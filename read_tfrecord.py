@@ -52,6 +52,7 @@ tf.train.start_queue_runners(sess=sess)
 # https://indico.io/blog/tensorflow-data-inputs-part1-placeholders-protobufs-queues/
 
 # groups examples into batches randomly
+# https://www.tensorflow.org/api_docs/python/tf/train/shuffle_batch
 images_batch, labels_batch = tf.train.shuffle_batch(
     [image, label], batch_size=128,
     capacity=2000,
