@@ -5,6 +5,8 @@ import numpy as np
 from multiprocessing.dummy import Pool as ThreadPool
 
 from PIL import Image
+from urllib.request import urlretrieve
+import pandas as pd
 
 
 def download_png_threaded(catalog, png_dir, overwrite=False):
@@ -50,7 +52,7 @@ def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
         downloaded = False
         while attempt < max_attempts:
             try:
-                download_png(galaxy['url'], galaxy['png_loc'])
+                urlretrieve(galaxy['url'], galaxy['png_loc'])
                 assert png_downloaded_correctly(png_loc)
                 break
             except Exception as err:
@@ -60,9 +62,6 @@ def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
     if pbar:
         pbar.update()
 
-
-def download_png(url, png_loc):
-    
 
 def png_downloaded_correctly(png_loc):
     try:
@@ -81,3 +80,17 @@ def check_images_are_downloaded(catalog):
 
     return catalog
 
+
+if __name__ == '__main__':
+
+    nrows = 100
+    png_dir = '/Volumes/EXTERNAL/gz2/png'
+    overwrite = False
+
+    catalog_dir = '/data/galaxy_zoo/gz2/subjects'
+    labels_loc = '{}/all_labels.csv'.format(catalog_dir)
+
+    labels = pd.read_csv(labels_loc, nrows=nrows)
+    print(labels.iloc[0])
+
+    download_png_threaded(labels, png_dir, overwrite)
