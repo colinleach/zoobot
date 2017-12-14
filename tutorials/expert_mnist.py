@@ -54,7 +54,7 @@ def max_pool_2x2(x):
 W_conv1 = weight_variable([5, 5, 1, 32])
 b_conv1 = bias_variable([32])
 
-# put MNIST image back in natural shape, with first dim whatever size is required
+# put MNIST matrix back in natural shape, with first dim whatever size is required
 x_image = tf.reshape(x, [-1, 28, 28, 1])
 
 # apply relu function to the convolution

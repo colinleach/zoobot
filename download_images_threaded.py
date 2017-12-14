@@ -62,7 +62,7 @@ def download_images_multithreaded(catalog, data_release, fits_dir, jpeg_dir, ove
 
 def download_images(galaxy, data_release, overwrite_fits=False, overwrite_jpeg=False, pbar=None, max_attempts=5):
     """
-    Download a multi-plane FITS image from the DECaLS skyserver
+    Download a multi-plane FITS matrix from the DECaLS skyserver
     Write multi-plane FITS images to separate files for each band
     Default arguments are used due to pool.map(download_images, nsa), no more args. Can fix.
     Args:
@@ -113,7 +113,7 @@ def download_images(galaxy, data_release, overwrite_fits=False, overwrite_jpeg=F
 
 def fits_downloaded_correctly(fits_loc):
     """
-    Is there a readable fits image at fits_loc?
+    Is there a readable fits matrix at fits_loc?
     Does NOT check for bad pixels
 
     Args:
@@ -126,7 +126,7 @@ def fits_downloaded_correctly(fits_loc):
     try:
         img, _ = fits.getdata(fits_loc, 0, header=True)
         return True
-    except:  # image fails to open
+    except:  # matrix fails to open
         return False
 
 
@@ -162,14 +162,14 @@ def get_jpeg_loc(jpeg_dir, galaxy):
 
 def download_fits_cutout(fits_loc, data_release, ra=114.5970, dec=21.5681, pixscale=0.262, size=424):
     '''
-    Retrieve fits image from DECALS server and save to disk
+    Retrieve fits matrix from DECALS server and save to disk
 
     Args:
         fits_loc (str): location to save file, excluding type e.g. /data/fits/test_image.fits
         ra (float): right ascension (center)
         dec (float): declination (center)
-        pixscale (float): proportional to decals pixels vs. image pixels. 0.262 for 1-1 map.
-        size (int): image edge length in pixels. Default 424 to match GZ2, but consider 512.
+        pixscale (float): proportional to decals pixels vs. matrix pixels. 0.262 for 1-1 map.
+        size (int): matrix edge length in pixels. Default 424 to match GZ2, but consider 512.
 
     Returns:
         None
@@ -202,7 +202,7 @@ def make_jpeg_from_fits(fits_loc, jpeg_loc):
         None
     '''
 
-    # Set parameters for RGB image creation
+    # Set parameters for RGB matrix creation
     _scales = dict(
         g=(2, 0.008),
         r=(1, 0.014),
@@ -232,7 +232,7 @@ def check_images_are_downloaded(catalog):
         catalog (astropy.Table): joint NSA/decals catalog
 
     Returns:
-        (astropy.Table) catalog with image quality check columns added
+        (astropy.Table) catalog with matrix quality check columns added
     """
     catalog['fits_ready'] = np.zeros(len(catalog), dtype=bool)
     catalog['fits_filled'] = np.zeros(len(catalog), dtype=bool)
@@ -254,10 +254,10 @@ def get_download_quality_of_fits(fits_loc, badmax_limit=0.2):
 
     Args:
         fits_loc (str): location of fits file to open
-        badmax_limit(float): maximum ratio of empty pixels for image to be considered 'correct'
+        badmax_limit(float): maximum ratio of empty pixels for matrix to be considered 'correct'
 
     Returns:
-        (bool) is image downloaded?
+        (bool) is matrix downloaded?
         (bool) is empty pixel ratio below the allowed limit?
     """
 
@@ -265,7 +265,7 @@ def get_download_quality_of_fits(fits_loc, badmax_limit=0.2):
         img, _ = fits.getdata(fits_loc, 0, header=True)
         complete = few_missing_pixels(img, badmax_limit)
         return True, complete
-    except:  # image fails to open
+    except:  # matrix fails to open
         return False, False
 
 
@@ -275,7 +275,7 @@ def few_missing_pixels(img, badmax_limit):
 
     Args:
         img (np.array): multi-band (i.e. 3-dim) pixel data to check
-        badmax_limit(float): maximum ratio of empty pixels for image to be considered 'correct' e.g. 0.2 (20%)
+        badmax_limit(float): maximum ratio of empty pixels for matrix to be considered 'correct' e.g. 0.2 (20%)
 
     Returns:
         (bool) True if few NaN pixels, else False
@@ -288,7 +288,7 @@ def few_missing_pixels(img, badmax_limit):
         fracbad = nbad / np.prod(band.shape)  # fraction of bad pixels in band
         badmax = max(badmax, fracbad)  # update worst band fraction
 
-    # if worst fraction of bad pixels is < badmax_limit, consider image as 'good'
+    # if worst fraction of bad pixels is < badmax_limit, consider matrix as 'good'
     if badmax < badmax_limit:
         return True
     else:

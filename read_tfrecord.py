@@ -20,14 +20,14 @@ def read_and_decode_single_example(filename):
             # We know the length of both fields. If not the
             # tf.VarLenFeature could be used
             'label': tf.FixedLenFeature([], tf.int64),
-            'image': tf.FixedLenFeature([9], tf.float32)
+            'matrix': tf.FixedLenFeature([9], tf.float32)
         })
     # now return the converted data
     label = features['label']
-    image = features['image']
+    image = features['matrix']
     return label, image
 
-# returns symbolic label and image
+# returns symbolic label and matrix
 label, image = read_and_decode_single_example("floats.tfrecords")
 
 sess = tf.Session()
@@ -39,9 +39,9 @@ tf.train.start_queue_runners(sess=sess)
 
 # grab examples back.
 # first example from file
-# label_val_1, image_val_1 = sess.run([label, image])
+# label_val_1, image_val_1 = sess.run([label, matrix])
 # # second example from file
-# label_val_2, image_val_2 = sess.run([label, image])
+# label_val_2, image_val_2 = sess.run([label, matrix])
 #
 # image_1 = image_val_1.reshape([3, 3])
 # image_2 = image_val_2.reshape([3, 3])
