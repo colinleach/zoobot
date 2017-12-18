@@ -20,15 +20,19 @@ def read_and_decode_single_example(filename):
             # We know the length of both fields. If not the
             # tf.VarLenFeature could be used
             'label': tf.FixedLenFeature([], tf.int64),
-            'matrix': tf.FixedLenFeature([9], tf.float32)
+            'matrix': tf.FixedLenFeature([64 ** 2 * 3], tf.float32),
+            't04_spiral_a08_spiral_weighted_fraction': tf.FixedLenFeature([], tf.float32)
         })
     # now return the converted data
     label = features['label']
     image = features['matrix']
-    return label, image
+    spiral_fraction = features['t04_spiral_a08_spiral_weighted_fraction']
+
+    return label, image, spiral_fraction
 
 # returns symbolic label and matrix
-label, image = read_and_decode_single_example("floats.tfrecords")
+example_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_64.tfrecord'
+label, image, spiral_fraction = read_and_decode_single_example(example_loc)
 
 sess = tf.Session()
 
@@ -37,24 +41,20 @@ init = tf.global_variables_initializer()
 sess.run(init)
 tf.train.start_queue_runners(sess=sess)
 
-# grab examples back.
-# first example from file
-# label_val_1, image_val_1 = sess.run([label, matrix])
+# # grab examples back.
+# # first example from file
+# label_val_1, image_val_1 = sess.run([label, image])
 # # second example from file
-# label_val_2, image_val_2 = sess.run([label, matrix])
+# label_val_2, image_val_2 = sess.run([label, image])
 #
-# image_1 = image_val_1.reshape([3, 3])
-# image_2 = image_val_2.reshape([3, 3])
-#
-# print(label_val_1, image_1)
-# print(label_val_2, image_2)
+# print(label_val_1, label_val_2)
 
 # https://indico.io/blog/tensorflow-data-inputs-part1-placeholders-protobufs-queues/
 
 # groups examples into batches randomly
 # https://www.tensorflow.org/api_docs/python/tf/train/shuffle_batch
-images_batch, labels_batch = tf.train.shuffle_batch(
-    [image, label], batch_size=128,
+images_batch, labels_batch, spiral_fraction_batch = tf.train.shuffle_batch(
+    [image, label, spiral_fraction], batch_size=128,
     capacity=2000,
     min_after_dequeue=1000)
 
@@ -63,7 +63,9 @@ sess = tf.Session()
 init = tf.initialize_all_variables()
 sess.run(init)
 tf.train.start_queue_runners(sess=sess)
-labels, images = sess.run([labels_batch, images_batch])
+labels, images, spiral_fractions = sess.run([labels_batch, images_batch, spiral_fraction_batch])
 
-square_images = images.reshape([-1, 3, 3])
-print(square_images)
+square_images = images.reshape([-1, 64, 64])
+print(labels)
+print(spiral_fractions)
+print(square_images[0])

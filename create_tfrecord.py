@@ -46,6 +46,7 @@ def image_to_tfrecord(matrix, label, tfrecord_loc, extra_data=None):
     }
 
     if extra_data:
+        extra_data = extra_data.copy()  # avoid mutating input dict
         for name, value in extra_data.items():
             extra_data[name] = value_to_feature(value)
         features_to_save.update(extra_data)
@@ -57,6 +58,7 @@ def image_to_tfrecord(matrix, label, tfrecord_loc, extra_data=None):
             # Features contains a map of string to Feature proto objects
             feature=features_to_save))
     # use the proto object to serialize the example to a string
+
     serialized = example.SerializeToString()
     # write the serialized object to disk
     writer.write(serialized)
@@ -72,8 +74,6 @@ def value_to_feature(value):
     Returns:
         (tf.train.Feature) encoding of value, according to value type.
     """
-    print(value)
-    print(type(value))
     if type(value) == int:
         return int_to_feature(value)
     elif type(value) == float:
