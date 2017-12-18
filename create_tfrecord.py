@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def image_to_tfrecord(matrix, label, tfrecord_loc, extra_data=None):
+def image_to_tfrecord(matrix, label, writer, extra_data=None):
     """
     Save an image, label and any additional data to TFRecord. If no record exists, create one.
 
@@ -19,8 +19,6 @@ def image_to_tfrecord(matrix, label, tfrecord_loc, extra_data=None):
     """
 
     flat_matrix = np.reshape(matrix, matrix.size)
-
-    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
 
     # A Feature contains one of either a int64_list,
     # float_list, or bytes_list
