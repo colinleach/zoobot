@@ -112,6 +112,8 @@ def cnn_model_fn(features, labels, mode):
             global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
+    # not in any other mode
+    print(mode)
     # Add evaluation metrics (for EVAL mode)
     eval_metric_ops = {
         "accuracy": tf.metrics.accuracy(

@@ -1,6 +1,6 @@
 import pytest
 
-from get_galaxy_zoo import *
+from catalogs.get_galaxy_zoo_catalog import *
 
 
 @pytest.fixture()

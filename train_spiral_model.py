@@ -4,27 +4,10 @@ import shutil
 import tensorflow as tf
 import numpy as np
 
-from read_tfrecord import read_and_decode_single_example
+from tensorboard import summary as tensorboard_summary
+
 
 SIZE = 64
-
-#
-# def my_input_function():
-#     """
-#     Estimator input returns {col: values} and labels
-#     Symbolic, many examples
-#     Returns:
-#
-#     """
-#     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_64.tfrecord'
-#     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_28.tfrecord'
-#     label, image, spiral_fraction = read_and_decode_single_example(filename)
-#     labels_batch, images_batch, spiral_fraction_batch = tf.train.shuffle_batch(
-#         [label, image, spiral_fraction], batch_size=100,
-#         capacity=1000,
-#         min_after_dequeue=100)
-#     feature_cols = {'x': images_batch}
-#     return feature_cols, labels_batch
 
 
 def my_model_fn(features, labels, mode):
@@ -33,6 +16,7 @@ def my_model_fn(features, labels, mode):
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
     # MNIST images are 28x28 pixels, and have one color channel
     input_layer = features["x"]
+    # input_layer = tf.Print(input_layer, [input_layer, tf.shape(input_layer)])
 
     tf.summary.image('augmented', input_layer, 1)
 
@@ -47,6 +31,9 @@ def my_model_fn(features, labels, mode):
         kernel_size=[5, 5],
         padding="same",
         activation=tf.nn.relu)
+
+    # tf.Print(conv1, [tf.shape(conv1)])
+    # print(conv1)
 
     # Pooling Layer #1
     # First max pooling layer with a 2x2 filter and stride of 2
@@ -114,6 +101,8 @@ def my_model_fn(features, labels, mode):
     loss = tf.losses.softmax_cross_entropy(
         onehot_labels=onehot_labels, logits=logits)
 
+    # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
+
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
@@ -122,106 +111,138 @@ def my_model_fn(features, labels, mode):
             global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
+    tf.summary.histogram('Probabilities', predictions['probabilities'])
+    tf.summary.histogram('Classes', predictions['classes'])
+
+    tensorboard_summary.pr_curve_streaming_op(
+        name='spirals',
+        labels=labels,
+        predictions=predictions['probabilities'][:, 1],
+    )
+
     # Add evaluation metrics (for EVAL mode)
     eval_metric_ops = {
-        "accuracy": tf.metrics.accuracy(
-            labels=labels, predictions=predictions["classes"])}
+        "acc/accuracy": tf.metrics.accuracy(
+            labels=labels, predictions=predictions["classes"]),
+        "pr/auc": tf.metrics.auc(labels=labels, predictions=predictions['classes']),
+        "acc/mean_per_class_accuracy": tf.metrics.mean_per_class_accuracy(labels=labels, predictions=predictions['classes'], num_classes=2),
+        'pr/precision': tf.metrics.precision(labels=labels, predictions=predictions['classes']),
+        'pr/recall': tf.metrics.recall(labels=labels, predictions=predictions['classes']),
+        'confusion/true_positives': tf.metrics.true_positives(labels=labels, predictions=predictions['classes']),
+        'confusion/true_negatives': tf.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
+        'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
+        'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
+    }
     return tf.estimator.EstimatorSpec(
         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
-# TODO combine train and eval functions to avoid inconsistency
-
-# 191756 examples
-def train_input():
-    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_train.tfrecord'.format(SIZE)
+def input(mode, size=64, shuffle=1000, batch=100, copy=True, adjust=True):
+    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(size, mode)
 
     dataset = tf.data.TFRecordDataset(filename)
     dataset = dataset.map(_parse_function)  # Parse the record into tensors.
-    dataset = dataset.repeat()  # Repeat the input indefinitely.
-    dataset = dataset.shuffle(190000)
-    dataset = dataset.batch(256)
+
+    if mode == 'train':
+        # Repeat the input indefinitely
+        # Release in deca-batches to be stratified into batch size
+        print('repeating')
+        # dataset = dataset.repeat()
+        dataset = dataset.shuffle(shuffle)
+        # dataset = dataset.take(batch * 8)  # TODO temporary
+        dataset = dataset.batch(batch * 8)
+    elif mode == 'test':
+        # Pick one deca-batch of random examples (to be stratified into batch size
+        # dataset = dataset.shuffle(shuffle).take(batch * 8)
+        dataset = dataset.shuffle(shuffle)
+        dataset = dataset.batch(batch * 8)
+
     iterator = dataset.make_one_shot_iterator()
     batch_images, batch_labels = iterator.get_next()
+
     batch_images = tf.reshape(batch_images, [-1, SIZE, SIZE, 3])
-    tf.summary.image('original', batch_images)
-    grey_images = tf.reduce_mean(batch_images, axis=3, keep_dims=True)
-    tf.summary.image('greyscale', batch_images)
-    augmented_images = augment_images(grey_images)
+    tf.summary.image('{}/original'.format(mode), batch_images)
+    # batch_labels = tf.Print(batch_labels, [tf.shape(batch_labels)])
+    batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
+    tf.summary.image('{}/greyscale'.format(mode), batch_images)
 
-    # TODO new and untested
-    # (stratified_images, stratified_labels) = tf.contrib.training.stratified_sample(
-    #     augmented_images,
-    #     batch_labels,
-    #     target_probs=[0.5, 0.5],
-    #     batch_size=128)
+    batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='before strat')
+    (batch_images, batch_labels) = tf.contrib.training.stratified_sample(
+        tensors=[batch_images],  # expects a list of tensors, not a single 4d batch tensor
+        labels=batch_labels,
+        target_probs=np.array([0.5, 0.5]),
+        batch_size=batch,
+        enqueue_many=True)
 
-    feature_cols = {'x': augmented_images}
+    batch_images = batch_images[0]
+    batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='after strat')
+
+    batch_images = augment_images(batch_images, copy, adjust)
+    tf.summary.image('augmented_{}'.format(mode), batch_images)
+
+    feature_cols = {'x': batch_images}
     return feature_cols, batch_labels
 
 
-def eval_input():
-    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_test.tfrecord'.format(SIZE)
+# TODO make some tests for stratified - I'm really stumped on how to use it alongside dataset
 
-    dataset = tf.data.TFRecordDataset(filename)
-    dataset = dataset.map(_parse_function)  # Parse the record into tensors.
-    dataset = dataset.shuffle(47500)
-    dataset = dataset.batch(2000)
-    dataset = dataset.repeat()
-    iterator = dataset.make_one_shot_iterator()
-    batch_images, batch_labels = iterator.get_next()
-    batch_images = tf.reshape(batch_images, [-1, SIZE, SIZE, 3])
-    tf.summary.image('original_eval', batch_images)
-    grey_images = tf.reduce_mean(batch_images, axis=3, keep_dims=True)
-    tf.summary.image('greyscale_eval', batch_images)
-    augmented_images = augment_images(grey_images)
-
-    # TODO new and untested
-    # (stratified_images, stratified_labels) = tf.contrib.training.stratified_sample(
-    #     augmented_images,
-    #     batch_labels,
-    #     target_probs=[0.5, 0.5],
-    #     batch_size=1000)
-
-    feature_cols = {'x': augmented_images}
-    return feature_cols, batch_labels
+def augment_images(images, copy=True, adjust=True):
+    if copy:
+        images = tf.map_fn(transform_3d, images)
+    if adjust:
+        images = tf.image.random_brightness(images, max_delta=0.1)
+        images = tf.image.random_contrast(images, lower=0.9, upper=1.1)
+    return images
 
 
-def augment_images(images):
-    images = tf.image.random_brightness(images, max_delta=0.1)
-    images = tf.image.random_contrast(images, lower=0.9, upper=1.1)
+def transform_3d(images):
+    images = tf.image.random_flip_left_right(images)
+    images = tf.image.random_flip_up_down(images)
+    images = tf.image.rot90(images)
     return images
 
 
 def _parse_function(example_proto):
-  features = {"matrix": tf.FixedLenFeature((SIZE * SIZE * 3), tf.float32),
-              "label": tf.FixedLenFeature((), tf.int64)}
-  parsed_features = tf.parse_single_example(example_proto, features)
-  return parsed_features["matrix"], parsed_features["label"]
+    features = {"matrix": tf.FixedLenFeature((SIZE * SIZE * 3), tf.float32),
+                "label": tf.FixedLenFeature((), tf.int64)}
+    parsed_features = tf.parse_single_example(example_proto, features)
+    return parsed_features["matrix"], parsed_features["label"]
 
 
 def main():
-    log_dir = 'mine'
+    log_dir = 'runs/with_strat'
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
     # Create the Estimator
     mnist_classifier = tf.estimator.Estimator(
-        model_fn=my_model_fn, model_dir='mine')
+        model_fn=my_model_fn, model_dir=log_dir)
 
     # Set up logging for predictions
     tensors_to_log = {"probabilities": "softmax_tensor"}
     logging_hook = tf.train.LoggingTensorHook(
         tensors=tensors_to_log, every_n_iter=50)
 
+    def train_input():
+        return input(mode='train', shuffle=6000, batch=100, copy=True, adjust=True)
+
+    def eval_input():
+        return input(mode='test', shuffle=5000, batch=1000, copy=False, adjust=False)
+
     epoch_n = 0
-    while epoch_n < 40:
+    while epoch_n < 400:
+        print('training begins')
         # Train the model
         mnist_classifier.train(
             input_fn=train_input,
-            steps=50,
+            steps=5,
             hooks=[logging_hook]
-            )
+        )
+
+        # result = mnist_classifier.predict(input_fn=eval_input)
+        # print(list(result))
+
         # Evaluate the model and print results
+        print('eval begins')
         eval_results = mnist_classifier.evaluate(input_fn=eval_input)
         print(eval_results)
 
