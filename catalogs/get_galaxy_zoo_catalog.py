@@ -2,9 +2,6 @@
 
 import pandas as pd
 
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-
 from shared_utilities import plot_catalog_overlap
 
 
@@ -30,24 +27,6 @@ def get_spiral_classification_results(published_data_loc, nrows=None):
     df = pd.read_csv(published_data_loc, nrows=nrows, usecols=useful_columns)
 
     return df
-
-
-def match_galaxies_to_catalog(galaxies, catalog, matching_radius=10 * u.arcsec):
-    # http://docs.astropy.org/en/stable/coordinates/matchsep.html
-
-    galaxies_coord = SkyCoord(ra=galaxies['ra'] * u.degree, dec=galaxies['dec'] * u.degree)
-    catalog_coord = SkyCoord(ra=catalog['ra'] * u.degree, dec=catalog['dec'] * u.degree)
-    best_match_catalog_index, sky_separation, _ = galaxies_coord.match_to_catalog_sky(catalog_coord)
-
-    galaxies['best_match'] = best_match_catalog_index
-    galaxies['sky_separation'] = sky_separation.to(u.arcsec).value
-    matched_galaxies = galaxies[galaxies['sky_separation'] < matching_radius.value]
-
-    catalog['best_match'] = catalog.index.values
-
-    matched_catalog = pd.merge(matched_galaxies, catalog, on='best_match', how='inner', suffixes=['_subject', ''])
-
-    return matched_catalog
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 
 from tensorboard import summary as tensorboard_summary
+from input_utils import input
 
 
 SIZE = 64
@@ -137,80 +138,8 @@ def my_model_fn(features, labels, mode):
         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
-def input(mode, size=64, shuffle=1000, batch=100, copy=True, adjust=True):
-    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(size, mode)
-
-    dataset = tf.data.TFRecordDataset(filename)
-    dataset = dataset.map(_parse_function)  # Parse the record into tensors.
-
-    if mode == 'train':
-        # Repeat the input indefinitely
-        # Release in deca-batches to be stratified into batch size
-        print('repeating')
-        # dataset = dataset.repeat()
-        dataset = dataset.shuffle(shuffle)
-        # dataset = dataset.take(batch * 8)  # TODO temporary
-        dataset = dataset.batch(batch * 8)
-    elif mode == 'test':
-        # Pick one deca-batch of random examples (to be stratified into batch size
-        # dataset = dataset.shuffle(shuffle).take(batch * 8)
-        dataset = dataset.shuffle(shuffle)
-        dataset = dataset.batch(batch * 8)
-
-    iterator = dataset.make_one_shot_iterator()
-    batch_images, batch_labels = iterator.get_next()
-
-    batch_images = tf.reshape(batch_images, [-1, SIZE, SIZE, 3])
-    tf.summary.image('{}/original'.format(mode), batch_images)
-    # batch_labels = tf.Print(batch_labels, [tf.shape(batch_labels)])
-    batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
-    tf.summary.image('{}/greyscale'.format(mode), batch_images)
-
-    batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='before strat')
-    (batch_images, batch_labels) = tf.contrib.training.stratified_sample(
-        tensors=[batch_images],  # expects a list of tensors, not a single 4d batch tensor
-        labels=batch_labels,
-        target_probs=np.array([0.5, 0.5]),
-        batch_size=batch,
-        enqueue_many=True)
-
-    batch_images = batch_images[0]
-    batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='after strat')
-
-    batch_images = augment_images(batch_images, copy, adjust)
-    tf.summary.image('augmented_{}'.format(mode), batch_images)
-
-    feature_cols = {'x': batch_images}
-    return feature_cols, batch_labels
-
-
-# TODO make some tests for stratified - I'm really stumped on how to use it alongside dataset
-
-def augment_images(images, copy=True, adjust=True):
-    if copy:
-        images = tf.map_fn(transform_3d, images)
-    if adjust:
-        images = tf.image.random_brightness(images, max_delta=0.1)
-        images = tf.image.random_contrast(images, lower=0.9, upper=1.1)
-    return images
-
-
-def transform_3d(images):
-    images = tf.image.random_flip_left_right(images)
-    images = tf.image.random_flip_up_down(images)
-    images = tf.image.rot90(images)
-    return images
-
-
-def _parse_function(example_proto):
-    features = {"matrix": tf.FixedLenFeature((SIZE * SIZE * 3), tf.float32),
-                "label": tf.FixedLenFeature((), tf.int64)}
-    parsed_features = tf.parse_single_example(example_proto, features)
-    return parsed_features["matrix"], parsed_features["label"]
-
-
 def main():
-    log_dir = 'runs/with_strat'
+    log_dir = 'runs/strat_with_augs_64'
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
     # Create the Estimator
@@ -220,21 +149,29 @@ def main():
     # Set up logging for predictions
     tensors_to_log = {"probabilities": "softmax_tensor"}
     logging_hook = tf.train.LoggingTensorHook(
-        tensors=tensors_to_log, every_n_iter=50)
+        tensors=tensors_to_log, every_n_iter=27)
 
     def train_input():
-        return input(mode='train', shuffle=6000, batch=100, copy=True, adjust=True)
+        mode = 'train'
+        # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'test')
+        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, mode)
+        return input(
+           filename=filename, size=SIZE, mode=mode, batch=100, augment=True, stratify=True)
 
     def eval_input():
-        return input(mode='test', shuffle=5000, batch=1000, copy=False, adjust=False)
+        mode = 'test'
+        # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
+        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, mode)
+        return input(
+            filename=filename, size=SIZE, mode=mode, batch=100, augment=True, stratify=True)
 
     epoch_n = 0
-    while epoch_n < 400:
+    while epoch_n < 4000:
         print('training begins')
         # Train the model
         mnist_classifier.train(
             input_fn=train_input,
-            steps=5,
+            steps=3,
             hooks=[logging_hook]
         )
 

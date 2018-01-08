@@ -56,6 +56,7 @@ if __name__ == '__main__':
 
     train_test_split = int(0.8*len(df))
 
+    df = df.sample(frac=1).reset_index(drop=True)
     train_df = df[:train_test_split].copy()
     test_df = df[train_test_split:].copy()
 
