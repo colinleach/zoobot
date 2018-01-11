@@ -3,16 +3,25 @@ import shutil
 
 import tensorflow as tf
 import numpy as np
+from functools import partial
 
 from tensorboard import summary as tensorboard_summary
 from input_utils import input
 
 
-SIZE = 64
+def spiral_classifier(features, labels, mode, params):
+    """
+    Classify images of galaxies into spiral/not spiral
+    Based on MNIST example from tensorflow docs
 
+    Args:
+        features ():
+        labels ():
+        mode ():
 
-def my_model_fn(features, labels, mode):
-    """Model function for CNN."""
+    Returns:
+
+    """
     # Input Layer
     # Reshape X to 4-D tensor: [batch_size, width, height, channels]
     # MNIST images are 28x28 pixels, and have one color channel
@@ -28,10 +37,11 @@ def my_model_fn(features, labels, mode):
     # Output Tensor Shape: [batch_size, 28, 28, 32]
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
-        filters=32,
-        kernel_size=[5, 5],
-        padding="same",
-        activation=tf.nn.relu)
+        filters=params['conv1_filters'],
+        kernel_size=params['conv1_kernel'],
+        padding=params['conv1_padding'],
+        activation=params['conv1_activation'],
+        name='model/layer1/conv1')
 
     # tf.Print(conv1, [tf.shape(conv1)])
     # print(conv1)
@@ -40,7 +50,11 @@ def my_model_fn(features, labels, mode):
     # First max pooling layer with a 2x2 filter and stride of 2
     # Input Tensor Shape: [batch_size, 28, 28, 32]
     # Output Tensor Shape: [batch_size, 14, 14, 32]
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+    pool1 = tf.layers.max_pooling2d(
+        inputs=conv1,
+        pool_size=params['pool1_size'],
+        strides=params['pool1_strides'],
+        name='model/layer1/pool1')
 
     # Convolutional Layer #2
     # Computes 64 features using a 5x5 filter.
@@ -49,41 +63,52 @@ def my_model_fn(features, labels, mode):
     # Output Tensor Shape: [batch_size, 14, 14, 64]
     conv2 = tf.layers.conv2d(
         inputs=pool1,
-        filters=64,
-        kernel_size=[5, 5],
-        padding="same",
-        activation=tf.nn.relu)
+        filters=params['conv2_filters'],
+        kernel_size=params['conv2_kernel'],
+        padding=params['conv2_padding'],
+        activation=params['conv2_activation'],
+        name='model/layer2/conv2')
 
     # Pooling Layer #2
     # Second max pooling layer with a 2x2 filter and stride of 2
     # Input Tensor Shape: [batch_size, 14, 14, 64]
     # Output Tensor Shape: [batch_size, 7, 7, 64]
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    pool2 = tf.layers.max_pooling2d(
+        inputs=conv2,
+        pool_size=params['pool2_size'],
+        strides=params['pool2_strides'],
+        name='model/layer2/pool2')
 
     # Flatten tensor into a batch of vectors
     # Input Tensor Shape: [batch_size, 7, 7, 64]
     # Output Tensor Shape: [batch_size, 7 * 7 * 64]
     # pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64], name='pool2_flat')
-    pool2_flat = tf.reshape(pool2, [-1, int(SIZE/4) ** 2 * 64], name='pool2_flat')
+    pool2_flat = tf.reshape(pool2, [-1, int(params['image_dim']/4) ** 2 * 64], name='model/layer2/flat')
     # tf.Print(pool2_flat, [pool2_flat.shape])
 
     # Dense Layer
     # Densely connected layer with 1024 neurons
     # Input Tensor Shape: [batch_size, 7 * 7 * 64]
     # Output Tensor Shape: [batch_size, 1024]
-    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu, name='dense')
+    dense1 = tf.layers.dense(
+        inputs=pool2_flat,
+        units=params['dense1_units'],
+        activation=params['dense1_activation'],
+        name='model/layer3/dense1')
     # tf.Print(dense, [dense.shape])
 
     # Add dropout operation; 0.6 probability that element will be kept
     dropout = tf.layers.dropout(
-        inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+        inputs=dense1,
+        rate=params['dense1_dropout'],
+        training=mode == tf.estimator.ModeKeys.TRAIN)
     tf.summary.tensor_summary('dropout_summary', dropout)
 
     # Logits layer
     # Input Tensor Shape: [batch_size, 1024]
     # Output Tensor Shape: [batch_size, 10]
     # logits = tf.layers.dense(inputs=dropout, units=10)
-    logits = tf.layers.dense(inputs=dropout, units=2)
+    logits = tf.layers.dense(inputs=dropout, units=2, name='model/layer4/logits')
     tf.summary.histogram('logits', logits)
     tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
@@ -98,6 +123,7 @@ def my_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
     # Calculate Loss (for both TRAIN and EVAL modes)
+    # required for EstimatorSpec
     onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
     loss = tf.losses.softmax_cross_entropy(
         onehot_labels=onehot_labels, logits=logits)
@@ -106,7 +132,7 @@ def my_model_fn(features, labels, mode):
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        optimizer = params['optimizer'](learning_rate=params['learning_rate'])
         train_op = optimizer.minimize(
             loss=loss,
             global_step=tf.train.get_global_step())
@@ -138,52 +164,128 @@ def my_model_fn(features, labels, mode):
         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
-def main():
-    log_dir = 'runs/strat_with_augs_64'
-    if os.path.exists(log_dir):
-        shutil.rmtree(log_dir)
+def run_experiment(model_fn, params):
+
+    if os.path.exists(params['log_dir']):
+        shutil.rmtree(params['log_dir'])
+
     # Create the Estimator
-    mnist_classifier = tf.estimator.Estimator(
-        model_fn=my_model_fn, model_dir=log_dir)
+    model_fn_partial = partial(model_fn, params=params)
+    estimator = tf.estimator.Estimator(
+        model_fn=model_fn_partial, model_dir=params['log_dir'])
 
     # Set up logging for predictions
     tensors_to_log = {"probabilities": "softmax_tensor"}
     logging_hook = tf.train.LoggingTensorHook(
-        tensors=tensors_to_log, every_n_iter=27)
+        tensors=tensors_to_log, every_n_iter=params['log_freq'])
 
     def train_input():
         mode = 'train'
-        # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'test')
-        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, mode)
+        # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
+        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
         return input(
-           filename=filename, size=SIZE, mode=mode, batch=100, augment=True, stratify=True)
+           filename=filename, size=params['image_dim'], mode=mode, batch=100, augment=True, stratify=True)
 
     def eval_input():
         mode = 'test'
         # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
-        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, mode)
+        filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
         return input(
-            filename=filename, size=SIZE, mode=mode, batch=100, augment=True, stratify=True)
+            filename=filename, size=params['image_dim'], mode=mode, batch=100, augment=True, stratify=True)
 
     epoch_n = 0
-    while epoch_n < 4000:
+    while epoch_n < params['epochs']:
         print('training begins')
-        # Train the model
-        mnist_classifier.train(
+        # Train the estimator
+        estimator.train(
             input_fn=train_input,
-            steps=3,
+            steps=params['save_steps'],
             hooks=[logging_hook]
         )
 
-        # result = mnist_classifier.predict(input_fn=eval_input)
+        # result = estimator.predict(input_fn=eval_input)
         # print(list(result))
 
-        # Evaluate the model and print results
+        # Evaluate the estimator and print results
         print('eval begins')
-        eval_results = mnist_classifier.evaluate(input_fn=eval_input)
+        eval_results = estimator.evaluate(input_fn=eval_input)
         print(eval_results)
 
         epoch_n += 1
+
+
+def default_model_architecture():
+    return dict(
+        conv1_filters=32,
+        conv1_kernel=[5, 5],
+        conv1_padding='same',
+        conv1_activation=tf.nn.relu,
+
+        pool1_size=[2, 2],
+        pool1_strides=2,
+
+        conv2_filters=64,
+        conv2_kernel=[5, 5],
+        conv2_padding='same',
+        conv2_activation=tf.nn.relu,
+
+        pool2_size=[2, 2],
+        pool2_strides=2,
+
+        dense1_units=1064,
+        dense1_dropout=0.4,
+        dense1_activation=tf.nn.relu,
+
+        learning_rate=0.001,
+        optimizer=tf.train.GradientDescentOptimizer
+
+    )
+
+
+def chollet_model_architecture():
+    return dict(
+        conv1_filters=32,
+        conv1_kernel=[3, 3],
+        conv1_padding='same',
+        conv1_activation=tf.nn.relu,
+
+        pool1_size=[2, 2],
+        pool1_strides=1,
+
+        conv2_filters=64,
+        conv2_kernel=[3, 3],
+        conv2_padding='same',
+        conv2_activation=tf.nn.relu,
+
+        pool2_size=[2, 2],
+        pool2_strides=1,
+
+        dense1_units=1064,
+        dense1_dropout=0.5,
+        dense1_activation=tf.nn.relu,
+
+        learning_rate=0.001,
+        optimizer=tf.train.GradientDescentOptimizer
+
+    )
+
+
+def main():
+
+    params = dict(
+        epochs=1000,
+        batch_size=128,  # TODO
+        image_dim=64,
+        save_steps=10,
+        log_freq=25,
+        log_dir='runs/chollet_run'
+    )
+
+    # params.update(default_model_architecture())
+    params.update(chollet_model_architecture())
+    # print(params)
+
+    run_experiment(spiral_classifier, params)
 
 
 if __name__ == '__main__':
