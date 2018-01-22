@@ -48,11 +48,10 @@ for tfrecord_loc in ['train.tfrecords', 'test.tfrecords']:
 Computational graph
 """
 
-batch = 10  # keeping it simple for now
+batch = 32  # keeping it simple for now
 
-for n in range(3):
-    train_features, train_labels = input(filename='train.tfrecords', mode='train', size=size, batch=batch, stratify=True, augment=False)
-    train_images = train_features['x']
+train_features, train_labels = input(filename='train.tfrecords', mode='train', size=size, batch=batch, stratify=True, augment=False)
+train_images = train_features['x']
 
 test_features, test_labels = input(filename='test.tfrecords', mode='test', size=size, batch=batch, stratify=True, augment=False)
 test_images = test_features['x']
@@ -61,27 +60,21 @@ test_images = test_features['x']
 Execution
 """
 
-sess = tf.Session()
-init = tf.global_variables_initializer()
-sess.run(init)
 
-time.sleep(0.1)
+with tf.train.MonitoredSession() as sess:
 
-train_images, train_labels = sess.run([train_images, train_labels])
+    train_images, train_labels = sess.run([train_images, train_labels])
 
-# print(train_images)
-print(train_labels)
-print('train images shape', train_images.shape)
-print('train labels shape', train_labels.shape)
+    # print(train_images)
+    print(train_labels)
+    print('train images shape', train_images.shape)
+    print('train labels shape', train_labels.shape)
 
-time.sleep(0.1)
+    test_images, test_labels = sess.run([test_images, test_labels])
 
-test_images, test_labels = sess.run([test_images, test_labels])
-
-# print(train_images)
-print(test_labels)
-print('test images shape', test_images.shape)
-print('test labels shape', test_labels.shape)
+    print(test_labels)
+    print('test images shape', test_images.shape)
+    print('test labels shape', test_labels.shape)
 
 # print(true_images)
 # print(false_images)

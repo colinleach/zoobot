@@ -40,34 +40,35 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size):
 
 if __name__ == '__main__':
 
-    size = 64
-    train_test_fraction = 0.8
+    for size in [128, 256, 512]:
 
-    columns_to_save = ['t04_spiral_a08_spiral_count',
-                       't04_spiral_a09_no_spiral_count',
-                       't04_spiral_a08_spiral_weighted_fraction',
-                       'id',
-                       'ra',
-                       'dec']
+        train_test_fraction = 0.8
 
-    df = pd.read_csv('/data/galaxy_zoo/gz2/subjects/all_labels_downloaded.csv',
-                     usecols=columns_to_save + ['png_loc', 'png_ready'],
-                     nrows=None)
+        columns_to_save = ['t04_spiral_a08_spiral_count',
+                           't04_spiral_a09_no_spiral_count',
+                           't04_spiral_a08_spiral_weighted_fraction',
+                           'id',
+                           'ra',
+                           'dec']
 
-    train_test_split = int(0.8*len(df))
+        df = pd.read_csv('/data/galaxy_zoo/gz2/subjects/all_labels_downloaded.csv',
+                         usecols=columns_to_save + ['png_loc', 'png_ready'],
+                         nrows=None)
 
-    df = df.sample(frac=1).reset_index(drop=True)
-    train_df = df[:train_test_split].copy()
-    test_df = df[train_test_split:].copy()
+        train_test_split = int(0.8*len(df))
 
-    print(len(train_df))
-    print(len(test_df))
+        df = df.sample(frac=1).reset_index(drop=True)
+        train_df = df[:train_test_split].copy()
+        test_df = df[train_test_split:].copy()
 
-    train_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_train.tfrecord'.format(size)
-    test_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_test.tfrecord'.format(size)
+        print(len(train_df))
+        print(len(test_df))
 
-    write_image_df_to_tfrecord(train_df, train_tfrecord_loc, size)
-    write_image_df_to_tfrecord(test_df, test_tfrecord_loc, size)
+        train_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_train.tfrecord'.format(size)
+        test_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_test.tfrecord'.format(size)
 
-    assert os.path.exists(train_tfrecord_loc)
-    assert os.path.exists(test_tfrecord_loc)
+        write_image_df_to_tfrecord(train_df, train_tfrecord_loc, size)
+        write_image_df_to_tfrecord(test_df, test_tfrecord_loc, size)
+
+        assert os.path.exists(train_tfrecord_loc)
+        assert os.path.exists(test_tfrecord_loc)

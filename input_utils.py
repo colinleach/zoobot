@@ -10,27 +10,29 @@ def input(filename, mode, size=64, batch=100, copy=True, adjust=True, stratify=F
     parse_function = partial(_parse_function, size=size)
     dataset = dataset.map(parse_function)  # Parse the record into tensors.
 
-    if stratify:
-        initial_batch = batch * 10
-    else:
-        initial_batch = batch
-    shuffle = initial_batch * 5
-
     if mode == 'train':
         print('taking a training batch')
         # Repeat the input indefinitely
         # Release in deca-batches to be stratified into batch size
-        dataset = dataset.repeat()
-        dataset = dataset.shuffle(shuffle).batch(initial_batch)
+        dataset = dataset.shuffle(batch * 10)
     elif mode == 'test':
         print('taking an eval batch')
-        # Pick one deca-batch of random examples (to be stratified into batch size
-        # using .take and then get_next gives only one example
-        # using .batch and then get_next gives a batch of examples
-        dataset = dataset.shuffle(shuffle).take(initial_batch).batch(initial_batch)
+        # Restrict to one deca-batch of random examples (to avoid looping forever)
+        # using .take and then get_next gives only one example (good)
+        # using .batch and then get_next gives a batch of examples (too early)
+        dataset = dataset.shuffle(batch * 10)
 
     iterator = dataset.make_one_shot_iterator()
-    batch_images, batch_labels = iterator.get_next()
+    batch_image, batch_label = iterator.get_next()
+
+    # queue single images into batches
+    if stratify:
+        batch_images, batch_labels = stratify_images_auto(batch_image, batch_label, batch)
+    else:
+        batch_images, batch_labels = tf.train.batch(
+            [batch_image, batch_label],
+            batch,
+            capacity=batch)
 
     batch_images = tf.reshape(batch_images, [-1, size, size, 3])
     tf.summary.image('{}/original'.format(mode), batch_images)
@@ -38,21 +40,9 @@ def input(filename, mode, size=64, batch=100, copy=True, adjust=True, stratify=F
     batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
     tf.summary.image('{}/greyscale'.format(mode), batch_images)
 
-    if stratify:
-        batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='images before strat')
-        batch_labels = tf.Print(batch_labels, [tf.shape(batch_labels)], message='labels before strat')
-        batch_labels = tf.Print(batch_labels, [tf.reduce_sum(batch_labels), tf.reduce_mean(tf.cast(batch_labels, tf.float32))], message='true labels before strat')
-        batch_images, batch_labels = stratify_images(batch_images, batch_labels)
-        batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='images after strat')
-        batch_labels = tf.Print(batch_labels, [tf.shape(batch_labels)], message='labels after strat')
-        batch_labels = tf.Print(batch_labels, [tf.reduce_sum(batch_labels), tf.reduce_mean(tf.cast(batch_labels, tf.float32))], message='true labels after strat')
-
     if augment:
         batch_images = augment_images(batch_images, copy, adjust)
         tf.summary.image('augmented_{}'.format(mode), batch_images)
-
-    batch_images = tf.Print(batch_images, [tf.shape(batch_images)], message='final images shape')
-    batch_labels = tf.Print(batch_labels, [tf.shape(batch_labels)], message='final labels shape')
 
     feature_cols = {'x': batch_images}
     return feature_cols, batch_labels
@@ -95,6 +85,57 @@ def stratify_images(batch_images, batch_labels):
     return batch_images, batch_labels
 
 
+def stratify_images_auto(batch_images, batch_labels, batch_size):
+    data_batch, label_batch = tf.contrib.training.stratified_sample(
+        [batch_images],  # list of tensors. enqueue many ensures treated with batch dimension within list
+        batch_labels,
+        target_probs=np.array([0.5, 0.5]),
+        batch_size=batch_size,
+        enqueue_many=False,
+        queue_capacity=batch_size * 10
+    )
+    return data_batch, label_batch
+
+
+def rejection_sample(batch_images, batch_labels, batch_size):
+    data_batch, label_batch = tf.contrib.training.rejection_sample(
+        [batch_images, batch_labels],
+        accept_prob_fn=lambda x: 0.5,  # for now
+        batch_size=2,
+        enqueue_many=True,
+    )
+    return data_batch, label_batch
+
+
+# def get_weights(labels):
+#     n_true_examples = tf.to_int32(tf.reduce_sum(labels))
+#     n_false_examples = tf.to_int32(tf.size(labels) - n_true_examples)
+#     weight_for_true = 1/tf.to_float32(n_true_examples)
+#     weight_for_false = 1 / tf.to_float32(n_true_examples)
+#     return tf.map_fn(replace_if_true()
+#
+# def replace_if_true(value, value_if_true, value_if_false):
+#     return tf.cond(
+#         lambda x: value == True,
+#         true_fn=lambda: value_if_true,
+#         false_fn=lambda: value_if_false
+#
+# def weighted_resample(batch_images, batch_labels, batch_size):
+#
+#     n_true_examples = tf.to_int32(tf.reduce_sum(batch_labels))
+#     n_false_examples = tf.to_int32(tf.size(batch_labels) - n_true_examples)
+#     weights = tf.float(n_true_examples)
+#
+#     tf.contrib.training.weighted_resample(
+#         [batch_images, batch_labels],
+#         bat,
+#         overall_rate,
+#         scope=None,
+#         mean_decay=0.999,
+#         seed=None
+#     )
+#
+
 def augment_images(images, copy=True, adjust=True):
     if copy:
         images = tf.map_fn(transform_3d, images)
@@ -112,10 +153,15 @@ def transform_3d(images):
 
 
 def _parse_function(example_proto, size=64):
-    features = {"matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
-                "label": tf.FixedLenFeature((), tf.int64)}
+    features = feature_spec(size)
     parsed_features = tf.parse_single_example(example_proto, features)
     return parsed_features["matrix"], parsed_features["label"]
+
+
+def feature_spec(size):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64)}
 
 
 #

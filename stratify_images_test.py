@@ -1,63 +1,50 @@
 import tensorflow as tf
 import numpy as np
 
-from input_utils import stratify_images
+from input_utils import stratify_images, stratify_images_auto, rejection_sample
+
+import matplotlib.pyplot as plt
 
 """
 Computational graph
 """
 
-SIZE = 4
-true_image_values = 3.
-false_image_values = true_image_values * -1.
 
-n_true_examples = 1
-n_false_examples = 3
+batch_size = 32  # keeping it simple for now
 
-batch = 2  # keeping it simple for now
+all_data = tf.constant([1. for n in range(800)] + [0. for n in range(200)])
+all_labels = tf.constant([1 for n in range(800)] + [0 for n in range(200)])
+dataset = tf.data.Dataset.from_tensor_slices(
+    {'data': all_data,
+     'labels': all_labels}
+)
 
-true_images = tf.Variable(initial_value=np.ones((n_true_examples, SIZE, SIZE, 1)) * true_image_values, dtype=tf.float32)
-false_images = tf.Variable(initial_value=np.ones((n_false_examples, SIZE, SIZE, 1)) * false_image_values, dtype=tf.float32)
+dataset = dataset.shuffle(buffer_size=1000)
+# dataset = dataset.batch(32)
+dataset = dataset.repeat(1)
+batch = dataset.make_one_shot_iterator().get_next()
 
-true_labels = tf.Variable(initial_value=np.ones(n_true_examples), dtype=tf.int32)
-false_labels = tf.Variable(initial_value=np.zeros(n_false_examples), dtype=tf.int32)
+images = batch['data']
+labels = batch['labels']
 
+stratified_result = stratify_images_auto(images, labels, batch_size)
 
-batch_images = tf.concat([true_images, false_images], 0)
-batch_labels = tf.concat([true_labels, false_labels], 0)
-
-strat_images, strat_labels = stratify_images(batch_images, batch_labels, batch)
 
 """
 Execution
 """
 
-sess = tf.Session()
-init = tf.global_variables_initializer()
-sess.run(init)
+with tf.train.MonitoredSession() as sess:
 
-true_images, false_images, true_labels, false_labels = sess.run([true_images, false_images, true_labels, false_labels])
+    all_labels = []
+    all_means = []
+    while not sess.should_stop():
+        result = sess.run(stratified_result)
+        data_batch = result[0]
+        label_batch = result[1]
+        print(label_batch)
+        all_labels.append(label_batch)
+        all_means.append(np.array(all_labels).mean())
 
-# print(true_images)
-# print(false_images)
-# print(true_labels)
-# print(false_labels)
-
-batch_images, batch_labels = sess.run([batch_images, batch_labels])
-
-# print(batch_images)
-# print(batch_labels)
-
-strat_images, strat_labels = sess.run([strat_images, strat_labels])
-
-print(strat_images)
-print(strat_labels)
-
-print(strat_images.shape)
-print(strat_labels.shape)
-
-assert np.sum(strat_labels) == int(batch/2)
-assert np.mean(strat_images) == 0.0
-
-hopefully_true_images = strat_images[strat_labels == 1]
-assert np.min(hopefully_true_images) == true_image_values
+plt.plot(all_means)
+plt.show()
