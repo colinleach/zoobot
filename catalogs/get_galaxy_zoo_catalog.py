@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from shared_utilities import plot_catalog_overlap
+from shared_utilities import plot_catalog_overlap, match_galaxies_to_catalog
 
 
 def get_spiral_classification_results(published_data_loc, nrows=None):

@@ -1,13 +1,11 @@
 import os
-
-import time
 import random
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from create_tfrecord import image_to_tfrecord
-from input_utils import input
+from models.input_utils import input
+from tfrecord.create_tfrecord import image_to_tfrecord
 
 """
 Make test data

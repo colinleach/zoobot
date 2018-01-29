@@ -1,9 +1,8 @@
-import tensorflow as tf
-import numpy as np
-
-from input_utils import stratify_images, stratify_images_auto, rejection_sample
-
 import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
+from models.input_utils import stratify_images_auto
 
 """
 Computational graph

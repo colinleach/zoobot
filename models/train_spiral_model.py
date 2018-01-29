@@ -1,14 +1,12 @@
 import os
 import shutil
-
-import tensorflow as tf
-import numpy as np
 from functools import partial
 
-from tensorboard import summary as tensorboard_summary
+import tensorflow as tf
 from input_utils import input
+from tensorboard import summary as tensorboard_summary
 
-from estimator_models import chollet_model_results
+from models.estimator_models import chollet_model_results
 
 
 def spiral_classifier(features, labels, mode, params):
@@ -74,7 +72,7 @@ def train_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=True)
+        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=params['train_stratify'])
 
 
 def eval_input(params):
@@ -82,7 +80,7 @@ def eval_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=True)
+        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=params['eval_stratify'])
 
 
 # def serving_input_receiver_fn():
@@ -93,15 +91,15 @@ def eval_input(params):
 #     inputs = {"x": tf.placeholder(shape=[None, 4], dtype=tf.float32)}
 #     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
-
-def serving_input_receiver_fn():
-  """An input receiver that expects a serialized tf.Example."""
-  serialized_tf_example = tf.placeholder(dtype=tf.string,
-                                         shape=[default_batch_size],
-                                         name='input_example_tensor')
-  receiver_tensors = {'examples': serialized_tf_example}
-  features = tf.parse_example(serialized_tf_example, feature_spec)
-  return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
+#
+# def serving_input_receiver_fn():
+#   """An input receiver that expects a serialized tf.Example."""
+#   serialized_tf_example = tf.placeholder(dtype=tf.string,
+#                                          shape=[default_batch_size],
+#                                          name='input_example_tensor')
+#   receiver_tensors = {'examples': serialized_tf_example}
+#   features = tf.parse_example(serialized_tf_example, feature_spec)
+#   return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
 
 def run_experiment(model_fn, params):

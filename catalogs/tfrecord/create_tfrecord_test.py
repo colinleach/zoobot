@@ -1,8 +1,8 @@
-import pytest
-
 import os
 
-from create_tfrecord import *
+import pytest
+
+from tfrecord.create_tfrecord import *
 
 
 @pytest.fixture()

@@ -1,7 +1,6 @@
-
 import tensorflow as tf
 
-from read_tfrecord import read_and_decode_single_example
+from tfrecord.read_tfrecord import read_and_decode_single_example
 
 # import tensorflow.contrib.eager as tfe
 # tfe.enable_eager_execution()

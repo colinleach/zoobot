@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from train_spiral_model import spiral_classifier, run_experiment
+from models.train_spiral_model import spiral_classifier, run_experiment
 
 
 def default_params():
@@ -12,6 +12,8 @@ def default_params():
         eval_batches=3,
         max_train_batches=None,
         log_freq=25,
+        train_stratify=True,
+        eval_stratify=True
 )
 
 

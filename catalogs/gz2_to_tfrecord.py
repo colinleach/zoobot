@@ -1,14 +1,13 @@
 import os
 import sys
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import tensorflow as tf
 from PIL import Image
 from tqdm import tqdm
 
-import tensorflow as tf
-
-from create_tfrecord import image_to_tfrecord
+from tfrecord.create_tfrecord import image_to_tfrecord
 
 
 def write_image_df_to_tfrecord(df, tfrecord_loc, img_size):
