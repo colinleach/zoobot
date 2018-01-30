@@ -2,7 +2,7 @@
 # import numpy as np
 # import tensorflow as tf
 #
-# from zoobot.models.input_utils import stratify_images_auto
+# from zoobot.models.input_utils import stratify_images
 #
 # """
 # Computational graph
@@ -26,7 +26,7 @@
 # images = batch['data']
 # labels = batch['labels']
 #
-# stratified_result = stratify_images_auto(images, labels, batch_size)
+# stratified_result = stratify_images(images, labels, batch_size)
 #
 #
 # """

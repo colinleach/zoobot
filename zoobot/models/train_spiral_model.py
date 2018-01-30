@@ -72,7 +72,7 @@ def train_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=params['train_stratify'])
+        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], augment=True, stratify=params['train_stratify'])
 
 
 def eval_input(params):
@@ -80,7 +80,7 @@ def eval_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        filename=filename, size=params['image_dim'], mode=mode, batch=params['batch_size'], augment=True, stratify=params['eval_stratify'])
+        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], augment=True, stratify=params['eval_stratify'])
 
 
 # def serving_input_receiver_fn():

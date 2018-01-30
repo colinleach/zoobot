@@ -64,10 +64,26 @@ def test_input_utils_stratified(size, true_image_values, false_image_values):
     train_batch = 64
     test_batch = 128
 
-    train_features, train_labels = input(filename='train.tfrecords', mode='train', size=size, batch=train_batch, stratify=True, augment=False)
+    train_features, train_labels = input(
+        tfrecord_loc='train.tfrecords',
+        name='train',
+        size=size,
+        batch=train_batch,
+        stratify=True,
+        transform=False,  # no augmentations
+        adjust=False  # no augmentations
+    )
     train_images = train_features['x']
 
-    test_features, test_labels = input(filename='test.tfrecords', mode='test', size=size, batch=test_batch, stratify=True, augment=False)
+    test_features, test_labels = input(
+        tfrecord_loc='test.tfrecords',
+        name='test',
+        size=size,
+        batch=test_batch,
+        stratify=True,
+        transform=False,  # no augmentations
+        adjust=False  # no augmentations
+    )
     test_images = test_features['x']
 
     with tf.train.MonitoredSession() as sess:  # mimic Estimator environment
