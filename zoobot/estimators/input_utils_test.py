@@ -1,13 +1,12 @@
-import pytest
-
 import os
 import random
 
 import numpy as np
+import pytest
 import tensorflow as tf
 
-from zoobot.models.input_utils import input
-from zoobot.catalogs.tfrecord.create_tfrecord import image_to_tfrecord
+from zoobot.estimators.input_utils import input
+from zoobot.tfrecord import image_to_tfrecord
 
 
 @pytest.fixture(scope='module')

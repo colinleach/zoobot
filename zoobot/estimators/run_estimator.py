@@ -3,16 +3,15 @@ import shutil
 from functools import partial
 
 import tensorflow as tf
-from zoobot.models.input_utils import input
+from zoobot.estimators.input_utils import input
 from tensorboard import summary as tensorboard_summary
 
-from zoobot.models.estimator_models import chollet_model_results
+from zoobot.estimators.architecture_scaffolds import four_layer_cnn
 
 
-def spiral_classifier(features, labels, mode, params):
+def four_layer_binary_classifier(features, labels, mode, params):
     """
     Classify images of galaxies into spiral/not spiral
-    Based on MNIST example from tensorflow docs
 
     Args:
         features ():
@@ -24,7 +23,7 @@ def spiral_classifier(features, labels, mode, params):
 
     """
 
-    predictions, loss = chollet_model_results(features, labels, mode, params)
+    predictions, loss = four_layer_cnn(features, labels, mode, params)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
@@ -72,7 +71,7 @@ def train_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], augment=True, stratify=params['train_stratify'])
+        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['train_stratify'])
 
 
 def eval_input(params):
@@ -80,7 +79,7 @@ def eval_input(params):
     # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
     filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
     return input(
-        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], augment=True, stratify=params['eval_stratify'])
+        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
 
 
 # def serving_input_receiver_fn():
@@ -141,8 +140,8 @@ def run_experiment(model_fn, params):
         print(eval_results)
 
         print('saving model at epoch {}'.format(epoch_n))
-        estimator.export_savedmodel(
-            export_dir_base="/path/to/model",
-            serving_input_receiver_fn=serving_input_receiver_fn)
+        # estimator.export_savedmodel(
+        #     export_dir_base="/path/to/model",
+        #     serving_input_receiver_fn=serving_input_receiver_fn)
 
         epoch_n += 1

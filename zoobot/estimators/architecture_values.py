@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from zoobot.models.train_spiral_model import spiral_classifier, run_experiment
+from zoobot.estimators.run_estimator import four_layer_binary_classifier, run_experiment
 
 
 def default_params():
@@ -17,7 +17,7 @@ def default_params():
 )
 
 
-def default_model_architecture():
+def default_three_layer_architecture():
     return dict(
         padding='same',
 
@@ -48,7 +48,7 @@ def default_model_architecture():
     )
 
 
-def chollet_model_architecture():
+def default_four_layer_architecture():
     return dict(
         padding='same',
 
@@ -87,7 +87,7 @@ def chollet_model_architecture():
 
 if __name__ == '__main__':
     params = default_params()
-    params.update(chollet_model_architecture())
+    params.update(default_four_layer_architecture())
     params['image_dim'] = 128
     params['log_dir'] = 'runs/chollet_128_triple'
-    run_experiment(spiral_classifier, params)
+    run_experiment(four_layer_binary_classifier, params)

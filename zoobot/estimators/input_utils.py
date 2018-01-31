@@ -1,8 +1,7 @@
-
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from zoobot.catalogs.tfrecord.tfrecord_io import load_dataset
+from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
 def input(tfrecord_loc, name, size=64, batch=100, stratify=False, transform=True, adjust=True):
