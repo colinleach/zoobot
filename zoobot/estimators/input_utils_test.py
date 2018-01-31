@@ -6,7 +6,7 @@ import pytest
 import tensorflow as tf
 
 from zoobot.estimators.input_utils import input
-from zoobot.tfrecord import image_to_tfrecord
+from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
 
 @pytest.fixture(scope='module')

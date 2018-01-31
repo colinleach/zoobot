@@ -3,7 +3,7 @@ import pytest
 import os
 import pandas as pd
 
-from zoobot.catalogs.get_galaxy_zoo_catalog import get_classification_results
+from zoobot.catalogs.get_classifications import get_classification_results
 
 
 @pytest.fixture()
@@ -12,7 +12,7 @@ def published_data_loc(tmpdir):
 
 
 @pytest.fixture()
-def published_galaxy():
+def example_classification_data():
     return {
 
         # weighted fraction values (random)
@@ -59,22 +59,33 @@ def published_galaxy():
         't11_arms_number_a34_4_count': 7,
         't11_arms_number_a36_more_than_4_count': 2,
         't11_arms_number_a37_cant_tell_count': 2,
-
-        # other columns
-        'dr7objid': 'example',
-        'ra': 12.0,
-        'dec': -1.0
     }
 
 
 @pytest.fixture()
-def published_data(published_galaxy):
-    return pd.DataFrame([published_galaxy, published_galaxy])
+def published_data(example_classification_data):
+    zoo1 = {
+            'dr7objid': 'zoo1',
+            'ra': 12.0,
+            'dec': -1.0
+        }
+    zoo1.update(example_classification_data)
+
+    zoo2 = {
+            'dr7objid': 'zoo2',
+            'ra': 15.0,
+            'dec': -1.0
+        }
+    zoo2.update(example_classification_data)
+
+    return pd.DataFrame([zoo1, zoo2])
 
 
 def test_get_classification_results(published_data, published_data_loc):
     assert not os.path.exists(published_data_loc)
     published_data.to_csv(published_data_loc)
     catalog = get_classification_results(published_data_loc)
+    print(catalog['dr7objid'])
+    print(published_data['dr7objid'])
     for column in published_data.columns.values:
-        assert all(catalog.iloc[0][column] == published_data[column])
+        assert all(catalog[column] == published_data[column])

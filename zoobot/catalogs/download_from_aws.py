@@ -5,8 +5,7 @@ import numpy as np
 from multiprocessing.dummy import Pool as ThreadPool
 
 from PIL import Image
-from urllib.request import urlretrieve
-import pandas as pd
+from urllib.request import urlretrieve  # urlretrieve is unstable multithreaded - but doesn't seem to fall apart here
 
 
 def download_png_threaded(catalog, png_dir, overwrite=False):
@@ -26,8 +25,6 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
     pbar.close()
     pool.close()
     pool.join()
-
-    # list(map(download_images_partial, catalog.iterrows()))
 
     catalog = check_images_are_downloaded(catalog)
 
@@ -65,7 +62,7 @@ def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
 
 def png_downloaded_correctly(png_loc):
     try:
-        im = Image.open(png_loc)
+        _ = Image.open(png_loc)
         return True
     except:
         return False
@@ -79,19 +76,3 @@ def check_images_are_downloaded(catalog):
         catalog['png_ready'][row_index] = png_downloaded_correctly(png_loc)
 
     return catalog
-
-
-if __name__ == '__main__':
-
-    nrows = None
-    png_dir = '/Volumes/EXTERNAL/gz2/png'
-    overwrite = True
-
-    catalog_dir = '/data/galaxy_zoo/gz2/subjects'
-    labels_loc = '{}/all_labels.csv'.format(catalog_dir)
-
-    labels = pd.read_csv(labels_loc, nrows=nrows)
-
-    labels = download_png_threaded(labels, png_dir, overwrite)
-
-    labels.to_csv('{}/all_labels_downloaded.csv'.format(catalog_dir), index=None)

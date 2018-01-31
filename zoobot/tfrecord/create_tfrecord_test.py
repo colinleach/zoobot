@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from zoobot.catalogs.tfrecord.create_tfrecord import *
+from zoobot.tfrecord.create_tfrecord import *
 
 from zoobot.tfrecord.tfrecord_io import matrix_label_feature_spec, read_first_example, load_dataset
 

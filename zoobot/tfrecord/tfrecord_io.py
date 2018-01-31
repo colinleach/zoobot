@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 
-from zoobot.tfrecord import image_to_tfrecord
+from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
 
 def read_first_example(example_loc, feature_spec):

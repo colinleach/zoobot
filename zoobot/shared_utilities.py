@@ -57,10 +57,19 @@ from astropy import units as u
 
 
 def match_galaxies_to_catalog(galaxies, catalog, matching_radius=10 * u.arcsec):
-    # http://docs.astropy.org/en/stable/coordinates/matchsep.html
+    """
+    Wrapper for http://docs.astropy.org/en/stable/coordinates/matchsep.html
+    Args:
+        galaxies (pd.DataFrame):
+        catalog (pd.DataFrame):
+        matching_radius ():
 
-    galaxies_coord = SkyCoord(ra=galaxies['ra'] * u.degree, dec=galaxies['dec'] * u.degree)
-    catalog_coord = SkyCoord(ra=catalog['ra'] * u.degree, dec=catalog['dec'] * u.degree)
+    Returns:
+
+    """
+    galaxies_coord = SkyCoord(ra=galaxies['ra'].values * u.degree, dec=galaxies['dec'].values * u.degree)
+    catalog_coord = SkyCoord(ra=catalog['ra'].values * u.degree, dec=catalog['dec'].values * u.degree)
+
     best_match_catalog_index, sky_separation, _ = galaxies_coord.match_to_catalog_sky(catalog_coord)
 
     galaxies['best_match'] = best_match_catalog_index
@@ -72,4 +81,3 @@ def match_galaxies_to_catalog(galaxies, catalog, matching_radius=10 * u.arcsec):
     matched_catalog = pd.merge(matched_galaxies, catalog, on='best_match', how='inner', suffixes=['_subject', ''])
 
     return matched_catalog
-

@@ -7,10 +7,10 @@ import tensorflow as tf
 from PIL import Image
 from tqdm import tqdm
 
-from zoobot.tfrecord import image_to_tfrecord
+from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
 
-def write_image_df_to_tfrecord(df, tfrecord_loc, img_size):
+def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save):
 
     if os.path.exists(tfrecord_loc):
         print('{} already exists - deleting'.format(tfrecord_loc))
@@ -37,11 +37,23 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size):
     sys.stdout.flush()
 
 
+def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):
+    train_test_split = int(train_test_fraction * len(df))
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    train_df = df[:train_test_split].copy()
+    test_df = df[train_test_split:].copy()
+
+    assert not train_df.empty
+    assert not test_df.empty
+
+    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save)
+    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save)
+
+
 if __name__ == '__main__':
 
     for size in [128, 256, 512]:
-
-        train_test_fraction = 0.8
 
         columns_to_save = ['t04_spiral_a08_spiral_count',
                            't04_spiral_a09_no_spiral_count',
@@ -54,20 +66,4 @@ if __name__ == '__main__':
                          usecols=columns_to_save + ['png_loc', 'png_ready'],
                          nrows=None)
 
-        train_test_split = int(0.8*len(df))
-
-        df = df.sample(frac=1).reset_index(drop=True)
-        train_df = df[:train_test_split].copy()
-        test_df = df[train_test_split:].copy()
-
-        print(len(train_df))
-        print(len(test_df))
-
-        train_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_train.tfrecord'.format(size)
-        test_tfrecord_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_test.tfrecord'.format(size)
-
-        write_image_df_to_tfrecord(train_df, train_tfrecord_loc, size)
-        write_image_df_to_tfrecord(test_df, test_tfrecord_loc, size)
-
-        assert os.path.exists(train_tfrecord_loc)
-        assert os.path.exists(test_tfrecord_loc)
+        write_catalog_to_train_test_tfrecords(df, size, columns_to_save)
