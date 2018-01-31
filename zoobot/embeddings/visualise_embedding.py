@@ -27,7 +27,7 @@ softmax = graph.get_tensor_by_name('softmax_tensor:0')
 params = {}
 params['image_dim'] = 128
 params['batch_size'] = 128
-params['eval_stratify'] = False  # something in stratify breaks with saved models
+params['eval_stratify'] = False  # something in stratify breaks with saved estimators
 
 features, labels = eval_input(params)
 

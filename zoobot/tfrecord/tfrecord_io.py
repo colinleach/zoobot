@@ -1,10 +1,10 @@
 import os
-
-import tensorflow as tf
-import numpy as np
 from functools import partial
 
-from zoobot.catalogs.tfrecord.create_tfrecord import image_to_tfrecord
+import numpy as np
+import tensorflow as tf
+
+from zoobot.tfrecord import image_to_tfrecord
 
 
 def read_first_example(example_loc, feature_spec):

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def default_model_results(features, labels, mode, params):
+def three_layer_cnn(features, labels, mode, params):
     """
 
     Args:
@@ -83,7 +83,7 @@ def default_model_results(features, labels, mode, params):
     return predictions, loss
 
 
-def chollet_model_results(features, labels, mode, params):
+def four_layer_cnn(features, labels, mode, params):
     """
 
     Args:
