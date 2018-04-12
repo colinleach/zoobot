@@ -1,5 +1,0 @@
-tensorflow
-tqdm
-pillow
-numpy
-pandas

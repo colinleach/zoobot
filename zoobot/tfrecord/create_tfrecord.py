@@ -74,12 +74,23 @@ def value_to_feature(value):
     """
     if type(value) == int:
         return int_to_feature(value)
+    if type(value) == str:
+        return str_to_feature(value)
     elif type(value) == float:
         return float_to_feature(value)
     elif type(value) == list or type(value) == np.ndarray:
         return float_list_to_feature(value)
     else:
         raise Exception('Fatal error: {} feature type not understood'.format(value))
+
+
+def str_to_feature(str_to_save):
+    raise Exception('String features not yet supported!')
+    # bytes_to_save = bytes(str_to_save, encoding='utf-8')
+    # print(bytes_to_save)
+    # return tf.train.Feature(
+    #     bytes_list=tf.train.BytesList.FromString(bytes_to_save)
+    # )
 
 
 def int_to_feature(int_to_save):

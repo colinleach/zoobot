@@ -8,6 +8,7 @@ import tensorflow as tf
 from zoobot.estimators.input_utils import input
 from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
+TEST_EXAMPLE_DIR = 'zoobot/test_examples'
 
 @pytest.fixture(scope='module')
 def size():
@@ -63,8 +64,13 @@ def test_input_utils_stratified(size, true_image_values, false_image_values):
     train_batch = 64
     test_batch = 128
 
+    train_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
+    test_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
+    assert os.path.exists(train_loc)
+    assert os.path.exists(test_loc)
+
     train_features, train_labels = input(
-        tfrecord_loc='train.tfrecords',
+        tfrecord_loc=TEST_EXAMPLE_DIR + '/train.tfrecords',
         name='train',
         size=size,
         batch=train_batch,
@@ -75,7 +81,7 @@ def test_input_utils_stratified(size, true_image_values, false_image_values):
     train_images = train_features['x']
 
     test_features, test_labels = input(
-        tfrecord_loc='test.tfrecords',
+        tfrecord_loc=TEST_EXAMPLE_DIR + '/' + 'test.tfrecords',
         name='test',
         size=size,
         batch=test_batch,
