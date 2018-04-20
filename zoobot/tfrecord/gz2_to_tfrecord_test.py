@@ -2,9 +2,14 @@ import pytest
 
 import pandas as pd
 
-from zoobot.tfrecord.gz2_to_tfrecord import write_catalog_to_train_test_tfrecords
+from zoobot.tfrecord import gz2_to_tfrecord
 
 TEST_EXAMPLE_DIR = 'zoobot/test_examples'
+
+
+@pytest.fixture
+def record_dir(tmpdir):
+    return tmpdir.mkdir('record_dir').strpath
 
 
 @pytest.fixture
@@ -13,7 +18,7 @@ def columns_to_save():
         't04_spiral_a08_spiral_count',
         't04_spiral_a09_no_spiral_count',
         't04_spiral_a08_spiral_weighted_fraction',
-        'id',
+        # 'id',
         'ra',
         'dec']
 
@@ -46,5 +51,6 @@ def downloaded_catalog():
     return pd.DataFrame([zoo1, zoo2])
 
 
-def test_write_catalog_to_train_test_records(downloaded_catalog):
-    write_catalog_to_train_test_tfrecords(downloaded_catalog, 32, columns_to_save)
+def test_write_catalog_to_train_test_records(downloaded_catalog, record_dir, columns_to_save):
+    # write_catalog_to_train_test_tfrecords(downloaded_catalog, record_dir, record_dir, 32, columns_to_save)
+    gz2_to_tfrecord.write_catalog_to_train_test_tfrecords(downloaded_catalog, 'zoobot/record_dir', 'zoobot/record_dir', 32, columns_to_save)
