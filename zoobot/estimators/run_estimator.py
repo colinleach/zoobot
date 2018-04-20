@@ -3,7 +3,7 @@ import shutil
 from functools import partial
 
 import tensorflow as tf
-from zoobot.estimators.input_utils import input
+from zoobot.estimators import input_utils
 from tensorboard import summary as tensorboard_summary
 
 from zoobot.estimators.architecture_scaffolds import four_layer_cnn
@@ -68,18 +68,14 @@ def get_eval_metric_ops(labels, predictions):
 
 def train_input(params):
     mode = 'train'
-    # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
-    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
-    return input(
-        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['train_stratify'])
+    return input_utils.input(
+        tfrecord_loc=params['train_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['train_stratify'])
 
 
 def eval_input(params):
     mode = 'test'
-    # filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(SIZE, 'train')
-    filename = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], mode)
-    return input(
-        tfrecord_loc=filename, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
+    return input_utils.input(
+        tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
 
 
 # def serving_input_receiver_fn():

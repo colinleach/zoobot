@@ -10,6 +10,7 @@ from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
 TEST_EXAMPLE_DIR = 'zoobot/test_examples'
 
+
 @pytest.fixture(scope='module')
 def size():
     return 4
@@ -42,9 +43,13 @@ def example_data(size, true_image_values, false_image_values):
     return all_data
 
 
-@pytest.fixture(scope='module')
-def example_tfrecords(all_data, tmpdir):
-    tfrecord_dir = tmpdir.mkdir('tfrecord_dir').strpath
+@pytest.fixture()
+def tfrecord_dir(tmpdir):
+    return tmpdir.mkdir('tfrecord_dir').strpath
+
+
+@pytest.fixture()
+def example_tfrecords(tfrecord_dir, example_data):
     tfrecord_locs = [
         '{}/train.tfrecords'.format(tfrecord_dir),
         '{}/test.tfrecords'.format(tfrecord_dir)
@@ -54,23 +59,25 @@ def example_tfrecords(all_data, tmpdir):
             os.remove(tfrecord_loc)
         writer = tf.python_io.TFRecordWriter(tfrecord_loc)
 
-        for example in all_data:
+        for example in example_data:
             image_to_tfrecord(matrix=example[0], label=example[1], writer=writer)
         writer.close()
 
 
-def test_input_utils_stratified(size, true_image_values, false_image_values):
+def test_input_utils_stratified(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
+
+    # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 
     train_batch = 64
     test_batch = 128
 
-    train_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
-    test_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
+    train_loc = tfrecord_dir + '/train.tfrecords'
+    test_loc = tfrecord_dir + '/test.tfrecords'
     assert os.path.exists(train_loc)
     assert os.path.exists(test_loc)
 
     train_features, train_labels = input(
-        tfrecord_loc=TEST_EXAMPLE_DIR + '/train.tfrecords',
+        tfrecord_loc=train_loc,
         name='train',
         size=size,
         batch=train_batch,
@@ -81,7 +88,7 @@ def test_input_utils_stratified(size, true_image_values, false_image_values):
     train_images = train_features['x']
 
     test_features, test_labels = input(
-        tfrecord_loc=TEST_EXAMPLE_DIR + '/' + 'test.tfrecords',
+        tfrecord_loc=test_loc,
         name='test',
         size=size,
         batch=test_batch,

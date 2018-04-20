@@ -18,7 +18,7 @@ def columns_to_save():
         't04_spiral_a08_spiral_count',
         't04_spiral_a09_no_spiral_count',
         't04_spiral_a08_spiral_weighted_fraction',
-        # 'id',
+        # 'id',  Note: saving string features is not yet implemented
         'ra',
         'dec']
 
@@ -48,9 +48,13 @@ def downloaded_catalog():
         'png_ready': True
     }
 
-    return pd.DataFrame([zoo1, zoo2])
+    return pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
 
 
 def test_write_catalog_to_train_test_records(downloaded_catalog, record_dir, columns_to_save):
-    # write_catalog_to_train_test_tfrecords(downloaded_catalog, record_dir, record_dir, 32, columns_to_save)
-    gz2_to_tfrecord.write_catalog_to_train_test_tfrecords(downloaded_catalog, 'zoobot/record_dir', 'zoobot/record_dir', 32, columns_to_save)
+    gz2_to_tfrecord.write_catalog_to_train_test_tfrecords(
+        downloaded_catalog,
+        record_dir + '/train.tfrecords',
+        record_dir + '/test.tfrecords',
+        32,
+        columns_to_save)
