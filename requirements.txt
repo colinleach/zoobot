@@ -1,3 +1,7 @@
+coverage
+python-coveralls
+pytest-cov
+codecov
 tensorflow
 tqdm
 pillow
