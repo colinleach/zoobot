@@ -64,8 +64,8 @@ def test_input_utils_stratified(size, true_image_values, false_image_values):
     train_batch = 64
     test_batch = 128
 
-    train_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
-    test_loc = TEST_EXAMPLE_DIR + '/example.tfrecords'
+    train_loc = TEST_EXAMPLE_DIR + '/train.tfrecords'
+    test_loc = TEST_EXAMPLE_DIR + '/test.tfrecords'
     assert os.path.exists(train_loc)
     assert os.path.exists(test_loc)
 
