@@ -19,10 +19,6 @@ def example_image_data():
 def tfrecord_dir(tmpdir):
     return tmpdir.mkdir('tfrecord_dir').strpath
 
-# @pytest.fixture
-# def tfrecord_dir(tmpdir):
-#     return '/Users/mikewalmsley/repos/zoobot/zoobot/test_examples'
-
 
 def test_matrix_to_tfrecord(example_image_data, tfrecord_dir):
     label = 1
