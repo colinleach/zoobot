@@ -7,3 +7,4 @@ tqdm
 pillow
 numpy
 pandas
+astropy
