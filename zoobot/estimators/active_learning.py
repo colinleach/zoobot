@@ -27,24 +27,23 @@ def create_complete_tfrecord(predictions_with_catalog, params):  # predictions w
     return train_df, test_df
 
 
-def predict_input(params):  # deterministic
-    name = 'predict'
-    # return input_utils.input(
-    #     tfrecord_loc=params['train_loc'], size=params['image_dim'], name=name, batch=params['batch_size'], stratify=params['eval_stratify'])
+# currently very duplicated
+def predict_on_unknown_input(unknown_tfrecord_locs, params):
+    name = 'predict_on_unknown'
     return input_utils.input(
-        tfrecord_loc=params['active_tfrecord_loc'], size=params['image_dim'], name=name, batch=params['batch_size'], stratify=params['train_stratify'])
+        tfrecord_loc=unknown_tfrecord_locs, size=params['image_dim'], name=name, batch=params['batch_size'], stratify=False)
 
 
-def active_train_input(params):
-    mode = 'active_training'
+def train_on_known(known_tfrecord_locs, params):
+    mode = 'train_on_known'
     return input_utils.input(
-        tfrecord_loc=params['active_tfrecord_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['train_stratify'])
+        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=False)
 
 
-def eval_input(params):
-    mode = 'test'
+def eval_on_known(known_tfrecord_locs, params):
+    mode = 'eval_on_known'
     return input_utils.input(
-        tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
+        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=False)
 
 
 def set_up_estimator(model_fn, params):
@@ -55,45 +54,78 @@ def set_up_estimator(model_fn, params):
     return estimator
 
 
-def run_active_learning(estimator, params, catalog):
+def run_active_learning(estimator, params, known_subjects, unknown_subjects):
 
     if os.path.exists(params['log_dir']):
         shutil.rmtree(params['log_dir'])
 
-    # Set up logging for predictions
-    tensors_to_log = {"probabilities": "softmax_tensor"}
-    logging_hook = tf.train.LoggingTensorHook(
-        tensors=tensors_to_log, every_n_iter=params['log_freq'])
+    # setup phase
 
-    predict_input_partial = functools.partial(predict_input, params=params)
-    active_train_input_partial = functools.partial(active_train_input, params=params)
-    eval_input_partial = functools.partial(eval_input, params=params)
+    # save known subjects to tfrecord
+    if not os.path.exists(params['known_tfrecord_loc']):
+        gz2_to_tfrecord.write_image_df_to_tfrecord(
+            df=known_subjects,
+            label_col='smooth-or-featured_featured-or-disk_fraction',
+            tfrecord_loc=params['known_tfrecord_loc'],
+            img_size=params['img_dim'],
+            columns_to_save=params['columns_to_save'],
+            append=False
+        )
+        logging.info(
+            'Saved {} catalog galaxies to {}'.format(len(known_subjects), params['known_tfrecord_loc']))
+
+    # save unknown subjects to tfrecord
+    if not os.path.exists(params['unknown_tfrecord_loc']):
+        gz2_to_tfrecord.write_image_df_to_tfrecord(
+            df=unknown_subjects,
+            label_col='smooth-or-featured_featured-or-disk_fraction',
+            tfrecord_loc=params['unknown_tfrecord_loc'],
+            img_size=params['img_dim'],
+            columns_to_save=params['columns_to_save'],
+            append=False
+        )
+        logging.info(
+            'Saved {} catalog galaxies to {}'.format(len(unknown_subjects), params['unknown_tfrecord_loc']))
+
+    # initial training
+    initally_known_input_partial = functools.partial(
+        # TODO should be agnostic to input function and naming, except to assume images. Extend dummy!
+        known_tfrecord_locs=params['known_tfrecord_loc'],
+        params=params
+    )
+
+    # Set up logging for predictions
+    # tensors_to_log = {"probabilities": "softmax_tensor"}
+    # logging_hook = tf.train.LoggingTensorHook(
+    #     tensors=tensors_to_log, every_n_iter=params['log_freq'])
 
     estimator.train(
-        input_fn=active_train_input_partial,
-        steps=1,
-        max_steps=params['max_train_batches'],
-        hooks=[logging_hook])
+        input_fn=initally_known_input_partial,
+        max_steps=params['initial_train_max_steps'],
+        # hooks=[logging_hook])
+    )
 
+    known_tfrecord_locs = [params['known_tfrecord_loc']]  # initially, only trained on pre-saved tfrecord. Mutable.
+
+    unknown_input_partial = functools.partial(  # always predict on all initially-unknown subjects, slightly silly
+        known_tfrecord_locs=params['unknown_tfrecord_loc'],
+        params=params
+    )
+
+    # begin active learning
     epoch_n = 0
-    params['epochs'] = 1
     while epoch_n < params['epochs']:
-
         logging.debug('Making predictions for uncertainty')
         predict_results = estimator.predict(
-            input_fn=active_train_input_partial,
-            hooks=[logging_hook]
+            input_fn=initally_known_input_partial,
+            # hooks=[logging_hook],
+            steps=1
         )
-        print('Got results: {}'.format(predict_results))
-
-        for result in predict_results:
-            print('result: {}'.format(result))
-
-        # predict_results = tf.Print(predict_results, [predict_results])
-        #
-        # output = tf.multiply(predict_results, 1)
 
         #
+        predictions = pd.DataFrame(predict_results)
+        print(predictions)
+
         # uncertain_galaxies = catalog
         #
         # logging.debug('Appending least confident subjects to train tfrecord')
@@ -138,9 +170,8 @@ def get_active_learning_params():
     params.update(architecture_values.default_four_layer_architecture())
     params['img_dim'] = 64
     params['log_dir'] = 'runs/active_learning'
-    params['train_loc'] = 'all_panoptes_galaxies_train.tfrecord'
-    params['test_loc'] = 'all_panoptes_galaxies_test.tfrecord'
-    params['active_tfrecord_loc'] = 'active.tfrecord'
+    params['known_tfrecord_loc'] = 'known_initially.tfrecord'
+    params['initial_train_max_steps'] = 10
 
     columns_to_save = ['smooth-or-featured_smooth_min',
                        'smooth-or-featured_featured-or-disk_min',
@@ -148,6 +179,7 @@ def get_active_learning_params():
                        'ra',
                        'dec']
     params['columns_to_save'] = columns_to_save
+    params['epochs'] = 1
     return params
 
 
@@ -168,15 +200,6 @@ if __name__ == '__main__':
     # train_df, test_df = create_complete_tfrecord(predictions_with_catalog, params)  # save train and test tfrecords
     train_df = predictions_with_catalog[:3159]  # for now, just pick first 3k
 
-    gz2_to_tfrecord.write_image_df_to_tfrecord(
-        df=train_df[:100],  # save starter active learning tfrecord
-        label_col='smooth-or-featured_featured-or-disk_fraction',
-        tfrecord_loc=params['active_tfrecord_loc'],
-        img_size=params['img_dim'],
-        columns_to_save=params['columns_to_save'],
-        append=False  # overwrite any existing active learning tfrecord
-    )
-    logging.info('Saved {} catalog galaxies to {}'.format(len(predictions_with_catalog), params['active_tfrecord_loc']))
 
     model_fn = run_estimator.four_layer_regression_classifier
     estimator = set_up_estimator(model_fn, params)
