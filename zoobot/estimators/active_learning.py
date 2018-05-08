@@ -47,15 +47,18 @@ def eval_input(params):
         tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
 
 
-def run_experiment(model_fn, params, catalog):
-
-    if os.path.exists(params['log_dir']):
-        shutil.rmtree(params['log_dir'])
-
+def set_up_estimator(model_fn, params):
     # Create the Estimator
     model_fn_partial = functools.partial(model_fn, params=params)
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial, model_dir=params['log_dir'])
+    return estimator
+
+
+def run_active_learning(estimator, params, catalog):
+
+    if os.path.exists(params['log_dir']):
+        shutil.rmtree(params['log_dir'])
 
     # Set up logging for predictions
     tensors_to_log = {"probabilities": "softmax_tensor"}
@@ -130,18 +133,7 @@ def run_experiment(model_fn, params, catalog):
         epoch_n += 1
 
 
-if __name__ == '__main__':
-
-    logging.basicConfig(
-        filename='active_learning.log',
-        filemode='w',
-        format='%(asctime)s %(message)s',
-        level=logging.INFO)
-
-    predictions_with_catalog_loc = '/data/repos/galaxy-zoo-panoptes/reduction/data/output/panoptes_predictions_with_catalog.csv'
-    predictions_with_catalog = pd.read_csv(predictions_with_catalog_loc)
-    logging.info('Loaded {} catalog galaxies with predictions'.format(len(predictions_with_catalog)))
-
+def get_active_learning_params():
     params = architecture_values.default_params()
     params.update(architecture_values.default_four_layer_architecture())
     params['img_dim'] = 64
@@ -156,9 +148,25 @@ if __name__ == '__main__':
                        'ra',
                        'dec']
     params['columns_to_save'] = columns_to_save
+    return params
+
+
+if __name__ == '__main__':
+
+    logging.basicConfig(
+        filename='active_learning.log',
+        filemode='w',
+        format='%(asctime)s %(message)s',
+        level=logging.INFO)
+
+    predictions_with_catalog_loc = '/data/repos/galaxy-zoo-panoptes/reduction/data/output/panoptes_predictions_with_catalog.csv'
+    predictions_with_catalog = pd.read_csv(predictions_with_catalog_loc)
+    logging.info('Loaded {} catalog galaxies with predictions'.format(len(predictions_with_catalog)))
+
+    params = get_active_learning_params()
 
     # train_df, test_df = create_complete_tfrecord(predictions_with_catalog, params)  # save train and test tfrecords
-    train_df = predictions_with_catalog[:3159]
+    train_df = predictions_with_catalog[:3159]  # for now, just pick first 3k
 
     gz2_to_tfrecord.write_image_df_to_tfrecord(
         df=train_df[:100],  # save starter active learning tfrecord
@@ -171,4 +179,5 @@ if __name__ == '__main__':
     logging.info('Saved {} catalog galaxies to {}'.format(len(predictions_with_catalog), params['active_tfrecord_loc']))
 
     model_fn = run_estimator.four_layer_regression_classifier
-    run_experiment(model_fn, params, train_df)
+    estimator = set_up_estimator(model_fn, params)
+    run_active_learning(estimator, params, train_df)
