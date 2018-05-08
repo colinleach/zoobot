@@ -85,8 +85,6 @@ def params(tmpdir, example_tfrecords, size, tfrecord_train_loc, tfrecord_test_lo
     params['log_dir'] = 'runs/chollet_128_triple'
     params['epochs'] = 1  # stop early, only run one train/eval cycle
     params['log_dir'] = tmpdir.mkdir('log_dir').strpath
-    # params['train_loc'] = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'train')
-    # params['test_loc'] = '/data/galaxy_zoo/gz2/tfrecord/spiral_{}_{}.tfrecord'.format(params['image_dim'], 'test')
     params['train_loc'] = tfrecord_train_loc
     params['test_loc'] = tfrecord_test_loc
     return params

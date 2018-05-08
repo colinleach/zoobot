@@ -160,6 +160,7 @@ def four_layer_cnn(features, labels, mode, params):
     tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
     predictions = {
+        "welp": tf.ones(11),
         # Generate predictions (for PREDICT and EVAL mode)
         "classes": tf.argmax(input=logits, axis=1),
         # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
@@ -169,9 +170,12 @@ def four_layer_cnn(features, labels, mode, params):
 
     # Calculate Loss (for both TRAIN and EVAL modes)
     # required for EstimatorSpec
-    onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
-    loss = tf.losses.softmax_cross_entropy(
-        onehot_labels=onehot_labels, logits=logits)
-    # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
 
+    if mode != tf.estimator.ModeKeys.PREDICT:
+        onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
+        loss = tf.losses.softmax_cross_entropy(
+            onehot_labels=onehot_labels, logits=logits)
+        # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
+    else:
+        loss = None
     return predictions, loss

@@ -1,8 +1,4 @@
-
-
 import pandas as pd
-
-from zoobot.shared_utilities import match_galaxies_to_catalog
 
 
 def get_classification_results(published_data_loc, nrows=None):

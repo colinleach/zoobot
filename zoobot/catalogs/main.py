@@ -3,12 +3,12 @@ import pandas as pd
 
 from zoobot.catalogs.get_classifications import get_classification_results
 from zoobot.catalogs.download_from_aws import download_png_threaded
-from zoobot.shared_utilities import match_galaxies_to_catalog
+from zoobot.shared_utilities import match_galaxies_to_catalog_pandas
 
 
 def get_labels_and_images(classifications, subject_manifest, png_dir, output_loc, overwrite):
 
-    catalog = match_galaxies_to_catalog(classifications, subject_manifest)
+    catalog, _ = match_galaxies_to_catalog_pandas(classifications, subject_manifest)
     assert len(catalog) > 0
 
     catalog_with_png_locs = download_png_threaded(catalog, png_dir, overwrite)

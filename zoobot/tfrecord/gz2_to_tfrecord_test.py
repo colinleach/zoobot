@@ -54,6 +54,7 @@ def downloaded_catalog():
 def test_write_catalog_to_train_test_records(downloaded_catalog, record_dir, columns_to_save):
     gz2_to_tfrecord.write_catalog_to_train_test_tfrecords(
         downloaded_catalog,
+        't04_spiral_a08_spiral_weighted_fraction',
         record_dir + '/train.tfrecords',
         record_dir + '/test.tfrecords',
         32,

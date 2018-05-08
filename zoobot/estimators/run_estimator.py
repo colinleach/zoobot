@@ -46,6 +46,43 @@ def four_layer_binary_classifier(features, labels, mode, params):
         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
+def four_layer_regression_classifier(features, labels, mode, params):
+    """
+    Classify images of galaxies into spiral/not spiral
+
+    Args:
+        features ():
+        labels ():
+        mode ():
+        params ():
+
+    Returns:
+
+    """
+
+    predictions, loss = four_layer_cnn(features, labels, mode, params)  # loss is None if in predict mode
+
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        optimizer = params['optimizer'](learning_rate=params['learning_rate'])
+        train_op = optimizer.minimize(
+            loss=loss,
+            global_step=tf.train.get_global_step())
+        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+
+    # tensorboard_summary.pr_curve_streaming_op(
+    #     name='spirals',
+    #     labels=labels,
+    #     predictions=predictions['probabilities'][:, 1],
+    # )
+    # Add evaluation metrics (for EVAL mode)
+    eval_metric_ops = get_eval_metric_ops(labels, predictions)
+    return tf.estimator.EstimatorSpec(
+        mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+
+
 def get_eval_metric_ops(labels, predictions):
 
     # record distribution of predictions for tensorboard
