@@ -7,8 +7,9 @@ import numpy as np
 import tensorflow as tf
 
 from zoobot.tfrecord import create_tfrecord
-from zoobot.estimators.architecture_values import default_four_layer_architecture, default_params
-from zoobot.estimators.run_estimator import run_experiment, four_layer_binary_classifier
+from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
+from zoobot.estimators.run_estimator import run_estimator
+from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
 
 
 # copied from input_utils_test...
@@ -96,5 +97,5 @@ def model_fn():
 
 
 def test_run_experiment(model_fn, params):
-    run_experiment(model_fn, params)
+    run_estimator(model_fn, params)
     assert os.path.exists(params['log_dir'])

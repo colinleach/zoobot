@@ -85,7 +85,7 @@ def value_to_feature(value):
 
 
 def str_to_feature(str_to_save):
-    raise Exception('String features not yet supported!')
+    raise Exception('Error saving "{}". String features not yet supported!'.format(str_to_save))
     # bytes_to_save = bytes(str_to_save, encoding='utf-8')
     # print(bytes_to_save)
     # return tf.train.Feature(

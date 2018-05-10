@@ -28,7 +28,7 @@ def matrix_label_feature_spec(size):
 if __name__ == '__main__':
 
     example_image_data = np.array(np.ones((50, 50, 3), dtype=float))
-    tfrecord_dir = '/data/repos/zoobot/zoobot/catalogs/tfrecord'
+    tfrecord_dir = '/data/repos/zoobot/zoobot/get_catalogs/tfrecord'
     label = 1
     save_loc = '{}/example.tfrecords'.format(tfrecord_dir)
     if os.path.exists(save_loc):

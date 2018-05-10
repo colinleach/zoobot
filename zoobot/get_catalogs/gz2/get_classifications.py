@@ -60,13 +60,13 @@ def get_classification_results(published_data_loc, nrows=None):
 #     Load published data (Hart 2016) and subject manifest for AWS. Match on RA/DEC.
 #     Get the weighted fraction and raw count data for each relevant question.
 #     Currently, this is for the questions smooth/featured, edge-on, round/cigar, spiral/not, and spiral count.
-#     Optionally, plot the overlap in RA/DEC of both catalogs
+#     Optionally, plot the overlap in RA/DEC of both get_catalogs
 #     Args:
 #         published_data_loc (str): file location of Hart 2016 GZ2 results catalog
 #         subject_manifest_loc (str): file location of AWS subject manifest, private comm. from Sandor Kruk
 #         labels_loc (str): file location to matched catalog
 #         nrows (int): max number of rows to load per catalog, for speedy debugging. if None, load all rows.
-#         plot_overlap (bool): if True, plot overlap of both catalogs in RA/DEC
+#         plot_overlap (bool): if True, plot overlap of both get_catalogs in RA/DEC
 #
 #     Returns:
 #         (pd.DataFrame) matched catalog of GZ2 classifications and AWS locations, with answers to relevant questions

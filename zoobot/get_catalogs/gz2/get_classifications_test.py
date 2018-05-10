@@ -3,7 +3,7 @@ import pytest
 import os
 import pandas as pd
 
-from zoobot.catalogs.get_classifications import get_classification_results
+from zoobot.get_catalogs.gz2.get_classifications import get_classification_results
 
 
 @pytest.fixture()

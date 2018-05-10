@@ -8,15 +8,15 @@ import pandas as pd
 from astropy.table import Table
 
 from zoobot.estimators import input_utils
-from zoobot.tfrecord import gz2_to_tfrecord
+from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot import shared_utilities
-from zoobot.estimators import architecture_values
+from zoobot.estimators import estimator_params
 from zoobot.estimators import run_estimator
 
 
 def create_complete_tfrecord(predictions_with_catalog, params):  # predictions will be made on this tfrecord
 
-    train_df, test_df = gz2_to_tfrecord.write_catalog_to_train_test_tfrecords(
+    train_df, test_df = catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
         df=predictions_with_catalog,
         label_col='smooth-or-featured_featured-or-disk_fraction',
         train_loc=params['train_loc'],
@@ -31,19 +31,19 @@ def create_complete_tfrecord(predictions_with_catalog, params):  # predictions w
 def predict_on_unknown_input(unknown_tfrecord_locs, params):
     name = 'predict_on_unknown'
     return input_utils.input(
-        tfrecord_loc=unknown_tfrecord_locs, size=params['image_dim'], name=name, batch=params['batch_size'], stratify=False)
+        tfrecord_loc=unknown_tfrecord_locs, size=params['image_dim'], name=name, batch_size=params['batch_size'], stratify=False)
 
 
 def train_on_known(known_tfrecord_locs, params):
     mode = 'train_on_known'
     return input_utils.input(
-        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=False)
+        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=False)
 
 
 def eval_on_known(known_tfrecord_locs, params):
     mode = 'eval_on_known'
     return input_utils.input(
-        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=False)
+        tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=False)
 
 
 def set_up_estimator(model_fn, params):
@@ -52,7 +52,6 @@ def set_up_estimator(model_fn, params):
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial, model_dir=params['log_dir'])
     return estimator
-
 
 def run_active_learning(estimator, params, known_subjects, unknown_subjects):
 
@@ -63,7 +62,7 @@ def run_active_learning(estimator, params, known_subjects, unknown_subjects):
 
     # save known subjects to tfrecord
     if not os.path.exists(params['known_tfrecord_loc']):
-        gz2_to_tfrecord.write_image_df_to_tfrecord(
+        catalog_to_tfrecord.write_image_df_to_tfrecord(
             df=known_subjects,
             label_col='smooth-or-featured_featured-or-disk_fraction',
             tfrecord_loc=params['known_tfrecord_loc'],
@@ -76,7 +75,7 @@ def run_active_learning(estimator, params, known_subjects, unknown_subjects):
 
     # save unknown subjects to tfrecord
     if not os.path.exists(params['unknown_tfrecord_loc']):
-        gz2_to_tfrecord.write_image_df_to_tfrecord(
+        catalog_to_tfrecord.write_image_df_to_tfrecord(
             df=unknown_subjects,
             label_col='smooth-or-featured_featured-or-disk_fraction',
             tfrecord_loc=params['unknown_tfrecord_loc'],
@@ -166,8 +165,8 @@ def run_active_learning(estimator, params, known_subjects, unknown_subjects):
 
 
 def get_active_learning_params():
-    params = architecture_values.default_params()
-    params.update(architecture_values.default_four_layer_architecture())
+    params = estimator_params.default_params()
+    params.update(estimator_params.default_four_layer_architecture())
     params['img_dim'] = 64
     params['log_dir'] = 'runs/active_learning'
     params['known_tfrecord_loc'] = 'known_initially.tfrecord'

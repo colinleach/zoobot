@@ -74,7 +74,7 @@
 #
 # # @pytest.fixture()
 # # def nsa():
-# #     nsa_v1_0_0_catalog_loc = '/data/galaxy_zoo/decals/catalogs/nsa_v1_0_0.fits'
+# #     nsa_v1_0_0_catalog_loc = '/data/galaxy_zoo/decals/get_catalogs/nsa_v1_0_0.fits'
 # #     return Table(fits.getdata(nsa_v1_0_0_catalog_loc, 1))[:1000]
 # #
 # #

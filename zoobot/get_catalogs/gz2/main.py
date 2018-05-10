@@ -1,8 +1,8 @@
 
 import pandas as pd
 
-from zoobot.catalogs.get_classifications import get_classification_results
-from zoobot.catalogs.download_from_aws import download_png_threaded
+from zoobot.get_catalogs.gz2.get_classifications import get_classification_results
+from zoobot.get_catalogs.gz2.download_gz_from_aws import download_png_threaded
 from zoobot.shared_utilities import match_galaxies_to_catalog_pandas
 
 

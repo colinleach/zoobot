@@ -2,8 +2,8 @@ import pytest
 
 import pandas as pd
 
-from zoobot.catalogs.main import get_labels_and_images
-from zoobot.catalogs import get_classifications_test
+from zoobot.get_catalogs.gz2.main import get_labels_and_images
+from zoobot.get_catalogs.gz2 import get_classifications_test
 
 
 @pytest.fixture()

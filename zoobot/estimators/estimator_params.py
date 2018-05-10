@@ -1,9 +1,15 @@
 import tensorflow as tf
 
-from zoobot.estimators.run_estimator import four_layer_binary_classifier, run_experiment
+from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
+from zoobot.estimators.run_estimator import run_estimator
 
 
 def default_params():
+    """
+    Get typical parameters controlling the training/testing of an estimator
+    Returns:
+        (dict) typical parameters controlling the training/testing of an estimator
+    """
     return dict(
         epochs=1000,
         batch_size=128,
@@ -13,11 +19,17 @@ def default_params():
         max_train_batches=None,
         log_freq=25,
         train_stratify=True,
-        eval_stratify=True
+        eval_stratify=True,
+        log_dir='runs/default_run'
 )
 
 
 def default_three_layer_architecture():
+    """
+    Get parameters for three-layer CNN architecture (excluding input dimension)
+    Returns:
+        (dict) parameters for three-layer CNN architecture (excluding input dimension)
+    """
     return dict(
         padding='same',
 
@@ -42,13 +54,15 @@ def default_three_layer_architecture():
 
         learning_rate=0.001,
         optimizer=tf.train.GradientDescentOptimizer,
-
-        log_dir='runs/default_run'
-
     )
 
 
 def default_four_layer_architecture():
+    """
+    Get parameters for four-layer CNN architecture (excluding input dimension)
+    Returns:
+        (dict) parameters for four-layer CNN architecture (excluding input dimension)
+    """
     return dict(
         padding='same',
 
@@ -79,9 +93,7 @@ def default_four_layer_architecture():
         dense1_activation=tf.nn.relu,
 
         learning_rate=0.001,
-        optimizer=tf.train.GradientDescentOptimizer,
-
-
+        optimizer=tf.train.GradientDescentOptimizer
     )
 
 
@@ -90,4 +102,4 @@ if __name__ == '__main__':
     params.update(default_four_layer_architecture())
     params['image_dim'] = 128
     params['log_dir'] = 'runs/chollet_128_triple'
-    run_experiment(four_layer_binary_classifier, params)
+    run_estimator(four_layer_binary_classifier, params)

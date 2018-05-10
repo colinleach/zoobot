@@ -4,14 +4,14 @@ import tensorflow as tf
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
-def input(tfrecord_loc, name, size=64, batch=100, stratify=False, transform=True, adjust=True):
+def input(tfrecord_loc, name, size=64, batch_size=100, stratify=False, transform=True, adjust=True):
     """
     Load tfrecord as dataset. Stratify and augment images as directed. Batch with queues for Estimator input.
     Args:
         tfrecord_loc (str): file location of tfrecord to load
         name (str): name (e.g. 'train' for Tensorboard records
         size (int): length of square dimension of images e.g. 128
-        batch (int): size of batch to return
+        batch_size (int): size of batch to return
         stratify (bool): split batch into even True/False examples. Not currently very accurate for small batches!
         transform (bool): augment images with flips, 90' rotations
         adjust (bool): augment images with random brightness/contrast
@@ -23,21 +23,32 @@ def input(tfrecord_loc, name, size=64, batch=100, stratify=False, transform=True
 
     feature_spec = matrix_label_feature_spec(size)
     dataset = load_dataset(tfrecord_loc, feature_spec)
-    dataset = dataset.shuffle(batch * 10)
-
-    iterator = dataset.make_one_shot_iterator()
-    example = iterator.get_next()
-    batch_image = example['matrix']
-    batch_label = example['label']
+    dataset = dataset.shuffle(batch_size * 10)
 
     # queue single images into batches
-    if stratify:
-        batch_images, batch_labels = stratify_images(batch_image, batch_label, batch)
-    else:
-        batch_images, batch_labels = tf.train.batch(
-            [batch_image, batch_label],
-            batch,
-            capacity=batch)
+    # if stratify:
+    #     iterator = dataset.make_one_shot_iterator()
+    #     example = iterator.get_next()
+    #     batch_image = example['matrix']
+    #     batch_label = example['label']
+    #     batch_images, batch_labels = stratify_images(batch_image, batch_label, batch)
+    # else:
+    dataset = dataset.batch(batch_size)
+    iterator = dataset.make_one_shot_iterator()
+    batch = iterator.get_next()
+    # tf.Print(batch, [batch], 'batch')
+    batch_images, batch_labels = batch['matrix'], batch['label']  # smart enough to handle dict calls to batches!
+        # batch_images, batch_labels = tf.train.batch(
+        #     [batch_image, batch_label],
+        #     batch,
+        #     capacity=batch)
+
+    # TODO temp workaround!!
+
+    # batch_images, batch_labels = tf.train.batch(
+    #     [batch_image, batch_label],
+    #     batch_size,
+    #     capacity=batch_size * 100)
 
     batch_images = tf.reshape(batch_images, [-1, size, size, 3])
     tf.summary.image('{}/original'.format(name), batch_images)

@@ -80,7 +80,7 @@ def test_input_utils_stratified(tfrecord_dir, example_tfrecords, size, true_imag
         tfrecord_loc=train_loc,
         name='train',
         size=size,
-        batch=train_batch,
+        batch_size=train_batch,
         stratify=True,
         transform=False,  # no augmentations
         adjust=False  # no augmentations
@@ -91,7 +91,7 @@ def test_input_utils_stratified(tfrecord_dir, example_tfrecords, size, true_imag
         tfrecord_loc=test_loc,
         name='test',
         size=size,
-        batch=test_batch,
+        batch_size=test_batch,
         stratify=True,
         transform=False,  # no augmentations
         adjust=False  # no augmentations
