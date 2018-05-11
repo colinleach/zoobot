@@ -99,17 +99,25 @@ def run_estimator(model_fn, params):
     # Set up logging for predictions
     # Apparently, looks at tensors output under 'predictions', not anywhere within graph? nclear
     tensors_to_log = {
-        'labels': 'labels',
-        'classes': 'classes',
-        'max_logits': 'max_logits',
-        'min_logits': 'min_logits',
-        'logits': 'i_logits',
+        # 'labels': 'labels',
+        # 'classes': 'classes',
+        # 'max_logits': 'max_logits',
+        # 'min_logits': 'min_logits',
+        # 'logits': 'i_logits',
         "probabilities": 'softmax_tensor',
-        'loss': 'loss',
+        # 'loss': 'loss',
         'mean_loss': 'mean_loss'
     }
     logging_hook = tf.train.LoggingTensorHook(
         tensors=tensors_to_log, every_n_iter=params['log_freq'])
+
+    prediction_tensors = {
+        'mean_loss': 'mean_loss',
+        'all_predictions': 'all_predictions'
+    }
+    prediction_logging_hook = tf.train.LoggingTensorHook(
+        tensors=prediction_tensors, every_n_iter=params['log_freq']
+    )
 
     train_input_partial = partial(train_input, params=params)
     eval_input_partial = partial(eval_input, params=params)
@@ -138,5 +146,14 @@ def run_estimator(model_fn, params):
         # estimator.export_savedmodel(
         #     export_dir_base="/path/to/model",
         #     serving_input_receiver_fn=serving_input_receiver_fn)
+
+        predictions = estimator.predict(
+            eval_input_partial,
+            # hooks=[prediction_logging_hook]
+        )
+        prediction_rows = list(predictions)
+        logging.info('All predictions: ')
+        logging.info(prediction_rows['all_predictions'].shape)
+        logging.info(prediction_rows['all_predictions'])
 
         epoch_n += 1

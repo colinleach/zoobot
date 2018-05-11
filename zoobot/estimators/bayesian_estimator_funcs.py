@@ -97,7 +97,7 @@ def input_to_dense(features, params):
     return dense1
 
 
-def dense_to_prediction(dense1, labels, params, dropout_on):
+def dense_to_prediction(dense1, labels, params, dropout_on, name=True):
 
     # Add dropout operation
     dropout = tf.layers.dropout(
@@ -113,12 +113,15 @@ def dense_to_prediction(dense1, labels, params, dropout_on):
     tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
     prediction = {
-        'labels': tf.identity(labels, name='labels'),
-        "classes": tf.argmax(input=logits, axis=1, name='classes'),
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
-        "predictions": tf.nn.softmax(logits)[:, 0]  # keep only one softmax per subject. Softmax sums to 1 in TF.
+        "predictions": tf.nn.softmax(logits)[:, 0],  # keep only one softmax per subject. Softmax sums to 1 in TF.
         # TODO PR the docs about this?
     }
+    if labels is not None:
+        prediction.update({
+            'labels': tf.identity(labels, name='labels'),  #  these are None in predict mode
+            "classes": tf.argmax(input=logits, axis=1, name='classes'),
+        })
 
     return logits, prediction
 
@@ -144,11 +147,23 @@ def bayesian_cnn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.PREDICT:
 
         prediction_tensors = []
-        for posterior_sample in range(10):
-            _, predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)  # always apply dropout
-            prediction_tensors.append(predictions['predictions'])  # TODO fix bad naming
 
-        all_prediction_tensors = tf.concat(prediction_tensors, axis=1)  # dimensions [batch_size, n_samples]
+        def new_predictions():
+            _, predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)
+            prediction_tensors.append(predictions)
+
+        n = 0
+        tf.while_loop(tf.less(n, 4), new_predictions())
+
+        # _, predictions_a = dense_to_prediction(dense1, labels, params, dropout_on=True)  # always apply dropout. Rename tensors to avoid conflicts.
+        # _, predictions_b = dense_to_prediction(dense1, labels, params, dropout_on=True)
+        # _, predictions_c = dense_to_prediction(dense1, labels, params, dropout_on=True)
+        #
+        # prediction_tensors.append(predictions_a['predictions'])  # TODO fix bad naming
+        # prediction_tensors.append(predictions_b['predictions'])
+        # prediction_tensors.append(predictions_c['predictions'])
+
+        all_prediction_tensors = tf.concat(prediction_tensors, axis=0, name='all_predictions')  # dimensions [batch_size, n_samples]
         predictions.update({'all_predictions': all_prediction_tensors})  # use labels/classes/probs from last sample
         return predictions, None  # no loss needed
 
@@ -168,7 +183,7 @@ def get_eval_metric_ops(labels, predictions):
 
     # record distribution of predictions for tensorboard
     tf.summary.histogram('Probabilities', predictions['probabilities'])
-    tf.summary.histogram('Classes', predictions['classes'])
+    # tf.summary.histogram('Classes', predictions['classes'])
 
     return {
         "acc/accuracy": tf.metrics.accuracy(
@@ -182,86 +197,3 @@ def get_eval_metric_ops(labels, predictions):
         'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
         'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
     }
-
-
-
-def three_layer_cnn(features, labels, mode, params):
-    """
-
-    Args:
-        features ():
-        labels ():
-        mode ():
-        params ():
-
-    Returns:
-
-    """
-    input_layer = features["x"]
-    tf.summary.image('augmented', input_layer, 1)
-
-    conv1 = tf.layers.conv2d(
-        inputs=input_layer,
-        filters=params['conv1_filters'],
-        kernel_size=params['conv1_kernel'],
-        padding=params['padding'],
-        activation=params['conv1_activation'],
-        name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
-        inputs=conv1,
-        pool_size=params['pool1_size'],
-        strides=params['pool1_strides'],
-        name='model/layer1/pool1')
-
-    conv2 = tf.layers.conv2d(
-        inputs=pool1,
-        filters=params['conv2_filters'],
-        kernel_size=params['conv2_kernel'],
-        padding=params['padding'],
-        activation=params['conv2_activation'],
-        name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
-        inputs=conv2,
-        pool_size=params['pool2_size'],
-        strides=params['pool2_strides'],
-        name='model/layer2/pool2')
-
-    # Flatten tensor into a batch of vectors
-    pool2_flat = tf.reshape(pool2, [-1, int(params['image_dim'] / 4) ** 2 * 64], name='model/layer2/flat')
-    tf.summary.histogram('pool2_flat', pool2_flat)  # to visualise embedding of learned features
-
-    # Dense Layer
-    dense1 = tf.layers.dense(
-        inputs=pool2_flat,
-        units=params['dense1_units'],
-        activation=params['dense1_activation'],
-        name='model/layer3/dense1')
-
-    # Add dropout operation
-    dropout = tf.layers.dropout(
-        inputs=dense1,
-        rate=params['dense1_dropout'],
-        training=mode == tf.estimator.ModeKeys.TRAIN)
-    tf.summary.tensor_summary('dropout_summary', dropout)
-
-    # Logits layer
-    logits = tf.layers.dense(inputs=dropout, units=2, name='model/layer4/logits')
-    tf.summary.histogram('logits', logits)
-    tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
-
-    predictions = {
-        # Generate predictions (for PREDICT and EVAL mode)
-        "classes": tf.argmax(input=logits, axis=1),
-        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
-        # `logging_hook`.
-        "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
-    }
-
-    # Calculate Loss (for both TRAIN and EVAL modes)
-    # required for EstimatorSpec
-    onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
-    loss = tf.losses.softmax_cross_entropy(
-        onehot_labels=onehot_labels, logits=logits)
-    # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
-
-    return predictions, loss
