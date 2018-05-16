@@ -1,6 +1,8 @@
+import logging
 
 import tensorflow as tf
 from tensorboard import summary as tensorboard_summary
+from tensorflow.python.saved_model import signature_constants
 
 
 def four_layer_binary_classifier(features, labels, mode, params):
@@ -21,7 +23,25 @@ def four_layer_binary_classifier(features, labels, mode, params):
     predictions, loss = bayesian_cnn(features, labels, mode, params)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
-        export_outputs = {'probabilities_0_name': tf.estimator.export.ClassificationOutput(scores=predictions['probabilities_0'])}
+        export_outputs = {
+            'a_name': tf.estimator.export.ClassificationOutput(scores=predictions['probabilities_0'])
+        }
+
+        # samples = 10  # TODO should not need to manually match
+        # export_outputs = {}
+        # for n in range(samples):
+        #     if n == 0:
+        #         name = signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+        #     else:
+        #         name = 'sample_{}'.format(n)
+        #     export_outputs.update({
+        #         name: tf.estimator.export.PredictOutput(
+        #             {
+        #                 'logits': predictions['probabilities_{}'.format(n)],
+        #                 'featured_score': predictions['predictions_{}'.format(n)],
+        #             })
+        #     })
+
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -31,17 +51,19 @@ def four_layer_binary_classifier(features, labels, mode, params):
             global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
-    # TODO doesn't work yet
-    # tensorboard_summary.pr_curve_streaming_op(
-    #     name='spirals',
-    #     labels=labels,
-    #     predictions=predictions['probabilities'][:, 1],
-    # )
+    else:  # must be EVAL mode
+        # # TODO doesn't work yet
+        # tensorboard_summary.pr_curve_streaming_op(
+        #     name='spirals',
+        #     labels=labels,
+        #     predictions=predictions['probabilities'][:, 1],
+        # )
+        print('Eval inner loop')
 
-    # Add evaluation metrics (for EVAL mode)
-    eval_metric_ops = get_eval_metric_ops(labels, predictions)
-    return tf.estimator.EstimatorSpec(
-        mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+        # Add evaluation metrics (for EVAL mode)
+        eval_metric_ops = get_eval_metric_ops(labels, predictions)
+        return tf.estimator.EstimatorSpec(
+            mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
 def input_to_dense(features, params):
@@ -146,7 +168,7 @@ def bayesian_cnn(features, labels, mode, params):
 
     dense1 = input_to_dense(features, params)  # run from input to dense1 output
 
-    samples = 3
+    samples = 10
 
     # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
     if mode == tf.estimator.ModeKeys.PREDICT:
@@ -182,7 +204,14 @@ def bayesian_cnn(features, labels, mode, params):
         return predictions, mean_loss
 
 
-def get_eval_metric_ops(labels, predictions):
+def get_eval_metric_ops(a_labels, predictions):
+
+    labels = tf.Print(a_labels, [a_labels], 'labels before eval')
+    predictions['probabilities'] = tf.Print(predictions['probabilities'], [predictions['probabilities']],
+                                            'probs before eval')
+
+    print(labels, 'labels in eval')
+    print(predictions['classes'], 'classes in eval')
 
     # record distribution of predictions for tensorboard
     tf.summary.histogram('Probabilities', predictions['probabilities'])
@@ -212,7 +241,9 @@ def logging_hooks(params):
     train_hook = tf.train.LoggingTensorHook(
         tensors=train_tensors, every_n_iter=params['log_freq'])
 
-    eval_hook = train_hook
+    # eval_hook = train_hook
+    eval_hook = tf.train.LoggingTensorHook(
+        tensors=train_tensors, every_n_iter=params['log_freq'])
 
     prediction_tensors = {}
     # [prediction_tensors.update({'sample_{}/predictions'.format(n): 'sample_{}/predictions'.format(n)}) for n in range(3)]

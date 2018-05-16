@@ -17,6 +17,8 @@ def write_catalog_to_train_test_tfrecords(df, label_col, train_loc, test_loc, im
     df = df.sample(frac=1).reset_index(drop=True)
     train_df = df[:train_test_split].copy()
     test_df = df[train_test_split:].copy()
+    train_df.to_csv(train_loc + '.csv')  # ugly but effective
+    test_df.to_csv(test_loc + '.csv')
 
     assert not train_df.empty
     assert not test_df.empty

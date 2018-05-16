@@ -4,7 +4,7 @@ from zoobot.estimators import estimator_funcs, bayesian_estimator_funcs, estimat
 from zoobot import panoptes_to_tfrecord
 
 image_dim = 28
-run_name = 'chollet_panoptes_featured_bayesian_temp{}'.format(image_dim)
+run_name = 'chollet_panoptes_featured_bayesian_l05_{}'.format(image_dim)
 
 logging.basicConfig(
     filename=run_name + '.log',
@@ -20,8 +20,8 @@ if new_tfrecords:
 params = estimator_params.default_params()
 # TODO optionally refactor these out of panoptes_to_tfrecord?
 
-params['train_loc'] = 'data/panoptes_calibration_featured_{}_train.tfrecord'.format(image_dim)
-params['test_loc'] = 'data/panoptes_calibration_featured_{}_test.tfrecord'.format(image_dim)
+params['train_loc'] = 'data/panoptes_calibration_featured_{}_l05_train.tfrecord'.format(image_dim)
+params['test_loc'] = 'data/panoptes_calibration_featured_{}_l05_test.tfrecord'.format(image_dim)
 
 params['label_col'] = 'smooth-or-featured_prediction-encoded'
 

@@ -29,24 +29,24 @@ def save_panoptes_to_tfrecord():
         'dec']
 
     df_loc = '/data/repos/galaxy-zoo-panoptes/reduction/data/output/panoptes_predictions_with_catalog.csv'
-    df = pd.read_csv(df_loc, usecols=columns_to_save + ['fits_loc', 'png_loc', 'png_ready'], nrows=None)
+    df = pd.read_csv(df_loc, usecols=columns_to_save + ['fits_loc', 'png_loc', 'png_ready'], nrows=500)
     logging.info('Loaded {} catalog galaxies with predictions'.format(len(df)))
 
     # use the majority vote as a label
-    # label_col = 'smooth-or-featured_prediction-encoded'
-    # df = df[df[label_col] > 0]  # no artifacts
-    # df[label_col] = df[label_col] - 1  # 0 for featured
+    label_col = 'smooth-or-featured_prediction-encoded'
+    df = df[df[label_col] > 0]  # no artifacts
+    df[label_col] = df[label_col] - 1  # 0 for featured
 
     # use best split of the data as a label: here, around smooth vote fraction = 0.4
-    label_col = 'label'
-    df[label_col] = (df['smooth-or-featured_smooth_fraction'] > 0.4).astype(int)  # 0 for featured
+    # label_col = 'label'
+    # df[label_col] = (df['smooth-or-featured_smooth_fraction'] > 0.4).astype(int)  # 0 for featured
 
     df = df[df['smooth-or-featured_total-votes'] == 40]  # 40 votes required, gives low count uncertainty
 
-    for size in [28, 64, 128]:
+    for size in [28]:
 
-        train_loc = 'data/panoptes_calibration_featured_{}_train.tfrecord'.format(size)
-        test_loc = 'data/panoptes_calibration_featured_{}_test.tfrecord'.format(size)
+        train_loc = 'data/panoptes_calibration_featured_{}_l05_train.tfrecord'.format(size)
+        test_loc = 'data/panoptes_calibration_featured_{}_l05_test.tfrecord'.format(size)
 
         catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
             df,

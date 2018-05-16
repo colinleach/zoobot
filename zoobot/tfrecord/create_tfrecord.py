@@ -69,16 +69,16 @@ def value_to_feature(value):
     Returns:
         (tf.train.Feature) encoding of value, according to value type.
     """
-    if type(value) == int:
+    if type(value) == int or type(value) == np.int64:
         return int_to_feature(value)
     if type(value) == str:
         return str_to_feature(value)
-    elif type(value) == float:
+    elif type(value) == float or type(value) == np.float64:
         return float_to_feature(value)
     elif type(value) == list or type(value) == np.ndarray:
         return float_list_to_feature(value)
     else:
-        raise Exception('Fatal error: {} feature type not understood'.format(value))
+        raise Exception('Fatal error: {} feature of type {} not understood'.format(value, type(value)))
 
 
 def str_to_feature(str_to_save):
