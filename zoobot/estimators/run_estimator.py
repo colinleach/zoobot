@@ -97,30 +97,12 @@ def run_estimator(model_fn, params):
         model_fn=model_fn_partial, model_dir=params['log_dir'])
 
     # Set up logging for predictions
-    # Apparently, looks at tensors output under 'predictions', not anywhere within graph? nclear
-    tensors_to_log = {
-        # 'labels': 'labels',
-        # 'classes': 'classes',
-        # 'max_logits': 'max_logits',
-        # 'min_logits': 'min_logits',
-        # 'logits': 'i_logits',
-        "probabilities": 'softmax_tensor',
-        # 'loss': 'loss',
-        'mean_loss': 'mean_loss'
-    }
-    logging_hook = tf.train.LoggingTensorHook(
-        tensors=tensors_to_log, every_n_iter=params['log_freq'])
-
-    prediction_tensors = {
-        'mean_loss': 'mean_loss',
-        'all_predictions': 'all_predictions'
-    }
-    prediction_logging_hook = tf.train.LoggingTensorHook(
-        tensors=prediction_tensors, every_n_iter=params['log_freq']
-    )
+    # Apparently, looks at tensors output under 'predictions', not anywhere within graph? unclear
 
     train_input_partial = partial(train_input, params=params)
     eval_input_partial = partial(eval_input, params=params)
+
+    train_logging, eval_logging, predict_logging = params['logging_hooks']
 
     epoch_n = 0
     while epoch_n < params['epochs']:
@@ -130,7 +112,7 @@ def run_estimator(model_fn, params):
             input_fn=train_input_partial,
             steps=params['train_batches'],
             max_steps=params['max_train_batches'],
-            hooks=[logging_hook]
+            hooks=train_logging
         )
 
         # Evaluate the estimator and logging.info results
@@ -138,7 +120,7 @@ def run_estimator(model_fn, params):
         _ = estimator.evaluate(
             input_fn=eval_input_partial,
             steps=params['eval_batches'],
-            hooks=[logging_hook]
+            hooks=eval_logging
         )
 
         # TODO
@@ -149,11 +131,13 @@ def run_estimator(model_fn, params):
 
         predictions = estimator.predict(
             eval_input_partial,
-            # hooks=[prediction_logging_hook]
+            hooks=predict_logging
         )
+        logging.info([n.name for n in tf.get_default_graph().as_graph_def().node])
         prediction_rows = list(predictions)
-        logging.info('All predictions: ')
-        logging.info(prediction_rows['all_predictions'].shape)
-        logging.info(prediction_rows['all_predictions'])
+        logging.info('Predictions: ')
+        logging.info(len(prediction_rows))
+        for row in prediction_rows[:10]:
+            logging.info(row)
 
         epoch_n += 1

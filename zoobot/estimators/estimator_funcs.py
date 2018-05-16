@@ -107,10 +107,6 @@ def four_layer_cnn(features, labels, mode, params):
         activation=params['dense1_activation'],
         name='model/layer4/dense1')
 
-    # here, the model branches/loops at test time depending on the dropout
-    if mode == tf.estimator.ModeKeys.PREDICT:
-        pass
-
     # Add dropout operation
     dropout = tf.layers.dropout(
         inputs=dense1,
@@ -124,9 +120,18 @@ def four_layer_cnn(features, labels, mode, params):
     tf.summary.histogram('logits', logits)
     tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
-    # Calculate Loss (for both TRAIN and EVAL modes)
-    # required for EstimatorSpec
-    if mode != tf.estimator.ModeKeys.PREDICT:
+    predictions = {
+        "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
+        # 'max_logits': tf.reduce_max(logits, name='max_logits'),
+        # 'min_logits': tf.reduce_min(logits, name='min_logits'),
+    }
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        loss = tf.ones(shape=params['batch_size'], dtype=tf.float32)
+        mean_loss = None
+
+    else:
+        # Calculate Loss (for both TRAIN and EVAL modes)
+        # required for EstimatorSpec
         onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
         labels = tf.stop_gradient(labels)  # don't let backprop consider the labels, no adversarial mischief!
         # softmax cross entropy is only defined with at least 2 classes, hence onehot labels are needed
@@ -134,20 +139,13 @@ def four_layer_cnn(features, labels, mode, params):
         # might be better to have 1 logits because we know classes are exclusive
         loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=logits, name='model/layer4/loss')
         mean_loss = tf.reduce_mean(loss, name='mean_loss')
-    else:
-        loss = tf.ones(shape=params['batch_size'], dtype=tf.float32)
-        mean_loss = None
-
-    predictions = {
-        # Generate predictions (for PREDICT and EVAL mode)
-        'labels': tf.identity(labels, name='labels'),
-        "classes": tf.argmax(input=logits, axis=1, name='classes'),
-        "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
-        'max_logits': tf.reduce_max(logits, name='max_logits'),
-        'min_logits': tf.reduce_min(logits, name='min_logits'),
-        'i_logits': tf.identity(logits, name='i_logits'),
-        'loss': tf.identity(loss, name='loss'),
-    }
+        predictions.update({
+            # Generate predictions (for PREDICT and EVAL mode)
+            'labels': tf.identity(labels, name='labels'),
+            "classes": tf.argmax(input=logits, axis=1, name='classes'),
+            'loss': tf.identity(loss, name='loss'),
+            'mean_loss': tf.identity(mean_loss, name='mean_loss'),
+        })
     return predictions, mean_loss
 
 

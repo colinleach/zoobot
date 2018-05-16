@@ -74,7 +74,7 @@ def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
         writer = tf.python_io.TFRecordWriter(tfrecord_loc)
 
         for example in example_data:
-            create_tfrecord.image_to_tfrecord(matrix=example[0], label=example[1], writer=writer)
+            writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))
         writer.close()
 
 
@@ -83,11 +83,12 @@ def params(tmpdir, example_tfrecords, size, tfrecord_train_loc, tfrecord_test_lo
     params = default_params()
     params.update(default_four_layer_architecture())
     params['image_dim'] = size
-    params['log_dir'] = 'runs/chollet_128_triple'
+    params['log_dir'] = 'runs/test_case'
     params['epochs'] = 1  # stop early, only run one train/eval cycle
     params['log_dir'] = tmpdir.mkdir('log_dir').strpath
     params['train_loc'] = tfrecord_train_loc
     params['test_loc'] = tfrecord_test_loc
+    params['logging_hooks'] = None, None, None  # no train, eval or predict hooks
     return params
 
 

@@ -26,29 +26,21 @@ def input(tfrecord_loc, name, size=64, batch_size=100, stratify=False, transform
     dataset = dataset.shuffle(batch_size * 10)
 
     # queue single images into batches
-    # if stratify:
-    #     iterator = dataset.make_one_shot_iterator()
-    #     example = iterator.get_next()
-    #     batch_image = example['matrix']
-    #     batch_label = example['label']
-    #     batch_images, batch_labels = stratify_images(batch_image, batch_label, batch)
-    # else:
-    dataset = dataset.batch(batch_size)
-    iterator = dataset.make_one_shot_iterator()
-    batch = iterator.get_next()
-    # tf.Print(batch, [batch], 'batch')
-    batch_images, batch_labels = batch['matrix'], batch['label']  # smart enough to handle dict calls to batches!
+    if stratify:
+        iterator = dataset.make_one_shot_iterator()
+        example = iterator.get_next()
+        batch_image = example['matrix']
+        batch_label = example['label']
+        batch_images, batch_labels = stratify_images(batch_image, batch_label, batch_size)
+    else:
+        dataset = dataset.batch(batch_size)
+        iterator = dataset.make_one_shot_iterator()
+        batch = iterator.get_next()
+        batch_images, batch_labels = batch['matrix'], batch['label']  # smart enough to handle dict calls to batches!
         # batch_images, batch_labels = tf.train.batch(
         #     [batch_image, batch_label],
         #     batch,
-        #     capacity=batch)
-
-    # TODO temp workaround!!
-
-    # batch_images, batch_labels = tf.train.batch(
-    #     [batch_image, batch_label],
-    #     batch_size,
-    #     capacity=batch_size * 100)
+        #     capacity=batch * 100)
 
     batch_images = tf.reshape(batch_images, [-1, size, size, 3])
     tf.summary.image('{}/original'.format(name), batch_images)

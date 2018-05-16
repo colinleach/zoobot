@@ -36,32 +36,36 @@ def write_image_df_to_tfrecord(df, label_col, tfrecord_loc, img_size, columns_to
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
 
-    dimensions = img_size, img_size
+    for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
+        serialized_example = row_to_serialized_example(subject, img_size, label_col, columns_to_save, source)
+        writer.write(serialized_example)
 
-    for subject_n, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
-        if subject['png_ready']:
-            if source == 'fits':
-                pil_img = load_fits_as_pil(subject)
-            elif source == 'png':
-                pil_img = load_png_as_pil(subject)
-            else:
-                logging.critical('Fatal error: image source "{}" not understood'.format(source))
-                raise ValueError
-
-            # to align with north/east TODO refactor this to make sure it matches downloader?
-            final_pil_img = pil_img.resize(size=(img_size, img_size), resample=Image.LANCZOS).transpose(Image.FLIP_TOP_BOTTOM)
-
-            matrix = np.array(final_pil_img)
-
-            label = int(subject[label_col])
-            extra_data = {}
-            for col in columns_to_save:
-                extra_data.update({col: subject[col]})
-
-            create_tfrecord.image_to_tfrecord(matrix, label, writer, extra_data)
-
-    writer.close()
+    writer.close()  # very important - will give 'DataLoss' error if writer not closed
     sys.stdout.flush()
+
+
+def row_to_serialized_example(row, img_size, label_col, columns_to_save, source):
+    if row['png_ready']:
+        if source == 'fits':
+            pil_img = load_fits_as_pil(row)
+        elif source == 'png':
+            pil_img = load_png_as_pil(row)
+        else:
+            logging.critical('Fatal error: image source "{}" not understood'.format(source))
+            raise ValueError
+
+        # to align with north/east TODO refactor this to make sure it matches downloader?
+        final_pil_img = pil_img.resize(size=(img_size, img_size), resample=Image.LANCZOS).transpose(
+            Image.FLIP_TOP_BOTTOM)
+
+        matrix = np.array(final_pil_img)
+
+        label = int(row[label_col])
+        extra_data = {}
+        for col in columns_to_save:
+            extra_data.update({col: row[col]})
+
+        return create_tfrecord.serialize_image_example(matrix, label, extra_data)
 
 
 def load_png_as_pil(subject):

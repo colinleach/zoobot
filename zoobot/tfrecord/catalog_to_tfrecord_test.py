@@ -34,6 +34,7 @@ def downloaded_catalog():
         'ra': 12.0,
         'dec': -1.0,
         'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
+        'fits_loc': '{}/example_a.fits'.format(TEST_EXAMPLE_DIR),
         'png_ready': True
     }
 
@@ -45,6 +46,7 @@ def downloaded_catalog():
         'ra': 15.0,
         'dec': -1.0,
         'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),
+        'fits_loc': '{}/example_b.fits'.format(TEST_EXAMPLE_DIR),
         'png_ready': True
     }
 

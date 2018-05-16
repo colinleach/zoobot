@@ -30,11 +30,13 @@ def four_layer_binary_classifier(features, labels, mode, params):
             global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
-    tensorboard_summary.pr_curve_streaming_op(
-        name='spirals',
-        labels=labels,
-        predictions=predictions['probabilities'][:, 1],
-    )
+    # TODO doesn't work yet
+    # tensorboard_summary.pr_curve_streaming_op(
+    #     name='spirals',
+    #     labels=labels,
+    #     predictions=predictions['probabilities'][:, 1],
+    # )
+
     # Add evaluation metrics (for EVAL mode)
     eval_metric_ops = get_eval_metric_ops(labels, predictions)
     return tf.estimator.EstimatorSpec(
@@ -97,7 +99,7 @@ def input_to_dense(features, params):
     return dense1
 
 
-def dense_to_prediction(dense1, labels, params, dropout_on, name=True):
+def dense_to_prediction(dense1, labels, params, dropout_on):
 
     # Add dropout operation
     dropout = tf.layers.dropout(
@@ -110,7 +112,7 @@ def dense_to_prediction(dense1, labels, params, dropout_on, name=True):
     logits = tf.layers.dense(inputs=dropout, units=2, name='logits')
 
     tf.summary.histogram('logits', logits)
-    tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
+    tf.summary.histogram('logits_probabilities', tf.nn.softmax(logits))
 
     prediction = {
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
@@ -141,41 +143,41 @@ def bayesian_cnn(features, labels, mode, params):
 
     """
 
-    dense1 = input_to_dense(features, params)
+    dense1 = input_to_dense(features, params)  # run from input to dense1 output
 
-    # here, the model branches/loops at test time
+    samples = 3
+
+    # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
     if mode == tf.estimator.ModeKeys.PREDICT:
+        prediction_tensors = ['predictions', 'probabilities']
+        predictions = {}
 
-        prediction_tensors = []
+        for sample in range(samples):
+            # variable names must be unique within a scope - make a new scope for each iteration
+            # see https://www.tensorflow.org/programmers_guide/variables#sharing_variables
+            with tf.variable_scope("sample_{}".format(sample)):
+                # Feedforward from dense1. Always apply dropout.
+                _, sample_predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)
+                # add to predictions to output, renamed with '_n'
+                for tensor in prediction_tensors:
+                    predictions[tensor + '_{}'.format(sample)] = sample_predictions[tensor]
+                # must return as several dict entries: all dict entries must be the same length (batch_size)
 
-        def new_predictions():
-            _, predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)
-            prediction_tensors.append(predictions)
+        return predictions, None  # no loss, as labels not known (in general)
 
-        n = 0
-        tf.while_loop(tf.less(n, 4), new_predictions())
-
-        # _, predictions_a = dense_to_prediction(dense1, labels, params, dropout_on=True)  # always apply dropout. Rename tensors to avoid conflicts.
-        # _, predictions_b = dense_to_prediction(dense1, labels, params, dropout_on=True)
-        # _, predictions_c = dense_to_prediction(dense1, labels, params, dropout_on=True)
-        #
-        # prediction_tensors.append(predictions_a['predictions'])  # TODO fix bad naming
-        # prediction_tensors.append(predictions_b['predictions'])
-        # prediction_tensors.append(predictions_c['predictions'])
-
-        all_prediction_tensors = tf.concat(prediction_tensors, axis=0, name='all_predictions')  # dimensions [batch_size, n_samples]
-        predictions.update({'all_predictions': all_prediction_tensors})  # use labels/classes/probs from last sample
-        return predictions, None  # no loss needed
-
-
-    # Calculate Loss (for both TRAIN and EVAL modes)
-    # required for EstimatorSpec
-    else:
-        logits, predictions = dense_to_prediction(dense1, labels, params,dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
-
+    else:  # Calculate Loss for TRAIN and EVAL modes)
+        # only feedforward once for one set of predictions
+        logits, predictions = dense_to_prediction(dense1, labels, params, dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
         onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
         loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=logits, name='model/layer4/loss')
         mean_loss = tf.reduce_mean(loss, name='mean_loss')
+
+        # create dummy variables that match names in predict mode
+        # TODO this is potentially wasteful as we don't actually need the feedforwards. Unclear if it executes - check.
+        for sample in range(samples):
+            with tf.variable_scope("sample_{}".format(sample)):
+                _, _ = dense_to_prediction(dense1, labels, params, dropout_on=True)
+
         return predictions, mean_loss
 
 
@@ -197,3 +199,25 @@ def get_eval_metric_ops(labels, predictions):
         'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
         'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
     }
+
+
+def logging_hooks(params):
+    train_tensors = {
+        'labels': 'labels',
+        # 'logits': 'logits',  may not always exist? TODO
+        "probabilities": 'softmax_tensor',
+        'mean_loss': 'mean_loss'
+    }
+    train_hook = tf.train.LoggingTensorHook(
+        tensors=train_tensors, every_n_iter=params['log_freq'])
+
+    eval_hook = train_hook
+
+    prediction_tensors = {}
+    # [prediction_tensors.update({'sample_{}/predictions'.format(n): 'sample_{}/predictions'.format(n)}) for n in range(3)]
+
+    prediction_hook = tf.train.LoggingTensorHook(
+        tensors=prediction_tensors, every_n_iter=params['log_freq']
+    )
+
+    return [train_hook], [eval_hook], [prediction_hook]  # estimator expects lists of logging hooks

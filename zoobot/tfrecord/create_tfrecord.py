@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def image_to_tfrecord(matrix, label, writer, extra_data=None):
+def serialize_image_example(matrix, label, extra_data=None):
     """
     Save an image, label and any additional data to TFRecord. If no record exists, create one.
 
@@ -56,10 +56,7 @@ def image_to_tfrecord(matrix, label, writer, extra_data=None):
             # Features contains a map of string to Feature proto objects
             feature=features_to_save))
     # use the proto object to serialize the example to a string
-
-    serialized = example.SerializeToString()
-    # write the serialized object to disk
-    writer.write(serialized)
+    return example.SerializeToString()
 
 
 def value_to_feature(value):

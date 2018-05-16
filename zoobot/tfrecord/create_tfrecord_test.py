@@ -25,7 +25,7 @@ def test_matrix_to_tfrecord(example_image_data, tfrecord_dir):
     save_loc = '{}/example.tfrecords'.format(tfrecord_dir)
     assert not os.path.exists(save_loc)
     writer = tf.python_io.TFRecordWriter(save_loc)
-    create_tfrecord.image_to_tfrecord(example_image_data, label, writer)
+    writer.write(create_tfrecord.serialize_image_example(example_image_data, label))
     assert os.path.exists(save_loc)
     writer.close()  # important
 
