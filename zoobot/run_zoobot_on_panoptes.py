@@ -4,7 +4,7 @@ from zoobot.estimators import estimator_funcs, bayesian_estimator_funcs, estimat
 from zoobot import panoptes_to_tfrecord
 
 image_dim = 28
-run_name = 'chollet_panoptes_featured_bayesian_{}'.format(image_dim)
+run_name = 'chollet_panoptes_featured_bayesian_temp{}'.format(image_dim)
 
 logging.basicConfig(
     filename=run_name + '.log',

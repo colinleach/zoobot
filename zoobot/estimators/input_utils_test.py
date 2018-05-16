@@ -64,57 +64,6 @@ def example_tfrecords(tfrecord_dir, example_data):
         writer.close()
 
 
-def test_input_utils_stratified(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
-
-    # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
-
-    train_batch = 64
-    test_batch = 128
-
-    train_loc = tfrecord_dir + '/train.tfrecords'
-    test_loc = tfrecord_dir + '/test.tfrecords'
-    assert os.path.exists(train_loc)
-    assert os.path.exists(test_loc)
-
-    train_features, train_labels = input(
-        tfrecord_loc=train_loc,
-        name='train',
-        size=size,
-        batch_size=train_batch,
-        stratify=True,
-        transform=False,  # no augmentations
-        adjust=False  # no augmentations
-    )
-    train_images = train_features['x']
-
-    test_features, test_labels = input(
-        tfrecord_loc=test_loc,
-        name='test',
-        size=size,
-        batch_size=test_batch,
-        stratify=True,
-        transform=False,  # no augmentations
-        adjust=False  # no augmentations
-    )
-    test_images = test_features['x']
-
-    with tf.train.MonitoredSession() as sess:  # mimic Estimator environment
-
-        train_images, train_labels = sess.run([train_images, train_labels])
-        assert len(train_labels) == train_batch
-        assert train_images.shape[0] == train_batch
-        assert train_labels.mean() < 0.75 and train_labels.mean() > 0.25  # stratify not very accurate...
-        assert train_images.shape == (train_batch, size, size, 1)
-        verify_images_match_labels(train_images, train_labels, true_image_values, false_image_values, size)
-
-        test_images, test_labels = sess.run([test_images, test_labels])
-        assert len(test_labels) == test_batch
-        assert test_images.shape[0] == test_batch
-        assert test_labels.mean() < 0.75 and test_labels.mean() > 0.25  # stratify not very accurate...
-        assert test_images.shape == (test_batch, size, size, 1)
-        verify_images_match_labels(test_images, test_labels, true_image_values, false_image_values, size)
-
-
 def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
 
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
@@ -138,6 +87,17 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
     )
     train_images = train_features['x']
 
+    train_features_strat, train_labels_strat = input(
+        tfrecord_loc=train_loc,
+        name='train',
+        size=size,
+        batch_size=train_batch,
+        stratify=True,
+        transform=False,  # no augmentations
+        adjust=False  # no augmentations
+    )
+    train_images_strat = train_features_strat['x']
+
     test_features, test_labels = input(
         tfrecord_loc=test_loc,
         name='test',
@@ -149,6 +109,17 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
     )
     test_images = test_features['x']
 
+    test_features_strat, test_labels_strat = input(
+        tfrecord_loc=test_loc,
+        name='test',
+        size=size,
+        batch_size=test_batch,
+        stratify=True,
+        transform=False,  # no augmentations
+        adjust=False  # no augmentations
+    )
+    test_images_strat = test_features_strat['x']
+
     with tf.train.MonitoredSession() as sess:  # mimic Estimator environment
 
         train_images, train_labels = sess.run([train_images, train_labels])
@@ -158,12 +129,26 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         assert train_images.shape == (train_batch, size, size, 1)
         verify_images_match_labels(train_images, train_labels, true_image_values, false_image_values, size)
 
+        train_images_strat, train_labels_strat = sess.run([train_images_strat, train_labels_strat])
+        assert len(train_labels_strat) == train_batch
+        assert train_images_strat.shape[0] == train_batch
+        assert train_labels_strat.mean() < 0.75 and train_labels_strat.mean() > 0.25  # stratify not very accurate...
+        assert train_images_strat.shape == (train_batch, size, size, 1)
+        verify_images_match_labels(train_images_strat, train_labels_strat, true_image_values, false_image_values, size)
+
         test_images, test_labels = sess.run([test_images, test_labels])
         assert len(test_labels) == test_batch
         assert test_images.shape[0] == test_batch
-        assert test_labels.mean() < 0.6  # should not be stratified
+        assert test_labels.mean() < 0.75 and test_labels.mean() > 0.25  # stratify not very accurate...
         assert test_images.shape == (test_batch, size, size, 1)
         verify_images_match_labels(test_images, test_labels, true_image_values, false_image_values, size)
+
+        test_images_strat, test_labels_strat = sess.run([test_images_strat, test_labels_strat])
+        assert len(test_labels_strat) == test_batch
+        assert test_images_strat.shape[0] == test_batch
+        assert test_labels_strat.mean() < 0.6  # should not be stratified
+        assert test_images_strat.shape == (test_batch, size, size, 1)
+        verify_images_match_labels(test_images_strat, test_labels_strat, true_image_values, false_image_values, size)
 
 
 def verify_images_match_labels(images, labels, true_values, false_values, size):

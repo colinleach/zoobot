@@ -21,7 +21,8 @@ def four_layer_binary_classifier(features, labels, mode, params):
     predictions, loss = bayesian_cnn(features, labels, mode, params)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+        export_outputs = {'probabilities_0_name': tf.estimator.export.ClassificationOutput(scores=predictions['probabilities_0'])}
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = params['optimizer'](learning_rate=params['learning_rate'])

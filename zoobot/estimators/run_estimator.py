@@ -7,43 +7,6 @@ import tensorflow as tf
 from zoobot.estimators import input_utils
 
 
-# def four_layer_regression_classifier(features, labels, mode, params):
-#     """
-#     Classify images of galaxies into spiral/not spiral
-#
-#     Args:
-#         features ():
-#         labels ():
-#         mode ():
-#         params ():
-#
-#     Returns:
-#
-#     """
-#
-#     predictions, loss = four_layer_cnn(features, labels, mode, params)  # loss is None if in predict mode
-#
-#     if mode == tf.estimator.ModeKeys.PREDICT:
-#         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-#
-#     if mode == tf.estimator.ModeKeys.TRAIN:
-#         optimizer = params['optimizer'](learning_rate=params['learning_rate'])
-#         train_op = optimizer.minimize(
-#             loss=loss,
-#             global_step=tf.train.get_global_step())
-#         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
-#
-#     # tensorboard_summary.pr_curve_streaming_op(
-#     #     name='spirals',
-#     #     labels=labels,
-#     #     predictions=predictions['probabilities'][:, 1],
-#     # )
-#     # Add evaluation metrics (for EVAL mode)
-#     eval_metric_ops = get_eval_metric_ops(labels, predictions)
-#     return tf.estimator.EstimatorSpec(
-#         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
-
 def train_input(params):
     mode = 'train'
     return input_utils.input(
@@ -54,26 +17,6 @@ def eval_input(params):
     mode = 'test'
     return input_utils.input(
         tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=params['eval_stratify'])
-
-
-# TODO wrap estimator for serving (maybe not here)
-# def serving_input_receiver_fn():
-#     """Build the serving inputs."""
-#     # The outer dimension (None) allows us to batch up inputs for
-#     # efficiency. However, it also means that if we want a prediction
-#     # for a single instance, we'll need to wrap it in an outer list.
-#     inputs = {"x": tf.placeholder(shape=[None, 4], dtype=tf.float32)}
-#     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-
-#
-# def serving_input_receiver_fn():
-#   """An input receiver that expects a serialized tf.Example."""
-#   serialized_tf_example = tf.placeholder(dtype=tf.string,
-#                                          shape=[default_batch_size],
-#                                          name='input_example_tensor')
-#   receiver_tensors = {'examples': serialized_tf_example}
-#   features = tf.parse_example(serialized_tf_example, matrix_label_feature_spec)
-#   return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
 
 def run_estimator(model_fn, params):
@@ -123,12 +66,6 @@ def run_estimator(model_fn, params):
             hooks=eval_logging
         )
 
-        # TODO
-        # logging.info('Saving model at epoch {}'.format(epoch_n))
-        # estimator.export_savedmodel(
-        #     export_dir_base="/path/to/model",
-        #     serving_input_receiver_fn=serving_input_receiver_fn)
-
         predictions = estimator.predict(
             eval_input_partial,
             hooks=predict_logging
@@ -139,5 +76,22 @@ def run_estimator(model_fn, params):
         logging.info(len(prediction_rows))
         for row in prediction_rows[:10]:
             logging.info(row)
+
+        # can't move out of run_estimator, uses closure to avoid arguments
+        def serving_input_receiver_fn():
+            """An input receiver that expects a serialized tf.Example."""
+            serialized_tf_example = tf.placeholder(dtype=tf.string,
+                                                   name='input_example_tensor')
+            receiver_tensors = {'examples': serialized_tf_example}
+            feature_spec = input_utils.matrix_feature_spec(size=params['image_dim'])
+            features = tf.parse_example(serialized_tf_example, feature_spec)
+            # update each image with the preprocessing from input_utils
+            new_features = input_utils.preprocess_batch(features['matrix'], size=params['image_dim'], name='uncertain')  #  outputs {x: new images}
+            return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
+        logging.info('Saving model at epoch {}'.format(epoch_n))
+        estimator.export_savedmodel(
+            export_dir_base=params['log_dir'],
+            serving_input_receiver_fn=serving_input_receiver_fn)
 
         epoch_n += 1
