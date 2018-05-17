@@ -4,7 +4,8 @@ from zoobot.estimators import estimator_funcs, bayesian_estimator_funcs, estimat
 from zoobot import panoptes_to_tfrecord
 
 image_dim = 28
-run_name = 'chollet_panoptes_featured_bayesian_l05_{}'.format(image_dim)
+# run_name = 'chollet_panoptes_featured_bayesian_l05_{}'.format(image_dim)
+run_name = 'chollet_panoptes_featured_l05_{}'.format(image_dim)
 
 logging.basicConfig(
     filename=run_name + '.log',
@@ -39,7 +40,7 @@ logging.info('Parameters used: ')
 for key, value in params.items():
     logging.info('{}: {}'.format(key, value))
 
-# model_fn = estimator_funcs.four_layer_binary_classifier
-model_fn = bayesian_estimator_funcs.four_layer_binary_classifier
+model_fn = estimator_funcs.four_layer_binary_classifier
+# model_fn = bayesian_estimator_funcs.four_layer_binary_classifier
 
 run_estimator.run_estimator(model_fn, params)
