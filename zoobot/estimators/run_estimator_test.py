@@ -8,15 +8,16 @@ import tensorflow as tf
 
 from zoobot.tfrecord import create_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.estimators.run_estimator import run_estimator
-from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
+from zoobot.estimators import run_estimator
+from zoobot.estimators import estimator_funcs
+from zoobot.estimators import bayesian_estimator_funcs
+from zoobot.estimators import dummy_image_estimator, dummy_image_estimator_test
 
 
 # copied from input_utils_test...
-
 @pytest.fixture(scope='module')
 def size():
-    return 64
+    return 28
 
 
 @pytest.fixture(scope='module')
@@ -84,7 +85,7 @@ def params(tmpdir, example_tfrecords, size, tfrecord_train_loc, tfrecord_test_lo
     params.update(default_four_layer_architecture())
     params['image_dim'] = size
     params['log_dir'] = 'runs/test_case'
-    params['epochs'] = 1  # stop early, only run one train/eval cycle
+    params['epochs'] = 2  # stop early, only run one train/eval cycle
     params['log_dir'] = tmpdir.mkdir('log_dir').strpath
     params['train_loc'] = tfrecord_train_loc
     params['test_loc'] = tfrecord_test_loc
@@ -94,9 +95,35 @@ def params(tmpdir, example_tfrecords, size, tfrecord_train_loc, tfrecord_test_lo
 
 @pytest.fixture()
 def model_fn():
-    return four_layer_binary_classifier
+    # return dummy_image_estimator.dummy_model_fn
+    # return estimator_funcs.four_layer_binary_classifier
+    return bayesian_estimator_funcs.four_layer_binary_classifier
 
 
-def test_run_experiment(model_fn, params):
-    run_estimator(model_fn, params)
+N_EXAMPLES = 1000
+
+
+@pytest.fixture()
+def features():
+    # {'feature_name':array_of_values} format expected
+    return {'x': np.random.rand(N_EXAMPLES, 28, 28, 1)}
+
+
+@pytest.fixture()
+def labels():
+    return np.random.randint(low=0, high=2, size=N_EXAMPLES)
+
+
+def test_run_experiment(model_fn, params, features, labels, monkeypatch):
+
+    # mock both input functions
+    def dummy_input(params=None):
+        return dummy_image_estimator_test.train_input_fn(
+            features=features,
+            labels=labels,
+            batch_size=params['batch_size'])
+    monkeypatch.setattr(run_estimator, 'train_input', dummy_input)
+    monkeypatch.setattr(run_estimator, 'eval_input', dummy_input)
+
+    run_estimator.run_estimator(model_fn, params)
     assert os.path.exists(params['log_dir'])

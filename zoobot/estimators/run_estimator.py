@@ -31,6 +31,7 @@ def run_estimator(model_fn, params):
         None
     """
 
+    # start fresh, don't try to load any existing models
     if os.path.exists(params['log_dir']):
         shutil.rmtree(params['log_dir'])
 
@@ -40,17 +41,17 @@ def run_estimator(model_fn, params):
         model_fn=model_fn_partial, model_dir=params['log_dir'])
 
     # can't move out of run_estimator, uses closure to avoid arguments
-    # def serving_input_receiver_fn():
-    #     """An input receiver that expects a serialized tf.Example."""
-    #     serialized_tf_example = tf.placeholder(dtype=tf.string,
-    #                                            name='input_example_tensor')
-    #     receiver_tensors = {'examples': serialized_tf_example}
-    #     feature_spec = input_utils.matrix_feature_spec(size=params['image_dim'])
-    #     features = tf.parse_example(serialized_tf_example, feature_spec)
-    #     # update each image with the preprocessing from input_utils
-    #     # outputs {x: new images}
-    #     new_features = input_utils.preprocess_batch(features['matrix'], size=params['image_dim'], name='input_batch')
-    #     return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+    def serving_input_receiver_fn():
+        """An input receiver that expects a serialized tf.Example."""
+        serialized_tf_example = tf.placeholder(dtype=tf.string,
+                                               name='input_example_tensor')
+        receiver_tensors = {'examples': serialized_tf_example}
+        feature_spec = input_utils.matrix_feature_spec(size=params['image_dim'])
+        features = tf.parse_example(serialized_tf_example, feature_spec)
+        # update each image with the preprocessing from input_utils
+        # outputs {x: new images}
+        new_features = input_utils.preprocess_batch(features['matrix'], size=params['image_dim'], name='input_batch')
+        return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 
     train_input_partial = partial(train_input, params=params)
     eval_input_partial = partial(eval_input, params=params)
@@ -59,41 +60,36 @@ def run_estimator(model_fn, params):
 
     epoch_n = 0
     while epoch_n < params['epochs']:
-        print(epoch_n, 'epoch')
-        logging.info('training begins')
         # Train the estimator
         estimator.train(
             input_fn=train_input_partial,
             steps=params['train_batches'],
             max_steps=params['max_train_batches'],
+            # hooks=train_logging + [tf.train.ProfilerHook(save_secs=10)]
             hooks=train_logging
         )
 
         # Evaluate the estimator and logging.info results
-        logging.info('eval begins')
-        eval = estimator.evaluate(
+        _ = estimator.evaluate(
             input_fn=eval_input_partial,
             steps=params['eval_batches'],
             hooks=eval_logging
         )
-        print('Doing eval')
-        print(eval)
-        #
-        # if epoch_n % 10 == 0:
-        #
-        predictions = estimator.predict(
-            eval_input_partial,
-            hooks=predict_logging
-        )
-        prediction_rows = list(predictions)
-        logging.info('Predictions: ')
-        logging.info(len(prediction_rows))
-        for row in prediction_rows[:10]:
-            logging.info(row)
-        #
-        #     logging.info('Saving model at epoch {}'.format(epoch_n))
-        #     estimator.export_savedmodel(
-        #         export_dir_base=params['log_dir'],
-        #         serving_input_receiver_fn=serving_input_receiver_fn)
+
+        if epoch_n % 10 == 0:
+
+            predictions = estimator.predict(
+                eval_input_partial,
+                hooks=predict_logging
+            )
+            prediction_rows = list(predictions)
+            logging.debug('Predictions ({}): '.format(len(prediction_rows)))
+            for row in prediction_rows[:10]:
+                logging.info(row)
+
+            logging.info('Saving model at epoch {}'.format(epoch_n))
+            estimator.export_savedmodel(
+                export_dir_base=params['log_dir'],
+                serving_input_receiver_fn=serving_input_receiver_fn)
 
         epoch_n += 1

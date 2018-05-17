@@ -53,7 +53,8 @@ def default_three_layer_architecture():
         dense1_activation=tf.nn.relu,
 
         learning_rate=0.001,
-        optimizer=tf.train.GradientDescentOptimizer,
+        # optimizer=tf.train.GradientDescentOptimizer,
+        optimizer=tf.train.AdamOptimizer
     )
 
 

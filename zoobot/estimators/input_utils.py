@@ -20,41 +20,42 @@ def input(tfrecord_loc, name, size=64, batch_size=100, stratify=False, transform
         (dict) of form {'x': greyscale image batch}, represented as np.float32 Tensor of shape [batch, size, size, 1]}
         (Tensor) categorical labels for each image
     """
+    with tf.name_scope('input_{}'.format(name)):
+        feature_spec = matrix_label_feature_spec(size)
+        dataset = load_dataset(tfrecord_loc, feature_spec)
+        dataset = dataset.shuffle(batch_size * 10)
 
-    feature_spec = matrix_label_feature_spec(size)
-    dataset = load_dataset(tfrecord_loc, feature_spec)
-    dataset = dataset.shuffle(batch_size * 10)
+        dataset = dataset.batch(batch_size)
+        iterator = dataset.make_one_shot_iterator()
+        batch = iterator.get_next()
+        batch_images, batch_labels = batch['matrix'], batch['label']
+        # builds graph but will only actually execute if needed
+        # batch_images_stratified, batch_labels_stratified = stratify_images(batch_images, batch_labels, batch_size)
+        #
+        # if stratify:
+        #     batch_images = batch_images_stratified
+        #     batch_labels = batch_labels_stratified
 
-    dataset = dataset.batch(batch_size)
-    iterator = dataset.make_one_shot_iterator()
-    batch = iterator.get_next()
-    batch_images, batch_labels = batch['matrix'], batch['label']
-    # builds graph but will only actually execute if needed
-    batch_images_stratified, batch_labels_stratified = stratify_images(batch_images, batch_labels, batch_size)
+        preprocessed_batch_images = preprocess_batch(batch_images, size, name, transform, adjust)
 
-    if stratify:
-        batch_images = batch_images_stratified
-        batch_labels = batch_labels_stratified
-
-    preprocessed_batch_images = preprocess_batch(batch_images, size, name, transform, adjust)
-
-    return preprocessed_batch_images, batch_labels
+        return preprocessed_batch_images, batch_labels
 
 
 def preprocess_batch(batch_images, size, name, transform=True, adjust=False):  # TODO sort out args
+    with tf.name_scope('preprocess_{}'.format(name)):
 
-    batch_images = tf.reshape(batch_images, [-1, size, size, 3])
-    tf.summary.image('{}/original'.format(name), batch_images)
+        batch_images = tf.reshape(batch_images, [-1, size, size, 3])
+        tf.summary.image('{}/original'.format(name), batch_images)
 
-    batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
-    tf.summary.image('{}/greyscale'.format(name), batch_images)
+        batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
+        tf.summary.image('{}/greyscale'.format(name), batch_images)
 
-    batch_images = augment_images(batch_images, transform, adjust)
-    tf.summary.image('augmented_{}'.format(name), batch_images)
+        batch_images = augment_images(batch_images, transform, adjust)
+        tf.summary.image('augmented_{}'.format(name), batch_images)
 
-    feature_cols = {'x': batch_images}
-    assert feature_cols is not None
-    return feature_cols
+        feature_cols = {'x': batch_images}
+        assert feature_cols is not None
+        return feature_cols
 
 
 def stratify_images(image, label, batch_size):
