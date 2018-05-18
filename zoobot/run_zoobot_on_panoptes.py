@@ -6,7 +6,7 @@ from zoobot import panoptes_to_tfrecord
 image_dim = 64
 label_split_value = '0.5'
 # run_name = 'chollet_panoptes_featured_bayesian_l05_{}'.format(image_dim)
-run_name = 'bayesian_panoptes_featured_s{}_l{}_120k'.format(image_dim, label_split_value)
+run_name = 'bayesian_panoptes_featured_s{}_l{}_120k_test'.format(image_dim, label_split_value)
 
 logging.basicConfig(
     filename=run_name + '.log',
@@ -23,7 +23,7 @@ params = estimator_params.default_params()
 # TODO optionally refactor these out of panoptes_to_tfrecord?
 
 params['train_loc'] = 'data/panoptes_featured_s{}_l{}_train.tfrecord'.format(image_dim, label_split_value)
-params['test_loc'] = 'data/panoptes_featured_s{}_l{}_train.tfrecord'.format(image_dim, label_split_value)
+params['test_loc'] = 'data/panoptes_featured_s{}_l{}_test.tfrecord'.format(image_dim, label_split_value)
 
 params['label_col'] = 'smooth-or-featured_prediction-encoded'
 
