@@ -10,13 +10,13 @@ from zoobot.estimators import input_utils
 def train_input(params):
     mode = 'train'
     return input_utils.input(
-        tfrecord_loc=params['train_loc'], size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=params['train_stratify'])
+        tfrecord_loc=params['train_loc'], size=params['image_dim'], channels=params['channels'], name=mode, batch_size=params['batch_size'], stratify=params['train_stratify'])
 
 
 def eval_input(params):
     mode = 'test'
     return input_utils.input(
-        tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=params['eval_stratify'])
+        tfrecord_loc=params['test_loc'], size=params['image_dim'], channels=params['channels'], name=mode, batch_size=params['batch_size'], stratify=params['eval_stratify'])
 
 
 def run_estimator(model_fn, params):
@@ -46,11 +46,15 @@ def run_estimator(model_fn, params):
         serialized_tf_example = tf.placeholder(dtype=tf.string,
                                                name='input_example_tensor')
         receiver_tensors = {'examples': serialized_tf_example}
-        feature_spec = input_utils.matrix_feature_spec(size=params['image_dim'])
+        feature_spec = input_utils.matrix_feature_spec(size=params['image_dim'], channels=params['channels'])
         features = tf.parse_example(serialized_tf_example, feature_spec)
         # update each image with the preprocessing from input_utils
         # outputs {x: new images}
-        new_features = input_utils.preprocess_batch(features['matrix'], size=params['image_dim'], name='input_batch')
+        new_features = input_utils.preprocess_batch(
+            features['matrix'],
+            size=params['image_dim'],
+            channels=params['channels'],
+            name='input_batch')
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 
     train_input_partial = partial(train_input, params=params)
@@ -76,7 +80,7 @@ def run_estimator(model_fn, params):
             hooks=eval_logging
         )
 
-        if epoch_n % 10 == 0:
+        if epoch_n % params['save_freq'] == 0:
 
             predictions = estimator.predict(
                 eval_input_partial,

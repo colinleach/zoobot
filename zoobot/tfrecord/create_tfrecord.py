@@ -28,12 +28,15 @@ def serialize_image_example(matrix, label, extra_data=None):
     matrix_feature = float_list_to_feature(flat_matrix)
 
     # Expects TensorFlow data format convention, "Height-Width-Depth".
-    if matrix.shape[2] > matrix.shape[0]:
+    if matrix.shape[1] > matrix.shape[0]:
         raise Exception('Fatal error: image not in height-width-depth convention')
 
     height_feature = int_to_feature(matrix.shape[0])
     width_feature = int_to_feature(matrix.shape[1])
-    channels_feature = int_to_feature(matrix.shape[2])
+    if len(matrix.shape) == 2:
+        channels_feature = int_to_feature(1)
+    else:
+        channels_feature = int_to_feature(matrix.shape[2])
 
     features_to_save = {
         'label': label_feature,
