@@ -71,9 +71,16 @@ if __name__ == '__main__':
         len(full_catalog)))
     logging.info('Galaxies identified from directories: {}'.format(
         len(full_catalog['id'].unique())))
+    full_catalog.to_csv('catalogs/raw_catalog_from_folders.csv')
 
     # add in metadata from Tim on mass, merger time, etc.
-    catalog_metadata = pd.read_csv(os.path.join(catalog_root_dir, 'galaxies_data.txt'), dtype={'id': str}).drop_duplicates()
+    catalog_metadata = pd.read_csv(os.path.join(catalog_root_dir, 'GalaxiesData.txt'), dtype={'ID': str}).drop_duplicates()
+    catalog_metadata = catalog_metadata.rename(columns={
+        'ID': 'id',
+        ' Mass [log solar mass]': 'mass',
+        ' Mass ratio': 'mass_ratio',
+        ' Max. time since merger [Myr]': 'max_time'
+    })
     assert all(catalog_metadata['id'].unique())
     logging.info('Metadata entries: {}'.format(
         len(catalog_metadata)))
@@ -88,7 +95,7 @@ if __name__ == '__main__':
         how='inner')
 
     catalog_loc = 'catalogs/illustris_galaxies.csv'
-    full_catalog_with_metadata.reset_index().to_csv(catalog_loc)
+    full_catalog_with_metadata.reset_index().to_csv(catalog_loc, index=False)
     logging.info('Saved {} galaxies, {} images to {}'.format(
         len(full_catalog_with_metadata['id'].unique()),
         len(full_catalog_with_metadata),

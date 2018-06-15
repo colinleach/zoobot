@@ -1,10 +1,7 @@
-import logging
-
 import tensorflow as tf
-from tensorboard import summary as tensorboard_summary
 from tensorflow.python.saved_model import signature_constants
 
-SAMPLES = 10
+N_SAMPLES = 1
 
 
 def four_layer_binary_classifier(features, labels, mode, params):
@@ -27,32 +24,21 @@ def four_layer_binary_classifier(features, labels, mode, params):
         with tf.variable_scope('predict'):
 
             """
-            Output a single sample (but calculate many). Deprecated
+            Calculate N_SAMPLES samples but export only 1
             """
             # export_outputs = {
             #     'a_name': tf.estimator.export.ClassificationOutput(scores=predictions['probabilities_0'])
             # }
 
-            all_predictions = [predictions['predictions_{}'.format(n)] for n in range(SAMPLES)]
+            """
+            Calculate and export N_SAMPLES samples
+            """
+            all_predictions = [predictions['predictions_{}'.format(n)] for n in range(N_SAMPLES)]
             export_outputs = {
                 signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({
                     'all_predictions': tf.stack(all_predictions, axis=1)  # axis=0 is batch dimension
                     })
             }
-
-            # export_outputs = {}
-            # for n in range(SAMPLES):
-            #     if n == 0:
-            #         name = signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
-            #     else:
-            #         name = 'sample_{}'.format(n)
-            #     export_outputs.update({
-            #         name: tf.estimator.export.PredictOutput(
-            #             {
-            #                 'logits': predictions['probabilities_{}'.format(n)],
-            #                 'featured_score': predictions['predictions_{}'.format(n)],
-            #             })
-            #     })
 
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
@@ -66,13 +52,6 @@ def four_layer_binary_classifier(features, labels, mode, params):
 
     else:  # must be EVAL mode
         with tf.variable_scope('eval'):
-
-            # TODO doesn't work yet
-            # tensorboard_summary.pr_curve_streaming_op(
-            #     name='spirals',
-            #     labels=labels,
-            #     predictions=predictions['probabilities'][:, 1],
-            # )
 
             # Add evaluation metrics (for EVAL mode)
             eval_metric_ops = get_eval_metric_ops(labels, predictions)
@@ -102,7 +81,7 @@ def bayesian_cnn(features, labels, mode, params):
         prediction_tensors = ['predictions', 'probabilities']
         predictions = {}
 
-        for sample in range(SAMPLES):
+        for sample in range(N_SAMPLES):
             # variable names must be unique within a scope - make a new scope for each iteration
             # see https://www.tensorflow.org/programmers_guide/variables#sharing_variables
             with tf.variable_scope("sample_{}".format(sample)):
@@ -126,7 +105,7 @@ def bayesian_cnn(features, labels, mode, params):
 
         # create dummy variables that match names in predict mode
         # TODO this is potentially wasteful as we don't actually need the feedforwards. Unclear if it executes - check.
-        for sample in range(SAMPLES):
+        for sample in range(N_SAMPLES):
             with tf.variable_scope("sample_{}".format(sample)):
                 _, _ = dense_to_prediction(dense1, labels, params, dropout_on=True)
 
@@ -140,20 +119,20 @@ def input_to_dense(features, params):
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=params['conv1_filters'],
-        kernel_size=params['conv1_kernel'],
+        kernel_size=[params['conv1_kernel'], params['conv1_kernel']],
         padding=params['padding'],
         activation=params['conv1_activation'],
         name='model/layer1/conv1')
     pool1 = tf.layers.max_pooling2d(
         inputs=conv1,
-        pool_size=params['pool1_size'],
+        pool_size=[params['pool1_size'], params['pool1_size']],
         strides=params['pool1_strides'],
         name='model/layer1/pool1')
 
     conv2 = tf.layers.conv2d(
         inputs=pool1,
         filters=params['conv2_filters'],
-        kernel_size=params['conv2_kernel'],
+        kernel_size=[params['conv2_kernel'], params['conv2_kernel']],
         padding=params['padding'],
         activation=params['conv2_activation'],
         name='model/layer2/conv2')
@@ -166,18 +145,24 @@ def input_to_dense(features, params):
     conv3 = tf.layers.conv2d(
         inputs=pool2,
         filters=params['conv3_filters'],
-        kernel_size=params['conv3_kernel'],
+        kernel_size=[params['conv3_kernel'], params['conv3_kernel']],
         padding=params['padding'],
         activation=params['conv3_activation'],
         name='model/layer3/conv3')
     pool3 = tf.layers.max_pooling2d(
         inputs=conv3,
-        pool_size=params['pool3_size'],
+        pool_size=[params['pool3_size'], params['pool3_size']],
         strides=params['pool3_strides'],
         name='model/layer3/pool3')
 
-    # Flatten tensor into a batch of vectors
-    pool3_flat = tf.reshape(pool3, [-1, int(params['image_dim'] / 8) ** 2 * 64], name='model/layer3/flat')
+    """
+    Flatten tensor into a batch of vectors
+    Start with image_dim shape, 1 channel
+    2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
+    length ^ 2 to make shape 1D
+    64 filters in final layer
+    """
+    pool3_flat = tf.reshape(pool3, [-1, int(params['image_dim'] / 8) ** 2 * params['conv3_filters']], name='model/layer3/flat')
 
     # Dense Layer
     dense1 = tf.layers.dense(
@@ -225,6 +210,7 @@ def get_eval_metric_ops(labels, predictions):
     tf.summary.histogram('Probabilities', predictions['probabilities'])
     tf.summary.histogram('Classes', predictions['classes'])
 
+    # validation loss is added behind-the-scenes by TensorFlow
     return {
         "acc/accuracy": tf.metrics.accuracy(
             labels=labels, predictions=predictions["classes"]),
@@ -237,7 +223,13 @@ def get_eval_metric_ops(labels, predictions):
         'confusion/true_positives': tf.metrics.true_positives(labels=labels, predictions=predictions['classes']),
         'confusion/true_negatives': tf.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
         'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
-        'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
+        'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes']),
+        'sanity/predictions_below_5%': tf.metrics.percentage_below(
+            values=predictions['probabilities'][:, 0],
+            threshold=0.05),
+        'sanity/predictions_above_95%': tf.metrics.percentage_below(
+            values=1 - predictions['probabilities'][:, 0],
+            threshold=0.05)
     }
 
 

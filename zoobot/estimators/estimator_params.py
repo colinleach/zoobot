@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import tensorflow as tf
 
 from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
@@ -10,7 +12,7 @@ def default_params():
     Returns:
         (dict) typical parameters controlling the training/testing of an estimator
     """
-    return dict(
+    return OrderedDict(
         epochs=1000,
         batch_size=128,
         image_dim=64,
@@ -30,22 +32,22 @@ def default_three_layer_architecture():
     Returns:
         (dict) parameters for three-layer CNN architecture (excluding input dimension)
     """
-    return dict(
+    return OrderedDict(
         padding='same',
 
         conv1_filters=32,
-        conv1_kernel=[5, 5],
+        conv1_kernel=5,
 
         conv1_activation=tf.nn.relu,
 
-        pool1_size=[2, 2],
+        pool1_size=2,
         pool1_strides=2,
 
         conv2_filters=64,
-        conv2_kernel=[5, 5],
+        conv2_kernel=5,
         conv2_activation=tf.nn.relu,
 
-        pool2_size=[2, 2],
+        pool2_size=2,
         pool2_strides=2,
 
         dense1_units=1064,
@@ -64,29 +66,29 @@ def default_four_layer_architecture():
     Returns:
         (dict) parameters for four-layer CNN architecture (excluding input dimension)
     """
-    return dict(
+    return OrderedDict(
         padding='same',
 
         conv1_filters=32,
-        conv1_kernel=[3, 3],
+        conv1_kernel=3,
 
         conv1_activation=tf.nn.relu,
 
-        pool1_size=[2, 2],
+        pool1_size=2,
         pool1_strides=2,
 
         conv2_filters=32,
-        conv2_kernel=[3, 3],
+        conv2_kernel=3,
         conv2_activation=tf.nn.relu,
 
-        pool2_size=[2, 2],
+        pool2_size=2,
         pool2_strides=2,
 
         conv3_filters=64,
-        conv3_kernel=[3, 3],
+        conv3_kernel=3,
         conv3_activation=tf.nn.relu,
 
-        pool3_size=[2, 2],
+        pool3_size=2,
         pool3_strides=2,
 
         dense1_units=1064,
@@ -94,7 +96,7 @@ def default_four_layer_architecture():
         dense1_activation=tf.nn.relu,
 
         learning_rate=0.001,
-        optimizer=tf.train.GradientDescentOptimizer
+        optimizer=tf.train.AdamOptimizer
     )
 
 

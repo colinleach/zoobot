@@ -43,7 +43,7 @@ def input(tfrecord_loc, name, size, channels, batch_size=100, stratify=False, tr
         return preprocessed_batch_images, batch_labels
 
 
-def preprocess_batch(batch_images, size, channels, name, transform=True, adjust=False):  # TODO sort out args
+def preprocess_batch(batch_images, size, channels, name, transform, adjust):  # TODO sort out args
     with tf.name_scope('preprocess_{}'.format(name)):
 
         batch_images = tf.reshape(batch_images, [-1, size, size, channels])
@@ -92,7 +92,7 @@ def stratify_images(image, label, batch_size):
     return data_batch, label_batch
 
 
-def augment_images(images, transform=True, adjust=True):
+def augment_images(images, transform, adjust):
     if transform:
         images = tf.map_fn(transform_3d, images)
     if adjust:
@@ -105,6 +105,7 @@ def transform_3d(images):
     images = tf.image.random_flip_left_right(images)
     images = tf.image.random_flip_up_down(images)
     images = tf.image.rot90(images)
+    # TODO zoom and off-center!
     return images
 
 
