@@ -9,3 +9,6 @@ numpy
 pandas
 astropy
 scipy
+scikit-optimize
+matplotlib
+photutils

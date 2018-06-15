@@ -35,6 +35,7 @@ def example_data(size, true_image_values, false_image_values):
     false_images = [np.ones((size, size, 3), dtype=float) * false_image_values for n in range(n_false_examples)]
     true_labels = [1 for n in range(n_true_examples)]
     false_labels = [0 for n in range(n_false_examples)]
+    print('starting: probs: ', np.mean(true_labels + false_labels))
 
     true_data = list(zip(true_images, true_labels))
     false_data = list(zip(false_images, false_labels))
@@ -83,7 +84,8 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         batch_size=train_batch,
         stratify=False,
         transform=False,  # no augmentations
-        adjust=False  # no augmentations
+        adjust=False,  # no augmentations
+        channels=3
     )
     train_images = train_features['x']
 
@@ -93,8 +95,10 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         size=size,
         batch_size=train_batch,
         stratify=True,
+        init_probs=np.array([0.8, 0.2]),
         transform=False,  # no augmentations
-        adjust=False  # no augmentations
+        adjust=False,  # no augmentations
+        channels=3,
     )
     train_images_strat = train_features_strat['x']
 
@@ -105,7 +109,8 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         batch_size=test_batch,
         stratify=False,
         transform=False,  # no augmentations
-        adjust=False  # no augmentations
+        adjust=False,  # no augmentations
+        channels=3
     )
     test_images = test_features['x']
 
@@ -115,8 +120,10 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         size=size,
         batch_size=test_batch,
         stratify=True,
+        init_probs=np.array([0.8, 0.2]),
         transform=False,  # no augmentations
-        adjust=False  # no augmentations
+        adjust=False,  # no augmentations
+        channels=3
     )
     test_images_strat = test_features_strat['x']
 
@@ -139,14 +146,14 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         test_images, test_labels = sess.run([test_images, test_labels])
         assert len(test_labels) == test_batch
         assert test_images.shape[0] == test_batch
-        assert test_labels.mean() < 0.75 and test_labels.mean() > 0.25  # stratify not very accurate...
+        assert test_labels.mean() < 0.6  # should not be stratified
         assert test_images.shape == (test_batch, size, size, 1)
         verify_images_match_labels(test_images, test_labels, true_image_values, false_image_values, size)
 
         test_images_strat, test_labels_strat = sess.run([test_images_strat, test_labels_strat])
         assert len(test_labels_strat) == test_batch
         assert test_images_strat.shape[0] == test_batch
-        assert test_labels_strat.mean() < 0.6  # should not be stratified
+        assert test_labels_strat.mean() < 0.75 and test_labels_strat.mean() > 0.25  # stratify not very accurate...
         assert test_images_strat.shape == (test_batch, size, size, 1)
         verify_images_match_labels(test_images_strat, test_labels_strat, true_image_values, false_image_values, size)
 

@@ -53,6 +53,11 @@ def tfrecord_dir(tmpdir):
 
 
 @pytest.fixture()
+def log_dir(tmpdir):
+    return tmpdir.mkdir('log_dir').strpath  # also includes saved model
+
+
+@pytest.fixture()
 def tfrecord_train_loc(tfrecord_dir):
     return '{}/train.tfrecords'.format(tfrecord_dir)
 
@@ -80,27 +85,31 @@ def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
 
 
 @pytest.fixture()
-def params(tmpdir, example_tfrecords, size, tfrecord_train_loc, tfrecord_test_loc):
+def params(size, log_dir, tfrecord_train_loc, tfrecord_test_loc):
     params = default_params()
     params.update(default_four_layer_architecture())
     params['image_dim'] = size
-    params['log_dir'] = 'runs/test_case'
-    params['epochs'] = 2  # stop early, only run one train/eval cycle
-    params['log_dir'] = tmpdir.mkdir('log_dir').strpath
+    params['log_dir'] = log_dir
+    params['epochs'] = 1  # stop early, only run one train/eval cycle
     params['train_loc'] = tfrecord_train_loc
     params['test_loc'] = tfrecord_test_loc
     params['logging_hooks'] = None, None, None  # no train, eval or predict hooks
+    params['save_freq'] = 10
+    params['channels'] = 3
+    params['eval_batches'] = 3
+    params['min_epochs'] = 1
     return params
 
 
 @pytest.fixture()
 def model_fn():
+    # TODO use pytest repeating testing features to try all three?
     # return dummy_image_estimator.dummy_model_fn
     # return estimator_funcs.four_layer_binary_classifier
     return bayesian_estimator_funcs.four_layer_binary_classifier
 
 
-N_EXAMPLES = 1000
+N_EXAMPLES = 128  # possible error restoring model if this is not exactly one batch?
 
 
 @pytest.fixture()
@@ -124,6 +133,10 @@ def test_run_experiment(model_fn, params, features, labels, monkeypatch):
             batch_size=params['batch_size'])
     monkeypatch.setattr(run_estimator, 'train_input', dummy_input)
     monkeypatch.setattr(run_estimator, 'eval_input', dummy_input)
+
+    def dummy_save(estimator, params, epoch_n, serving_input_receiver_fn):
+        pass
+    monkeypatch.setattr(run_estimator, 'save_model', dummy_save)  # does not test saving the model
 
     run_estimator.run_estimator(model_fn, params)
     assert os.path.exists(params['log_dir'])
