@@ -11,3 +11,4 @@ astropy
 scipy
 scikit-optimize
 matplotlib
+photutils
