@@ -10,3 +10,4 @@ pandas
 astropy
 scipy
 scikit-optimize
+matplotlib
