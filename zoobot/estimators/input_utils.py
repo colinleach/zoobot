@@ -4,7 +4,7 @@ import tensorflow as tf
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
-def input(tfrecord_loc, name, size, channels, batch_size=100, stratify=False, transform=True, adjust=False):
+def input(tfrecord_loc, name, size, channels, batch_size=100, stratify=False, init_probs=None, transform=True, adjust=False):
     """
     Load tfrecord as dataset. Stratify and augment images as directed. Batch with queues for Estimator input.
     Args:
@@ -29,12 +29,16 @@ def input(tfrecord_loc, name, size, channels, batch_size=100, stratify=False, tr
         iterator = dataset.make_one_shot_iterator()
         batch = iterator.get_next()
         batch_images, batch_labels = batch['matrix'], batch['label']
-        # builds graph but will only actually execute if needed
-
-        #  warning - stratify only works if initial probabilities are specified
-        batch_images_stratified, batch_labels_stratified = stratify_images(batch_images, batch_labels, batch_size)
 
         if stratify:
+            #  warning - stratify only works if initial probabilities are specified
+            batch_images_stratified, batch_labels_stratified = stratify_images(
+                batch_images,
+                batch_labels,
+                batch_size,
+                init_probs
+            )
+
             batch_images = batch_images_stratified
             batch_labels = batch_labels_stratified
 
@@ -60,7 +64,7 @@ def preprocess_batch(batch_images, size, channels, name, transform, adjust):  # 
         return feature_cols
 
 
-def stratify_images(image, label, batch_size):
+def stratify_images(image, label, batch_size, init_probs):
     """
     Queue examples of images/labels into roughly even True/False counts
     Args:
@@ -80,11 +84,12 @@ def stratify_images(image, label, batch_size):
     #     enqueue_many=False,  # each image/label is a single example, will be automatically batched (thanks TensorFlow!)
     #     queue_capacity=batch_size * 10
     # )
+    assert init_probs is not None
     data_batch, label_batch = tf.contrib.training.stratified_sample(
         [image],
         label,
         target_probs=np.array([0.5, 0.5]),
-        init_probs=np.array([1. - 0.061, 0.061]),
+        init_probs=init_probs,
         batch_size=batch_size,
         enqueue_many=True,  # each image/label is a single example, will be automatically batched (thanks TensorFlow!)
         queue_capacity=batch_size * 100

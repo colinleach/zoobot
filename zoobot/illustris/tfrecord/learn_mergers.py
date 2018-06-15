@@ -30,6 +30,7 @@ def train_on_illustris(custom_params):
     params['train_batches'] = 1000  # training steps to take per loop WRONG will complete dataset or stop early?
     params['train_stratify'] = True
     params['test_stratify'] = True
+    params['stratify_prior_probs'] = np.array([1. - 0.061, 0.061])
     params['image_dim'] = image_dim
     params['log_dir'] = 'runs/{}'.format(run_name)
     params['log_freq'] = 100
@@ -118,4 +119,3 @@ if __name__ == '__main__':
 
     train_on_illustris({})
     # grid_search_on_illustris()
-

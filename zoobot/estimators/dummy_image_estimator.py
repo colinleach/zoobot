@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.saved_model import signature_constants
 
 
 def dummy_model_fn(
@@ -46,12 +47,17 @@ def dummy_model_fn(
 
     if labels is not None:
         predictions.update({
-            'labels': tf.identity(labels, name='labels'),  #  these are None in predict mode
+            'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
             "classes": tf.argmax(input=logits, axis=1, name='classes'),
         })
 
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+        export_outputs = {
+            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({
+                'predictions': predictions['probabilities']
+                })
+        }
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
     # Compute evaluation metrics.

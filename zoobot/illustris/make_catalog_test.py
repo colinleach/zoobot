@@ -17,7 +17,7 @@ def dir(tmpdir):
     dir_path = dir_object.strpath
 
     # fill directory with fake examples
-    filenames = [
+    filenames = {
         'synthetic_image_104798_band_5_camera_0_bg_1.fits',
         'synthetic_image_104798_band_5_camera_1_bg_1.fits',  # different camera
         'synthetic_image_104798_band_5_camera_2_bg_1.fits',  # different camera
@@ -25,14 +25,14 @@ def dir(tmpdir):
         'synthetic_image_204798_band_5_camera_0_bg_1.fits',  # different id
 
         'something_else.else'  # different file type, not to be included
-    ]
+    }
     file_locs = [os.path.join(dir_path, file) for file in filenames]
 
     for file_loc in file_locs:
         with open(file_loc, mode='w') as file:
             file.write('I am a fake fits image')
 
-    assert os.listdir(dir_path) == filenames
+    assert set(os.listdir(dir_path)) == filenames - set('something_else.else')
 
     return dir_path
 
