@@ -85,58 +85,58 @@ def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
 
 
 @pytest.fixture()
-def params(size, log_dir, tfrecord_train_loc, tfrecord_test_loc):
-    params = default_params()
-    params.update(default_four_layer_architecture())
-    params['image_dim'] = size
-    params['log_dir'] = log_dir
-    params['epochs'] = 1  # stop early, only run one train/eval cycle
-    params['train_loc'] = tfrecord_train_loc
-    params['test_loc'] = tfrecord_test_loc
-    params['logging_hooks'] = None, None, None  # no train, eval or predict hooks
-    params['save_freq'] = 10
-    params['channels'] = 3
-    params['eval_batches'] = 3
-    params['min_epochs'] = 1
-    return params
-
-
-@pytest.fixture()
-def model_fn():
+def model(size):
     # TODO use pytest repeating testing features to try all three?
     # return dummy_image_estimator.dummy_model_fn
     # return estimator_funcs.four_layer_binary_classifier
-    return bayesian_estimator_funcs.four_layer_binary_classifier
+    return bayesian_estimator_funcs.BayesianBinaryModel(image_dim=size)
 
-
-N_EXAMPLES = 128  # possible error restoring model if this is not exactly one batch?
+@pytest.fixture()
+def run_config(size, log_dir):
+    return run_estimator.RunEstimatorConfig(
+        image_dim=size,
+        channels=3,
+        label_col='',  # not sure about this
+        epochs=1,
+        min_epochs=1,
+        log_dir=log_dir
+    )
 
 
 @pytest.fixture()
-def features():
+def n_examples():
+    return 128  # possible error restoring model if this is not exactly one batch?
+
+
+@pytest.fixture()
+def features(n_examples):
     # {'feature_name':array_of_values} format expected
-    return {'x': np.random.rand(N_EXAMPLES, 28, 28, 1)}
+    return {'x': np.random.rand(n_examples, 28, 28, 1)}
 
 
 @pytest.fixture()
-def labels():
-    return np.random.randint(low=0, high=2, size=N_EXAMPLES)
+def labels(n_examples):
+    return np.random.randint(low=0, high=2, size=n_examples)
 
 
-def test_run_experiment(model_fn, params, features, labels, monkeypatch):
+def test_run_experiment(run_config, model, features, labels, n_examples, monkeypatch):
 
     # mock both input functions
     def dummy_input(params=None):
         return dummy_image_estimator_test.train_input_fn(
             features=features,
             labels=labels,
-            batch_size=params['batch_size'])
+            batch_size=n_examples)
     monkeypatch.setattr(run_estimator, 'train_input', dummy_input)
     monkeypatch.setattr(run_estimator, 'eval_input', dummy_input)
+    monkeypatch.setattr(run_config, 'is_ready_to_train', lambda: True)
 
     def dummy_save(estimator, params, epoch_n, serving_input_receiver_fn):
         pass
     monkeypatch.setattr(run_estimator, 'save_model', dummy_save)  # does not test saving the model
 
-    run_estimator.run_estimator(model_fn, params)
-    assert os.path.exists(params['log_dir'])
+    # no need to add input configs to run_config, they've been monkeypatched
+    run_config.model = model
+
+    run_estimator.run_estimator(run_config)
+    assert os.path.exists(run_config.log_dir)

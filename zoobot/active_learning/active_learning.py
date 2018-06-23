@@ -30,19 +30,19 @@ def create_complete_tfrecord(predictions_with_catalog, params):  # predictions w
 # currently very duplicated
 def predict_on_unknown_input(unknown_tfrecord_locs, params):
     name = 'predict_on_unknown'
-    return input_utils.input(
+    return input_utils.get_input(
         tfrecord_loc=unknown_tfrecord_locs, size=params['image_dim'], name=name, batch_size=params['batch_size'], stratify=False)
 
 
 def train_on_known(known_tfrecord_locs, params):
     mode = 'train_on_known'
-    return input_utils.input(
+    return input_utils.get_input(
         tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=False)
 
 
 def eval_on_known(known_tfrecord_locs, params):
     mode = 'eval_on_known'
-    return input_utils.input(
+    return input_utils.get_input(
         tfrecord_loc=known_tfrecord_locs, size=params['image_dim'], name=mode, batch_size=params['batch_size'], stratify=False)
 
 

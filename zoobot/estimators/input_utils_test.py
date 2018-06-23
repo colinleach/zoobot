@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from zoobot.estimators.input_utils import input
+from zoobot.estimators import input_utils
 from zoobot.tfrecord import create_tfrecord
 
 TEST_EXAMPLE_DIR = 'zoobot/test_examples'
@@ -77,54 +77,60 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
     assert os.path.exists(train_loc)
     assert os.path.exists(test_loc)
 
-    train_features, train_labels = input(
-        tfrecord_loc=train_loc,
+    train_config = input_utils.InputConfig(
         name='train',
-        size=size,
+        tfrecord_loc=train_loc,
+        image_dim=size,
+        channels=3,
+        label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=False,
-        transform=False,  # no augmentations
-        adjust=False,  # no augmentations
-        channels=3
+        stratify_probs=None,
+        transform=False
     )
+    train_features, train_labels = input_utils.get_input(train_config)
     train_images = train_features['x']
 
-    train_features_strat, train_labels_strat = input(
-        tfrecord_loc=train_loc,
+    train_strat_config = input_utils.InputConfig(
         name='train',
-        size=size,
+        tfrecord_loc=train_loc,
+        image_dim=size,
+        channels=3,
+        label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=True,
-        init_probs=np.array([0.8, 0.2]),
-        transform=False,  # no augmentations
-        adjust=False,  # no augmentations
-        channels=3,
+        stratify_probs=np.array([0.8, 0.2]),
+        transform=False
     )
+    train_features_strat, train_labels_strat = input_utils.get_input(train_strat_config)
     train_images_strat = train_features_strat['x']
 
-    test_features, test_labels = input(
-        tfrecord_loc=test_loc,
+    test_config = input_utils.InputConfig(
         name='test',
-        size=size,
+        tfrecord_loc=test_loc,
+        image_dim=size,
+        channels=3,
+        label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=False,
-        transform=False,  # no augmentations
-        adjust=False,  # no augmentations
-        channels=3
+        stratify_probs=None,
+        transform=False
     )
+    test_features, test_labels = input_utils.get_input(test_config)
     test_images = test_features['x']
 
-    test_features_strat, test_labels_strat = input(
+    test_strat_config = input_utils.InputConfig(
+        name='test_strat',
         tfrecord_loc=test_loc,
-        name='test',
-        size=size,
+        image_dim=size,
+        channels=3,
+        label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=True,
-        init_probs=np.array([0.8, 0.2]),
-        transform=False,  # no augmentations
-        adjust=False,  # no augmentations
-        channels=3
+        stratify_probs=np.array([0.8, 0.2]),
+        transform=False
     )
+    test_features_strat, test_labels_strat = input_utils.get_input(test_strat_config)
     test_images_strat = test_features_strat['x']
 
     with tf.train.MonitoredSession() as sess:  # mimic Estimator environment

@@ -1,4 +1,3 @@
-import functools
 
 import numpy as np
 import tensorflow as tf
@@ -6,62 +5,101 @@ from scipy import ndimage
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
+class InputConfig():
 
-def input(tfrecord_loc, input_params):
+    def __init__(
+            self,
+            name,
+            tfrecord_loc,
+            label_col,
+            image_dim,
+            channels,
+            batch_size,
+            stratify,
+            stratify_probs,
+            transform,
+            rotation_range=None,
+            height_shift_range=None,
+            width_shift_range=None,
+            zoom_range=None,
+            horizontal_flip=None,
+            vertical_flip=None,
+            fill_mode=None,
+            cval=None
+    ):
+
+        self.name = name
+        self.tfrecord_loc = tfrecord_loc
+        self.label_col = label_col
+        self.image_dim = image_dim
+        self.channels = channels
+        self.batch_size = batch_size
+        self.stratify = stratify
+        self.stratify_probs = stratify_probs
+        self.transform = transform
+        self.rotation_range = rotation_range
+        self.height_shift_range = height_shift_range
+        self.width_shift_range = width_shift_range
+        self.zoom_range = zoom_range
+        self.horizontal_flip = horizontal_flip
+        self.vertical_flip = vertical_flip
+        self.fill_mode = fill_mode
+        self.cval = cval
+
+
+def get_input(config):
     """
     Load tfrecord as dataset. Stratify and transform_3d images as directed. Batch with queues for Estimator input.
     Args:
-        tfrecord_loc (str): file location of tfrecord to load
-        name (str): name (e.g. 'train' for Tensorboard records
-        size (int): length of square dimension of images e.g. 128
-        batch_size (int): size of batch to return
-        stratify (bool): split batch into even True/False examples. Not currently very accurate for small batches!
-        transform (bool): transform_3d images with flips, 90' rotations
-        adjust (bool): transform_3d images with random brightness/contrast
+        config (InputConfig): Configuration object defining how 'get_input' should function  # TODO consider active class
 
     Returns:
         (dict) of form {'x': greyscale image batch}, represented as np.float32 Tensor of shape [batch, size, size, 1]}
         (Tensor) categorical labels for each image
     """
-    with tf.name_scope('input_{}'.format(input_params['name'])):
-        feature_spec = matrix_label_feature_spec(input_params['image_dim'], input_params['channels'])
-        dataset = load_dataset(tfrecord_loc, feature_spec)
-        dataset = dataset.shuffle(input_params['batch_size'] * 10)
+    with tf.name_scope('input_{}'.format(config.name)):
+        feature_spec = matrix_label_feature_spec(config.image_dim, config.channels)
+        dataset = load_dataset(config.tfrecord_loc, feature_spec)
+        dataset = dataset.shuffle(config.batch_size * 10)
 
-        dataset = dataset.batch(input_params['batch_size'])
+        dataset = dataset.batch(config.batch_size)
         iterator = dataset.make_one_shot_iterator()
         batch = iterator.get_next()
         batch_images, batch_labels = batch['matrix'], batch['label']
 
-        if input_params['stratify']:
+        if config.stratify:
             #  warning - stratify only works if initial probabilities are specified
             batch_images_stratified, batch_labels_stratified = stratify_images(
                 batch_images,
                 batch_labels,
-                input_params['batch_size'],
-                input_params['stratify_probs']
+                config.batch_size,
+                config.stratify_probs
             )
 
             batch_images = batch_images_stratified
             batch_labels = batch_labels_stratified
 
-        preprocessed_batch_images = preprocess_batch(batch_images, input_params)
+        else:
+            assert config.stratify_probs is None  # check in case user has accidentally forgotten to activate stratify
+            # TODO make a single stratify parameter that expects list of floats - required to run properly anyway
+
+        preprocessed_batch_images = preprocess_batch(batch_images, config)
 
         return preprocessed_batch_images, batch_labels
 
 
-def preprocess_batch(batch_images, input_params):
+def preprocess_batch(batch_images, input_config):
     with tf.name_scope('preprocess'):
         batch_images = tf.reshape(
             batch_images,
-            [-1, input_params['image_dim'], input_params['image_dim'],
-             input_params['channels']])
+            [-1, input_config.image_dim, input_config.image_dim,
+             input_config.channels])
         tf.summary.image('preprocess/original', batch_images)
 
-        batch_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
+        batch_images = tf.reduce_mean(batch_images, axis=3, keep_dims=True)
         tf.summary.image('preprocess/greyscale', batch_images)
 
-        batch_images = augment_images(batch_images, input_params)
+        batch_images = augment_images(batch_images, input_config)
         tf.summary.image('augmented', batch_images)
 
         feature_cols = {'x': batch_images}
@@ -95,8 +133,8 @@ def stratify_images(image, label, batch_size, init_probs):
     return data_batch, label_batch
 
 
-def augment_images(images, input_params):
-    if input_params['transform']:
+def augment_images(images, input_config):
+    if input_config.transform:
         images = tf.map_fn(transform_3d, images)
     return images
 #
