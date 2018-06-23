@@ -9,15 +9,17 @@ from zoobot.estimators import input_utils
 
 
 def train_input(params):
-    mode = 'train'
     return input_utils.input(
-        tfrecord_loc=params['train_loc'], size=params['image_dim'], channels=params['channels'], init_probs=['stratify_prior_probs'], name=mode, batch_size=params['batch_size'], stratify=params['train_stratify'])
+        tfrecord_loc=params['train_loc'],
+        input_params=params['train']
+    )
 
 
 def eval_input(params):
-    mode = 'test'
     return input_utils.input(
-        tfrecord_loc=params['test_loc'], size=params['image_dim'], channels=params['channels'], name=mode, batch_size=params['batch_size'], stratify=params['eval_stratify'])
+        tfrecord_loc=params['test_loc'],
+        input_params=params['eval']
+    )
 
 
 def run_estimator(model_fn, params):
@@ -55,11 +57,7 @@ def run_estimator(model_fn, params):
         # TODO DANGER this can deviate from input utils - cause of bug?
         new_features = input_utils.preprocess_batch(
             features['matrix'],
-            size=params['image_dim'],
-            channels=params['channels'],
-            name='input_batch',
-            transform=True,
-            adjust=False
+            input_params=params['eval']
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 

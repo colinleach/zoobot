@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import tensorflow as tf
 
 from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
@@ -12,18 +10,16 @@ def default_params():
     Returns:
         (dict) typical parameters controlling the training/testing of an estimator
     """
-    return OrderedDict(
+    return dict(
         epochs=1000,
         batch_size=128,
         image_dim=64,
-        train_batches=30,
-        eval_batches=3,
         max_train_batches=None,
         log_freq=25,
-        train_stratify=True,
-        eval_stratify=True,
-        log_dir='runs/default_run'
-)
+        log_dir='runs/default_run',
+        train_batches=30,
+        eval_batches=3
+    )
 
 
 def default_three_layer_architecture():
@@ -32,7 +28,7 @@ def default_three_layer_architecture():
     Returns:
         (dict) parameters for three-layer CNN architecture (excluding input dimension)
     """
-    return OrderedDict(
+    return dict(
         padding='same',
 
         conv1_filters=32,
@@ -66,7 +62,7 @@ def default_four_layer_architecture():
     Returns:
         (dict) parameters for four-layer CNN architecture (excluding input dimension)
     """
-    return OrderedDict(
+    return dict(
         padding='same',
 
         conv1_filters=32,

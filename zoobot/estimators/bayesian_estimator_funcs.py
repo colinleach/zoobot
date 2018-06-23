@@ -1,8 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.saved_model import signature_constants
 
-N_SAMPLES = 1
-
 
 def four_layer_binary_classifier(features, labels, mode, params):
     """
@@ -18,29 +16,16 @@ def four_layer_binary_classifier(features, labels, mode, params):
     Returns:
 
     """
-    predictions, loss = bayesian_cnn(features, labels, mode, params)
+    response, loss = bayesian_cnn(features, labels, mode, params)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         with tf.variable_scope('predict'):
-
-            """
-            Calculate N_SAMPLES samples but export only 1
-            """
-            # export_outputs = {
-            #     'a_name': tf.estimator.export.ClassificationOutput(scores=predictions['probabilities_0'])
-            # }
-
-            """
-            Calculate and export N_SAMPLES samples
-            """
-            all_predictions = [predictions['predictions_{}'.format(n)] for n in range(N_SAMPLES)]
             export_outputs = {
                 signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({
-                    'all_predictions': tf.stack(all_predictions, axis=1)  # axis=0 is batch dimension
+                    'predictions_for_true': response['predictions_for_true']
                     })
             }
-
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=response, export_outputs=export_outputs)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         with tf.variable_scope('train'):
@@ -54,7 +39,7 @@ def four_layer_binary_classifier(features, labels, mode, params):
         with tf.variable_scope('eval'):
 
             # Add evaluation metrics (for EVAL mode)
-            eval_metric_ops = get_eval_metric_ops(labels, predictions)
+            eval_metric_ops = get_eval_metric_ops(labels, response)
             return tf.estimator.EstimatorSpec(
                 mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
@@ -78,25 +63,15 @@ def bayesian_cnn(features, labels, mode, params):
 
     # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
     if mode == tf.estimator.ModeKeys.PREDICT:
-        prediction_tensors = ['predictions', 'probabilities']
-        predictions = {}
 
-        for sample in range(N_SAMPLES):
-            # variable names must be unique within a scope - make a new scope for each iteration
-            # see https://www.tensorflow.org/programmers_guide/variables#sharing_variables
-            with tf.variable_scope("sample_{}".format(sample)):
-                # Feedforward from dense1. Always apply dropout.
-                _, sample_predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)
-                # add to predictions to output, renamed with '_n'
-                for tensor in prediction_tensors:
-                    predictions[tensor + '_{}'.format(sample)] = sample_predictions[tensor]
-                # must return as several dict entries: all dict entries must be the same length (batch_size)
-
-        return predictions, None  # no loss, as labels not known (in general)
+        with tf.variable_scope("sample"):
+            # Feedforward from dense1. Always apply dropout.
+            _, sample_predictions = dense_to_prediction(dense1, labels, params, dropout_on=True)
+        return sample_predictions, None  # no loss, as labels not known (in general)
 
     else:  # Calculate Loss for TRAIN and EVAL modes)
         # only feedforward once for one set of predictions
-        logits, predictions = dense_to_prediction(dense1, labels, params, dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
+        logits, response = dense_to_prediction(dense1, labels, params, dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
         onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
         onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
         loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=logits, name='model/layer4/loss')
@@ -105,11 +80,10 @@ def bayesian_cnn(features, labels, mode, params):
 
         # create dummy variables that match names in predict mode
         # TODO this is potentially wasteful as we don't actually need the feedforwards. Unclear if it executes - check.
-        for sample in range(N_SAMPLES):
-            with tf.variable_scope("sample_{}".format(sample)):
-                _, _ = dense_to_prediction(dense1, labels, params, dropout_on=True)
+        with tf.variable_scope("sample"):
+            _, _ = dense_to_prediction(dense1, labels, params, dropout_on=True)
 
-        return predictions, mean_loss
+        return response, mean_loss
 
 
 def input_to_dense(features, params):
@@ -185,24 +159,24 @@ def dense_to_prediction(dense1, labels, params, dropout_on):
 
     # Logits layer
     logits = tf.layers.dense(inputs=dropout, units=2, name='logits')
-    tf.summary.histogram('logits_featured', logits[:, 0])  # first dimension is batch, second is class (0 = featured)
-    tf.summary.histogram('logits_smooth', logits[:, 1])
+    tf.summary.histogram('logits_false', logits[:, 0])  # first dimension is batch, second is class (0 = featured here)
+    tf.summary.histogram('logits_true', logits[:, 1])
 
     softmax = tf.nn.softmax(logits, name='softmax')
-    softmax_featured_score = softmax[:, 0]
-    tf.summary.histogram('softmax_featured_score', softmax_featured_score)
+    softmax_true_score = softmax[:, 1]  # predicts if label = 1 i.e. smooth
+    tf.summary.histogram('softmax_true_score', softmax_true_score)
 
-    prediction = {
+    response = {
         "probabilities": softmax,
-        "predictions": softmax_featured_score,  # keep only one softmax per subject. Softmax sums to 1 in TF.
+        "predictions_for_true": softmax_true_score,  # keep only one softmax per subject. Softmax sums to 1
     }
     if labels is not None:
-        prediction.update({
+        response.update({
             'labels': tf.identity(labels, name='labels'),  #  these are None in predict mode
             "classes": tf.argmax(input=logits, axis=1, name='classes'),
         })
 
-    return logits, prediction
+    return logits, response
 
 
 def get_eval_metric_ops(labels, predictions):

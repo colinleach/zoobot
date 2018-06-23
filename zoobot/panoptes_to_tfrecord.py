@@ -37,14 +37,14 @@ def save_panoptes_to_tfrecord():
     # df = df[df[label_col] > 0]  # no artifacts
     # df[label_col] = df[label_col] - 1  # 0 for featured
 
-    label_split_value = 0.4
+    label_split_value = 0.5
     # use best split of the data is around smooth vote fraction = 0.4
     label_col = 'label'
     df[label_col] = (df['smooth-or-featured_smooth_fraction'] > label_split_value).astype(int)  # 0 for featured
 
     df = df[df['smooth-or-featured_total-votes'] > 36]  # >36 votes required, gives low count uncertainty
 
-    for size in [28, 64]:
+    for size in [128]:
 
         train_loc = 'data/panoptes_featured_s{}_l{}_train.tfrecord'.format(size, str(label_split_value)[:3])
         test_loc = 'data/panoptes_featured_s{}_l{}_test.tfrecord'.format(size, str(label_split_value)[:3])
