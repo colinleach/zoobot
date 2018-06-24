@@ -7,7 +7,7 @@ from zoobot.estimators import estimator_funcs, bayesian_estimator_funcs, run_est
 from zoobot import panoptes_to_tfrecord
 
 
-def get_stratify_probs_from_csv(input_config):
+def get_stratify_probs_from_csv(input_config: input_utils.InputConfig) -> list:
     subject_df = pd.read_csv(train_config.tfrecord_loc + '.csv')
     return [1. - subject_df[input_config.label_col].mean(), subject_df[input_config.label_col].mean()]
 
@@ -54,13 +54,13 @@ train_config = input_utils.InputConfig(
     rotation_range=90,
     height_shift_range=5,
     width_shift_range=5,
-    zoom_range=[0.95, 1.05],
+    crop_fraction=[0.95, 1.05],
     horizontal_flip=True,
     vertical_flip=True,
     fill_mode='wrap',
     cval=0.,
     batch_size=run_config.batch_size,
-    image_dim=run_config.image_dim,
+    initial_size=run_config.image_dim,
     channels=run_config.channels,
 )
 train_config.stratify_probs = get_stratify_probs_from_csv(train_config)
@@ -76,13 +76,13 @@ eval_config = input_utils.InputConfig(
     rotation_range=90,
     height_shift_range=5,
     width_shift_range=5,
-    zoom_range=[0.95, 1.05],
+    crop_fraction=[0.95, 1.05],
     horizontal_flip=True,
     vertical_flip=True,
     fill_mode='wrap',
     cval=0.,
     batch_size=run_config.batch_size,
-    image_dim=run_config.image_dim,
+    initial_size=run_config.image_dim,
     channels=run_config.channels,
 )
 eval_config.stratify_probs = get_stratify_probs_from_csv(eval_config)

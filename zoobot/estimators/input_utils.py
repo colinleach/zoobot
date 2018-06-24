@@ -12,39 +12,31 @@ class InputConfig():
             name,
             tfrecord_loc,
             label_col,
-            image_dim,
+            initial_size,
+            final_size,
             channels,
             batch_size,
             stratify,
             stratify_probs,
             transform,
-            rotation_range=None,
-            height_shift_range=None,
-            width_shift_range=None,
-            zoom_range=None,
-            horizontal_flip=None,
-            vertical_flip=None,
+            shift_range=None,
+            crop_fraction=None,
             fill_mode=None,
-            cval=None
     ):
 
         self.name = name
         self.tfrecord_loc = tfrecord_loc
         self.label_col = label_col
-        self.image_dim = image_dim
+        self.initial_size = initial_size
+        self.final_size = final_size
         self.channels = channels
         self.batch_size = batch_size
         self.stratify = stratify
         self.stratify_probs = stratify_probs
-        self.transform = transform
-        self.rotation_range = rotation_range
-        self.height_shift_range = height_shift_range
-        self.width_shift_range = width_shift_range
-        self.zoom_range = zoom_range
-        self.horizontal_flip = horizontal_flip
-        self.vertical_flip = vertical_flip
-        self.fill_mode = fill_mode
-        self.cval = cval
+        self.transform = transform  # use geometric augmentations
+        self.shift_range = shift_range  # not yet implemented
+        self.crop_size = int(crop_fraction * initial_size)
+        self.fill_mode = fill_mode  # not yet implemented, 'pad' or 'zoom'
 
 
 def get_input(config):
@@ -59,10 +51,14 @@ def get_input(config):
     """
     with tf.name_scope('input_{}'.format(config.name)):
         feature_spec = matrix_label_feature_spec(config.image_dim, config.channels)
-        dataset = load_dataset(config.tfrecord_loc, feature_spec)
-        dataset = dataset.shuffle(config.batch_size * 10)
 
+        # 'think of this as a lazy list of tuples of tensors'
+        dataset = load_dataset(config.tfrecord_loc, feature_spec, num_parallel_calls=1)
+        dataset = dataset.shuffle(config.batch_size * 10)
+        # dataset = dataset.repeat(5)
         dataset = dataset.batch(config.batch_size)
+        # dataset.map(func, num_parallel_calls=n)?
+        dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
         iterator = dataset.make_one_shot_iterator()
         batch = iterator.get_next()
         batch_images, batch_labels = batch['matrix'], batch['label']
@@ -199,12 +195,51 @@ def matrix_feature_spec(size, channels):  # used for predict mode
         "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
 
 
-def transform_3d(images):
-    images = tf.image.random_flip_left_right(images)
-    images = tf.image.random_flip_up_down(images)
-    images = tf.image.rot90(images)
-    # TODO zoom and off-center!
-    return images
+def transform_3d(image, crop_size, target_size, channels):
+    """
+    Runs best if image is originally significantly larger than final target size
+    for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
+    more computation but more pixel info preserved
+
+    Args:
+        image ():
+        crop_size ():
+        target_size ():
+        channels ():
+
+    Returns:
+        (Tensor): image rotated, flipped, cropped and (perhaps) normalized, shape (target_size, target_size, channels)
+    """
+
+    image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_flip_up_down(image)
+    image = tf.contrib.image.rotate(
+        image,
+        np.random.rand() * np.pi,  # in radians
+        interpolation='BILNEAR',  # Estimate new pixel values with interpolation. Empty space is filled with zeros.
+    )
+    # crop down and leave it small. Size is absolute.
+    image = tf.random_crop(image, [crop_size, crop_size, channels])
+    # resize to final desired size (may match crop size)
+    # pad...
+    # image = tf.image.resize_image_with_crop_or_pad(
+    #     image,
+    #     target_size,
+    #     target_size
+    # )
+    # ...or zoom
+    image = tf.image.resize_images(  # bilinear by default, could do bicubic
+        image,
+        [target_size, target_size],
+    )
+
+    # TODO consider adjustments
+    # image = tf.image.random_brightness(mage, max_delta=63)
+    # image = tf.image.random_contrast(image, lower=0.2, upper=1.8)
+    # Subtract off the mean and divide by the variance of the pixels.
+    # image = tf.image.per_image_standardization(image)
+
+    return image
 
 
 #

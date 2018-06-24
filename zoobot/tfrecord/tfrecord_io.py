@@ -7,22 +7,23 @@ import tensorflow as tf
 # from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
 
 
-def read_first_example(example_loc, feature_spec):
-    dataset = load_dataset(example_loc, feature_spec)
-    iterator = dataset.make_one_shot_iterator()
-    return iterator.get_next()
+# def read_first_example(example_loc, feature_spec):
+#     dataset = load_dataset(example_loc, feature_spec)
+#     iterator = dataset.make_one_shot_iterator()
+#     return iterator.get_next()
 
 
-def load_dataset(example_loc, feature_spec):
+def load_dataset(example_loc, feature_spec, num_parallel_calls=1):
+    # small wrapper around loading a TFRecord as a single tensor tuples
     dataset = tf.data.TFRecordDataset(example_loc)
     parse_function = partial(tf.parse_single_example, features=feature_spec)
-    return dataset.map(parse_function)  # Parse the record into tensors
+    return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
 
 
-def matrix_label_feature_spec(size):
-    return {
-        "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64)}
+# def matrix_label_feature_spec(size):
+#     return {
+#         "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
+#         "label": tf.FixedLenFeature((), tf.int64)}
 
 
 # TODO convert this to a proper test of dataset readability?
