@@ -7,7 +7,19 @@ import numpy as np
 
 from zoobot.tfrecord import create_tfrecord
 
-from zoobot.tfrecord.tfrecord_io import matrix_label_feature_spec, read_first_example, load_dataset
+from zoobot.tfrecord.tfrecord_io import load_dataset
+
+
+def matrix_label_feature_spec(size):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64)}
+
+
+def read_first_example(example_loc, feature_spec):
+    dataset = load_dataset(example_loc, feature_spec)
+    iterator = dataset.make_one_shot_iterator()
+    return iterator.get_next()
 
 
 @pytest.fixture()

@@ -94,11 +94,12 @@ def model(size):
 @pytest.fixture()
 def run_config(size, log_dir):
     return run_estimator.RunEstimatorConfig(
-        image_dim=size,
+        initial_size=size,
+        final_size=size - 10,
         channels=3,
         label_col='',  # not sure about this
-        epochs=1,
-        min_epochs=1,
+        epochs=2,
+        min_epochs=2,
         log_dir=log_dir
     )
 

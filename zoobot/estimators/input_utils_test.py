@@ -4,6 +4,8 @@ import random
 import numpy as np
 import pytest
 import tensorflow as tf
+import matplotlib
+matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
 from PIL import Image
 
@@ -23,8 +25,8 @@ def visual_check_image():
     return np.array(Image.open('zoobot/test_examples/example_b.png'))
 
 
-def test_augmentations_on_image(visual_check_image):
-    result = input_utils.transform_3d(visual_check_image)
+def test_geometric_augmentations_on_image(visual_check_image):
+    result = input_utils.geometric_augmentation(visual_check_image, max_zoom=1.5, final_size=256)
 
     with tf.Session() as sess:
         result = sess.run(result)
@@ -35,44 +37,94 @@ def test_augmentations_on_image(visual_check_image):
         axes[1].imshow(result)
         axes[1].set_title('After')
         fig.tight_layout()
-        fig.savefig('zoobot/test_examples/augmentation_check_single_image.png')
-        fig.show()  # should always appear rotated, 75% chance of flipped
+        fig.savefig('zoobot/test_examples/geometric_augmentation_check_single_image.png')
 
 
-def test_repeated_augmentations_on_image(visual_check_image):
-    transformed_images = [input_utils.transform_3d(visual_check_image) for n in range(6)]
+def test_photometric_augmentations_on_image(visual_check_image):
+    result = input_utils.photographic_augmentation(visual_check_image, max_brightness_delta=0.1, contrast_range=(0.9, 1.1))
+
+    with tf.Session() as sess:
+        result = sess.run(result)
+
+    fig, axes = plt.subplots(ncols=2)
+    axes[0].imshow(visual_check_image)
+    axes[0].set_title('Before')
+    axes[1].imshow(result)
+    axes[1].set_title('After')
+    fig.tight_layout()
+    fig.savefig('zoobot/test_examples/photometric_augmentation_check_single_image.png')
+
+
+def test_repeated_geometric_augmentations_on_image(visual_check_image):
+    transformed_images = [input_utils.geometric_augmentation(visual_check_image, max_zoom=1.5, final_size=256) for n in range(16)]
 
     with tf.Session() as sess:
         transformed_images = sess.run(transformed_images)
 
-        fig, axes = plt.subplots(nrows=6, figsize=(4, 4 * 6))
-        for image_n, image in enumerate(transformed_images):
-            axes[image_n].imshow(image)
-        fig.tight_layout()
-        fig.savefig('zoobot/test_examples/augmentation_check_on_batch.png')
-        fig.show()
+    fig, axes = plt.subplots(nrows=16, figsize=(4, 4 * 16))
+    for image_n, image in enumerate(transformed_images):
+        axes[image_n].imshow(image)
+    fig.tight_layout()
+    fig.savefig('zoobot/test_examples/geometric_augmentation_check_on_batch.png')
 
 
-"""
-Test augmentation applied by map_fn to a chain of images from from_tensor_slices
-"""
+def test_repeated_photometric_augmentations_on_image(visual_check_image):
+    transformed_images = [input_utils.photographic_augmentation(visual_check_image, max_brightness_delta=0.1, contrast_range=(0.9, 1.1)) for n in range(16)]
+
+    with tf.Session() as sess:
+        transformed_images = sess.run(transformed_images)
+
+    fig, axes = plt.subplots(nrows=16, figsize=(4, 4 * 16))
+    for image_n, image in enumerate(transformed_images):
+        axes[image_n].imshow(image)
+    fig.tight_layout()
+    fig.savefig('zoobot/test_examples/photometric_augmentation_check_on_batch.png')
 
 
 
 @pytest.fixture()
 def batch_of_visual_check_image(visual_check_image):
     return np.array([visual_check_image for n in range(16)])  # dimensions batch, height, width, channels
-#
-#
-# def test_augmentations_on_batch(batch_of_visual_check_image):
-#     transformed_batch = input_utils.transform_3d(batch_of_visual_check_image)
-#     transformed_images = [transformed_batch[n] for n in range(len(transformed_batch))]  # back to list form
-#     fig, axes = plt.subplots(ncols=len(transformed_images), figsize=(4, 4 * len(transformed_images)))
-#     for image_n, image in enumerate(transformed_images):
-#         axes[image_n].imshow(image)
-#     fig.tight_layout()
-#     fig.save('zoobot/test_examples/augmentation_check.png')
-#     fig.show()
+
+
+def test_all_augmentations_on_batch(batch_of_visual_check_image):
+
+    input_config = input_utils.InputConfig(
+        name='pytest',
+        tfrecord_loc='',
+        label_col='',
+        initial_size=424,
+        final_size=256,
+        channels=3,
+        batch_size=16,
+        stratify=None,
+        stratify_probs=None,
+        geometric_augmentation=True,
+        shift_range=None,
+        max_zoom=1.5,
+        fill_mode=None,
+        photographic_augmentation=True,
+        max_brightness_delta=0.2,
+        contrast_range=(0.8, 1.2)
+    )
+
+    transformed_batch = input_utils.augment_images(batch_of_visual_check_image, input_config)
+
+    with tf.Session() as sess:
+        transformed_batch = sess.run(transformed_batch)
+
+    transformed_images = [transformed_batch[n] for n in range(len(transformed_batch))]  # back to list form
+    fig, axes = plt.subplots(nrows=len(transformed_images), figsize=(4, 4 * len(transformed_images)))
+    for image_n, image in enumerate(transformed_images):
+        axes[image_n].imshow(image)
+    fig.tight_layout()
+    fig.savefig('zoobot/test_examples/all_augmentations_check.png')
+
+"""
+Test augmentation applied by map_fn to a chain of images from from_tensor_slices
+"""
+
+
 
 
 @pytest.fixture()

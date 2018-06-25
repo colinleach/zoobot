@@ -13,7 +13,8 @@ class RunEstimatorConfig():
 
     def __init__(
             self,
-            image_dim,
+            initial_size,
+            final_size,
             channels,
             label_col,
             epochs=50,
@@ -26,7 +27,8 @@ class RunEstimatorConfig():
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10
     ):
-        self.image_dim = image_dim
+        self.initial_size = initial_size
+        self.final_size=final_size
         self.channels = channels
         self.label_col = label_col
         self.epochs = epochs
@@ -60,7 +62,6 @@ def run_estimator(config):
     Train and evaluate an estimator
 
     Args:
-        model_fn (function): estimator model function
         config (RunEstimatorConfig): parameters controlling both estimator and train/test procedure
 
     Returns:
@@ -86,7 +87,7 @@ def run_estimator(config):
         serialized_tf_example = tf.placeholder(dtype=tf.string,
                                                name='input_example_tensor')
         receiver_tensors = {'examples': serialized_tf_example}
-        feature_spec = input_utils.matrix_feature_spec(size=config.image_dim, channels=config.channels)
+        feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)
         features = tf.parse_example(serialized_tf_example, feature_spec)
         # update each image with the preprocessing from input_utils
         # outputs {x: new images}

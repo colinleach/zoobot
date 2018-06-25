@@ -1,7 +1,8 @@
+from functools import partial
 
 import numpy as np
 import tensorflow as tf
-from scipy import ndimage
+
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
@@ -18,10 +19,13 @@ class InputConfig():
             batch_size,
             stratify,
             stratify_probs,
-            transform,
-            shift_range=None,
-            crop_fraction=None,
-            fill_mode=None,
+            geometric_augmentation=True,
+            shift_range=None,  # not implemented
+            max_zoom=1.1,
+            fill_mode=None,  # not implemented
+            photographic_augmentation=True,
+            max_brightness_delta=0.05,
+            contrast_range=(0.95, 1.15)
     ):
 
         self.name = name
@@ -33,11 +37,15 @@ class InputConfig():
         self.batch_size = batch_size
         self.stratify = stratify
         self.stratify_probs = stratify_probs
-        self.transform = transform  # use geometric augmentations
+
+        self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
         self.shift_range = shift_range  # not yet implemented
-        self.crop_size = int(crop_fraction * initial_size)
+        self.max_zoom = max_zoom
         self.fill_mode = fill_mode  # not yet implemented, 'pad' or 'zoom'
 
+        self.photographic_augmentation = photographic_augmentation
+        self.max_brightness_delta = max_brightness_delta
+        self.contrast_range = contrast_range
 
 def get_input(config):
     """
@@ -50,7 +58,7 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
-        feature_spec = matrix_label_feature_spec(config.image_dim, config.channels)
+        feature_spec = matrix_label_feature_spec(config.initial_size, config.channels)
 
         # 'think of this as a lazy list of tuples of tensors'
         dataset = load_dataset(config.tfrecord_loc, feature_spec, num_parallel_calls=1)
@@ -88,7 +96,7 @@ def preprocess_batch(batch_images, input_config):
     with tf.name_scope('preprocess'):
         batch_images = tf.reshape(
             batch_images,
-            [-1, input_config.image_dim, input_config.image_dim,
+            [-1, input_config.initial_size, input_config.initial_size,
              input_config.channels])
         tf.summary.image('preprocess/original', batch_images)
 
@@ -129,30 +137,49 @@ def stratify_images(image, label, batch_size, init_probs):
     return data_batch, label_batch
 
 
+
+def matrix_label_feature_spec(size, channels):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64)}
+
+
+def matrix_feature_spec(size, channels):  # used for predict mode
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
+
+
+
 def augment_images(images, input_config):
-    if input_config.transform:
-        images = tf.map_fn(transform_3d, images)
+    """
+
+    Args:
+        images (tf.Variable):
+        input_config (InputConfig):
+
+    Returns:
+
+    """
+    # image_list = tf.unstack(images, axis=0)
+    if input_config.geometric_augmentation:
+        images = tf.map_fn(
+            partial(
+                geometric_augmentation,
+                max_zoom=input_config.max_zoom,
+                final_size=input_config.final_size
+            ),
+            images,
+            back_prop=False
+        )
+    if input_config.photographic_augmentation:
+        images = tf.map_fn(
+            partial(
+                photographic_augmentation,
+                max_brightness_delta=input_config.max_brightness_delta,
+                contrast_range=input_config.contrast_range),
+            images)
     return images
-#
-# def crop_to_random_boxes(images, input_params):
-#
-#     # Generate a single distorted bounding box.
-#     begin, size, bbox_for_draw = tf.image.sample_distorted_bounding_box(
-#         image_size=tf.constant([input_params['image_dim'], input_params['image_dim'], input_params['channels']], dtype=tf.int32),
-#         bounding_boxes=tf.ones((len(images), 1, 4), tf.int32) * tf.constant([0.0, 0.0, 1.0, 1.0], dtype=tf.float32),
-#         min_object_covered=0.95)
-#
-#     # Draw the bounding box in an image summary.
-#     image_with_box = tf.image.draw_bounding_boxes(tf.expand_dims(image, 0),
-#                                                   bbox_for_draw)
-#     tf.summary.image('images_with_box', image_with_box)
-#
-#     # Employ the bounding box to distort the image.
-#     distorted_image = tf.slice(image, begin, size
-#     return images
-# TODO
-# https://www.tensorflow.org/api_docs/python/tf/image/sample_distorted_bounding_box
-# https://www.tensorflow.org/api_docs/python/tf/image/crop_to_bounding_box
+
 
 # def augment_images(images, params):
 #     if params['transform']:
@@ -173,29 +200,9 @@ def augment_images(images, input_config):
 #                 stateful=False,
 #                 name='augment')
 #         images = tf.concat(images, axis=3)
-#
-#         images = tf.image.random_flip_left_right(images)
-#         images = tf.image.random_flip_up_down(images)
-#
-#     # TODO These don't look good in practice. Perhaps standardisation needed?
-#     # if params['adjust']:
-#     #     images = tf.image.random_brightness(images, max_delta=0.1)
-#     #     images = tf.image.random_contrast(images, lower=0.9, upper=1.1)
-#     return images
 
 
-def matrix_label_feature_spec(size, channels):
-    return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64)}
-
-
-def matrix_feature_spec(size, channels):  # used for predict mode
-    return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
-
-
-def transform_3d(image, crop_size, target_size, channels):
+def geometric_augmentation(image, max_zoom, final_size):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -203,23 +210,32 @@ def transform_3d(image, crop_size, target_size, channels):
 
     Args:
         image ():
-        crop_size ():
-        target_size ():
-        channels ():
+        max_zoom ():
+        final_size ():
 
     Returns:
         (Tensor): image rotated, flipped, cropped and (perhaps) normalized, shape (target_size, target_size, channels)
     """
-
+    print('Applying augmentation')
+    assert image.shape[0] == image.shape[1]  # must be square
+    assert len(image.shape) == 3 # must have no batch dimension
+    assert max_zoom > 1. and max_zoom < 10.  # catch user accidentally putting in pixel values here
+    # TODO add slight redshifting?
     image = tf.image.random_flip_left_right(image)
     image = tf.image.random_flip_up_down(image)
+    rotation_angle_radians = np.random.rand() * np.pi
+    print('Angle: ', rotation_angle_radians)
     image = tf.contrib.image.rotate(
         image,
-        np.random.rand() * np.pi,  # in radians
-        interpolation='BILNEAR',  # Estimate new pixel values with interpolation. Empty space is filled with zeros.
-    )
+        rotation_angle_radians,  # in radians
+        interpolation='NEAREST',  # Estimate new pixel values with interpolation. Empty space is filled with zeros.
+    )  # TODO file tensorflow issue: fails on interpolation=bilinear
+    # TODO add stretch and/or shear?
+    # TODO add Gaussian or Poisson noise?
     # crop down and leave it small. Size is absolute.
-    image = tf.random_crop(image, [crop_size, crop_size, channels])
+
+    crop_size = int(int(image.shape[0]) / np.random.uniform(1.0, max_zoom))  # if max_zoom = 1.3, zoom randomly 1x to 1.3x
+    image = tf.random_crop(image, [crop_size, crop_size, image.shape[2]])  # do not change 'channel' dimension
     # resize to final desired size (may match crop size)
     # pad...
     # image = tf.image.resize_image_with_crop_or_pad(
@@ -230,15 +246,17 @@ def transform_3d(image, crop_size, target_size, channels):
     # ...or zoom
     image = tf.image.resize_images(  # bilinear by default, could do bicubic
         image,
-        [target_size, target_size],
+        tf.constant([final_size, final_size], dtype=tf.int32),
+        method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # again, only nearest neighbour works - otherwise gives noise
     )
+    return image
 
-    # TODO consider adjustments
-    # image = tf.image.random_brightness(mage, max_delta=63)
-    # image = tf.image.random_contrast(image, lower=0.2, upper=1.8)
-    # Subtract off the mean and divide by the variance of the pixels.
-    # image = tf.image.per_image_standardization(image)
 
+def photographic_augmentation(image, max_brightness_delta, contrast_range):
+    image = tf.image.random_brightness(image, max_delta=max_brightness_delta)
+    image = tf.image.random_contrast(image, lower=contrast_range[0], upper=contrast_range[1])
+    # Subtract off the mean and divide by the variance of the pixels
+    # image = tf.image.per_image_standardization(image)   # TODO consider astro-suitable normalization
     return image
 
 
@@ -307,39 +325,39 @@ def transform_3d(image, crop_size, target_size, channels):
 #                         fill_mode=params['fill_mode'], cval=params['cval'])
 #
 #     return x
-
-
-def apply_transform(x, transform_matrix, channel_index=0, fill_mode='nearest', cval=0.):
-
-    x = np.rollaxis(x, channel_index, 0)
-    final_affine_matrix = transform_matrix[:2, :2]
-    final_offset = transform_matrix[:2, 2]
-    channel_images = [
-        ndimage.interpolation.affine_transform(
-            x_channel,
-            final_affine_matrix,
-            final_offset,
-            order=0,
-            mode=fill_mode,
-            cval=cval)
-        for x_channel in x]
-
-    x = np.stack(channel_images, axis=0)
-    x = np.rollaxis(x, 0, channel_index + 1)
-    return x
-
-
-def transform_matrix_offset_center(matrix, x, y):
-    o_x = float(x) / 2 + 0.5
-    o_y = float(y) / 2 + 0.5
-    offset_matrix = np.array([[1, 0, o_x], [0, 1, o_y], [0, 0, 1]])
-    reset_matrix = np.array([[1, 0, -o_x], [0, 1, -o_y], [0, 0, 1]])
-    transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
-    return transform_matrix
-
-
-def flip_axis(x, axis):  # TODO: remove?
-    x = np.asarray(x).swapaxes(axis, 0)
-    x = x[::-1, ...]
-    x = x.swapaxes(0, axis)
-    return x
+#
+#
+# def apply_transform(x, transform_matrix, channel_index=0, fill_mode='nearest', cval=0.):
+#
+#     x = np.rollaxis(x, channel_index, 0)
+#     final_affine_matrix = transform_matrix[:2, :2]
+#     final_offset = transform_matrix[:2, 2]
+#     channel_images = [
+#         ndimage.interpolation.affine_transform(
+#             x_channel,
+#             final_affine_matrix,
+#             final_offset,
+#             order=0,
+#             mode=fill_mode,
+#             cval=cval)
+#         for x_channel in x]
+#
+#     x = np.stack(channel_images, axis=0)
+#     x = np.rollaxis(x, 0, channel_index + 1)
+#     return x
+#
+#
+# def transform_matrix_offset_center(matrix, x, y):
+#     o_x = float(x) / 2 + 0.5
+#     o_y = float(y) / 2 + 0.5
+#     offset_matrix = np.array([[1, 0, o_x], [0, 1, o_y], [0, 0, 1]])
+#     reset_matrix = np.array([[1, 0, -o_x], [0, 1, -o_y], [0, 0, 1]])
+#     transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
+#     return transform_matrix
+#
+#
+# def flip_axis(x, axis):  # TODO: remove?
+#     x = np.asarray(x).swapaxes(axis, 0)
+#     x = x[::-1, ...]
+#     x = x.swapaxes(0, axis)
+#     return x
