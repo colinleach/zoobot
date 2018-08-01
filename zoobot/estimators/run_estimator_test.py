@@ -122,8 +122,9 @@ def labels(n_examples):
 
 def test_run_experiment(run_config, model, features, labels, n_examples, monkeypatch):
 
+    # TODO need to test estimator with input functions!
     # mock both input functions
-    def dummy_input(params=None):
+    def dummy_input(input_config=None):
         return dummy_image_estimator_test.train_input_fn(
             features=features,
             labels=labels,

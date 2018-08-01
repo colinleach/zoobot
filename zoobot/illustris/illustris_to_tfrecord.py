@@ -107,7 +107,7 @@ if __name__ == '__main__':
     # drop minor mergers
     df = df[(df['name'] != 'minor_merger')]
 
-    for img_size in [256]:
+    for img_size in [424]:
         train_loc = 'tfrecord/illustris_no-minor_s{}_rescaled_train.tfrecord'.format(img_size)
         test_loc = 'tfrecord/illustris_no-minor_s{}_rescaled_test.tfrecord'.format(img_size)
         split_carefully(df, 'merger', train_loc, test_loc, img_size, columns_to_save=[])

@@ -10,6 +10,8 @@ from tqdm import tqdm
 
 from zoobot.tfrecord import create_tfrecord, image_utils
 
+import matplotlib.pyplot as plt
+
 
 # TODO refactor to make sure this aligns with downloader
 def load_decals_as_pil(subject):
@@ -31,7 +33,11 @@ def load_decals_as_pil(subject):
         scales=_scales,
         desaturate=True)
 
-    return Image.fromarray(np.uint8(rgb_img) * 255, mode='RGB')
+    # plt.imshow(rgb_img)
+    # plt.savefig('zoobot/test_examples/rescaled_before_pil.png')
+    pil_safe_img = np.uint8(rgb_img * 255)
+    assert pil_safe_img.min() >= 0. and pil_safe_img.max() <= 255
+    return Image.fromarray(pil_safe_img, mode='RGB')
 
 
 def write_catalog_to_train_test_tfrecords(df, label_col, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):
@@ -79,7 +85,8 @@ def row_to_serialized_example(row, img_size, label_col, columns_to_save, source,
         logging.critical('Fatal error: image source "{}" not understood'.format(source))
         raise ValueError
 
-    # to align with north/east TODO refactor this to make sure it matches downloader?
+    # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')
+    # to align with north/east TODO refactor this to make sure it matches downloader
     final_pil_img = pil_img.resize(size=(img_size, img_size), resample=Image.LANCZOS).transpose(
         Image.FLIP_TOP_BOTTOM)
 
@@ -95,4 +102,3 @@ def row_to_serialized_example(row, img_size, label_col, columns_to_save, source,
 
 def load_png_as_pil(subject):
     return Image.open(subject['png_loc'])
-

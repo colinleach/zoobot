@@ -18,12 +18,16 @@ class BayesianBinaryModel():
             optimizer=tf.train.AdamOptimizer,
             conv1_filters=32,
             conv1_kernel=1,
+            conv1_activation=tf.nn.relu,
             conv2_filters=32,
             conv2_kernel=3,
+            conv2_activation=tf.nn.relu,
             conv3_filters=16,
             conv3_kernel=3,
+            conv3_activation=tf.nn.relu,
             dense1_units=128,
             dense1_dropout=0.5,
+            dense1_activation=tf.nn.relu,
             log_freq=10,
     ):
         self.image_dim = image_dim
@@ -37,16 +41,16 @@ class BayesianBinaryModel():
         self.conv3_kernel = conv3_kernel
         self.dense1_units = dense1_units
         self.dense1_dropout = dense1_dropout
-        self.conv1_activation=tf.nn.relu
-        self.conv2_activation=tf.nn.relu
-        self.conv3_activation=tf.nn.relu
-        self.dense1_activation=tf.nn.relu
-        self.pool1_size=2
-        self.pool1_strides=2
-        self.pool2_size=2
-        self.pool2_strides=2
-        self.pool3_size=2
-        self.pool3_strides=2
+        self.conv1_activation = conv1_activation
+        self.conv2_activation = conv2_activation
+        self.conv3_activation = conv3_activation
+        self.dense1_activation = dense1_activation
+        self.pool1_size = 2
+        self.pool1_strides = 2
+        self.pool2_size = 2
+        self.pool2_strides = 2
+        self.pool3_size = 2
+        self.pool3_strides = 2
         self.padding = 'same'
         self.log_freq = log_freq
         self.model_fn = self.four_layer_binary_classifier
@@ -54,6 +58,11 @@ class BayesianBinaryModel():
         self.logging_hooks = [None, None, None]
         self.entry_point = self.four_layer_binary_classifier
 
+    # TODO move to shared utilities
+    # TODO duplicated with input_utils
+    def asdict(self):
+        excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
+        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
     def four_layer_binary_classifier(self, features, labels, mode):
         """
@@ -82,9 +91,15 @@ class BayesianBinaryModel():
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
                 optimizer = self.optimizer(learning_rate=self.learning_rate)  # TODO adaptive learning rate
-                train_op = optimizer.minimize(
-                    loss=loss,
-                    global_step=tf.train.get_global_step())
+
+                # important to explicitly use within update_ops for batch norm to work
+                # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
+                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                with tf.control_dependencies(update_ops):
+                    train_op = optimizer.minimize(
+                        loss=loss,
+                        global_step=tf.train.get_global_step())
+
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
         else:  # must be EVAL mode
@@ -94,7 +109,6 @@ class BayesianBinaryModel():
                 eval_metric_ops = get_eval_metric_ops(labels, response)
                 return tf.estimator.EstimatorSpec(
                     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
 
     def bayesian_cnn(self, features, labels, mode):
         """
@@ -111,7 +125,8 @@ class BayesianBinaryModel():
 
         """
 
-        dense1 = input_to_dense(features, self)  # run from input to dense1 output
+        # dense1 = input_to_dense(features, mode, self)  # run from input to dense1 output
+        dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -126,23 +141,28 @@ class BayesianBinaryModel():
             logits, response = dense_to_prediction(dense1, labels, self, dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
             onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
             onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=logits, name='model/layer4/loss')
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+                labels=onehot_labels,
+                logits=logits,
+                name='model/layer4/loss')
             # loss = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logits, name='model/layer4/loss')
             mean_loss = tf.reduce_mean(loss, name='mean_loss')
 
             # create dummy variables that match names in predict mode
-            # TODO this is potentially wasteful as we don't actually need the feedforwards. Unclear if it executes - check.
+            # TODO this is potentially wasteful as we don't actually need the feedforwards.
+            # Unclear if it executes - check.
             with tf.variable_scope("sample"):
                 _, _ = dense_to_prediction(dense1, labels, self, dropout_on=True)
 
             return response, mean_loss
 
 
-def input_to_dense(features, model):
+def input_to_dense(features, mode, model):
     """
 
     Args:
         features ():
+        mode():
         model (BayesianBinaryModel):
 
     Returns:
@@ -209,6 +229,86 @@ def input_to_dense(features, model):
     return dense1
 
 
+def input_to_dense_normed(features, mode, model):
+    """
+    # TODO refactor to avoid duplication with input_to_dense, or always norm
+    Args:
+        features ():
+        mode():
+        model (BayesianBinaryModel):
+
+    Returns:
+
+    """
+    input_layer = features["x"]
+    tf.summary.image('model_input', input_layer, 1)
+
+    conv1 = tf.layers.conv2d(
+        inputs=input_layer,
+        filters=model.conv1_filters,
+        kernel_size=[model.conv1_kernel, model.conv1_kernel],
+        padding=model.padding,
+        activation=None,
+        name='model/layer1/conv1')
+    norm1 = tf.layers.batch_normalization(conv1)
+    # TODO Does batch norm apply activation as well? I assume not, but model ran okay without any explicit activ...
+    relu1 = model.conv1_activation(norm1)
+
+    pool1 = tf.layers.max_pooling2d(
+        inputs=relu1,
+        pool_size=[model.pool1_size, model.pool1_size],
+        strides=model.pool1_strides,
+        name='model/layer1/pool1')
+
+    conv2 = tf.layers.conv2d(
+        inputs=pool1,
+        filters=model.conv2_filters,
+        kernel_size=[model.conv2_kernel, model.conv2_kernel],
+        padding=model.padding,
+        activation=None,
+        name='model/layer2/conv2')
+    norm2 = tf.layers.batch_normalization(conv2)
+    relu2 = model.conv2_activation(norm2)
+    pool2 = tf.layers.max_pooling2d(
+        inputs=relu2,
+        pool_size=model.pool2_size,
+        strides=model.pool2_strides,
+        name='model/layer2/pool2')
+
+    conv3 = tf.layers.conv2d(
+        inputs=pool2,
+        filters=model.conv3_filters,
+        kernel_size=[model.conv3_kernel, model.conv3_kernel],
+        padding=model.padding,
+        activation=None,
+        name='model/layer3/conv3')
+    norm3 = tf.layers.batch_normalization(conv3)
+    relu3 = model.conv3_activation(norm3)
+    pool3 = tf.layers.max_pooling2d(
+        inputs=relu3,
+        pool_size=[model.pool3_size, model.pool3_size],
+        strides=model.pool3_strides,
+        name='model/layer3/pool3')
+
+    """
+    Flatten tensor into a batch of vectors
+    Start with image_dim shape, 1 channel
+    2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
+    length ^ 2 to make shape 1D
+    64 filters in final layer
+    """
+    pool3_flat = tf.reshape(pool3, [-1, int(model.image_dim / 8) ** 2 * model.conv3_filters], name='model/layer3/flat')
+
+    # Dense Layer
+    dense1 = tf.layers.dense(
+        inputs=pool3_flat,
+        units=model.dense1_units,
+        activation=model.dense1_activation,
+        name='model/layer4/dense1')
+
+    return dense1
+
+
 def dense_to_prediction(dense1, labels, params, dropout_on):
 
     # Add dropout operation
@@ -233,7 +333,7 @@ def dense_to_prediction(dense1, labels, params, dropout_on):
     }
     if labels is not None:
         response.update({
-            'labels': tf.identity(labels, name='labels'),  #  these are None in predict mode
+            'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
             "classes": tf.argmax(input=logits, axis=1, name='classes'),
         })
 

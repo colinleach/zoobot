@@ -48,13 +48,18 @@ class RunEstimatorConfig():
         # TODO can make this check much more comprehensive
         return (self.train_config is not None) and (self.eval_config is not None)
 
+    # TODO move to shared utilities
+    def asdict(self):
+        excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
+        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
-def train_input(run_config):
-    return input_utils.get_input(config=run_config.train_config)
+
+def train_input(input_config):
+    return input_utils.get_input(config=input_config)
 
 
-def eval_input(run_config):
-    return input_utils.get_input(config=run_config.eval_config)
+def eval_input(input_config):
+    return input_utils.get_input(config=input_config)
 
 
 def run_estimator(config):
@@ -83,24 +88,29 @@ def run_estimator(config):
 
     # can't move out of run_estimator, uses closure to avoid arguments
     def serving_input_receiver_fn():
-        """An input receiver that expects a serialized tf.Example."""
+        """
+        An input receiver that expects a serialized tf.Example.
+        # TODO DANGER this can deviate from input utils - cause of bug?
+        """
         serialized_tf_example = tf.placeholder(dtype=tf.string,
                                                name='input_example_tensor')
         receiver_tensors = {'examples': serialized_tf_example}
-        feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)
+        feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
         features = tf.parse_example(serialized_tf_example, feature_spec)
-        # update each image with the preprocessing from input_utils
         # outputs {x: new images}
-
-        # TODO DANGER this can deviate from input utils - cause of bug?
-        new_features = input_utils.preprocess_batch(
+        images = tf.reshape(
             features['matrix'],
-            input_config=config.eval_config
+            [-1, config.initial_size, config.initial_size,
+             config.channels])
+
+        new_features = input_utils.preprocess_batch(
+            images,
+            config=config.eval_config
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 
-    train_input_partial = partial(train_input, params=config)
-    eval_input_partial = partial(eval_input, params=config)
+    train_input_partial = partial(train_input, input_config=config.train_config)
+    eval_input_partial = partial(eval_input, input_config=config.eval_config)
 
     train_logging, eval_logging, predict_logging = config.model.logging_hooks
 
