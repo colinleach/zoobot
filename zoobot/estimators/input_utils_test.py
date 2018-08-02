@@ -331,9 +331,9 @@ def test_input_utils_visual():
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 
     batch_size = 16
-    size = 96
+    size = 28  # note that only s28 exists in test_examples
     channels = 3
-    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_test.tfrecord'.format(str(int(size)))
     assert os.path.exists(tfrecord_loc)
 
     config = input_utils.InputConfig(
@@ -363,9 +363,9 @@ def test_input_utils_visual():
 
 def test_minimal_loading_from_tfrecord():
     n_examples = 16
-    size = 96
+    size = 28
     channels = 3
-    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_test.tfrecord'.format(str(int(size)))
 
     serialized_examples = load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples)
     examples = [parse_example(example, size, channels) for example in serialized_examples]
