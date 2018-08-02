@@ -19,7 +19,7 @@ before_script:
   - ./cc-test-reporter before-build
 
 script:
-  - docker run -v from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest --cov=zoobot; cp -r * /to_host"
+  - docker run -v from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot --cov=zoobot; cp -r * /to_host"
   # - cp -r from_container .
 
 after_script:
