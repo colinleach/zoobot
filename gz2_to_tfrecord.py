@@ -1,6 +1,6 @@
 
 import pandas as pd
-from zoobot.tfrecord import catalog_to_tfrecord
+from tfrecord import catalog_to_tfrecord
 
 if __name__ == '__main__':
 

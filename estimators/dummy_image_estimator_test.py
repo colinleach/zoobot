@@ -3,7 +3,7 @@ import pytest
 import tensorflow as tf
 import numpy as np
 
-from zoobot.estimators import dummy_image_estimator
+from estimators import dummy_image_estimator
 
 
 N_EXAMPLES = 2000

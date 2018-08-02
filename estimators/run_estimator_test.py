@@ -6,12 +6,12 @@ import random
 import numpy as np
 import tensorflow as tf
 
-from zoobot.tfrecord import create_tfrecord
-from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.estimators import run_estimator
-from zoobot.estimators import estimator_funcs
-from zoobot.estimators import bayesian_estimator_funcs
-from zoobot.estimators import dummy_image_estimator, dummy_image_estimator_test
+from tfrecord import create_tfrecord
+from estimators.estimator_params import default_four_layer_architecture, default_params
+from estimators import run_estimator
+from estimators import estimator_funcs
+from estimators import bayesian_estimator_funcs
+from estimators import dummy_image_estimator, dummy_image_estimator_test
 
 
 # copied from input_utils_test...
@@ -100,7 +100,8 @@ def run_config(size, log_dir):
         label_col='',  # not sure about this
         epochs=2,
         min_epochs=2,
-        log_dir=log_dir
+        log_dir=log_dir,
+        fresh_start=False
     )
 
 

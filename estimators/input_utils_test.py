@@ -9,10 +9,10 @@ matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from zoobot.estimators import input_utils
-from zoobot.tfrecord import create_tfrecord
+from estimators import input_utils
+from tfrecord import create_tfrecord
 
-TEST_EXAMPLE_DIR = 'zoobot/test_examples'
+TEST_EXAMPLE_DIR = 'test_examples'
 
 
 """
