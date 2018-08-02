@@ -5,8 +5,8 @@ language: python
 services:
   - docker
 
-before_install:
-  - docker pull mikewalmsley/zoobot:latest
+# before_install:
+#   - docker pull mikewalmsley/zoobot:latest
 
 env:
   global:
@@ -19,7 +19,7 @@ before_script:
   - ./cc-test-reporter before-build
 
 script:
-  - docker run -v from_container:/to_host zoobot /bin/sh -c "pytest --cov=zoobot; cp -r * /to_host"
+  - docker run -v from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest --cov=zoobot; cp -r * /to_host"
   # - cp -r from_container .
 
 after_script:
