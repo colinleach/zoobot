@@ -6,12 +6,12 @@ import random
 import numpy as np
 import tensorflow as tf
 
-from tfrecord import create_tfrecord
-from estimators.estimator_params import default_four_layer_architecture, default_params
-from estimators import run_estimator
-from estimators import estimator_funcs
-from estimators import bayesian_estimator_funcs
-from estimators import dummy_image_estimator, dummy_image_estimator_test
+from zoobot.tfrecord import create_tfrecord
+from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
+from zoobot.estimators import run_estimator
+from zoobot.estimators import estimator_funcs
+from zoobot.estimators import bayesian_estimator_funcs
+from zoobot.estimators import dummy_image_estimator, dummy_image_estimator_test
 
 
 # copied from input_utils_test...
@@ -113,12 +113,20 @@ def n_examples():
 @pytest.fixture()
 def features(n_examples):
     # {'feature_name':array_of_values} format expected
-    return {'x': np.random.rand(n_examples, 28, 28, 1)}
+    feature_shape = [n_examples, 28, 28, 1]
+    return {'x': tf.constant(
+                np.random.rand(*feature_shape), 
+                shape=feature_shape, 
+                dtype=tf.float32)
+            }
 
 
 @pytest.fixture()
 def labels(n_examples):
-    return np.random.randint(low=0, high=2, size=n_examples)
+    return tf.constant(
+        np.random.randint(low=0, high=2, size=n_examples), 
+        shape=[n_examples], 
+        dtype=tf.int32)
 
 
 def test_run_experiment(run_config, model, features, labels, n_examples, monkeypatch):

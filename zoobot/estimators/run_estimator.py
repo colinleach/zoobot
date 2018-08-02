@@ -6,7 +6,7 @@ from functools import partial
 
 import numpy as np
 import tensorflow as tf
-from estimators import input_utils, bayesian_estimator_funcs
+from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
 
 class RunEstimatorConfig():

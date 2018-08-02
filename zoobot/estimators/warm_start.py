@@ -3,7 +3,7 @@ import functools
 
 import tensorflow as tf
 
-from estimators import input_utils, bayesian_estimator_funcs
+from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
 
 def restart_estimator(config):

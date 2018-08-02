@@ -5,5 +5,5 @@
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.pyTestEnabled": true,
-    "python.pythonPath": "/anaconda3/envs/py36/bin/python"
+    "python.pythonPath": "/data/miniconda3/envs/zoobot/bin/python"
 }

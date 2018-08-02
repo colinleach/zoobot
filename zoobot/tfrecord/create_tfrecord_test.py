@@ -5,9 +5,9 @@ import os
 import tensorflow as tf
 import numpy as np
 
-from tfrecord import create_tfrecord
+from zoobot.tfrecord import create_tfrecord
 
-from tfrecord.tfrecord_io import load_dataset
+from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
 def matrix_label_feature_spec(size):

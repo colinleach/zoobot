@@ -3,7 +3,7 @@ import pytest
 import tensorflow as tf
 import numpy as np
 
-from estimators import dummy_image_estimator
+from zoobot.estimators import dummy_column_estimator
 
 
 N_EXAMPLES = 2000
@@ -12,12 +12,12 @@ N_EXAMPLES = 2000
 @pytest.fixture()
 def features():
     # {'feature_name':array_of_values} format expected
-    return {'x': tf.constant(np.random.rand(N_EXAMPLES, 28, 28, 1), dtype=tf.float32)}
+    return {'a_feature': tf.constant(np.random.rand(N_EXAMPLES), shape=[N_EXAMPLES], dtype=tf.float32)}
 
 
 @pytest.fixture()
 def labels():
-    return tf.constant(np.random.randint(low=0, high=2, size=N_EXAMPLES), dtype=tf.int8)
+    return tf.constant(np.random.randint(low=0, high=2, size=N_EXAMPLES), shape=[N_EXAMPLES], dtype=tf.int32)
 
 
 @pytest.fixture()
@@ -59,13 +59,19 @@ def eval_input_fn(features, labels, batch_size):
 
 # Build estimator from model function
 @pytest.fixture()
-def estimator(batch_size):
+def estimator(features, batch_size):
+    feature_columns = []
+
+    for key in features.keys():
+        feature_columns.append(tf.feature_column.numeric_column(key=key))
 
     return tf.estimator.Estimator(
-        model_fn=dummy_image_estimator.dummy_model_fn,
+        model_fn=dummy_column_estimator.dummy_model_fn,
         params={
             'batch_size': batch_size,  # required to get dimensions correct,
-            'image_dim': 28
+            'feature_columns': feature_columns,
+            'hidden_units': [10, 10],
+            'n_classes': 2
         }
         )
 

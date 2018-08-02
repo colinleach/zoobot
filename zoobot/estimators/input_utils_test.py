@@ -9,10 +9,10 @@ matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from estimators import input_utils
-from tfrecord import create_tfrecord
+from zoobot.estimators import input_utils
+from zoobot.tfrecord import create_tfrecord
 
-TEST_EXAMPLE_DIR = 'test_examples'
+TEST_EXAMPLE_DIR = 'zoobot/test_examples'
 
 
 """
@@ -200,6 +200,7 @@ def example_tfrecords(tfrecord_dir, example_data):
 
 
 def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
+    
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 
     train_batch = 64
@@ -333,7 +334,7 @@ def test_input_utils_visual():
     batch_size = 16
     size = 96
     channels = 3
-    tfrecord_loc = 'data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
     assert os.path.exists(tfrecord_loc)
 
     config = input_utils.InputConfig(
@@ -365,7 +366,7 @@ def test_minimal_loading_from_tfrecord():
     n_examples = 16
     size = 96
     channels = 3
-    tfrecord_loc = 'data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
 
     serialized_examples = load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples)
     examples = [parse_example(example, size, channels) for example in serialized_examples]

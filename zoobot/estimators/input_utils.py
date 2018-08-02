@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 
-from tfrecord.tfrecord_io import load_dataset
+from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
 class InputConfig():
@@ -73,7 +73,8 @@ def get_input(config):
     with tf.name_scope('input_{}'.format(config.name)):
         batch_images, batch_labels = load_batches(config)
         preprocessed_batch_images = preprocess_batch(batch_images, config)
-        tf.summary.scalar('batch_size', preprocessed_batch_images['x'].shape[0])
+        # tf.shape is important to record the dynamic shape, rather than static shape
+        tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
         tf.summary.scalar('mean_label', tf.reduce_mean(batch_labels))
         return preprocessed_batch_images, batch_labels
 

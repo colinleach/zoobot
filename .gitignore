@@ -18,3 +18,4 @@
 *.txt
 *.png
 *.ipynb_checkpoints*
+!*test_examples*
