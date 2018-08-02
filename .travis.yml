@@ -25,7 +25,7 @@ script:
   # check the container is correctly set
   # Make volume. Run pytest in container. Copy results to volume, and therefore to host.
   # - docker run -v ./from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot; cp -r /repos/zoobot /to_host"
-  - docker run --name=zoobot_container mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot"
+  - docker run --name=zoobot_container mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot --cov=repos/zoobot/zoobot"
   # - docker run --name=zoobot_container -d mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot"
   # - echo "run complete"
   # - pwd
@@ -35,6 +35,10 @@ script:
   # - docker cp zoobot_container:'/repos/zoobot/.' .
   # - pwd
   # - ls
+
+after_success:
+  - codecov
+  - coveralls
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
