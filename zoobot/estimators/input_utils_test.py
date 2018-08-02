@@ -121,7 +121,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     with tf.Session() as sess:
         transformed_batch = sess.run(transformed_batch)
 
-    assert type(transformed_batch) != list  # should give be a single 4D tensor, not a list
+    assert not isinstance(transformed_batch, list)  # should be a single 4D tensor
     transformed_images = [transformed_batch[n] for n in range(len(transformed_batch))]  # back to list form
     fig, axes = plt.subplots(nrows=len(transformed_images), figsize=(4, 4 * len(transformed_images)))
     for image_n, image in enumerate(transformed_images):
@@ -200,7 +200,6 @@ def example_tfrecords(tfrecord_dir, example_data):
 
 
 def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
-    
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 
     train_batch = 64

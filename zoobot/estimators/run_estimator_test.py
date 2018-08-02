@@ -114,18 +114,19 @@ def n_examples():
 def features(n_examples):
     # {'feature_name':array_of_values} format expected
     feature_shape = [n_examples, 28, 28, 1]
-    return {'x': tf.constant(
-                np.random.rand(*feature_shape), 
-                shape=feature_shape, 
-                dtype=tf.float32)
-            }
+    return {
+        'x': tf.constant(
+            np.random.rand(*feature_shape), 
+            shape=feature_shape, 
+            dtype=tf.float32)
+        }
 
 
 @pytest.fixture()
 def labels(n_examples):
     return tf.constant(
-        np.random.randint(low=0, high=2, size=n_examples), 
-        shape=[n_examples], 
+        np.random.randint(low=0, high=2, size=n_examples),
+        shape=[n_examples],
         dtype=tf.int32)
 
 
