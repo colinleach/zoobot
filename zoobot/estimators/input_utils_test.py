@@ -121,7 +121,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     with tf.Session() as sess:
         transformed_batch = sess.run(transformed_batch)
 
-    assert not isinstance(transformed_batch, list)  # should be a single 4D tensor
+    assert not isinstance(transformed_batch, list)  # should be a single 4D tensor, not a list
     transformed_images = [transformed_batch[n] for n in range(len(transformed_batch))]  # back to list form
     fig, axes = plt.subplots(nrows=len(transformed_images), figsize=(4, 4 * len(transformed_images)))
     for image_n, image in enumerate(transformed_images):
@@ -365,7 +365,7 @@ def test_minimal_loading_from_tfrecord():
     n_examples = 16
     size = 96
     channels = 3
-    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
 
     serialized_examples = load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples)
     examples = [parse_example(example, size, channels) for example in serialized_examples]

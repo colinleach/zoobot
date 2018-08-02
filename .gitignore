@@ -18,4 +18,4 @@
 *.txt
 *.png
 *.ipynb_checkpoints*
-!*test_examples*
+!zoobot/test_examples/*
