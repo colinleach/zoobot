@@ -1,4 +1,3 @@
-from functools import partial
 import copy
 
 import numpy as np
@@ -67,7 +66,7 @@ def get_input(config):
         config (InputConfig): Configuration object defining how 'get_input' should function  # TODO consider active class
 
     Returns:
-        (dict) of form {'x': greyscale image batch}, represented as np.float32 Tensor of shape [batch, size, size, 1]}
+        (dict) of form {'x': greyscale image batch}, as Tensor of shape [batch, size, size, 1]}
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
