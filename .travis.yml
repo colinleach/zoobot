@@ -5,8 +5,9 @@ language: generic
 services:
   - docker
 
-# before_install:
-#   - docker pull mikewalmsley/zoobot:latest
+before_install:  # would pull anyway in 'run' stage, but let's separate out for clarity
+  - docker pull mikewalmsley/zoobot:latest
+  - docker run mikewalmsley/zoobot /bin/sh -c "pwd; ls"
 
 env:
   global:
@@ -22,14 +23,13 @@ before_script:
 
 script:
   # check the container is correctly set
-  - docker run -v from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pwd; ls"
   # Make volume. Run pytest in container. Copy results to volume, and therefore to host.
-  - docker run -v from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot; cp -r /repos/zoobot /to_host"
+  - docker run -v ./from_container:/to_host mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot; cp -r /repos/zoobot /to_host"
   - echo "run complete"
   - pwd
   - ls
   # Copy volume into current directory (to pretend we ran locally)
-  - cp -r from_container .
+  - cp -r ./from_container .
   - pwd
   - ls
 
