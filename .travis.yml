@@ -20,7 +20,7 @@ before_script:  # prepare codeclimate test coverage reporter
   - ./cc-test-reporter before-build
 
 script:  # run pytest in docker container, measuring only coverage in zoobot/zoobot package
-  - docker run mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot --cov=repos/zoobot/zoobot"
+  - docker run mikewalmsley/zoobot /bin/sh -c "pytest /repos/zoobot --cov=/repos/zoobot/zoobot"
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
