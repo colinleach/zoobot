@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 
-from tfrecord_io import load_dataset
+from tfrecord.tfrecord_io import load_dataset
 
 
 class InputConfig():

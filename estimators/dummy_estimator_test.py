@@ -12,12 +12,12 @@ N_EXAMPLES = 2000
 @pytest.fixture()
 def features():
     # {'feature_name':array_of_values} format expected
-    return {'a_feature': np.random.rand(N_EXAMPLES)}
+    return {'a_feature': tf.constant(np.random.rand(N_EXAMPLES), shape=[N_EXAMPLES], dtype=tf.float32)}
 
 
 @pytest.fixture()
 def labels():
-    return np.random.randint(low=0, high=2, size=N_EXAMPLES)
+    return tf.constant(np.random.randint(low=0, high=2, size=N_EXAMPLES), shape=[N_EXAMPLES], dtype=tf.int32)
 
 
 @pytest.fixture()

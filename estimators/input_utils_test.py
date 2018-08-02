@@ -19,11 +19,10 @@ TEST_EXAMPLE_DIR = 'test_examples'
 Test augmentation applied to a single image (i.e. within map_fn)
 """
 
-
 @pytest.fixture()
 # actual image used for visual checks
 def visual_check_image():
-    return tf.constant(np.array(Image.open('zoobot/test_examples/example_b.png')))
+    return tf.constant(np.array(Image.open(TEST_EXAMPLE_DIR + '/example_b.png')))
 
 
 def test_geometric_augmentations_on_image(visual_check_image):
@@ -41,7 +40,7 @@ def test_geometric_augmentations_on_image(visual_check_image):
         axes[1].imshow(final_image)
         axes[1].set_title('After')
         fig.tight_layout()
-        fig.savefig('zoobot/test_examples/geometric_augmentation_check_single_image.png')
+        fig.savefig(TEST_EXAMPLE_DIR + '/geometric_augmentation_check_single_image.png')
 
 
 def test_photometric_augmentations_on_image(visual_check_image):
@@ -59,7 +58,7 @@ def test_photometric_augmentations_on_image(visual_check_image):
     axes[1].imshow(final_image)
     axes[1].set_title('After')
     fig.tight_layout()
-    fig.savefig('zoobot/test_examples/photometric_augmentation_check_single_image.png')
+    fig.savefig(TEST_EXAMPLE_DIR + '/photometric_augmentation_check_single_image.png')
 
 
 @pytest.fixture()
@@ -78,7 +77,7 @@ def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image):
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig('zoobot/test_examples/geometric_augmentation_check_on_batch.png')
+    fig.savefig(TEST_EXAMPLE_DIR + '/geometric_augmentation_check_on_batch.png')
 
 
 def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image):
@@ -92,7 +91,7 @@ def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig('zoobot/test_examples/photometric_augmentation_check_on_batch.png')
+    fig.savefig(TEST_EXAMPLE_DIR + '/photometric_augmentation_check_on_batch.png')
 
 
 def test_all_augmentations_on_batch(batch_of_visual_check_image):
@@ -105,7 +104,8 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
         final_size=256,
         channels=3,
         batch_size=16,
-        stratify=None,
+        stratify=False,
+        shuffle=False,
         stratify_probs=None,
         geometric_augmentation=True,
         shift_range=None,
@@ -127,7 +127,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig('zoobot/test_examples/all_augmentations_check.png')
+    fig.savefig(TEST_EXAMPLE_DIR + '/all_augmentations_check.png')
 
 
 """
@@ -219,6 +219,7 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=False,
+        shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,
         photographic_augmentation=False
@@ -235,6 +236,7 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=True,
+        shuffle=False,
         stratify_probs=np.array([0.8, 0.2]),
         geometric_augmentation=False,
         photographic_augmentation=False
@@ -251,6 +253,7 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=False,
+        shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,
         photographic_augmentation=False
@@ -267,6 +270,7 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=True,
+        shuffle=False,
         stratify_probs=np.array([0.8, 0.2]),
         geometric_augmentation=False,
         photographic_augmentation=False
@@ -329,7 +333,7 @@ def test_input_utils_visual():
     batch_size = 16
     size = 96
     channels = 3
-    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
     assert os.path.exists(tfrecord_loc)
 
     config = input_utils.InputConfig(
@@ -341,6 +345,7 @@ def test_input_utils_visual():
         label_col=None,  # TODO not sure about this
         batch_size=batch_size,
         stratify=False,
+        shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,
         photographic_augmentation=False)
@@ -353,21 +358,21 @@ def test_input_utils_visual():
     print(batch_images.shape)
     plt.clf()
     plt.imshow(batch_images[0])
-    plt.savefig('zoobot/test_examples/original_loaded_image.png')
+    plt.savefig(TEST_EXAMPLE_DIR + '/original_loaded_image.png')
 
 
 def test_minimal_loading_from_tfrecord():
     n_examples = 16
     size = 96
     channels = 3
-    tfrecord_loc = 'zoobot/data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
+    tfrecord_loc = 'data/panoptes_featured_s{}_l0.4_train.tfrecord'.format(str(int(size)))
 
     serialized_examples = load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples)
     examples = [parse_example(example, size, channels) for example in serialized_examples]
     images = [example['matrix'].reshape(size, size, channels) for example in examples]
     plt.clf()
     plt.imshow(images[0])
-    plt.savefig('zoobot/test_examples/original_minimal_loaded_image.png')
+    plt.savefig(TEST_EXAMPLE_DIR + '/original_minimal_loaded_image.png')
 
 
 def load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples):

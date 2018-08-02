@@ -25,8 +25,9 @@ class RunEstimatorConfig():
             early_stopping_window=10,
             max_sadness=4.,
             log_dir='runs/default_run_{}'.format(time.time()),
-            save_freq=10
-    ):
+            save_freq=10,
+            fresh_start=False
+    ):  # TODO refactor for consistent order
         self.initial_size = initial_size
         self.final_size=final_size
         self.channels = channels
@@ -37,6 +38,7 @@ class RunEstimatorConfig():
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
+        self.fresh_start = False
         self.max_sadness = max_sadness
         self.early_stopping_window = early_stopping_window
         self.min_epochs = min_epochs
@@ -112,7 +114,7 @@ def run_estimator(config):
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)
 
-    train_logging, eval_logging, predict_logging = config.model.logging_hooks
+    train_logging, eval_logging, _ = config.model.logging_hooks
 
     eval_loss_history = []
     epoch_n = 0
