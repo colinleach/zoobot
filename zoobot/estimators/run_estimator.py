@@ -38,7 +38,7 @@ class RunEstimatorConfig():
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
-        self.fresh_start = False
+        self.fresh_start = fresh_start
         self.max_sadness = max_sadness
         self.early_stopping_window = early_stopping_window
         self.min_epochs = min_epochs
