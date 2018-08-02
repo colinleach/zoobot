@@ -6,7 +6,7 @@ services:
   - docker
 
 before_install:
-docker pull mikewalmsley/zoobot:latest
+  - docker pull mikewalmsley/zoobot:latest
 
 env:
   global:
@@ -20,7 +20,7 @@ before_script:
 
 script:
   - docker run -v from_container:/to_host zoobot /bin/sh -c "pytest --cov=zoobot; cp -r * /to_host"
-  - cp -r from_container .
+  # - cp -r from_container .
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
