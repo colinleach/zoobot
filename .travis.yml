@@ -10,7 +10,7 @@ services:
 
 env:
   global:
-    - ON_TRAVIS="True"  # now not doing anything, use mock instead
+    - ON_TRAVIS="True"  # use mock instead
     - CC_TEST_REPORTER_ID=ef505b7877e9936f0112932776177dd6b0903f1c9c772413f7a3884150c5c06d
 
 before_script:
