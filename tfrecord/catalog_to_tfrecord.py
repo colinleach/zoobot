@@ -10,6 +10,8 @@ from tqdm import tqdm
 
 from tfrecord import create_tfrecord, image_utils
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 

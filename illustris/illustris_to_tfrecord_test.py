@@ -2,7 +2,7 @@ import pytest
 
 import pandas as pd
 
-from zoobot.illustris import illustris_to_tfrecord
+from illustris import illustris_to_tfrecord
 
 
 @pytest.fixture()
@@ -53,7 +53,7 @@ def catalog():
 
 @pytest.fixture()
 def fits_loc():
-    return 'zoobot/test_examples/illustris_test_dir/synthetic_image_104798_band_5_camera_0_bg_1.fits'
+    return 'test_examples/illustris_test_dir/synthetic_image_104798_band_5_camera_0_bg_1.fits'
 
 
 @pytest.fixture()

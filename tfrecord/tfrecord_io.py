@@ -4,9 +4,7 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 
-# from zoobot.tfrecord.create_tfrecord import image_to_tfrecord
-
-
+# from tfrecord.create_tfrecord import image_to_tfrecord
 
 
 def load_dataset(example_loc, feature_spec, num_parallel_calls=1):

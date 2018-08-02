@@ -2,9 +2,9 @@ import pytest
 
 import pandas as pd
 
-from zoobot.tfrecord import catalog_to_tfrecord
+from tfrecord import catalog_to_tfrecord
 
-TEST_EXAMPLE_DIR = 'zoobot/test_examples'
+TEST_EXAMPLE_DIR = 'test_examples'
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
-from zoobot.estimators.run_estimator import run_estimator
+from estimators.estimator_funcs import four_layer_binary_classifier
+from estimators.run_estimator import run_estimator
 
 
 def default_params():

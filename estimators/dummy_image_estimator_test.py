@@ -3,7 +3,7 @@ import pytest
 import tensorflow as tf
 import numpy as np
 
-from zoobot.estimators import dummy_image_estimator
+from estimators import dummy_image_estimator
 
 
 N_EXAMPLES = 2000
@@ -12,12 +12,12 @@ N_EXAMPLES = 2000
 @pytest.fixture()
 def features():
     # {'feature_name':array_of_values} format expected
-    return {'x': np.random.rand(N_EXAMPLES, 28, 28, 1)}
+    return {'x': tf.constant(np.random.rand(N_EXAMPLES, 28, 28, 1), dtype=tf.float32)}
 
 
 @pytest.fixture()
 def labels():
-    return np.random.randint(low=0, high=2, size=N_EXAMPLES)
+    return tf.constant(np.random.randint(low=0, high=2, size=N_EXAMPLES), dtype=tf.int8)
 
 
 @pytest.fixture()
