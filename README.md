@@ -5,7 +5,6 @@
 [![Build Status](https://travis-ci.org/RustyPanda/zoobot.svg?branch=master)](https://travis-ci.org/RustyPanda/zoobot)
 [![Maintainability](https://api.codeclimate.com/v1/badges/dcd9b142609237a90574/maintainability)](https://codeclimate.com/github/RustyPanda/zoobot/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/dcd9b142609237a90574/test_coverage)](https://codeclimate.com/github/RustyPanda/zoobot/test_coverage)
-[![Coverage Status](https://coveralls.io/repos/github/RustyPanda/zoobot/badge.svg?branch=master)](https://coveralls.io/github/RustyPanda/zoobot?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
 # ZooBot
