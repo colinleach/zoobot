@@ -8,7 +8,7 @@ from PIL import Image
 from astropy.io import fits
 from tqdm import tqdm
 
-from zoobot.tfrecord import create_tfrecord, image_utils
+from tfrecord import create_tfrecord, image_utils
 
 import matplotlib.pyplot as plt
 

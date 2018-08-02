@@ -1,10 +1,13 @@
 import logging
+import os
 
 import tensorflow as tf
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 
-from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
-from zoobot import panoptes_to_tfrecord
+from estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
+import panoptes_to_tfrecord
 
 
 def get_stratify_probs_from_csv(input_config: input_utils.InputConfig):
@@ -52,6 +55,7 @@ if __name__ == '__main__':
         tfrecord_loc='data/panoptes_featured_s{}_l{}_train.tfrecord'.format(initial_size, label_split_value),
         label_col=run_config.label_col,
         stratify=True,
+        shuffle=True,
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
@@ -69,6 +73,7 @@ if __name__ == '__main__':
         tfrecord_loc='data/panoptes_featured_s{}_l{}_test.tfrecord'.format(initial_size, label_split_value),
         label_col=run_config.label_col,
         stratify=True,
+        shuffle=True,
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
@@ -101,10 +106,19 @@ if __name__ == '__main__':
     run_config.model = model
     assert run_config.is_ready_to_train()
 
-    logging.info('Parameters used: ')
-    for config_object in [run_config, train_config, eval_config, model]:
-        for key, value in config_object.asdict().items():
-            logging.info('{}: {}'.format(key, value))
-        logging.info('Next object \n')
 
-    run_estimator.run_estimator(run_config)
+
+    # logging.info('Parameters used: ')
+    # for config_object in [run_config, train_config, eval_config, model]:
+    #     for key, value in config_object.asdict().items():
+    #         logging.info('{}: {}'.format(key, value))
+    #     logging.info('Next object \n')
+
+    # run_estimator.run_estimator(run_config)
+
+    # start fresh? No!
+    run_config.start_fresh = False
+    run_config.log_dir = 'runs/wide_restart'
+    assert os.path.exists(run_config.log_dir)
+
+    warm_start.restart_estimator(run_config)

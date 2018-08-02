@@ -6,7 +6,7 @@ from functools import partial
 
 import numpy as np
 import tensorflow as tf
-from zoobot.estimators import input_utils, bayesian_estimator_funcs
+from estimators import input_utils, bayesian_estimator_funcs
 
 
 class RunEstimatorConfig():
@@ -74,9 +74,9 @@ def run_estimator(config):
     """
     assert config.is_ready_to_train()
 
-    # start fresh, don't try to load any existing models
-    if os.path.exists(config.log_dir):
-        shutil.rmtree(config.log_dir)
+    if config.fresh_start:  # don't try to load any existing models
+        if os.path.exists(config.log_dir):
+            shutil.rmtree(config.log_dir)
 
     # Create the Estimator
     model_fn_partial = partial(bayesian_estimator_funcs.estimator_wrapper)
@@ -86,18 +86,17 @@ def run_estimator(config):
         params=config.model
     )
 
-    # can't move out of run_estimator, uses closure to avoid arguments
+    # can't move out of run_estimator, uses closure to avoid passing config as argument
     def serving_input_receiver_fn():
         """
         An input receiver that expects a serialized tf.Example.
-        # TODO DANGER this can deviate from input utils - cause of bug?
         """
         serialized_tf_example = tf.placeholder(dtype=tf.string,
                                                name='input_example_tensor')
-        receiver_tensors = {'examples': serialized_tf_example}
+        receiver_tensors = {'examples': serialized_tf_example}  # one or many??
         feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
         features = tf.parse_example(serialized_tf_example, feature_spec)
-        # outputs {x: new images}
+
         images = tf.reshape(
             features['matrix'],
             [-1, config.initial_size, config.initial_size,
@@ -108,6 +107,7 @@ def run_estimator(config):
             config=config.eval_config
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
 
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)

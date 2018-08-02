@@ -1,7 +1,7 @@
 import logging
 
 import pandas as pd
-from zoobot.tfrecord import catalog_to_tfrecord
+from tfrecord import catalog_to_tfrecord
 
 
 def save_panoptes_to_tfrecord():

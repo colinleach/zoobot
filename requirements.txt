@@ -13,3 +13,4 @@ scikit-optimize
 matplotlib
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
 photutils
+pylint  # for VS Code convenience only

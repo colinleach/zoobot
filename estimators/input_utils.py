@@ -1,10 +1,11 @@
 from functools import partial
+import copy
 
 import numpy as np
 import tensorflow as tf
 
 
-from zoobot.tfrecord.tfrecord_io import load_dataset
+from tfrecord.tfrecord_io import load_dataset
 
 
 class InputConfig():
@@ -18,6 +19,7 @@ class InputConfig():
             final_size,
             channels,
             batch_size,
+            shuffle,
             stratify,
             stratify_probs,
             geometric_augmentation=True,
@@ -36,6 +38,7 @@ class InputConfig():
         self.final_size = final_size
         self.channels = channels
         self.batch_size = batch_size
+        self.shuffle = shuffle
         self.stratify = stratify
         self.stratify_probs = stratify_probs
 
@@ -52,6 +55,9 @@ class InputConfig():
     def asdict(self):
         excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
         return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 
 def get_input(config):
@@ -88,7 +94,9 @@ def load_batches(config):
         feature_spec = matrix_label_feature_spec(config.initial_size, config.channels)
 
         dataset = load_dataset(config.tfrecord_loc, feature_spec)
-        dataset = dataset.shuffle(config.batch_size * 5)
+
+        if config.shuffle:
+            dataset = dataset.shuffle(config.batch_size * 5)
         # dataset = dataset.repeat(5)  Careful, don't repeat for eval - make param
         dataset = dataset.batch(config.batch_size)
         dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
