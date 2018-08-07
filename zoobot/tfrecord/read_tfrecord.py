@@ -12,7 +12,7 @@ def load_examples_from_tfrecord(tfrecord_locs, n_examples, size, channels):
         # Define a reader and read the next record
         reader = tf.TFRecordReader()
         _, serialized_example = reader.read(filename_queue)
-        example = parse_example(serialized_example, 128, 3)
+        example = parse_example(serialized_example, size, channels)
 
         # initialize all global and local variables
         # this op must be defined (not only executed) within the session

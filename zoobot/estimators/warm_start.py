@@ -8,7 +8,6 @@ from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
 def restart_estimator(config):
 
-
     def serving_input_receiver_fn_image():
         """
         An input receiver that expects an image array

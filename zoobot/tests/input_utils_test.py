@@ -7,23 +7,15 @@ import tensorflow as tf
 import matplotlib
 matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
-from PIL import Image
 
 from zoobot.estimators import input_utils
 from zoobot.tfrecord import create_tfrecord
-
-TEST_EXAMPLE_DIR = 'zoobot/test_examples'
+from zoobot.tests import TEST_EXAMPLE_DIR, TEST_FIGURE_DIR
 
 
 """
 Test augmentation applied to a single image (i.e. within map_fn)
 """
-
-@pytest.fixture()
-# actual image used for visual checks
-def visual_check_image():
-    return tf.constant(np.array(Image.open(TEST_EXAMPLE_DIR + '/example_b.png')))
-
 
 def test_geometric_augmentations_on_image(visual_check_image):
 
@@ -40,7 +32,7 @@ def test_geometric_augmentations_on_image(visual_check_image):
         axes[1].imshow(final_image)
         axes[1].set_title('After')
         fig.tight_layout()
-        fig.savefig(TEST_EXAMPLE_DIR + '/geometric_augmentation_check_single_image.png')
+        fig.savefig(os.path.join(TEST_FIGURE_DIR, 'geometric_augmentation_check_single_image.png'))
 
 
 def test_photometric_augmentations_on_image(visual_check_image):
@@ -58,7 +50,7 @@ def test_photometric_augmentations_on_image(visual_check_image):
     axes[1].imshow(final_image)
     axes[1].set_title('After')
     fig.tight_layout()
-    fig.savefig(TEST_EXAMPLE_DIR + '/photometric_augmentation_check_single_image.png')
+    fig.savefig(os.path.join(TEST_FIGURE_DIR, 'photometric_augmentation_check_single_image.png'))
 
 
 @pytest.fixture()
@@ -77,7 +69,7 @@ def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image):
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig(TEST_EXAMPLE_DIR + '/geometric_augmentation_check_on_batch.png')
+    fig.savefig(os.path.join(TEST_FIGURE_DIR, 'geometric_augmentation_check_on_batch.png'))
 
 
 def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image):
@@ -91,7 +83,7 @@ def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig(TEST_EXAMPLE_DIR + '/photometric_augmentation_check_on_batch.png')
+    fig.savefig(os.path.join(TEST_FIGURE_DIR, 'photometric_augmentation_check_on_batch.png'))
 
 
 def test_all_augmentations_on_batch(batch_of_visual_check_image):
@@ -127,7 +119,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     for image_n, image in enumerate(transformed_images):
         axes[image_n].imshow(image)
     fig.tight_layout()
-    fig.savefig(TEST_EXAMPLE_DIR + '/all_augmentations_check.png')
+    fig.savefig(os.path.join(TEST_FIGURE_DIR, 'all_augmentations_check.png'))
 
 
 """
@@ -144,12 +136,6 @@ Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 Functional test on fake data, saved to temporary tfrecords
 """
 
-
-@pytest.fixture(scope='module')
-def size():
-    return 4
-
-
 @pytest.fixture(scope='module')
 def true_image_values():
     return 3.
@@ -160,13 +146,17 @@ def false_image_values():
     return -3.
 
 
+# TODO extract these as special stratified fixtures - as usual but without random values
+
 @pytest.fixture()
-def example_data(size, true_image_values, false_image_values):
+def example_data(true_image_values, false_image_values):
+    example_size = 4
+    example_channels = 3
     n_true_examples = 100
     n_false_examples = 400
 
-    true_images = [np.ones((size, size, 3), dtype=float) * true_image_values for n in range(n_true_examples)]
-    false_images = [np.ones((size, size, 3), dtype=float) * false_image_values for n in range(n_false_examples)]
+    true_images = [np.ones((example_size, example_size, example_channels), dtype=float) * true_image_values for n in range(n_true_examples)]
+    false_images = [np.ones((example_size, example_size, example_channels), dtype=float) * false_image_values for n in range(n_false_examples)]
     true_labels = [1 for n in range(n_true_examples)]
     false_labels = [0 for n in range(n_false_examples)]
     print('starting: probs: ', np.mean(true_labels + false_labels))
@@ -319,26 +309,13 @@ def verify_images_match_labels(images, labels, true_values, false_values, size):
         assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
 
 
-# 64, 0.4 loads perfectly for both
-# 28, 0.5 loads perfectly for both
-# same input routines at 2 different sizes work perfectly on the oldest tfrecords
-# 424, 0.4 fails for both (newer than the others)
-# 48, 0.4 - new routine with small image, fails for both
-# 96, 0.4 - fails for both
-
-
-def test_input_utils_visual():
+def test_input_utils_visual(tfrecord_example_loc, size, channels, example_tfrecord_loc):
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
-
     batch_size = 16
-    size = 28  # note that only s28 exists in test_examples
-    channels = 3
-    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_test.tfrecord'.format(str(int(size)))
-    assert os.path.exists(tfrecord_loc)
 
     config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc=tfrecord_loc,
+        tfrecord_loc=tfrecord_example_loc,
         initial_size=size,
         final_size=size,
         channels=channels,
@@ -355,55 +332,6 @@ def test_input_utils_visual():
     with tf.train.MonitoredSession() as sess:
         batch_images = sess.run(batch_images)
 
-    print(batch_images.shape)
     plt.clf()
     plt.imshow(batch_images[0])
-    plt.savefig(TEST_EXAMPLE_DIR + '/original_loaded_image.png')
-
-
-def test_minimal_loading_from_tfrecord():
-    n_examples = 16
-    size = 28
-    channels = 3
-    tfrecord_loc = 'zoobot/test_examples/panoptes_featured_s{}_l0.4_test.tfrecord'.format(str(int(size)))
-
-    serialized_examples = load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples)
-    examples = [parse_example(example, size, channels) for example in serialized_examples]
-    images = [example['matrix'].reshape(size, size, channels) for example in examples]
-    plt.clf()
-    plt.imshow(images[0])
-    plt.savefig(TEST_EXAMPLE_DIR + '/original_minimal_loaded_image.png')
-
-
-def load_serialized_examples_from_tfrecord(tfrecord_loc, n_examples):
-    # see http://www.machinelearninguru.com/deep_learning/tensorflow/basics/tfrecord/tfrecord.html
-    with tf.Session() as sess:
-        filename_queue = tf.train.string_input_producer([tfrecord_loc], num_epochs=1)
-        reader = tf.TFRecordReader()
-        _, serialized_example = reader.read(filename_queue)
-
-        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-        sess.run(init_op)
-        # Create a coordinator and run all QueueRunner objects
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(coord=coord)
-        return [sess.run(serialized_example) for n in range(n_examples)]
-
-
-def parse_example(example, size, channels):
-    with tf.Session() as sess:
-        features = {
-            'matrix': tf.FixedLenFeature((size * size * channels), tf.float32),
-            'label': tf.FixedLenFeature([], tf.int64),
-        }
-        parsed_example = tf.parse_single_example(example, features=features)
-        return sess.run(parsed_example)
-
-#
-# def show_example(example, ax=None):
-#     im = example['matrix'].reshape(size, size, channels)
-#     label = example['label']
-    # if ax is None:
-    #     ax = plt
-    # ax.imshow(im)
-    # ax.text(50, 50, label, fontsize=16)
+    plt.savefig(os.path.join(TEST_FIGURE_DIR + 'original_loaded_image.png'))

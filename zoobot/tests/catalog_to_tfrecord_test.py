@@ -3,8 +3,7 @@ import pytest
 import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord
-
-TEST_EXAMPLE_DIR = 'zoobot/test_examples'
+from zoobot.tests import TEST_EXAMPLE_DIR
 
 
 @pytest.fixture

@@ -8,16 +8,7 @@ import tensorflow as tf
 
 from zoobot.tfrecord import create_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.estimators import run_estimator
-from zoobot.estimators import estimator_funcs
-from zoobot.estimators import bayesian_estimator_funcs
-from zoobot.estimators import dummy_image_estimator, dummy_image_estimator_test
-
-
-# copied from input_utils_test...
-@pytest.fixture(scope='module')
-def size():
-    return 28
+from zoobot.estimators import run_estimator, estimator_funcs, bayesian_estimator_funcs, dummy_image_estimator
 
 
 @pytest.fixture(scope='module')
@@ -130,12 +121,19 @@ def labels(n_examples):
         dtype=tf.int32)
 
 
-def test_run_experiment(run_config, model, features, labels, n_examples, monkeypatch):
+def test_run_experiment(
+    run_config, 
+    model, 
+    features, 
+    labels, 
+    n_examples, 
+    train_input_fn, 
+    monkeypatch):
 
     # TODO need to test estimator with input functions!
     # mock both input functions
     def dummy_input(input_config=None):
-        return dummy_image_estimator_test.train_input_fn(
+        return train_input_fn(
             features=features,
             labels=labels,
             batch_size=n_examples)

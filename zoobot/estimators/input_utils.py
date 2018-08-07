@@ -3,7 +3,6 @@ import copy
 import numpy as np
 import tensorflow as tf
 
-
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
 

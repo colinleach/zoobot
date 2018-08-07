@@ -1,8 +1,9 @@
-import pytest
+import os
 
 import pandas as pd
+import pytest
 
-from zoobot.illustris import illustris_to_tfrecord
+from zoobot.tests import TEST_EXAMPLE_DIR
 
 
 @pytest.fixture()
@@ -53,20 +54,9 @@ def catalog():
 
 @pytest.fixture()
 def fits_loc():
-    return 'zoobot/test_examples/illustris_test_dir/synthetic_image_104798_band_5_camera_0_bg_1.fits'
+    return os.path.join(TEST_EXAMPLE_DIR, 'synthetic_image_104798_band_5_camera_0_bg_1.fits')
 
 
 @pytest.fixture()
 def subject(fits_loc):
     return {'fits_loc': fits_loc}
-
-
-def test_render_fits(subject):
-    pil_img = illustris_to_tfrecord.load_illustris_as_pil(subject)
-    # pil_img.show()
-
-
-def test_remove_mergers_from_random_sample(catalog):
-    clean_catalog = illustris_to_tfrecord.remove_known_galaxies_from_random_sample(catalog)
-    print(clean_catalog['id'])
-    assert all(clean_catalog['id'].values == ['0', '1', '2', '3', '4', '5', '9'])
