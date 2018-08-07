@@ -1,67 +1,60 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
-def read_and_decode_single_example(filename):
-    # first construct a queue containing a list of filenames.
-    # this lets a user split up the dataset in multiple files to keep
-    # size down
-    filename_queue = tf.train.string_input_producer([filename],
-                                                    num_epochs=None)
-    # Unlike the TFRecordWriter, the TFRecordReader is symbolic
-    reader = tf.TFRecordReader()
-    # One can read a single serialized example from a filename
-    # serialized_example is a Tensor of type string.
-    _, serialized_example = reader.read(filename_queue)
-    # The serialized example is converted back to actual values.
-    # One needs to describe the format of the objects to be returned
-    features = tf.parse_single_example(
-        serialized_example,
-        features={
-            # We know the length of both fields. If not the
-            # tf.VarLenFeature could be used
-            'label': tf.FixedLenFeature([], tf.int64),
-            'matrix': tf.FixedLenFeature([28 ** 2 * 3], tf.float32),
-            't04_spiral_a08_spiral_weighted_fraction': tf.FixedLenFeature([], tf.float32)
-        })
-    # now return the converted data
-    label = features['label']
-    image = features['matrix']
-    spiral_fraction = features['t04_spiral_a08_spiral_weighted_fraction']
+def load_examples_from_tfrecord(tfrecord_locs, n_examples, size, channels):
+    # see http://www.machinelearninguru.com/deep_learning/tensorflow/basics/tfrecord/tfrecord.html
+    with tf.Session() as sess:
+        # Create a list of filenames and pass it to a queue
+        filename_queue = tf.train.string_input_producer(tfrecord_locs, num_epochs=1)
+        # Define a reader and read the next record
+        reader = tf.TFRecordReader()
+        _, serialized_example = reader.read(filename_queue)
+        example = parse_example(serialized_example, 128, 3)
 
-    return label, image, spiral_fraction
+        # initialize all global and local variables
+        # this op must be defined (not only executed) within the session
+        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+        sess.run(init_op)
+        # create a coordinator and run all QueueRunner objects
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
 
-# # returns symbolic label and matrix
-# example_loc = '/data/galaxy_zoo/gz2/tfrecord/spiral_64.tfrecord'
-# label, image, spiral_fraction = read_and_decode_single_example(example_loc)
-#
-# # sess = tf.Session()
-# # init = tf.global_variables_initializer()
-# # sess.run(init)
-# # tf.train.start_queue_runners(sess=sess)
-# #
-# #
-# # label_val_1, image_val_1 = sess.run([label, image])
-# # label_val_2, image_val_2 = sess.run([label, image])
-# # print(label_val_1, label_val_2)
-#
-# # https://indico.io/blog/tensorflow-data-inputs-part1-placeholders-protobufs-queues/
-#
-# # groups examples into batches randomly
-# # https://www.tensorflow.org/api_docs/python/tf/train/shuffle_batch
-# images_batch, labels_batch, spiral_fraction_batch = tf.train.shuffle_batch(
-#     [image, label, spiral_fraction], batch_size=10,
-#     capacity=100000,
-#     min_after_dequeue=1000)
-#
-#
-# sess = tf.Session()
-# init = tf.global_variables_initializer()
-# sess.run(init)
-# tf.train.start_queue_runners(sess=sess)
-# labels, images, spiral_fractions = sess.run([labels_batch, images_batch, spiral_fraction_batch])
-#
-# square_images = images.reshape([-1, 64, 64, 3])
-# # print(labels)
-# print(spiral_fractions)
-# print(square_images[0][:, :, 0])
-# print(square_images[1][:, :, 0])
+        # execute
+        return [sess.run(example) for n in range(n_examples)]
+
+
+def parse_example(example, size, channels):
+    features = {
+        'matrix': tf.FixedLenFeature((size * size * channels), tf.float32),
+        'label': tf.FixedLenFeature([], tf.int64),
+        }
+
+    return tf.parse_single_example(example, features=features)
+
+
+# these are actually not related to reading a tfrecord, they are very general
+def show_examples(examples, size, channels):
+    # simple wrapper for pretty example plotting
+    # TODO make plots in a grid rather than vertical column
+    fig, axes = plt.subplots(nrows=len(examples), figsize=(4, len(examples) * 3))
+    for n, example in enumerate(examples):
+        show_example(example, size, channels, ax=axes[n])
+    fig.tight_layout()
+    return fig, axes
+
+
+def show_example(example, size, channels, ax=None):
+    # saved as floats but truly int, show as int
+    im = example['matrix'].reshape(size, size, channels).astype(int)  
+    label = example['label']
+    name_mapping = {
+        0: 'Feat.',
+        1: 'Smooth'
+    }
+    if ax is None:
+        ax = plt
+    ax.imshow(im)
+    ax.text(60, 110, name_mapping[label], fontsize=16, color='r')
