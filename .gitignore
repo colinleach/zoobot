@@ -19,3 +19,4 @@
 *.png
 *.ipynb_checkpoints*
 !zoobot/test_examples/*
+*.ropeproject*

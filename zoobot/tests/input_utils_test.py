@@ -1,5 +1,4 @@
 import os
-import random
 
 import numpy as np
 import pytest
@@ -9,7 +8,6 @@ matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
 
 from zoobot.estimators import input_utils
-from zoobot.tfrecord import create_tfrecord
 from zoobot.tests import TEST_EXAMPLE_DIR, TEST_FIGURE_DIR
 
 
@@ -46,7 +44,7 @@ def test_photometric_augmentations_on_image(visual_check_image):
     fig, axes = plt.subplots(ncols=2)
     axes[0].imshow(input_image)
     axes[0].set_title('Before')
-    print(final_image.shape)
+    print(final_image.shape)  # TODO assert
     axes[1].imshow(final_image)
     axes[1].set_title('After')
     fig.tight_layout()
@@ -135,68 +133,14 @@ Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 """
 Functional test on fake data, saved to temporary tfrecords
 """
-
-@pytest.fixture(scope='module')
-def true_image_values():
-    return 3.
-
-
-@pytest.fixture(scope='module')
-def false_image_values():
-    return -3.
-
-
-# TODO extract these as special stratified fixtures - as usual but without random values
-
-@pytest.fixture()
-def example_data(true_image_values, false_image_values):
-    example_size = 4
-    example_channels = 3
-    n_true_examples = 100
-    n_false_examples = 400
-
-    true_images = [np.ones((example_size, example_size, example_channels), dtype=float) * true_image_values for n in range(n_true_examples)]
-    false_images = [np.ones((example_size, example_size, example_channels), dtype=float) * false_image_values for n in range(n_false_examples)]
-    true_labels = [1 for n in range(n_true_examples)]
-    false_labels = [0 for n in range(n_false_examples)]
-    print('starting: probs: ', np.mean(true_labels + false_labels))
-
-    true_data = list(zip(true_images, true_labels))
-    false_data = list(zip(false_images, false_labels))
-    all_data = true_data + false_data
-    random.shuffle(all_data)
-    return all_data
-
-
-@pytest.fixture()
-def tfrecord_dir(tmpdir):
-    return tmpdir.mkdir('tfrecord_dir').strpath
-
-
-@pytest.fixture()
-def example_tfrecords(tfrecord_dir, example_data):
-    tfrecord_locs = [
-        '{}/train.tfrecords'.format(tfrecord_dir),
-        '{}/test.tfrecords'.format(tfrecord_dir)
-    ]
-    for tfrecord_loc in tfrecord_locs:
-        if os.path.exists(tfrecord_loc):
-            os.remove(tfrecord_loc)
-        writer = tf.python_io.TFRecordWriter(tfrecord_loc)
-
-        for example in example_data:
-            writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))
-        writer.close()
-
-
-def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, false_image_values):
-    # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
+def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values, false_image_values):
+    # stratified_tfrecord_locs writes up the tfrecords to read
+    # needs to be an arg but is implicitly called by pytest
 
     train_batch = 64
     test_batch = 128
 
-    train_loc = tfrecord_dir + '/train.tfrecords'
-    test_loc = tfrecord_dir + '/test.tfrecords'
+    train_loc, test_loc = stratified_tfrecord_locs
     assert os.path.exists(train_loc)
     assert os.path.exists(test_loc)
 
@@ -205,7 +149,7 @@ def test_input_utils(tfrecord_dir, example_tfrecords, size, true_image_values, f
         tfrecord_loc=train_loc,
         initial_size=size,
         final_size=size,
-        channels=3,
+        channels=channels,
         label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=False,
@@ -309,13 +253,13 @@ def verify_images_match_labels(images, labels, true_values, false_values, size):
         assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
 
 
-def test_input_utils_visual(tfrecord_example_loc, size, channels, example_tfrecord_loc):
+def test_input_utils_visual(example_tfrecord_loc, size, channels):
     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
     batch_size = 16
 
     config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc=tfrecord_example_loc,
+        tfrecord_loc=example_tfrecord_loc,
         initial_size=size,
         final_size=size,
         channels=channels,

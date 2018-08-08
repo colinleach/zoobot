@@ -16,22 +16,22 @@ def estimator(batch_size, size):
             'image_dim': size}
     )
 
-def test_training(estimator, train_input_fn, features, labels, batch_size):
+def test_training(estimator, train_input_fn, random_features, random_labels, batch_size):
     # modifies estimator inplace
     estimator.train(
-        input_fn=lambda: train_input_fn(features, labels, batch_size),
+        input_fn=lambda: train_input_fn(random_features, random_labels, batch_size),
         steps=2
     )
 
 
-def test_predict(estimator, train_input_fn, eval_input_fn, features, labels, batch_size):
-    test_training(estimator, train_input_fn, features, labels, batch_size)  # requires model with a training
+def test_predict(estimator, train_input_fn, eval_input_fn, random_features, random_labels, batch_size):
+    test_training(estimator, train_input_fn, random_features, random_labels, batch_size)  # requires model with a training
     predictions = estimator.predict(  # returns a generator
-        input_fn=lambda: eval_input_fn(features, None, batch_size))
+        input_fn=lambda: eval_input_fn(random_features, None, batch_size))
 
 
-def test_eval(estimator, train_input_fn, features, labels, batch_size):
-    test_training(estimator, train_input_fn, features, labels, batch_size)
+def test_eval(estimator, train_input_fn, random_features, random_labels, batch_size):
+    test_training(estimator, train_input_fn, random_features, random_labels, batch_size)
     eval_result = estimator.evaluate(
-        input_fn=lambda: train_input_fn(features, labels, batch_size),
+        input_fn=lambda: train_input_fn(random_features, random_labels, batch_size),
         steps=1)  # or it never ends!
