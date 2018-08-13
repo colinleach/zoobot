@@ -46,15 +46,13 @@ def show_examples(examples, size, channels):
     return fig, axes
 
 
-def show_example(example, size, channels, ax=None):
+def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
-    im = example['matrix'].reshape(size, size, channels).astype(int)  
+    im = example['matrix'].reshape(size, size, channels) 
     label = example['label']
     name_mapping = {
         0: 'Feat.',
         1: 'Smooth'
     }
-    if ax is None:
-        ax = plt
     ax.imshow(im)
     ax.text(60, 110, name_mapping[label], fontsize=16, color='r')

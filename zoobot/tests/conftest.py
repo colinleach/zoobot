@@ -29,11 +29,16 @@ def example_tfrecord_loc():
 
 
 @pytest.fixture()
-def visual_check_image(size):
+def visual_check_image_data(size):
     # actual image used for visual checks
     image = Image.open(os.path.join(TEST_EXAMPLE_DIR, 'example_b.png'))
     image.thumbnail((size, size))
-    return tf.constant(np.array(image))
+    return np.array(image)
+
+
+@pytest.fixture()
+def visual_check_image(visual_check_image_data):
+    return tf.constant(visual_check_image_data)
 
 
 @pytest.fixture()
@@ -50,6 +55,14 @@ def random_features(n_examples, size, channels):
 @pytest.fixture()
 def random_labels(n_examples):
     return tf.constant(np.random.randint(low=0, high=2, size=n_examples), shape=[n_examples], dtype=tf.int32)
+
+
+@pytest.fixture()
+def parsed_example(visual_check_image_data):
+    return {
+        'matrix': np.array(visual_check_image_data).flatten(),  # Parsed matrix is a 1D vector, needs reshaping
+        'label': 1
+    }
 
 
 @pytest.fixture()
@@ -78,7 +91,6 @@ def eval_input_fn(random_features, random_labels, batch_size):
     """An input function for evaluation or prediction"""
     random_features = dict(random_features)
     if random_labels is None:
-        print('No labels')
         # No labels, use only features.
         inputs = random_features
     else:
@@ -146,3 +158,12 @@ def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
         writer.close()
 
     return tfrecord_locs  # of form (train_loc, test_loc)
+
+
+@pytest.fixture()
+def predictor_model_loc():  # not yet on github
+    return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530242652')
+
+@pytest.fixture()
+def predictor():
+    return lambda x: np.random.rand()  # whatever is passed in, return a single random float score
