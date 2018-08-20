@@ -2,6 +2,7 @@ import os
 import shutil
 import functools
 import logging
+import sqlite3
 
 import tensorflow as tf
 import pandas as pd
@@ -12,11 +13,69 @@ from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot import shared_utilities
 from zoobot.estimators import estimator_params
 from zoobot.estimators import run_estimator
+from zoobot.estimators import make_predictions
+from zoobot.tfrecord import read_tfrecord
+
+
+def create_db(db_loc):
+    # primary key
+    pass
+
+
+def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, columns_to_save, save_dir, shard_size=10000):
+    assert not df.empty
+
+    if id_col not in columns_to_save:
+        columns_to_save += [id_col]
+
+    df = df.sample(frac=1).reset_index(drop=True)  # shuffle
+
+    # split into shards
+    shard_n = 0
+    n_shards = int((len(df) // shard_size) + 1)
+    df_shards = [df.iloc[n * shard_size:n + 1 * shard_size] for n in range(n_shards)]
+
+    for shard_n, df_shard in enumerate(df_shards):
+        save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
+        catalog_to_tfrecord.write_image_df_to_tfrecord(df, label_col, save_loc, img_size, columns_to_save, append=False, source='fits')
+        add_tfrecord_to_db(save_loc, db)
+    return df
+
+
+def add_tfrecord_to_db(tfrecord_loc, db, df=None):
+    # scan through the record to make certain everything is truly there,
+    # rather than just reading df?
+    pass
+
+
+
+def record_acquisition_on_unlabelled(db, model, shard_locs, size, channels, acqisition_func, n_samples):
+    # iterate though the shards and get the acq. func of all unlabelled examples
+    # shards should fit in memory for one machine
+    subjects = read_tfrecord.load_examples_from_tfrecord(shard_locs, size, channels)
+    predictions = make_predictions.get_samples_of_subjects(model, subjects, n_samples)
+    acquisitions = acqisition_func(predictions)  # may need axis adjustment
+    for subject, acquisition in zip(subjects, acquisitions):
+        save_acquisition_to_db(subject, acquisition, db)
+
+
+def save_acquisition_to_db(subject, acquisition, db): 
+    # will overwrite previous acquisitions
+    # could make faster with batches, but not needed I think
+    cursor = db.cursor()  
+    cursor.execute('''  
+    INSERT INTO acquisitions(id, acquisition_value)
+                  VALUES(:id, :acquisition_value)''',
+                  {
+                      'id':subject['id'], 
+                      'acquisition_value':acquisition})
+    db.commit()
+
 
 
 def create_complete_tfrecord(predictions_with_catalog, params):  # predictions will be made on this tfrecord
 
-    train_df, test_df = catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
+    train_df, test_df = write_tfrecord.catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
         df=predictions_with_catalog,
         label_col='smooth-or-featured_featured-or-disk_fraction',
         train_loc=params['train_loc'],

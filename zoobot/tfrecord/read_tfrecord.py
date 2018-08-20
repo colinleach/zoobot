@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
-def load_examples_from_tfrecord(tfrecord_locs, n_examples, size, channels):
+def load_examples_from_tfrecord(tfrecord_locs, size, channels, n_examples=None):
     # see http://www.machinelearninguru.com/deep_learning/tensorflow/basics/tfrecord/tfrecord.html
     with tf.Session() as sess:
         # Create a list of filenames and pass it to a queue

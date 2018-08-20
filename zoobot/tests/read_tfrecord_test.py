@@ -11,7 +11,7 @@ from zoobot.tfrecord import read_tfrecord
 
 def test_load_examples_from_tfrecord(example_tfrecord_loc, size, channels):
     tfrecord_locs = [example_tfrecord_loc]
-    examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, 5, size, channels)
+    examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, size, channels, 5)
     assert len(examples) == 5
     example = examples[0]
     assert 0. < example['matrix'].mean() < 255.

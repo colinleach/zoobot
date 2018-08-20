@@ -12,7 +12,3 @@ def test_get_samples_of_subjects(predictor, parsed_example):
     subjects = [parsed_example for n in range(n_subjects)]
     samples = make_predictions.get_samples_of_subjects(predictor, subjects, n_samples)
     assert samples.shape == (10, 5)
-
-
-def test_view_samples():
-    pass

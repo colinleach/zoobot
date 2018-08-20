@@ -4,6 +4,7 @@ import random
 from astropy.io import fits
 from PIL import Image
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import pytest
 
@@ -143,10 +144,10 @@ def tfrecord_dir(tmpdir):
 
 @pytest.fixture()
 def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
-    tfrecord_locs = (
+    tfrecord_locs = [
         os.path.join(tfrecord_dir, 'stratified_train.tfrecords'),
         os.path.join(tfrecord_dir, 'stratified_test.tfrecords')
-    )
+    ]
 
     for tfrecord_loc in tfrecord_locs:
         if os.path.exists(tfrecord_loc):
@@ -157,13 +158,59 @@ def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
             writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))
         writer.close()
 
-    return tfrecord_locs  # of form (train_loc, test_loc)
+    return tfrecord_locs  # of form [train_loc, test_loc]
 
 
 @pytest.fixture()
 def predictor_model_loc():  # not yet on github
     return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530286779')
 
+
 @pytest.fixture()
 def predictor():
     return lambda x: np.random.rand()  # whatever is passed in, return a single random float score
+
+
+@pytest.fixture()
+def label_col():
+    return 't04_spiral_a08_spiral_weighted_fraction'
+
+
+@pytest.fixture()
+def id_col():
+    return 'id'
+
+
+@pytest.fixture
+def columns_to_save(label_col, id_col):
+    return [
+        label_col,
+        id_col,  # Will break tests, saving string features is not yet implemented!
+        'ra',
+        'dec']
+
+
+@pytest.fixture
+def catalog(label_col, id_col):
+
+    zoo1 = {
+        label_col: 0.4,
+        id_col: 'zoo1',
+        'ra': 12.0,
+        'dec': -1.0,
+        'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
+        'fits_loc': '{}/example_a.fits'.format(TEST_EXAMPLE_DIR),
+        'png_ready': True
+    }
+
+    zoo2 = {
+        label_col: 0.4,
+        id_col: 'zoo1',
+        'ra': 15.0,
+        'dec': -1.0,
+        'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),
+        'fits_loc': '{}/example_b.fits'.format(TEST_EXAMPLE_DIR),
+        'png_ready': True
+    }
+
+    return pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
