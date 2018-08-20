@@ -60,11 +60,11 @@ def entropy(probabilites):
 
 def view_samples(scores, labels):
     """For many subjects, view the distribution of scores and labels for that subject
-    
+
     Args:
         scores (np.array): class scores, of shape (n_subjects, n_samples)
         labels (np.array): class labels, of shape (n_subjects)
-    """ 
+    """
     correct = (np.mean(scores, axis=1) > 0.5) == labels
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True)
     for galaxy_n, ax in enumerate(axes):
@@ -72,13 +72,17 @@ def view_samples(scores, labels):
         c='r'
         if correct[galaxy_n]:
             c='g'
-        
+
         lbound = 0
         ubound = 0.5
         if scores[galaxy_n].mean() > 0.5:
             lbound = 0.5
             ubound = 1
-            
+
         ax.axvspan(lbound, ubound, alpha=0.1, color=c)
-        ax.text(0.7, 0.75 * np.max(hist_data[0]), 'H: {}'.format(str(entropy(scores[galaxy_n]))[:4]))
+        ax.text(
+            0.7, 
+            0.75 * np.max(hist_data[0]),
+            'H: {}'.format(str(entropy(scores[galaxy_n]))[:4])
+            )
         ax.set_xlim([0, 1])

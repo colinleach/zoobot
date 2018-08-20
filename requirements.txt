@@ -11,6 +11,7 @@ astropy
 scipy
 scikit-optimize
 matplotlib
+seaborn
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
 photutils
 pylint  # for VS Code convenience only

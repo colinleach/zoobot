@@ -162,7 +162,7 @@ def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
 
 @pytest.fixture()
 def predictor_model_loc():  # not yet on github
-    return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530242652')
+    return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530286779')
 
 @pytest.fixture()
 def predictor():
