@@ -214,3 +214,10 @@ def catalog(label_col, id_col):
     }
 
     return pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
+
+
+@pytest.fixture()
+def matrix_label_feature_spec(size):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64)}

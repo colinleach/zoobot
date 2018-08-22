@@ -23,7 +23,16 @@ def load_examples_from_tfrecord(tfrecord_locs, size, channels, n_examples=None):
         threads = tf.train.start_queue_runners(coord=coord)
 
         # execute
-        return [sess.run(example) for n in range(n_examples)]
+        if n_examples is None:  # load full record
+            data = []
+            while True:
+                try:
+                    data.append(sess.run(example))
+                except tf.errors.OutOfRangeError:
+                    break
+        else:  # load the first n examples
+            data = [sess.run(example) for n in range(n_examples)]
+        return data
 
 
 def parse_example(example, size, channels):

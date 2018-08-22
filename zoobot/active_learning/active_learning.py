@@ -73,6 +73,9 @@ def save_acquisition_to_db(subject, acquisition, db):
 
 
 
+
+
+
 def create_complete_tfrecord(predictions_with_catalog, params):  # predictions will be made on this tfrecord
 
     train_df, test_df = write_tfrecord.catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(

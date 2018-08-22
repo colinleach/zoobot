@@ -6,7 +6,7 @@ import tensorflow as tf
 
 def serialize_image_example(matrix, label, extra_data=None):
     """
-    Save an image, label and any additional data to TFRecord. If no record exists, create one.
+    Save an image, label and any additional data to serialized byte string
 
     Args:
         matrix (np.array): pixel data. Floats in shape [height, width, depth]
@@ -52,7 +52,7 @@ def serialize_image_example(matrix, label, extra_data=None):
             extra_data[name] = value_to_feature(value)
         features_to_save.update(extra_data)
 
-    # construct the Example proto boject
+    # construct the Example protocol buffer boject
     example = tf.train.Example(
         # Example contains a Features proto object
         features=tf.train.Features(
@@ -85,12 +85,10 @@ def value_to_feature(value):
 
 
 def str_to_feature(str_to_save):
-    raise Exception('Error saving "{}". String features not yet supported!'.format(str_to_save))
-    # bytes_to_save = bytes(str_to_save, encoding='utf-8')
-    # print(bytes_to_save)
-    # return tf.train.Feature(
-    #     bytes_list=tf.train.BytesList.FromString(bytes_to_save)
-    # )
+    bytes_to_save = bytes(str_to_save, encoding='utf-8')
+    return tf.train.Feature(
+        bytes_list=tf.train.BytesList(value=[bytes_to_save])
+    )
 
 
 def int_to_feature(int_to_save):

@@ -22,23 +22,23 @@ logging.basicConfig(
     level=logging.DEBUG)
 
 
-@pytest.fixture()
-def known_subjects():
-    data = [{
-        'some_feature': np.random.rand(1),
-        'label': np.random.randint(0, 2, size=1),
-        'id': hashlib.sha256(b'some_id_bytes')
-    }]
-    return pd.DataFrame(data)
+# @pytest.fixture()
+# def known_subjects():
+#     data = [{
+#         'some_feature': np.random.rand(1),
+#         'label': np.random.randint(0, 2, size=1),
+#         'id': hashlib.sha256(b'some_id_bytes')
+#     }]
+#     return pd.DataFrame(data)
 
 
-@pytest.fixture()
-def unknown_subjects():
-    data = [{
-        'some_feature': np.random.rand(1),
-        'id': hashlib.sha256(b'some_id_bytes')
-    }]
-    return pd.DataFrame(data)
+# @pytest.fixture()
+# def unknown_subjects():
+#     data = [{
+#         'some_feature': np.random.rand(1),
+#         'id': hashlib.sha256(b'some_id_bytes')
+#     }]
+#     return pd.DataFrame(data)
 
 
 @pytest.fixture()
@@ -70,6 +70,38 @@ def empty_shard_db():
     return db
 
 
+
+@pytest.fixture()
+def filled_shard_db(empty_shard_db):  # no shard index yet
+    db = empty_shard_db
+    cursor = db.cursor()
+    cursor.execute(
+        '''
+        INSERT INTO acquisitions(id, acquisition_value)
+                  VALUES(:id, :acquisition_value)
+        ''',
+        {
+            'id': 1,
+            'acquisition_value': 0.9
+        }
+    )
+    cursor.commit()
+
+    cursor.execute(
+        '''
+        INSERT INTO acquisitions(id, acquisition_value)
+                  VALUES(:id, :acquisition_value)
+        ''',
+        {
+            'id': 2,
+            'acquisition_value': 0.3
+        }
+    )
+    cursor.commit()
+
+    return db
+
+
 @pytest.fixture()
 def shard_locs(stratified_tfrecord_locs):
     return stratified_tfrecord_locs  # pair of records
@@ -90,8 +122,8 @@ def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_c
     active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=10)
 
 
-def test_add_tfrecord_to_db(tfrecord_loc, empty_shard_db):  # bad loc
-    active_learning.add_tfrecord_to_db(tfrecord_loc, empty_shard_db)
+def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db):  # bad loc
+    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db)
 
 
 def test_record_acquisition_on_unlabelled(empty_shard_db, predictor, shard_locs, size, channels, acquisition_func):
@@ -100,6 +132,16 @@ def test_record_acquisition_on_unlabelled(empty_shard_db, predictor, shard_locs,
 
 def test_save_acquisition_to_db(subject, acquisition, empty_shard_db):
     active_learning.save_acquisition_to_db(subject, acquisition, empty_shard_db)
+    cursor = empty_shard_db.cursor()
+    cursor.execute(
+        '''
+        SELECT id, acquisition_value FROM acquisitions
+        '''
+    )
+    # TODO should use namedtuples to read/write db rows
+    saved_subject = cursor.fetchone()
+    assert saved_subject[0] == subject['id']
+    assert np.isclose(saved_subject[1], acquisition)
 
 
 @pytest.fixture()
