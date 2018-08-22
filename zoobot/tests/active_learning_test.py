@@ -22,23 +22,22 @@ logging.basicConfig(
     level=logging.DEBUG)
 
 
-# @pytest.fixture()
-# def known_subjects():
-#     data = [{
-#         'some_feature': np.random.rand(1),
-#         'label': np.random.randint(0, 2, size=1),
-#         'id': hashlib.sha256(b'some_id_bytes')
-#     }]
-#     return pd.DataFrame(data)
+@pytest.fixture()
+def known_subject(size, size, channels):
+    return {
+        'matrix': np.random.rand(size, size, channels),
+        'label': np.random.randint(0, 2, size=1),
+        'id': hashlib.sha256(b'some_id_bytes')
+    }
 
 
-# @pytest.fixture()
-# def unknown_subjects():
-#     data = [{
-#         'some_feature': np.random.rand(1),
-#         'id': hashlib.sha256(b'some_id_bytes')
-#     }]
-#     return pd.DataFrame(data)
+@pytest.fixture()
+def unknown_subject(known_subject):
+    return {
+        'matrix': np.random.rand(size, size, channels),
+        'id': hashlib.sha256(b'some_id_bytes')
+    }]
+    return pd.DataFrame(data)
 
 
 @pytest.fixture()
