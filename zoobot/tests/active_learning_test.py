@@ -23,21 +23,18 @@ logging.basicConfig(
 
 
 @pytest.fixture()
-def known_subject(size, size, channels):
+def unknown_subject(size, channels):
     return {
         'matrix': np.random.rand(size, size, channels),
-        'label': np.random.randint(0, 2, size=1),
-        'id': hashlib.sha256(b'some_id_bytes')
+        'id': hashlib.sha256(b'some_id_bytes').hexdigest()
     }
 
 
 @pytest.fixture()
-def unknown_subject(known_subject):
-    return {
-        'matrix': np.random.rand(size, size, channels),
-        'id': hashlib.sha256(b'some_id_bytes')
-    }]
-    return pd.DataFrame(data)
+def known_subject(known_subject):
+    known_subject = unknown_subject.copy()
+    known_subject['label'] = np.random.randint(1)
+    return known_subject
 
 
 @pytest.fixture()
@@ -50,21 +47,32 @@ def empty_shard_db():
     db = sqlite3.connect(':memory:')
 
     cursor = db.cursor()
-    cursor.execute
-    ('''
-    CREATE TABLE shard_index(
-        id INTEGER PRIMARY KEY,
-        saved_size INTEGER,
-        tfrecord TEXT)
-    ''')
+
+    cursor.execute(
+        '''
+        CREATE TABLE catalog(
+            id STRING PRIMARY KEY,
+            label INT)
+        '''
+    )
     db.commit()
 
-    cursor.execute
-    ('''
-    CREATE TABLE acquisitions(
-        id INTEGER PRIMARY KEY,
-        acquisition_value FLOAT)
-    ''')
+    cursor.execute(
+        '''
+        CREATE TABLE shardindex(
+            id STRING PRIMARY KEY,
+            tfrecord TEXT)
+        '''
+    )
+    db.commit()
+
+    cursor.execute(
+        '''
+        CREATE TABLE acquisitions(
+            id STRING PRIMARY KEY,
+            acquisition_value FLOAT)
+        '''
+    )
     db.commit()
     return db
 
@@ -80,11 +88,11 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
                   VALUES(:id, :acquisition_value)
         ''',
         {
-            'id': 1,
+            'id': 'some_hash',
             'acquisition_value': 0.9
         }
     )
-    cursor.commit()
+    db.commit()
 
     cursor.execute(
         '''
@@ -92,18 +100,18 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
                   VALUES(:id, :acquisition_value)
         ''',
         {
-            'id': 2,
+            'id': 'some_other_hash',
             'acquisition_value': 0.3
         }
     )
-    cursor.commit()
+    db.commit()
 
     return db
 
 
 @pytest.fixture()
 def shard_locs(stratified_tfrecord_locs):
-    return stratified_tfrecord_locs  # pair of records
+    return stratified_tfrecord_locs  # pair of records. Bad - has label, does not have id
 
 
 @pytest.fixture()
@@ -117,30 +125,86 @@ def acquisition():
     return np.random.rand()
 
 
-def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir):
+def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, label_col, id_col, columns_to_save, tfrecord_dir):
     active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=10)
+    # db should contain the catalog in 'catalog' table
+    cursor = empty_shard_db.cursor()
+    cursor.execute(
+        '''
+        SELECT id, label FROM catalog
+        '''
+    )
+    catalog_entries = cursor.fetchall()
+    for entry in catalog_entries:
+        recovered_id = str(entry[0])
+        recovered_label = entry[1]
+        expected_label = catalog[catalog['id'] == recovered_id].squeeze()[label_col]
+        assert recovered_label == expected_label
+
+    # db should contain file locs in 'shardindex' table
+    # tfrecords should have been written with the right files
+    cursor.execute(
+        '''
+        SELECT id, tfrecord FROM shardindex
+        '''
+    )
+    shardindex_entries = cursor.fetchall()
+    shardindex_data = []
+    for entry in shardindex_entries:
+        shardindex_data.append({
+            'id': str(entry[0]).encode('utf8'),  # TODO shardindex id is a byte string
+            'tfrecord': entry[1]
+        })
+    shardindex = pd.DataFrame(data=shardindex_data)
+
+    tfrecord_locs = shardindex['tfrecord'].unique()
+    for tfrecord_loc in tfrecord_locs:
+        expected_shard_ids = set(shardindex[shardindex['tfrecord'] == tfrecord_loc]['id'].unique())
+        examples = read_tfrecord.load_examples_from_tfrecord(
+            [tfrecord_loc], 
+            read_tfrecord.matrix_label_id_feature_spec(size, channels)
+        )
+        actual_shard_ids = set([example['id'] for example in examples])
+        assert expected_shard_ids == actual_shard_ids
 
 
-def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db):  # bad loc
-    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db)
+def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_col):  # bad loc
+    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_col)
+    cursor = empty_shard_db.cursor()
+    cursor.execute(
+        '''
+        SELECT id, tfrecord FROM shardindex
+        '''
+    )
+    saved_subjects = cursor.fetchall()
+    for n, subject in enumerate(saved_subjects):
+        assert str(subject[0]) == catalog.iloc[n][id_col]  # strange string casting when read back
+        assert subject[1] == example_tfrecord_loc
 
-
-def test_record_acquisition_on_unlabelled(empty_shard_db, predictor, shard_locs, size, channels, acquisition_func):
-    active_learning.record_acquisition_on_unlabelled(empty_shard_db, predictor, shard_locs, size, channels, acquisition_func, n_samples=10)
-
-
-def test_save_acquisition_to_db(subject, acquisition, empty_shard_db):
-    active_learning.save_acquisition_to_db(subject, acquisition, empty_shard_db)
+def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
+    active_learning.save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
         SELECT id, acquisition_value FROM acquisitions
         '''
     )
-    # TODO should use namedtuples to read/write db rows
     saved_subject = cursor.fetchone()
-    assert saved_subject[0] == subject['id']
+    assert saved_subject[0] == unknown_subject['id']
     assert np.isclose(saved_subject[1], acquisition)
+
+
+def test_record_acquisition_on_unlabelled(filled_shard_db, predictor, acquisition_func, shard_locs, size, channels):
+    active_learning.record_acquisition_on_unlabelled(filled_shard_db, predictor, shard_locs, size, channels, acquisition_func, n_samples=10)
+    cursor = filled_shard_db.cursor()
+    cursor.execute(
+        '''
+        SELECT id, acquisition_value FROM acquisitions
+        '''
+    )
+    saved_subjects = cursor.fetchall()
+    for subject in saved_subjects:
+        assert 0. > subject[1] < 1.  # doesn't actually verify value is consistent
 
 
 @pytest.fixture()

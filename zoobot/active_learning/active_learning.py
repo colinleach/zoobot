@@ -3,6 +3,7 @@ import shutil
 import functools
 import logging
 import sqlite3
+from collections import namedtuple
 
 import tensorflow as tf
 import pandas as pd
@@ -30,6 +31,8 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
 
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle
 
+    add_catalog_to_db(df, db, id_col, label_col)  # consider refactoring out of this func
+
     # split into shards
     shard_n = 0
     n_shards = int((len(df) // shard_size) + 1)
@@ -37,22 +40,50 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
 
     for shard_n, df_shard in enumerate(df_shards):
         save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
-        catalog_to_tfrecord.write_image_df_to_tfrecord(df, label_col, save_loc, img_size, columns_to_save, append=False, source='fits')
-        add_tfrecord_to_db(save_loc, db)
+        assert isinstance(save_loc, str)
+        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, label_col, save_loc, img_size, columns_to_save, append=False, source='fits')
+        add_tfrecord_to_db(save_loc, db, df_shard, id_col)
     return df
 
 
-def add_tfrecord_to_db(tfrecord_loc, db, df=None):
+def add_catalog_to_db(df, db, id_col, label_col):
+    catalog_entries = list(df[[id_col, label_col]].itertuples(index=False, name='CatalogEntry'))
+    cursor = db.cursor()
+    cursor.executemany(
+        '''
+        INSERT INTO catalog(id, label) VALUES(?,?)''',
+        catalog_entries
+    )
+    db.commit()
+
+
+def add_tfrecord_to_db(tfrecord_loc, db, df, id_col):
     # scan through the record to make certain everything is truly there,
     # rather than just reading df?
-    pass
-
+    # eventually, consider the catalog being SQL as source-of-truth and csv output
+    # ShardIndexEntry = namedtuple('ShardIndexEntry', 'id, tfrecord')
+    shard_index_entries = list(zip(
+        df[id_col].values, 
+        [tfrecord_loc for n in range(len(df))]
+    ))
+    # shard_index_entries = list(map(
+    #     lambda x, y: ShardIndexEntry._make(id=x, tfrecord=y),
+    #     d,
+          # could alternatively modify df beforehand
+    # ))  
+    cursor = db.cursor()
+    cursor.executemany(
+        '''
+        INSERT INTO shardindex(id, tfrecord) VALUES(?,?)''',
+        shard_index_entries
+    )
+    db.commit()
 
 
 def record_acquisition_on_unlabelled(db, model, shard_locs, size, channels, acqisition_func, n_samples):
     # iterate though the shards and get the acq. func of all unlabelled examples
     # shards should fit in memory for one machine
-    subjects = read_tfrecord.load_examples_from_tfrecord(shard_locs, size, channels)
+    subjects = read_tfrecord.load_examples_from_tfrecord(shard_locs, read_tfrecord.matrix_id_feature_spec(size, channels))
     predictions = make_predictions.get_samples_of_subjects(model, subjects, n_samples)
     acquisitions = acqisition_func(predictions)  # may need axis adjustment
     for subject, acquisition in zip(subjects, acquisitions):

@@ -95,11 +95,11 @@ def row_to_serialized_example(row, img_size, label_col, columns_to_save, source,
     matrix = np.array(final_pil_img)
 
     label = int(row[label_col])
-    extra_data = {}
+    extra_kwargs = {}
     for col in columns_to_save:
-        extra_data.update({col: row[col]})
+        extra_kwargs.update({col: row[col]})
 
-    return create_tfrecord.serialize_image_example(matrix, label, extra_data)
+    return create_tfrecord.serialize_image_example(matrix, label=label, **extra_kwargs)
 
 
 def load_png_as_pil(subject):

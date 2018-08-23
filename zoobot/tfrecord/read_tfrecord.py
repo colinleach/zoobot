@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
-def load_examples_from_tfrecord(tfrecord_locs, size, channels, n_examples=None):
+def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):
     # see http://www.machinelearninguru.com/deep_learning/tensorflow/basics/tfrecord/tfrecord.html
     with tf.Session() as sess:
         # Create a list of filenames and pass it to a queue
@@ -12,7 +12,7 @@ def load_examples_from_tfrecord(tfrecord_locs, size, channels, n_examples=None):
         # Define a reader and read the next record
         reader = tf.TFRecordReader()
         _, serialized_example = reader.read(filename_queue)
-        example = parse_example(serialized_example, size, channels)
+        example = tf.parse_single_example(serialized_example, features=feature_spec)
 
         # initialize all global and local variables
         # this op must be defined (not only executed) within the session
@@ -35,13 +35,36 @@ def load_examples_from_tfrecord(tfrecord_locs, size, channels, n_examples=None):
         return data
 
 
-def parse_example(example, size, channels):
-    features = {
-        'matrix': tf.FixedLenFeature((size * size * channels), tf.float32),
-        'label': tf.FixedLenFeature([], tf.int64),
+def matrix_label_feature_spec(size, channels):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64)
         }
 
-    return tf.parse_single_example(example, features=features)
+
+def matrix_id_feature_spec(size, channels):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "id": tf.FixedLenFeature((), tf.string)
+        }
+
+
+def matrix_label_id_feature_spec(size, channels):
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "label": tf.FixedLenFeature((), tf.int64),
+        "id": tf.FixedLenFeature((), tf.string)
+        }
+
+
+# not required, use tf.parse_single_example directly
+# def parse_example(example, size, channels):
+#     features = {
+#         'matrix': tf.FixedLenFeature((size * size * channels), tf.float32),
+#         'label': tf.FixedLenFeature([], tf.int64),
+#         }
+
+#     return tf.parse_single_example(example, features=features)
 
 
 # these are actually not related to reading a tfrecord, they are very general

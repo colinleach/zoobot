@@ -1,5 +1,7 @@
 import os
 import random
+import time
+import hashlib
 
 from astropy.io import fits
 from PIL import Image
@@ -142,6 +144,31 @@ def tfrecord_dir(tmpdir):
     return tmpdir.mkdir('tfrecord_dir').strpath
 
 
+@pytest.fixture()  # depends on create_tfrecord serializing correctly
+def serialized_matrix_label_example(size, channels):
+    return create_tfrecord.serialize_image_example(
+        matrix=np.random.rand(size, size, channels),
+        label=1
+        )
+
+
+@pytest.fixture()  # depends on create_tfrecord serializing correctly
+def serialized_matrix_id_example(size, channels, unique_id):
+    return create_tfrecord.serialize_image_example(
+        matrix=np.random.rand(size, size, channels),
+        id_str=unique_id
+        )
+
+
+@pytest.fixture()  # depends on create_tfrecord serializing correctly
+def serialized_matrix_label_id_example(size, channels, unique_id):
+    return create_tfrecord.serialize_image_example(
+        matrix=np.random.rand(size, size, channels),
+        label=1,
+        id_str=unique_id
+        )
+
+
 @pytest.fixture()
 def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
     tfrecord_locs = [
@@ -156,6 +183,38 @@ def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
         writer = tf.python_io.TFRecordWriter(tfrecord_loc)
         for example in stratified_data:  # depends on tfrecord.create_tfrecord
             writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))
+        writer.close()
+
+    return tfrecord_locs  # of form [train_loc, test_loc]
+
+
+
+@pytest.fixture()
+def shard_locs(tfrecord_dir):  # write shards dynamically when called
+
+    shard_names = [
+        's28_shard_0.tfrecord',
+        's28_shard_1.tfrecord'
+    ]
+    tfrecord_locs = list(map(
+        lambda x: os.path.join(tfrecord_dir, x),
+        shard_names
+    ))
+
+    for tfrecord_n, tfrecord_loc in enumerate(tfrecord_locs):
+        if os.path.exists(tfrecord_loc):
+            os.remove(tfrecord_loc)
+        
+        examples = [
+            {
+                'matrix': np.random.rand(size, size, channels), 
+                'id': str(tfrecord_n) + '_' + str(n)
+                }
+            for n in range(128)]
+
+        writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+        for example in examples:  # depends on tfrecord.create_tfrecord
+            writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], id_str=example['id']))
         writer.close()
 
     return tfrecord_locs  # of form [train_loc, test_loc]
@@ -185,17 +244,22 @@ def id_col():
 def columns_to_save(label_col, id_col):
     return [
         label_col,
-        id_col,  # Will break tests, saving string features is not yet implemented!
+        id_col,
         'ra',
         'dec']
 
 
 @pytest.fixture
-def catalog(label_col, id_col):
+def unique_id():  # not currently used
+    id_hash = hashlib.sha256(bytes(str(time.time()), 'utf8'))  # unique id each time
+    yield id_hash.hexdigest()
+
+
+@pytest.fixture
+def catalog(label_col, id_col, unique_id):
 
     zoo1 = {
         label_col: 0.4,
-        id_col: 'zoo1',
         'ra': 12.0,
         'dec': -1.0,
         'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
@@ -205,7 +269,6 @@ def catalog(label_col, id_col):
 
     zoo2 = {
         label_col: 0.4,
-        id_col: 'zoo1',
         'ra': 15.0,
         'dec': -1.0,
         'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),
@@ -213,11 +276,6 @@ def catalog(label_col, id_col):
         'png_ready': True
     }
 
-    return pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
-
-
-@pytest.fixture()
-def matrix_label_feature_spec(size):
-    return {
-        "matrix": tf.FixedLenFeature((size * size * 3), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64)}
+    df = pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
+    df[id_col] = [str(n) for n in range(len(df))]
+    return df

@@ -4,27 +4,19 @@ import numpy as np
 import tensorflow as tf
 
 
-def serialize_image_example(matrix, label, extra_data=None):
+def serialize_image_example(matrix, **extra_kwargs):
     """
     Save an image, label and any additional data to serialized byte string
 
     Args:
         matrix (np.array): pixel data. Floats in shape [height, width, depth]
-        label (int): class of image
-        writer ():
-        extra_data (dict): of form {'name of feature to save': value(s) to be saved. Int, float, or np.array only
+        **extra_kwargs (dict): any further keyword args will be saved as named in the tfrecord
 
     Returns:
         None
     """
 
     flat_matrix = np.reshape(matrix, matrix.size)
-
-    # A Feature contains one of either a int64_list,
-    # float_list, or bytes_list
-    # Each of these will be preserved in the TFRecord
-    label_feature = int_to_feature(label)
-
     matrix_feature = float_list_to_feature(flat_matrix)
 
     # Expects TensorFlow data format convention, "Height-Width-Depth".
@@ -39,18 +31,16 @@ def serialize_image_example(matrix, label, extra_data=None):
         channels_feature = int_to_feature(matrix.shape[2])
 
     features_to_save = {
-        'label': label_feature,
         'matrix': matrix_feature,
         'channels': channels_feature,
         'height': height_feature,
         'width': width_feature
     }
 
-    if extra_data:
-        extra_data = extra_data.copy()  # avoid mutating input dict
-        for name, value in extra_data.items():
-            extra_data[name] = value_to_feature(value)
-        features_to_save.update(extra_data)
+    extra_data = {}
+    for name, value in extra_kwargs.items():
+        extra_data[name] = value_to_feature(value)
+    features_to_save.update(extra_data)
 
     # construct the Example protocol buffer boject
     example = tf.train.Example(

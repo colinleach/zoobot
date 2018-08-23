@@ -5,7 +5,7 @@ import os
 import tensorflow as tf
 import numpy as np
 
-from zoobot.tfrecord import create_tfrecord
+from zoobot.tfrecord import create_tfrecord, read_tfrecord
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
@@ -21,11 +21,14 @@ def extra_data_feature_spec(size, channels):
         'a_string': tf.FixedLenFeature([], tf.string)}
 
 
-def test_serialize_image_example(visual_check_image_data, matrix_label_feature_spec):
+def test_serialize_image_example(visual_check_image_data, size, channels):
     serialized_example = create_tfrecord.serialize_image_example(visual_check_image_data, label=1)
     # parse back and confirm it matches. Must be within session for tensors to be comparable to np
     with tf.Session() as sess:
-        example = tf.parse_single_example(serialized_example, matrix_label_feature_spec)
+        example = tf.parse_single_example(
+            serialized_example, 
+            features=read_tfrecord.matrix_label_feature_spec(size, channels)
+            )
         recovered_matrix = example['matrix'].eval()
         assert np.allclose(recovered_matrix, visual_check_image_data.flatten())
         assert example['label'].eval() == 1
@@ -37,7 +40,7 @@ def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_
     a_float = .5
     some_floats = np.array([1., 2., 3.])
     a_string = 'hello world'
-    extra_data = {
+    extra_kwargs = {
         'an_int': 1,
         'a_float': .5,
         'some_floats': some_floats,
@@ -45,8 +48,8 @@ def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_
     }
     serialized_example = create_tfrecord.serialize_image_example(
         visual_check_image_data,
-        label, 
-        extra_data
+        label=label, 
+        **extra_kwargs
     )
     with tf.Session() as sess:
         example = tf.parse_single_example(serialized_example, extra_data_feature_spec)
