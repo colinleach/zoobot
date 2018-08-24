@@ -25,9 +25,11 @@ def create_db(db_loc):
 
 def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, columns_to_save, save_dir, shard_size=10000):
     assert not df.empty
-
+    
     if id_col not in columns_to_save:
         columns_to_save += [id_col]
+    if label_col not in columns_to_save:
+        columns_to_save += [label_col]
 
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle
 
@@ -40,8 +42,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
 
     for shard_n, df_shard in enumerate(df_shards):
         save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
-        assert isinstance(save_loc, str)
-        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, label_col, save_loc, img_size, columns_to_save, append=False, source='fits')
+        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
         add_tfrecord_to_db(save_loc, db, df_shard, id_col)
     return df
 
@@ -51,7 +52,7 @@ def add_catalog_to_db(df, db, id_col, label_col):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id, label) VALUES(?,?)''',
+        INSERT INTO catalog(id_str, label) VALUES(?,?)''',
         catalog_entries
     )
     db.commit()
@@ -74,7 +75,7 @@ def add_tfrecord_to_db(tfrecord_loc, db, df, id_col):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO shardindex(id, tfrecord) VALUES(?,?)''',
+        INSERT INTO shardindex(id_str, tfrecord) VALUES(?,?)''',
         shard_index_entries
     )
     db.commit()
@@ -93,14 +94,55 @@ def record_acquisition_on_unlabelled(db, model, shard_locs, size, channels, acqi
 def save_acquisition_to_db(subject, acquisition, db): 
     # will overwrite previous acquisitions
     # could make faster with batches, but not needed I think
+    # TODO needs test for duplicate values/replace behaviour
     cursor = db.cursor()  
     cursor.execute('''  
-    INSERT INTO acquisitions(id, acquisition_value)
-                  VALUES(:id, :acquisition_value)''',
+    INSERT OR REPLACE INTO acquisitions(id_str, acquisition_value)  
+                  VALUES(:id_str, :acquisition_value)''',
                   {
-                      'id':subject['id'], 
+                      'id_str':subject['id_str'], 
                       'acquisition_value':acquisition})
     db.commit()
+
+
+def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
+    top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
+    top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
+    catalog_to_tfrecord.write_image_df_to_tfrecord(
+        catalog, 
+        tfrecord_loc, 
+        size, 
+        columns_to_save=['id_str', 'label'], 
+        append=True, # must append, don't overwrite previous training data! 
+        source='fits')
+
+
+def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
+    cursor = db.cursor()
+    if shard_loc is None:  # top subjects from any shard
+        cursor.execute(
+            '''
+            SELECT id_str, acquisition_value 
+            FROM acquisitions 
+            ORDER BY acquisition_value DESC
+            LIMIT (:n_subjects)
+            ''',
+            (n_subjects,)
+        )
+    else:
+        cursor.execute(  # top subjects from that shard only
+            '''
+            SELECT acquisitions.id_str, acquisitions.acquisition_value, shardindex.id_str, shardindex.tfrecord
+            FROM acquisitions 
+            INNER JOIN shardindex ON acquisitions.id_str = shardindex.id_str
+            WHERE shardindex.tfrecord = (:shard_loc)
+            ORDER BY acquisition_value DESC
+            LIMIT (:n_subjects)
+            ''',
+            (shard_loc, n_subjects),
+        )
+    top_subjects = cursor.fetchall()
+    return [x[0] for x in top_subjects]  # list of id_str's
 
 
 

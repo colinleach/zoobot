@@ -190,7 +190,7 @@ def stratified_tfrecord_locs(tfrecord_dir, stratified_data):
 
 
 @pytest.fixture()
-def shard_locs(tfrecord_dir):  # write shards dynamically when called
+def shard_locs(tfrecord_dir, size, channels):  # write shards dynamically when called
 
     shard_names = [
         's28_shard_0.tfrecord',
@@ -205,16 +205,11 @@ def shard_locs(tfrecord_dir):  # write shards dynamically when called
         if os.path.exists(tfrecord_loc):
             os.remove(tfrecord_loc)
         
-        examples = [
-            {
-                'matrix': np.random.rand(size, size, channels), 
-                'id': str(tfrecord_n) + '_' + str(n)
-                }
-            for n in range(128)]
+        examples = [{'matrix': np.random.rand(size, size, channels), 'id_str': str(tfrecord_n) + '_' + str(n)} for n in range(128)]
 
         writer = tf.python_io.TFRecordWriter(tfrecord_loc)
         for example in examples:  # depends on tfrecord.create_tfrecord
-            writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], id_str=example['id']))
+            writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], id_str=example['id_str']))
         writer.close()
 
     return tfrecord_locs  # of form [train_loc, test_loc]
@@ -232,12 +227,12 @@ def predictor():
 
 @pytest.fixture()
 def label_col():
-    return 't04_spiral_a08_spiral_weighted_fraction'
+    return 'label'
 
 
 @pytest.fixture()
 def id_col():
-    return 'id'
+    return 'id_str'
 
 
 @pytest.fixture
@@ -259,7 +254,7 @@ def unique_id():  # not currently used
 def catalog(label_col, id_col, unique_id):
 
     zoo1 = {
-        label_col: 0.4,
+        label_col: 1,
         'ra': 12.0,
         'dec': -1.0,
         'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
@@ -268,7 +263,7 @@ def catalog(label_col, id_col, unique_id):
     }
 
     zoo2 = {
-        label_col: 0.4,
+        label_col: 0,
         'ra': 15.0,
         'dec': -1.0,
         'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),

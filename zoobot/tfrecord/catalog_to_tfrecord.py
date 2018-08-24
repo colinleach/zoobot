@@ -42,7 +42,7 @@ def load_decals_as_pil(subject):
     return Image.fromarray(pil_safe_img, mode='RGB')
 
 
-def write_catalog_to_train_test_tfrecords(df, label_col, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):
+def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):
     train_test_split = int(train_test_fraction * len(df))
 
     df = df.sample(frac=1).reset_index(drop=True)
@@ -54,13 +54,12 @@ def write_catalog_to_train_test_tfrecords(df, label_col, train_loc, test_loc, im
     assert not train_df.empty
     assert not test_df.empty
 
-    write_image_df_to_tfrecord(train_df, label_col, train_loc, img_size, columns_to_save, append=False, source='fits')
-    write_image_df_to_tfrecord(test_df, label_col, test_loc, img_size, columns_to_save, append=False, source='fits')
-
+    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, source='fits')
+    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, source='fits')
     return train_df, test_df
 
 
-def write_image_df_to_tfrecord(df, label_col, tfrecord_loc, img_size, columns_to_save, append=False, source='fits', load_fits_as_pil=load_decals_as_pil):
+def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, append=False, source='fits', load_fits_as_pil=load_decals_as_pil):
 
     if not append:
         if os.path.exists(tfrecord_loc):
@@ -70,15 +69,16 @@ def write_image_df_to_tfrecord(df, label_col, tfrecord_loc, img_size, columns_to
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
 
     for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
-        serialized_example = row_to_serialized_example(subject, img_size, label_col, columns_to_save, source, load_fits_as_pil)
+        serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, source, load_fits_as_pil)
         writer.write(serialized_example)
 
     writer.close()  # very important - will give 'DataLoss' error if writer not closed
     sys.stdout.flush()
 
+# problem: must contain a label to be written to tfrecord. Should fix!
+def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_as_pil):
+    # row should have columns that exactly match a read_tfrecord feature spec function
 
-def row_to_serialized_example(row, img_size, label_col, columns_to_save, source, load_fits_as_pil):
-    # if row['png_ready']:
     if source == 'fits':
         pil_img = load_fits_as_pil(row)  # passed by user - may vary
     elif source == 'png':
@@ -88,18 +88,18 @@ def row_to_serialized_example(row, img_size, label_col, columns_to_save, source,
         raise ValueError
 
     # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')
-    # to align with north/east TODO refactor this to make sure it matches downloader
+    # to align with north/east 
+    # TODO refactor this to make sure it matches downloader
     final_pil_img = pil_img.resize(size=(img_size, img_size), resample=Image.LANCZOS).transpose(
         Image.FLIP_TOP_BOTTOM)
-
     matrix = np.array(final_pil_img)
 
-    label = int(row[label_col])
+    # label = int(row[label_col])  # TODO don't do this within the row->serialize!
     extra_kwargs = {}
     for col in columns_to_save:
         extra_kwargs.update({col: row[col]})
 
-    return create_tfrecord.serialize_image_example(matrix, label=label, **extra_kwargs)
+    return create_tfrecord.serialize_image_example(matrix, **extra_kwargs)
 
 
 def load_png_as_pil(subject):
