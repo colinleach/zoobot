@@ -158,8 +158,8 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
 
 @pytest.fixture()
 def acquisition_func():
-    # return make_predictions.entropy
-    return lambda x: np.random.rand(x.shape[0])
+    # converts loaded subjects to acquisition scores. Here, random.
+    return lambda x: np.random.rand(len(x))
 
 
 @pytest.fixture()
@@ -223,6 +223,7 @@ def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_co
         assert str(subject[0]) == catalog.iloc[n][id_col]  # strange string casting when read back
         assert subject[1] == example_tfrecord_loc
 
+
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     active_learning.save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db)
     cursor = empty_shard_db.cursor()
@@ -236,8 +237,8 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_record_acquisition_on_unlabelled(filled_shard_db, predictor, acquisition_func, shard_locs, size, channels):
-    active_learning.record_acquisition_on_unlabelled(filled_shard_db, predictor, shard_locs, size, channels, acquisition_func, n_samples=10)
+def test_record_acquisition_on_unlabelled(filled_shard_db, acquisition_func, shard_locs, size, channels):
+    active_learning.record_acquisition_on_unlabelled(filled_shard_db, shard_locs, size, channels, acquisition_func)
     cursor = filled_shard_db.cursor()
     cursor.execute(
         '''
@@ -259,25 +260,30 @@ def test_get_top_acquisitions(filled_shard_db):
     assert top_ids == ['some_hash', 'yet_another_hash']
 
 
-def test_add_top_acquisitions_to_tfrecord(catalog, filled_shard_db, tfrecord_dir, size, channels):
+def test_add_top_acquisitions_to_tfrecord(monkeypatch, catalog, filled_shard_db, tfrecord_dir, size, channels):
+    # catalog must contain records with ids matching the database ids
+    catalog.at[0, 'id_str'] = 'some_hash'
+    catalog.at[12, 'id_str'] = 'yet_another_hash'
     shard_loc = 'tfrecord_a'  # only get top acquisitions from here
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     # TODO there should already be a record here with some other entries, should only append
     n_subjects = 2
-    active_learning.add_top_acquisitions_to_tfrecord(catalog, filled_shard_db, n_subjects, shard_loc, tfrecord_loc, size)
+
+    def mock_get_top_acquisitions(db, n_subjects, shard_loc):
+        return ['some_hash', 'yet_another_hash']
+    monkeypatch.setattr(active_learning, 'get_top_acquisitions', mock_get_top_acquisitions)
+
+    active_learning.add_top_acquisitions_to_tfrecord(catalog, filled_shard_db, n_subjects, None, tfrecord_loc, size)
+
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
-    assert subjects[0]['id_str'] == 'some_hash'
-    assert subjects[1]['id_str'] == 'yet_another_hash'
+    assert subjects[0]['id_str'].decode('utf-8') == 'some_hash'  # saved as bytes in tfrecord
+    assert subjects[1]['id_str'].decode('utf-8') == 'yet_another_hash'  # saved as bytes in tfrecord
 
 
-# @pytest.fixture()
-# def params(test_dir):
-#     params = active_learning.get_active_learning_params()
-#     params['known_tfrecord_loc'] = test_dir + 'known.tfrecord'
-#     params['unknown_tfrecord_loc'] = test_dir + 'unknown.tfrecord'
+def test_setup():  # TODO
+    pass
 
 
-# def test_run_experiment(estimator, params, known_subjects, unknown_subjects):
-#     active_learning.run_active_learning(estimator, params, known_subjects, unknown_subjects)
-#     assert os.path.exists(params['log_dir'])
+def test_run():  # TODO
+    pass

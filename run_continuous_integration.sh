@@ -1,5 +1,7 @@
 #/bin/sh!
 
+# must already be logged in: docker login, username is mikewalmsley
+
 # must be run from this directory
 docker build -t=zoobot .
 docker run -v ~/dockerlogs:/to_host zoobot /bin/sh -c "pytest zoobot;"​

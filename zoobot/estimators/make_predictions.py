@@ -58,6 +58,13 @@ def entropy(probabilites):
     return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)))
 
 
+def acquisition_func(model, n_samples):
+    def acquisition_callable(subjects):
+        samples = get_samples_of_subjects(model, subjects, n_samples)
+        return entropy(samples)
+    return acquisition_callable
+
+
 def view_samples(scores, labels):
     """For many subjects, view the distribution of scores and labels for that subject
 

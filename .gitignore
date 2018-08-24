@@ -10,7 +10,9 @@
 *model.ckpt*
 *variables.data*
 *variables.index*
-*saved_model.pb*
+zoobot/illustris/runs
+zoobot/old_runs
+zoobot/runs
 *.pbtxt*
 *events.out*
 *checkpoint
