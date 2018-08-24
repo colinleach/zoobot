@@ -5,6 +5,7 @@ import os
 import random
 import hashlib
 import sqlite3
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -13,6 +14,7 @@ import pandas as pd
 from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
 from zoobot.active_learning import active_learning
+from zoobot.estimators import make_predictions
 
 
 logging.basicConfig(
@@ -169,8 +171,13 @@ def acquisition():
 
 def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, label_col, id_col, columns_to_save, tfrecord_dir):
     active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=10)
-    # db should contain the catalog in 'catalog' table
-    cursor = empty_shard_db.cursor()
+    verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
+    verify_db_matches_shards(catalog, empty_shard_db, size, channels)
+
+
+def verify_db_matches_catalog(catalog, db, id_col, label_col):
+     # db should contain the catalog in 'catalog' table
+    cursor = db.cursor()
     cursor.execute(
         '''
         SELECT id_str, label FROM catalog
@@ -183,8 +190,11 @@ def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channel
         expected_label = catalog[catalog[id_col] == recovered_id].squeeze()[label_col]
         assert recovered_label == expected_label
 
+
+def verify_db_matches_shards(catalog, db, size, channels):
     # db should contain file locs in 'shardindex' table
     # tfrecords should have been written with the right files
+    cursor = db.cursor()
     cursor.execute(
         '''
         SELECT id_str, tfrecord FROM shardindex
@@ -238,7 +248,8 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
 
 
 def test_record_acquisition_on_unlabelled(filled_shard_db, acquisition_func, shard_locs, size, channels):
-    active_learning.record_acquisition_on_unlabelled(filled_shard_db, shard_locs, size, channels, acquisition_func)
+    shard_loc = shard_locs[0]
+    active_learning.record_acquisition_on_unlabelled(filled_shard_db, shard_loc, size, channels, acquisition_func)
     cursor = filled_shard_db.cursor()
     cursor.execute(
         '''
@@ -277,13 +288,44 @@ def test_add_top_acquisitions_to_tfrecord(monkeypatch, catalog, filled_shard_db,
 
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
-    assert subjects[0]['id_str'].decode('utf-8') == 'some_hash'  # saved as bytes in tfrecord
-    assert subjects[1]['id_str'].decode('utf-8') == 'yet_another_hash'  # saved as bytes in tfrecord
+    assert subjects[0]['id_str'] == 'some_hash'.encode('utf-8')  # tfrecord saves as bytes
+    assert subjects[1]['id_str'] == 'yet_another_hash'.encode('utf-8')  #tfrecord saves as bytes
 
 
-def test_setup():  # TODO
-    pass
+@pytest.fixture()
+def db_loc(tmpdir):
+    return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
 
 
-def test_run():  # TODO
-    pass
+def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir):
+    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir)
+    db = sqlite3.connect(db_loc)
+    verify_db_matches_catalog(catalog, db, id_col, label_col)
+    verify_db_matches_shards(catalog, db, size, channels)
+
+
+def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
+    # depends on setup working okay
+    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir)
+
+    def train_callable():
+        # pretend to save a model in subdirectory of predictor_dir
+        subdir_loc = os.path.join(predictor_dir, str(time.time()))
+        os.mkdir(subdir_loc)
+
+    def mock_load_predictor(loc):
+        return None
+    monkeypatch.setattr(active_learning.make_predictions, 'load_predictor', mock_load_predictor)
+
+    def mock_acquistion_func(predictor, n_samples):
+        return lambda x: np.random.rand(len(x))
+    monkeypatch.setattr(active_learning.make_predictions, 'acquisition_func', mock_acquistion_func)
+
+    # train_callable = lambda x: True  # does nothing
+    train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
+    predictor_dir = tmpdir.mkdir('predictor_dir').strpath
+    active_learning.run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable)
+
+
+def test_get_all_shard_locs(filled_shard_db):
+    assert set(active_learning.get_all_shard_locs(filled_shard_db)) == {'tfrecord_a', 'tfrecord_b'}
