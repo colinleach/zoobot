@@ -105,18 +105,6 @@ def save_acquisition_to_db(subject, acquisition, db):
     db.commit()
 
 
-def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
-    top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
-    top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
-    catalog_to_tfrecord.write_image_df_to_tfrecord(
-        catalog, 
-        tfrecord_loc, 
-        size, 
-        columns_to_save=['id_str', 'label'], 
-        append=True, # must append, don't overwrite previous training data! 
-        source='fits')
-
-
 def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     cursor = db.cursor()
     if shard_loc is None:  # top subjects from any shard
@@ -144,6 +132,17 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     top_subjects = cursor.fetchall()
     return [x[0] for x in top_subjects]  # list of id_str's
 
+
+def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
+    top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
+    top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
+    catalog_to_tfrecord.write_image_df_to_tfrecord(
+        catalog, 
+        tfrecord_loc, 
+        size, 
+        columns_to_save=['id_str', 'label'], 
+        append=True, # must append, don't overwrite previous training data! 
+        source='fits')
 
 
 
