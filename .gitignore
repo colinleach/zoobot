@@ -22,3 +22,6 @@ zoobot/runs
 *.ipynb_checkpoints*
 !zoobot/test_examples/*
 *.ropeproject*
+build/*
+*.whl
+*.egg-info
