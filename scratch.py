@@ -1,6 +1,6 @@
 import sqlite3
 
-db = sqlite3.connect('/data/repos/db.db')
+db = sqlite3.connect('/Users/mikewalmsley/repos/db.db')
 cursor = db.cursor()
 
 n_rows = 10

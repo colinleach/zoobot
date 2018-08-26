@@ -1,5 +1,6 @@
 import os
 import shutil
+from shutil import copyfile
 import functools
 import logging
 import sqlite3
@@ -64,8 +65,8 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle
     # split into shards
     shard_n = 0
-    n_shards = int((len(df) // shard_size) + 1)
-    df_shards = [df.iloc[n * shard_size:n + 1 * shard_size] for n in range(n_shards)]
+    n_shards = (len(df) // shard_size) + 1
+    df_shards = [df.iloc[n * shard_size:(n + 1) * shard_size] for n in range(n_shards)]
 
     for shard_n, df_shard in enumerate(df_shards):
         save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
@@ -169,15 +170,18 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
             ''',
             (shard_loc, n_subjects),
         )
-    top_subjects = cursor.fetchall()
-    top_acquisitions = [x[0] for x in top_subjects]
-    assert len(top_acquisitions) > 0
+    top_subjects = cursor.fetchall()  # somehow autoconverts to id_str to int...
+    top_acquisitions = [str(x[0]) for x in top_subjects]  # ensure id_str really is str
+    if len(top_acquisitions) == 0:
+        raise ValueError
     return top_acquisitions # list of id_str's
 
 
 def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
     top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
     top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
+    if top_catalog_rows.empty:
+        raise ValueError('Fatal mismatch: top ids not found in catalog! Top: {}, Expected: {}'.format(top_acquisitions, catalog['id_str']))
     assert len(top_catalog_rows) > 0
     catalog_to_tfrecord.write_image_df_to_tfrecord(
         top_catalog_rows, 
@@ -188,51 +192,55 @@ def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecor
         source='fits')
 
 
-def setup(catalog, db_loc, id_col, label_col, size, shard_dir):
+def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size=25):
     db = create_db(catalog, db_loc, id_col, label_col)
     columns_to_save = [id_col, label_col]
     # writing is slow
-    write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=10000)
+    write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=shard_size)
+    # temporary
+    copyfile(db_loc, '/Users/mikewalmsley/repos/zoobot/setup_db.db')
 
 
 def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
     n_samples = 20
     db = sqlite3.connect(db_loc)
     shard_locs = get_all_shard_locs(db)
-    print(shard_locs)
-    n_subjects_per_iter = 1000
-    max_iterations = 1
+    n_subjects_per_iter = 10
+    max_iterations = 5
 
     iteration = 0
+    shard_n = 0
     while iteration < max_iterations:
-        for shard_loc in shard_locs:
-            print(shard_loc)
+        shard_loc = shard_locs[shard_n]
+        logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
 
-            # train as usual, with saved_model being placed in predictor_dir
-            train_callable()
+        # train as usual, with saved_model being placed in predictor_dir
+        train_callable()  # could be docker container run, save model
 
-            saved_models = os.listdir(predictor_dir)  # subfolders
-            saved_models.sort()  # sort by name i.e. timestamp
-            predictor_loc = saved_models[-1]  # the subfolder with the most recent time
+        # make predictions and save to db, could be docker container
+        saved_models = os.listdir(predictor_dir)  # subfolders
+        saved_models.sort()  # sort by name i.e. timestamp
+        predictor_loc = saved_models[-1]  # the subfolder with the most recent time
+        predictor = make_predictions.load_predictor(predictor_loc)
+        acquisition_func = make_predictions.acquisition_func(predictor, n_samples)
+        record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func)
+        
+        #temporary
+        # from shutil import copyfile
+        # copyfile(db_loc, '/Users/mikewalmsley/repos/zoobot/db.db')
+        
+        # add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, None, train_tfrecord_loc, size)
+        add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
 
-            predictor = make_predictions.load_predictor(predictor_loc)
-            acquisition_func = make_predictions.acquisition_func(predictor, n_samples)
-            record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func)
-            
-            from shutil import copyfile
-            copyfile(db_loc, '/data/repos/db.db')
-            
-            add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, None, train_tfrecord_loc, size)
-            # add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
-
-            iteration += 1
+        iteration += 1
 
 
 def get_all_shard_locs(db):
     cursor = db.cursor()
     cursor.execute(
         '''
-        SELECT tfrecord FROM shardindex
+        SELECT DISTINCT tfrecord FROM shardindex
+        ORDER BY tfrecord ASC
         '''
     )
     return [row[0] for row in cursor.fetchall()]  # list of shard locs

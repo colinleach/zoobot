@@ -172,7 +172,8 @@ def acquisition():
 def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, label_col, id_col, columns_to_save, tfrecord_dir):
     active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=10)
     verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
-    verify_db_matches_shards(catalog, empty_shard_db, size, channels)
+    verify_db_matches_shards(empty_shard_db, size, channels)
+    verify_catalog_matches_shards(catalog, empty_shard_db, size, channels)
 
 
 def verify_db_matches_catalog(catalog, db, id_col, label_col):
@@ -191,9 +192,7 @@ def verify_db_matches_catalog(catalog, db, id_col, label_col):
         assert recovered_label == expected_label
 
 
-def verify_db_matches_shards(catalog, db, size, channels):
-    # db should contain file locs in 'shardindex' table
-    # tfrecords should have been written with the right files
+def load_shardindex(db):
     cursor = db.cursor()
     cursor.execute(
         '''
@@ -204,11 +203,16 @@ def verify_db_matches_shards(catalog, db, size, channels):
     shardindex_data = []
     for entry in shardindex_entries:
         shardindex_data.append({
-            'id_str': str(entry[0]).encode('utf8'),  # TODO shardindex id is a byte string
+            'id_str': str(entry[0]),  # TODO shardindex id is str, loaded from byte string
             'tfrecord': entry[1]
         })
-    shardindex = pd.DataFrame(data=shardindex_data)
+    return pd.DataFrame(data=shardindex_data)
 
+
+def verify_db_matches_shards(db, size, channels):
+    # db should contain file locs in 'shardindex' table
+    # tfrecords should have been written with the right files
+    shardindex = load_shardindex(db)
     tfrecord_locs = shardindex['tfrecord'].unique()
     for tfrecord_loc in tfrecord_locs:
         expected_shard_ids = set(shardindex[shardindex['tfrecord'] == tfrecord_loc]['id_str'].unique())
@@ -216,8 +220,31 @@ def verify_db_matches_shards(catalog, db, size, channels):
             [tfrecord_loc], 
             read_tfrecord.matrix_label_id_feature_spec(size, channels)
         )
-        actual_shard_ids = set([example['id_str'] for example in examples])
+        actual_shard_ids = set([example['id_str'].decode() for example in examples])
         assert expected_shard_ids == actual_shard_ids
+
+
+def verify_catalog_matches_shards(catalog, db, size, channels):
+    from collections import Counter
+    # TODO why do I need to import Counter here?! Surely it should be script scoped...
+    shardindex = load_shardindex(db)
+    tfrecord_locs = shardindex['tfrecord'].unique()
+    # check that every catalog id is in exactly one shard
+    assert not any(catalog['id_str'].duplicated())  # catalog must be unique to start with
+    catalog_ids = Counter(catalog['id_str'])  # all 1's
+    shard_ids = Counter()
+
+    for tfrecord_loc in tfrecord_locs:
+        examples = read_tfrecord.load_examples_from_tfrecord(
+            [tfrecord_loc],
+            read_tfrecord.matrix_label_id_feature_spec(size, channels)
+        )
+        ids_in_shard = [x['id_str'].decode() for x in examples]
+        assert len(ids_in_shard) == len(set(ids_in_shard))  # must be unique within shard
+        shard_ids = Counter(ids_in_shard) + shard_ids
+
+    assert catalog_ids == shard_ids
+
 
 
 def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_col):  # bad loc
@@ -298,10 +325,12 @@ def db_loc(tmpdir):
 
 
 def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir):
+    # falls over if threads start too fast
     active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir)
     db = sqlite3.connect(db_loc)
     verify_db_matches_catalog(catalog, db, id_col, label_col)
-    verify_db_matches_shards(catalog, db, size, channels)
+    verify_db_matches_shards(db, size, channels)
+    verify_catalog_matches_shards(catalog, db, size, channels)
 
 
 def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
@@ -328,4 +357,4 @@ def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_c
 
 
 def test_get_all_shard_locs(filled_shard_db):
-    assert set(active_learning.get_all_shard_locs(filled_shard_db)) == {'tfrecord_a', 'tfrecord_b'}
+    assert active_learning.get_all_shard_locs(filled_shard_db) == ['tfrecord_a', 'tfrecord_b']
