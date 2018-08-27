@@ -162,6 +162,7 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
 @pytest.fixture()
 def acquisition_func():
     # converts loaded subjects to acquisition scores. Here, random.
+    # should be used within record_top_acquistions, different to mock_acq._func used in test_run
     return lambda x: np.random.rand(len(x))
 
 
@@ -354,6 +355,7 @@ def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_c
     # train_callable = lambda x: True  # does nothing
     train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     predictor_dir = tmpdir.mkdir('predictor_dir').strpath
+    # TODO add something else (time, string) in predictor dir and make sure the latest timestamp is loaded
     active_learning.run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable)
 
 

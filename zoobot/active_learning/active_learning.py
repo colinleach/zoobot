@@ -112,15 +112,20 @@ def add_tfrecord_to_db(tfrecord_loc, db, df, id_col):
 
 def record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func):
     # iterate though the shards and get the acq. func of all unlabelled examples
-    # shards should fit in memory for one machine
+    # one shard should fit in memory for one machine
     # TODO currently predicts on ALL, even labelled. Should flag labelled and exclude
+    # TODO fix messy mixing of arrays, dicts, lists
+    # TODO update tests with more realistic acq. function!
     subjects = read_tfrecord.load_examples_from_tfrecord(
         [shard_loc],
         read_tfrecord.matrix_id_feature_spec(size, channels)
     )
     logging.debug('Loaded subjects from {} of size {}'.format(shard_loc, size))
-    acquisitions = acquisition_func(subjects)
-    for subject, acquisition in zip(subjects, acquisitions):
+    # acq func expects a list of matrices
+    subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
+    acquisitions = acquisition_func(subjects_data)  # returns np array of acq. values
+    acquistion_values = [acquisitions[n] for n in range(len(acquisitions))]  # convert back to list
+    for subject, acquisition in zip(subjects, acquistion_values):
         if isinstance(subject['id_str'], bytes):
             subject['id_str'] = subject['id_str'].decode('utf-8')
         save_acquisition_to_db(subject, acquisition, db)
@@ -182,6 +187,16 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     return top_acquisitions # list of id_str's
 
 
+def add_labels_to_catalog(catalog, subject_ids, subject_labels, id_col, label_col):
+    # better done with a database probably
+    labeller = dict(zip(subject_ids, subject_labels))
+    def add_label(row):
+        if row[id_col] in labeller.keys():
+            return labeller[row[id_col]]
+    catalog['label'] = catalog.apply(add_label, axis=1)
+    return catalog
+
+
 def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
     top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
     top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
@@ -205,7 +220,12 @@ def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size):
     write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=shard_size)
 
 
-def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
+def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable, known_catalog):
+    try:
+        del catalog['label']  # catalog is unknown to begin with!
+    except KeyError:
+        pass
+    
     logging.basicConfig(level=logging.INFO)
     n_samples = 20
     db = sqlite3.connect(db_loc)
@@ -224,19 +244,47 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
 
         # make predictions and save to db, could be docker container
         saved_models = os.listdir(predictor_dir)  # subfolders
-        saved_models.sort()  # sort by name i.e. timestamp
+        saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
         predictor_loc = os.path.join(predictor_dir, saved_models[-1])  # the subfolder with the most recent time
         logging.info('Loading model from {}'.format(predictor_loc))
         predictor = make_predictions.load_predictor(predictor_loc)
+        # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
         acquisition_func = make_predictions.acquisition_func(predictor, n_samples)
         logging.info('Making and recording predictions')
         record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func)
 
-        logging.info('Saving top acquisition subjects to {}'.format(train_tfrecord_loc))
+        top_acquisition_ids = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
+        # TODO would pause here in practice
+
+        labels = get_labels(top_acquisition_ids, known_catalog)
+        
+        logging.debug('Before')
+        logging.debug(catalog.iloc[0][[id_col, label_col]])
+        # add new labels to catalog (modify!)
+        catalog = add_labels_to_catalog(catalog, top_acquisition_ids, labels, id_col, label_col)
+        logging.debug('After')
+        logging.debug(catalog.iloc[0][[id_col, label_col]])
+
+        logging.info('Saving top acquisition subjects to {}, labels: {}'.format(train_tfrecord_loc, labels))
         add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
 
         iteration += 1
 
+def request_labels(subject_ids):
+    # TODO request labels, import from somewhere else
+    pass
+
+
+def recieve_labels(subject_ids, labels):
+    pass
+
+
+def get_labels(subject_ids, known_catalog):
+    # temporary, mimic GZ
+    labels = []
+    for id_str in subject_ids:
+        labels.append(known_catalog[known_catalog['id_str'] == id_str].squeeze())
+    return labels
 
 def get_all_shard_locs(db):
     cursor = db.cursor()

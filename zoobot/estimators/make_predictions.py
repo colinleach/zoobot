@@ -24,6 +24,8 @@ def load_predictor(predictor_loc):
     """
     model_unwrapped = predictor.from_saved_model(predictor_loc)
     # wrap to avoid having to pass around dicts all the time
+    # expects image matrix, passes to model within dict of type {examples: matrix}
+    # model returns several columns, select 'predictions_for_true' and flip
     return lambda x: 1 - model_unwrapped({'examples': x})['predictions_for_true']
 
 
@@ -32,7 +34,7 @@ def get_samples_of_subjects(model, subjects, n_samples):
     
     Args:
         model (function): callable mapping parsed subjects to class scores
-        subjects (list): subjects on which to make a prediction
+        subjects (list): subject matrices on which to make a prediction
         n_samples (int): number of samples (i.e. model calls) to calculate per subject
     
     Returns:
@@ -55,13 +57,14 @@ def entropy(probabilites):
     Returns:
         float: total entropy in distribution
     """
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)))
+    # do p * log p for every sample, sum for each subject
+    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
 
 
 def acquisition_func(model, n_samples):
     def acquisition_callable(subjects):
         samples = get_samples_of_subjects(model, subjects, n_samples)
-        return entropy(samples)
+        return entropy(samples)  # TODO return a list instead for convenience
     return acquisition_callable
 
 

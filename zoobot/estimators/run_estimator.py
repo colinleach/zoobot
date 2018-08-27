@@ -75,6 +75,7 @@ def run_estimator(config):
         None
     """
     assert config.is_ready_to_train()
+    logging.info('Global step on run: {}'.format(tf.train.get_global_step()))
 
     if config.fresh_start:  # don't try to load any existing models
         if os.path.exists(config.log_dir):
@@ -89,20 +90,37 @@ def run_estimator(config):
     )
 
     # can't move out of run_estimator, uses closure to avoid passing config as argument
-    def serving_input_receiver_fn():
-        """
-        An input receiver that expects a serialized tf.Example.
-        """
-        serialized_tf_example = tf.placeholder(dtype=tf.string,
-                                               name='input_example_tensor')
-        receiver_tensors = {'examples': serialized_tf_example}  # one or many??
-        feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
-        features = tf.parse_example(serialized_tf_example, feature_spec)
+    # def serving_input_receiver_fn():
+    #     """
+    #     An input receiver that expects a serialized tf.Example.
+    #     """
+    #     serialized_tf_example = tf.placeholder(dtype=tf.string,
+    #                                            name='input_example_tensor')
+    #     receiver_tensors = {'examples': serialized_tf_example}  # one or many??
+    #     feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
+    #     features = tf.parse_example(serialized_tf_example, feature_spec)
 
-        images = tf.reshape(
-            features['matrix'],
-            [-1, config.initial_size, config.initial_size,
-             config.channels])
+    #     images = tf.reshape(
+    #         features['matrix'],
+    #         [-1, config.initial_size, config.initial_size,
+    #          config.channels])
+
+    #     new_features = input_utils.preprocess_batch(
+    #         images,
+    #         config=config.eval_config
+    #     )
+    #     return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
+    
+    def serving_input_receiver_fn_image():
+        """
+        An input receiver that expects an image array
+        """
+        images = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, config.initial_size, config.initial_size, config.channels), 
+            name='images')
+        receiver_tensors = {'examples': images}
 
         new_features = input_utils.preprocess_batch(
             images,
@@ -119,7 +137,10 @@ def run_estimator(config):
     eval_loss_history = []
     epoch_n = 0
 
-    while epoch_n <= config.epochs:
+    while epoch_n < config.epochs:
+
+        logging.info('Global step on epoch {}: {}'.format(epoch_n, tf.train.get_global_step()))
+
         # Train the estimator
         estimator.train(
             input_fn=train_input_partial,
@@ -145,8 +166,8 @@ def run_estimator(config):
         # for row in prediction_rows[:10]:
         #     logging.info(row)
 
-        if epoch_n % config.save_freq == 0:
-            save_model(estimator, config, epoch_n, serving_input_receiver_fn)
+        if (epoch_n % config.save_freq == 0) or (epoch_n == config.epochs):
+            save_model(estimator, config, epoch_n, serving_input_receiver_fn_image)
 
         if epoch_n > config.min_epochs:
             sadness = early_stopper(eval_loss_history, config.early_stopping_window)
@@ -189,7 +210,7 @@ def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
     Returns:
 
     """
-    logging.info('Saving model at epoch {}'.format(epoch_n))
+    logging.info('Saving model at epoch {} to {}'.format(epoch_n, config.log_dir))
     estimator.export_savedmodel(
         export_dir_base=config.log_dir,
         serving_input_receiver_fn=serving_input_receiver_fn)

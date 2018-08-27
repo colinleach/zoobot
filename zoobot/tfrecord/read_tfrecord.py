@@ -16,7 +16,7 @@ def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):
         _, serialized_example = reader.read(filename_queue)
         example = tf.parse_single_example(serialized_example, features=feature_spec)
 
-        # initialize all global and local variables
+         # initialize all global and local variables
         # this op must be defined (not only executed) within the session
         init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         sess.run(init_op)
