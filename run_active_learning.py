@@ -83,6 +83,6 @@ known_catalog.to_csv(train_tfrecord_loc + '.csv')  # save known catalog for stra
 # define the estimator
 run_config = estimator_from_disk.setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_size, label_split_value, predictor_dir)
 # set up db and shards using unknown catalog data
-active_learning.setup(unknown_catalog, db_loc, id_col, label_col, initial_size, shard_dir, shard_size)
+active_learning.setup(unknown_catalog, db_loc, id_col, initial_size, shard_dir, shard_size)
 # run active learning (labels currently not implemented)
 active_learning.run(unknown_catalog, db_loc, id_col, label_col, initial_size, channels, predictor_dir, train_tfrecord_loc, train_callable)

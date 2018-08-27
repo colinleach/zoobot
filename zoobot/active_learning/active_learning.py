@@ -321,6 +321,7 @@ def add_labels_to_db(subject_ids, labels, db):
 
         assert isinstance(label, np.int64) or isinstance(label, int)
         assert isinstance(subject_id, str)
+
         logging.debug('label {}, id {}'.format(label, subject_id))
         cursor.execute(
             '''
@@ -336,12 +337,14 @@ def add_labels_to_db(subject_ids, labels, db):
         cursor.execute(
             '''
             SELECT label FROM catalog
-            WHERE id_str = (:id_str)
+            WHERE id_str = (:subject_id)
             LIMIT 1
             ''',
             (subject_id,)
         )
         retrieved_label = cursor.fetchone()[0]
+        logging.warning('{} {}'.format(retrieved_label, label))
+        # writes to nan not int when called with run_active_learning
         assert retrieved_label == label
 
 
