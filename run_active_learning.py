@@ -9,6 +9,7 @@ from zoobot.estimators import run_estimator
 from zoobot.active_learning import estimator_from_disk, active_learning
 from zoobot.tests import TEST_EXAMPLE_DIR
 
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 logging.basicConfig(
     filename='run_active_learning.log',
@@ -23,15 +24,15 @@ label_split_value = '0.4'
 initial_size = 64
 final_size = 28
 channels = 3
-predictor_dir = '/Data/repos/zoobot/zoobot/runs/active'
-shard_dir = '/Data/repos/zoobot/zoobot/data/shards'
+predictor_dir = os.path.join(CURRENT_DIR, 'zoobot/runs/active')
+shard_dir = os.path.join(CURRENT_DIR, 'zoobot/data/shards')
 shard_size = 25
 
-train_tfrecord_loc = '/Data/repos/zoobot/zoobot/data/panoptes_featured_s{}_l{}_active_train.tfrecord'.format(  # empty
+train_tfrecord_loc = os.path.join(CURRENT_DIR, 'zoobot/data/panoptes_featured_s{}_l{}_active_train.tfrecord').format(  # empty
     initial_size, 
     label_split_value
 )
-eval_tfrecord_loc = '/Data/repos/zoobot/zoobot/data/panoptes_featured_s{}_l{}_test.tfrecord'.format(
+eval_tfrecord_loc = os.path.join(CURRENT_DIR, 'zoobot/data/panoptes_featured_s{}_l{}_test.tfrecord').format(
     initial_size, 
     label_split_value
 )
@@ -39,8 +40,8 @@ assert os.path.exists(eval_tfrecord_loc)
 
 run_name = 'active_si{}_sf{}_l{}'.format(initial_size, final_size, label_split_value)
 
-# train_tf_loc = '/Data/repos/zoobot/zoobot/data/panoptes_featured_s28_l0.4_train.tfrecord.csv'
-# test_tf_loc = '/Data/repos/zoobot/zoobot/data/panoptes_featured_s28_l0.4_test.tfrecord.csv'
+# train_tf_loc = os.path.join(CURRENT_DIR, 'zoobot/data/panoptes_featured_s28_l0.4_train.tfrecord.csv'
+# test_tf_loc = os.path.join(CURRENT_DIR, 'zoobot/data/panoptes_featured_s28_l0.4_test.tfrecord.csv'
 
 train_callable = lambda: run_estimator.run_estimator(run_config)
 
@@ -63,7 +64,7 @@ if os.path.exists(predictor_dir):
 os.mkdir(predictor_dir)
 
 
-catalog = pd.read_csv('/Data/repos/zoobot/zoobot/data/panoptes_featured_s{}_l{}_train.tfrecord.csv'.format(initial_size, label_split_value))
+catalog = pd.read_csv(os.path.join(CURRENT_DIR, 'zoobot/data/panoptes_featured_s{}_l{}_train.tfrecord.csv').format(initial_size, label_split_value))
 
 # >36 votes required, gives low count uncertainty
 catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  
@@ -73,7 +74,7 @@ catalog[label_col] = (catalog['smooth-or-featured_smooth_fraction'] > float(labe
 catalog[id_col] = catalog['subject_id'].astype(str) 
 
 known_catalog = catalog[:50]  # for initial training data
-unknown_catalog = catalog[50:200]  # for new data
+unknown_catalog = catalog[50:100]  # for new data
 unknown_catalog.to_csv(os.path.join(TEST_EXAMPLE_DIR, 'panoptes.csv'))
 
 # create initial small training set with random selection

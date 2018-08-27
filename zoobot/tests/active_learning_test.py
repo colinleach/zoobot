@@ -55,7 +55,7 @@ def empty_shard_db():
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT,
+            label INT DEFAULT NULL,
             fits_loc STRING)
         '''
     )
@@ -89,12 +89,11 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, label, fits_loc)
+                  VALUES(:id_str, NULL, :fits_loc)
         ''',
         {
             'id_str': 'some_hash',
-             # NULL label
             'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
         }
     )
@@ -106,6 +105,7 @@ def filled_shard_db(empty_shard_db):
         ''',
         {
             'id_str': 'some_hash',
+            # label is NULL
             'acquisition_value': 0.9
         }
     )
@@ -124,8 +124,8 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, label, fits_loc)
+                  VALUES(:id_str, NULL, :fits_loc)
         ''',
         {
             'id_str': 'some_other_hash',
@@ -158,8 +158,8 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, label, fits_loc)
+                  VALUES(:id_str, NULL, :fits_loc)
         ''',
         {
             'id_str': 'yet_another_hash',
@@ -232,9 +232,9 @@ def acquisition():
     return np.random.rand()
 
 
-def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, label_col, id_col, columns_to_save, tfrecord_dir):
-    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=15)
-    verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
+def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, id_col, columns_to_save, tfrecord_dir):
+    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, id_col, columns_to_save, tfrecord_dir, shard_size=15)
+    # verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
     verify_db_matches_shards(empty_shard_db, size, channels)
     verify_catalog_matches_shards(catalog, empty_shard_db, size, channels)
 
@@ -281,7 +281,7 @@ def verify_db_matches_shards(db, size, channels):
         expected_shard_ids = set(shardindex[shardindex['tfrecord'] == tfrecord_loc]['id_str'].unique())
         examples = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc], 
-            read_tfrecord.matrix_label_id_feature_spec(size, channels)
+            read_tfrecord.matrix_id_feature_spec(size, channels)
         )
         actual_shard_ids = set([example['id_str'].decode() for example in examples])
         assert expected_shard_ids == actual_shard_ids
@@ -300,7 +300,7 @@ def verify_catalog_matches_shards(catalog, db, size, channels):
     for tfrecord_loc in tfrecord_locs:
         examples = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc],
-            read_tfrecord.matrix_label_id_feature_spec(size, channels)
+            read_tfrecord.matrix_id_feature_spec(size, channels)
         )
         ids_in_shard = [x['id_str'].decode() for x in examples]
         assert len(ids_in_shard) == len(set(ids_in_shard))  # must be unique within shard
@@ -361,16 +361,12 @@ def test_get_top_acquisitions(filled_shard_db):
     assert top_ids == ['some_hash', 'yet_another_hash']
 
 
-def test_add_top_acquisitions_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
+def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
     shard_loc = 'tfrecord_a'  # only get top acquisitions from here
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     # TODO there should already be a record here with some other entries, should only append
-    n_subjects = 2
-    def mock_get_top_acquisitions(db, n_subjects, shard_loc):
-        return ['some_hash', 'yet_another_hash']
-    monkeypatch.setattr(active_learning, 'get_top_acquisitions', mock_get_top_acquisitions)
-
-    active_learning.add_top_acquisitions_to_tfrecord(filled_shard_db_with_labels, n_subjects, shard_loc, tfrecord_loc, size)
+    subject_ids = ['some_hash', 'yet_another_hash']
+    active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size)
 
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
@@ -413,18 +409,18 @@ def test_add_labels_to_db(filled_shard_db):
 
 
 
-def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir):
+def test_setup(catalog, db_loc, id_col, size, channels, tfrecord_dir):
     # falls over if threads start too fast
-    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=25)
+    active_learning.setup(catalog, db_loc, id_col, size, tfrecord_dir, shard_size=25)
     db = sqlite3.connect(db_loc)
-    verify_db_matches_catalog(catalog, db, id_col, label_col)
+    # verify_db_matches_catalog(catalog, db, id_col, label_col)
     verify_db_matches_shards(db, size, channels)
     verify_catalog_matches_shards(catalog, db, size, channels)
 
 
 def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
     # depends on setup working okay
-    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=25)
+    active_learning.setup(catalog, db_loc, id_col, size, tfrecord_dir, shard_size=25)
 
     def train_callable():
         # pretend to save a model in subdirectory of predictor_dir
@@ -438,6 +434,10 @@ def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_c
     def mock_acquistion_func(predictor, n_samples):
         return lambda x: np.random.rand(len(x))
     monkeypatch.setattr(active_learning.make_predictions, 'acquisition_func', mock_acquistion_func)
+
+    def mock_get_labels(subject_ids):  # don't actually read from saved catalog, just make up
+        return [np.random.randint(2) for n in range(len(subject_ids))]
+    monkeypatch.setattr(active_learning.mock_panoptes, 'get_labels', mock_get_labels)
 
     # train_callable = lambda x: True  # does nothing
     train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
