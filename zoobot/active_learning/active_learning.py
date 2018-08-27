@@ -1,8 +1,8 @@
+import logging
 import os
 import shutil
-from shutil import copyfile
 import functools
-import logging
+import itertools
 import sqlite3
 import time
 from collections import namedtuple
@@ -73,7 +73,6 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
         save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
         catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
         add_tfrecord_to_db(save_loc, db, df_shard, id_col)
-        time.sleep(100)
     return df
 
 
@@ -115,7 +114,11 @@ def record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_
     # iterate though the shards and get the acq. func of all unlabelled examples
     # shards should fit in memory for one machine
     # TODO currently predicts on ALL, even labelled. Should flag labelled and exclude
-    subjects = read_tfrecord.load_examples_from_tfrecord([shard_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
+    subjects = read_tfrecord.load_examples_from_tfrecord(
+        [shard_loc],
+        read_tfrecord.matrix_id_feature_spec(size, channels)
+    )
+    logging.debug('Loaded subjects from {} of size {}'.format(shard_loc, size))
     acquisitions = acquisition_func(subjects)
     for subject, acquisition in zip(subjects, acquisitions):
         if isinstance(subject['id_str'], bytes):
@@ -192,47 +195,44 @@ def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecor
         columns_to_save=['id_str', 'label'], 
         append=True, # must append, don't overwrite previous training data! 
         source='fits')
-    time.sleep(100)
+    time.sleep(0.1)  # seconds
 
 
-def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size=25):
+def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size):
     db = create_db(catalog, db_loc, id_col, label_col)
     columns_to_save = [id_col, label_col]
     # writing is slow
     write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=shard_size)
-    # temporary
-    copyfile(db_loc, '/Users/mikewalmsley/repos/zoobot/setup_db.db')
 
 
 def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
+    logging.basicConfig(level=logging.INFO)
     n_samples = 20
     db = sqlite3.connect(db_loc)
-    shard_locs = get_all_shard_locs(db)
+    shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
     n_subjects_per_iter = 10
     max_iterations = 5
 
     iteration = 0
-    shard_n = 0
     while iteration < max_iterations:
-        shard_loc = shard_locs[shard_n]
+        shard_loc = next(shard_locs)
         logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
 
         # train as usual, with saved_model being placed in predictor_dir
+        logging.info('Training')
         train_callable()  # could be docker container run, save model
 
         # make predictions and save to db, could be docker container
         saved_models = os.listdir(predictor_dir)  # subfolders
         saved_models.sort()  # sort by name i.e. timestamp
-        predictor_loc = saved_models[-1]  # the subfolder with the most recent time
+        predictor_loc = os.path.join(predictor_dir, saved_models[-1])  # the subfolder with the most recent time
+        logging.info('Loading model from {}'.format(predictor_loc))
         predictor = make_predictions.load_predictor(predictor_loc)
         acquisition_func = make_predictions.acquisition_func(predictor, n_samples)
+        logging.info('Making and recording predictions')
         record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func)
-        
-        #temporary
-        # from shutil import copyfile
-        # copyfile(db_loc, '/Users/mikewalmsley/repos/zoobot/db.db')
-        
-        # add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, None, train_tfrecord_loc, size)
+
+        logging.info('Saving top acquisition subjects to {}'.format(train_tfrecord_loc))
         add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
 
         iteration += 1
@@ -247,16 +247,3 @@ def get_all_shard_locs(db):
         '''
     )
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
-
-
-# if __name__ == '__main__':
-
-    # logging.basicConfig(
-    #     filename='active_learning.log',
-    #     filemode='w',
-    #     format='%(asctime)s %(message)s',
-    #     level=logging.INFO)
-
-    # predictions_with_catalog_loc = '/data/repos/galaxy-zoo-panoptes/reduction/data/output/panoptes_predictions_with_catalog.csv'
-    # predictions_with_catalog = pd.read_csv(predictions_with_catalog_loc)
-    # logging.info('Loaded {} catalog galaxies with predictions'.format(len(predictions_with_catalog)))

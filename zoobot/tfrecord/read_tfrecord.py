@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -18,21 +20,34 @@ def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):
         # this op must be defined (not only executed) within the session
         init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         sess.run(init_op)
+
         # create a coordinator and run all QueueRunner objects
         coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(coord=coord)
+        logging.debug('Starting queue to load examples from {}'.format(tfrecord_locs))
+        threads = tf.train.start_queue_runners(coord=coord, daemon=False)  # block exit until closed
+        logging.debug(threads)
+        logging.debug('Queue started')
 
         # execute
         if n_examples is None:  # load full record
             data = []
             while True:
+    
                 try:
-                    data.append(sess.run(example))
+                    loaded_example = sess.run(example)
+                    data.append(loaded_example)
                 except tf.errors.OutOfRangeError:
+                    logging.debug('tfrecords {} exhausted'.format(tfrecord_locs))
                     break
-        else:  # load the first n examples
+        else:
+            logging.debug('Loading the first {} examples from {}'.format(n_examples, tfrecord_locs))
             data = [sess.run(example) for n in range(n_examples)]
-        return data
+
+        # weird behaviour when used with pytest - threads may not stop on test end. Be explicit.
+        coord.request_stop() # ask the threads to stop
+        coord.join(threads)  # wait for them to actually do it
+
+    return data
 
 
 def matrix_label_feature_spec(size, channels):

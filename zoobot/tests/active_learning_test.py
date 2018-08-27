@@ -11,6 +11,7 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 
+from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
 from zoobot.active_learning import active_learning
@@ -18,7 +19,7 @@ from zoobot.estimators import make_predictions
 
 
 logging.basicConfig(
-    filename='active_learning_test.log',
+    filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),
     filemode='w',
     format='%(asctime)s %(message)s',
     level=logging.DEBUG)
@@ -326,7 +327,7 @@ def db_loc(tmpdir):
 
 def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir):
     # falls over if threads start too fast
-    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir)
+    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=25)
     db = sqlite3.connect(db_loc)
     verify_db_matches_catalog(catalog, db, id_col, label_col)
     verify_db_matches_shards(db, size, channels)
@@ -335,7 +336,7 @@ def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir)
 
 def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
     # depends on setup working okay
-    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=100)
+    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=25)
 
     def train_callable():
         # pretend to save a model in subdirectory of predictor_dir
