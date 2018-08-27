@@ -7,6 +7,8 @@ import pandas as pd
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator
 from zoobot.active_learning import estimator_from_disk, active_learning
+from zoobot.tests import TEST_EXAMPLE_DIR
+
 
 logging.basicConfig(
     filename='run_active_learning.log',
@@ -68,10 +70,11 @@ catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
 # make labels
 catalog[label_col] = (catalog['smooth-or-featured_smooth_fraction'] > float(label_split_value)).astype(int)  # 0 for featured
 # make ids
-catalog[id_col] = catalog['subject_id'].astype(str)
+catalog[id_col] = catalog['subject_id'].astype(str) 
 
 known_catalog = catalog[:50]  # for initial training data
 unknown_catalog = catalog[50:200]  # for new data
+unknown_catalog.to_csv(os.path.join(TEST_EXAMPLE_DIR, 'panoptes.csv'))
 
 # create initial small training set with random selection
 catalog_to_tfrecord.write_image_df_to_tfrecord(known_catalog, train_tfrecord_loc, initial_size, [id_col, label_col])
@@ -81,4 +84,4 @@ run_config = estimator_from_disk.setup(run_name, train_tfrecord_loc, eval_tfreco
 # set up db and shards using unknown catalog data
 active_learning.setup(unknown_catalog, db_loc, id_col, label_col, initial_size, shard_dir, shard_size)
 # run active learning (labels currently not implemented)
-active_learning.run(unknown_catalog, db_loc, id_col, label_col, initial_size, channels, predictor_dir, train_tfrecord_loc, train_callable, unknown_catalog.copy())
+active_learning.run(unknown_catalog, db_loc, id_col, label_col, initial_size, channels, predictor_dir, train_tfrecord_loc, train_callable)

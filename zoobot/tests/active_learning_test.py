@@ -55,7 +55,8 @@ def empty_shard_db():
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT)
+            label INT,
+            fits_loc STRING)
         '''
     )
     db.commit()
@@ -82,11 +83,22 @@ def empty_shard_db():
 
 
 @pytest.fixture()
-def filled_shard_db(empty_shard_db):  # no shard index yet
+def filled_shard_db(empty_shard_db):
     db = empty_shard_db
     cursor = db.cursor()
 
-
+    cursor.execute(
+        '''
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
+        ''',
+        {
+            'id_str': 'some_hash',
+             # NULL label
+            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+        }
+    )
+    db.commit()
     cursor.execute(
         '''
         INSERT INTO acquisitions(id_str, acquisition_value)
@@ -112,6 +124,17 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
 
     cursor.execute(
         '''
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
+        ''',
+        {
+            'id_str': 'some_other_hash',
+            # NULL label
+            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+        }
+    )
+    cursor.execute(
+        '''
         INSERT INTO acquisitions(id_str, acquisition_value)
                   VALUES(:id_str, :acquisition_value)
         ''',
@@ -135,6 +158,17 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
 
     cursor.execute(
         '''
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
+        ''',
+        {
+            'id_str': 'yet_another_hash',
+            # NULL label
+            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+        }
+    )
+    cursor.execute(
+        '''
         INSERT INTO acquisitions(id_str, acquisition_value)
                   VALUES(:id_str, :acquisition_value)
         ''',
@@ -155,8 +189,35 @@ def filled_shard_db(empty_shard_db):  # no shard index yet
         }
     )
     db.commit()
-
     return db
+
+
+@pytest.fixture()
+def filled_shard_db_with_labels(filled_shard_db):
+    db = filled_shard_db
+    cursor = db.cursor()
+    default_loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+    for pair in [('some_hash', 1), ('some_other_hash', 1), ('yet_another_hash', 0)]:
+        cursor.execute(
+            '''
+            UPDATE catalog SET label = ? WHERE id_str = ?
+            ''',
+            (pair[1], pair[0])
+        )
+        db.commit()
+    return db
+
+
+# def test_filled_shard_db_with_labels(filled_shard_db_with_labels):
+#     cursor = filled_shard_db_with_labels.cursor()
+#     cursor.execute(
+#         '''
+#         SELECT *
+#         FROM catalog
+#         '''
+#     )
+#     print(cursor.fetchall())
+#     assert False
 
 
 @pytest.fixture()
@@ -300,20 +361,16 @@ def test_get_top_acquisitions(filled_shard_db):
     assert top_ids == ['some_hash', 'yet_another_hash']
 
 
-def test_add_top_acquisitions_to_tfrecord(monkeypatch, catalog, filled_shard_db, tfrecord_dir, size, channels):
-    # catalog must contain records with ids matching the database ids
-    catalog.at[0, 'id_str'] = 'some_hash'
-    catalog.at[12, 'id_str'] = 'yet_another_hash'
+def test_add_top_acquisitions_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
     shard_loc = 'tfrecord_a'  # only get top acquisitions from here
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     # TODO there should already be a record here with some other entries, should only append
     n_subjects = 2
-
     def mock_get_top_acquisitions(db, n_subjects, shard_loc):
         return ['some_hash', 'yet_another_hash']
     monkeypatch.setattr(active_learning, 'get_top_acquisitions', mock_get_top_acquisitions)
 
-    active_learning.add_top_acquisitions_to_tfrecord(catalog, filled_shard_db, n_subjects, None, tfrecord_loc, size)
+    active_learning.add_top_acquisitions_to_tfrecord(filled_shard_db_with_labels, n_subjects, shard_loc, tfrecord_loc, size)
 
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
@@ -324,6 +381,36 @@ def test_add_top_acquisitions_to_tfrecord(monkeypatch, catalog, filled_shard_db,
 @pytest.fixture()
 def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
+
+
+def test_add_labels_to_db(filled_shard_db):
+    subjects = [
+        {
+            'id_str': 'some_hash',
+            'label': 0
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'label': 1
+        }
+    ]
+    subject_ids = [x['id_str'] for x in subjects]
+    labels = [x['label'] for x in subjects]
+    active_learning.add_labels_to_db(subject_ids, labels, filled_shard_db)
+    # read db, check labels match
+    cursor = filled_shard_db.cursor()
+    for subject in subjects:
+        cursor.execute(
+            '''
+            SELECT label FROM catalog
+            WHERE id_str = (:id_str)
+            ''',
+            (subject['id_str'],)
+        )
+        results = list(cursor.fetchall())
+        assert len(results) == 1
+        assert results[0][0] == subject['label']
+
 
 
 def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir):

@@ -7,17 +7,20 @@ import sqlite3
 import time
 from collections import namedtuple
 
+import pytest  # nice assertions
 import tensorflow as tf
 import pandas as pd
-from astropy.table import Table
+import numpy as np
 
 from zoobot.estimators import input_utils
-from zoobot.tfrecord import catalog_to_tfrecord
+from zoobot.tfrecord import catalog_to_tfrecord, create_tfrecord
 from zoobot import shared_utilities
 from zoobot.estimators import estimator_params
 from zoobot.estimators import run_estimator
 from zoobot.estimators import make_predictions
 from zoobot.tfrecord import read_tfrecord
+
+from zoobot.active_learning import mock_panoptes
 
 
 def create_db(catalog, db_loc, id_col, label_col):  # very similar to empty db fixture
@@ -30,7 +33,8 @@ def create_db(catalog, db_loc, id_col, label_col):  # very similar to empty db f
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT)
+            label INT,
+            fits_loc STRING)
         '''
     )
     db.commit()
@@ -77,11 +81,11 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
 
 
 def add_catalog_to_db(df, db, id_col, label_col):
-    catalog_entries = list(df[[id_col, label_col]].itertuples(index=False, name='CatalogEntry'))
+    catalog_entries = list(df[[id_col, label_col, 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label) VALUES(?,?)''',
+        INSERT INTO catalog(id_str, label, fits_loc) VALUES(?,?,?)''',
         catalog_entries
     )
     db.commit()
@@ -187,30 +191,59 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     return top_acquisitions # list of id_str's
 
 
-def add_labels_to_catalog(catalog, subject_ids, subject_labels, id_col, label_col):
-    # better done with a database probably
-    labeller = dict(zip(subject_ids, subject_labels))
-    def add_label(row):
-        if row[id_col] in labeller.keys():
-            return labeller[row[id_col]]
-    catalog['label'] = catalog.apply(add_label, axis=1)
-    return catalog
+# def add_labels_to_catalog(catalog, subject_ids, subject_labels, id_col, label_col):
+#     # better done with a database probably
+#     labeller = dict(zip(subject_ids, subject_labels))
+#     def add_label(row):
+#         if row[id_col] in labeller.keys():
+#             return labeller[row[id_col]]
+#     catalog['label'] = catalog.apply(add_label, axis=1)
+#     return catalog
 
 
-def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecord_loc, size):
+def add_top_acquisitions_to_tfrecord(db, n_subjects, shard_loc, tfrecord_loc, size):
     top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
-    top_catalog_rows = catalog[catalog['id_str'].isin(top_acquisitions)]
-    if top_catalog_rows.empty:
-        raise ValueError('Fatal mismatch: top ids not found in catalog! Top: {}, Expected: {}'.format(top_acquisitions, catalog['id_str']))
-    assert len(top_catalog_rows) > 0
+
+    cursor = db.cursor()
+    rows = []
+    for subject_id in top_acquisitions:
+        assert isinstance(subject_id, str)
+        logging.debug(subject_id)
+        cursor.execute(
+            '''
+            SELECT id_str, label, fits_loc FROM catalog
+            WHERE id_str = (:id_str)
+            ''',
+            (subject_id,)
+        )
+        # namedtuple would allow better type checking
+        subject = cursor.fetchone()  # TODO ensure distinct
+        if subject is None:
+            raise ValueError('Fatal: top ids not found in catalog!')
+        # if not isinstance(subject[0], str):
+        #     raise ValueError('Fatal: {} subject id is not str!'.format(subject_id))
+        # if not isinstance(subject[1], int):
+        #     raise ValueError('Fatal: {} label is not int!'.format(subject_id))
+        logging.debug(subject)
+        if subject[1] is None:
+            raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
+        assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. null label
+        rows.append({
+            'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
+            'label': int(subject[1]),
+            'fits_loc': str(subject[2])
+        })
+    
+    top_subject_df = pd.DataFrame(data=rows)
+    print(top_subject_df.iloc[0])
+    print(top_subject_df.iloc[1])
     catalog_to_tfrecord.write_image_df_to_tfrecord(
-        top_catalog_rows, 
+        top_subject_df, 
         tfrecord_loc, 
         size, 
         columns_to_save=['id_str', 'label'], 
         append=True, # must append, don't overwrite previous training data! 
         source='fits')
-    time.sleep(0.1)  # seconds
 
 
 def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size):
@@ -220,7 +253,7 @@ def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size):
     write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=shard_size)
 
 
-def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable, known_catalog):
+def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
     try:
         del catalog['label']  # catalog is unknown to begin with!
     except KeyError:
@@ -256,35 +289,42 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
         top_acquisition_ids = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
         # TODO would pause here in practice
 
-        labels = get_labels(top_acquisition_ids, known_catalog)
-        
-        logging.debug('Before')
-        logging.debug(catalog.iloc[0][[id_col, label_col]])
-        # add new labels to catalog (modify!)
-        catalog = add_labels_to_catalog(catalog, top_acquisition_ids, labels, id_col, label_col)
-        logging.debug('After')
-        logging.debug(catalog.iloc[0][[id_col, label_col]])
+        logging.debug('ids {}'.format(top_acquisition_ids))
+        labels = mock_panoptes.get_labels(top_acquisition_ids)
+        logging.debug('labels {}'.format(labels))
+
+        add_labels_to_db(top_acquisition_ids, labels, db)
 
         logging.info('Saving top acquisition subjects to {}, labels: {}'.format(train_tfrecord_loc, labels))
-        add_top_acquisitions_to_tfrecord(catalog, db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
+        add_top_acquisitions_to_tfrecord(db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
 
         iteration += 1
 
-def request_labels(subject_ids):
-    # TODO request labels, import from somewhere else
-    pass
+# def request_labels(subject_ids):
+#     # TODO request labels, import from somewhere else
+#     pass
 
 
-def recieve_labels(subject_ids, labels):
-    pass
+# def recieve_labels(subject_ids, labels):
+#     pass
 
 
-def get_labels(subject_ids, known_catalog):
-    # temporary, mimic GZ
-    labels = []
-    for id_str in subject_ids:
-        labels.append(known_catalog[known_catalog['id_str'] == id_str].squeeze())
-    return labels
+def add_labels_to_db(subject_ids, labels, db):
+    cursor = db.cursor()
+    for subject_n in range(len(subject_ids)):
+        label = labels[subject_n]
+        subject_id = subject_ids[subject_n]
+        assert isinstance(label, np.int64) or isinstance(label, int)
+        assert isinstance(subject_id, str)
+        cursor.execute(
+            '''
+            UPDATE catalog
+            SET label = ?
+            WHERE id_str = ?
+            ''',
+            (label, subject_id)
+        )
+
 
 def get_all_shard_locs(db):
     cursor = db.cursor()
