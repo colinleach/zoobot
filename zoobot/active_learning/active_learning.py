@@ -4,6 +4,7 @@ from shutil import copyfile
 import functools
 import logging
 import sqlite3
+import time
 from collections import namedtuple
 
 import tensorflow as tf
@@ -72,6 +73,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
         save_loc = os.path.join(save_dir, 's{}_shard_{}'.format(img_size, shard_n))
         catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
         add_tfrecord_to_db(save_loc, db, df_shard, id_col)
+        time.sleep(100)
     return df
 
 
@@ -190,6 +192,7 @@ def add_top_acquisitions_to_tfrecord(catalog, db, n_subjects, shard_loc, tfrecor
         columns_to_save=['id_str', 'label'], 
         append=True, # must append, don't overwrite previous training data! 
         source='fits')
+    time.sleep(100)
 
 
 def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size=25):

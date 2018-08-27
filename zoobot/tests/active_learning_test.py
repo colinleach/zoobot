@@ -170,7 +170,7 @@ def acquisition():
 
 
 def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, label_col, id_col, columns_to_save, tfrecord_dir):
-    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=10)
+    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, label_col, id_col, columns_to_save, tfrecord_dir, shard_size=15)
     verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
     verify_db_matches_shards(empty_shard_db, size, channels)
     verify_catalog_matches_shards(catalog, empty_shard_db, size, channels)
@@ -335,7 +335,7 @@ def test_setup(catalog, db_loc, id_col, label_col, size, channels, tfrecord_dir)
 
 def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
     # depends on setup working okay
-    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir)
+    active_learning.setup(catalog, db_loc, id_col, label_col, size, tfrecord_dir, shard_size=100)
 
     def train_callable():
         # pretend to save a model in subdirectory of predictor_dir

@@ -9,7 +9,6 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
 
 
-
 def setup():
 
     initial_size = 128
@@ -17,8 +16,14 @@ def setup():
     final_size = 64
     label_split_value = '0.4'
     run_name = 'train_from_disk_si{}_sf{}_l{}'.format(initial_size, final_size, label_split_value)
-    train_tfrecord_loc = 'data/panoptes_featured_s{}_l{}_active_train.tfrecord'.format(initial_size, label_split_value)
-    eval_tfrecord_loc = 'data/panoptes_featured_s{}_l{}_active_test.tfrecord'.format(initial_size, label_split_value)
+    train_tfrecord_loc = 'data/panoptes_featured_s{}_l{}_active_train.tfrecord'.format(
+        initial_size, 
+        label_split_value
+    )
+    eval_tfrecord_loc = 'data/panoptes_featured_s{}_l{}_active_test.tfrecord'.format(
+        initial_size, 
+        label_split_value
+    )
 
     logging.basicConfig(
         filename=run_name + '.log',
