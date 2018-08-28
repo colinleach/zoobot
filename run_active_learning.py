@@ -45,19 +45,6 @@ run_name = 'active_si{}_sf{}_l{}'.format(initial_size, final_size, label_split_v
 
 train_callable = lambda: run_estimator.run_estimator(run_config)
 
-# new database (for now)
-if os.path.exists(db_loc):
-    os.remove(db_loc)
-
-# new active learning train tfrecord (for now)
-if os.path.exists(train_tfrecord_loc):
-    os.remove(train_tfrecord_loc)
-
-# new shards always (for now)
-if os.path.exists(shard_dir):
-    shutil.rmtree(shard_dir)
-os.mkdir(shard_dir)
-
 # new predictors (apart from initial disk load) for now
 if os.path.exists(predictor_dir):
     shutil.rmtree(predictor_dir)
@@ -77,12 +64,28 @@ known_catalog = catalog[:50]  # for initial training data
 unknown_catalog = catalog[50:100]  # for new data
 unknown_catalog.to_csv(os.path.join(TEST_EXAMPLE_DIR, 'panoptes.csv'))
 
-# create initial small training set with random selection
-catalog_to_tfrecord.write_image_df_to_tfrecord(known_catalog, train_tfrecord_loc, initial_size, [id_col, label_col])
-known_catalog.to_csv(train_tfrecord_loc + '.csv')  # save known catalog for stratify_probs to read
-# define the estimator
+# define the estimator - load settings (rename 'setup' to 'settings'?)
 run_config = estimator_from_disk.setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_size, label_split_value, predictor_dir)
-# set up db and shards using unknown catalog data
-active_learning.setup(unknown_catalog, db_loc, id_col, initial_size, shard_dir, shard_size)
+new_train_tfrecord = True
+new_database_and_shards = True
+
+if new_train_tfrecord:
+    if os.path.exists(train_tfrecord_loc):
+        os.remove(train_tfrecord_loc)
+    # create initial small training set with random selection
+    catalog_to_tfrecord.write_image_df_to_tfrecord(known_catalog, train_tfrecord_loc, initial_size, [id_col, label_col])
+    known_catalog.to_csv(train_tfrecord_loc + '.csv')  # save known catalog for stratify_probs to read
+
+if new_database_and_shards:
+    # new database (for now)
+    if os.path.exists(db_loc):
+        os.remove(db_loc)
+    # new shards always (for now)
+    if os.path.exists(shard_dir):
+        shutil.rmtree(shard_dir)
+    os.mkdir(shard_dir)
+    # set up db and shards using unknown catalog data
+    active_learning.setup(unknown_catalog, db_loc, id_col, initial_size, shard_dir, shard_size)
+
 # run active learning (labels currently not implemented)
 active_learning.run(unknown_catalog, db_loc, id_col, label_col, initial_size, channels, predictor_dir, train_tfrecord_loc, train_callable)

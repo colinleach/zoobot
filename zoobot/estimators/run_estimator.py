@@ -63,6 +63,12 @@ def train_input(input_config):
 def eval_input(input_config):
     return input_utils.get_input(config=input_config)
 
+# temporary
+# def get_latest_checkpoint_dir(base_dir):
+#         saved_models = os.listdir(base_dir)  # subfolders
+#         saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
+#         return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
+    
 
 def run_estimator(config):
     """
@@ -75,18 +81,76 @@ def run_estimator(config):
         None
     """
     assert config.is_ready_to_train()
-    logging.info('Global step on run: {}'.format(tf.train.get_global_step()))
 
     if config.fresh_start:  # don't try to load any existing models
         if os.path.exists(config.log_dir):
             shutil.rmtree(config.log_dir)
 
+
+    '''
+    initial problem: checkpointing was not frequent enough (steps) for trained model to be saved
+    hence, loading model from 'latest' checkpoint always started from scratch
+    resolution - run for longer or train for more steps
+
+    current problem: 
+    initial 'fresh' model trains fine
+    model loaded from checkpoint via model_dir = config.log_dir steps do not increment
+    log no longer shows training results: loss = x, steps = y. Only eval results.
+    tensorboard similarly shows new eval results (at same step), but no new train results
+    inference: training appears to be either disabled or blocked after loading checkpoint from model dir
+
+    logging updated to record each training call and steps requested
+    steps are used in incrementing mode i.e. do another 20, not max_steps i.e. never do more than 20 total
+    '''
+        
+
     # Create the Estimator
+
     model_fn_partial = partial(bayesian_estimator_funcs.estimator_wrapper)
+    # fast_checkpoint_config = tf.estimator.RunConfig(
+        # save_checkpoints_secs = 20,  # Save checkpoints every 20 secs
+        # keep_checkpoint_max = 10       # Retain the 10 most recent checkpoints.
+        # save_checkpoints_steps = 2  # save a checkpoint every 2 steps
+    # )
+
+
+    '''
+    warm_start_from loc of latest timestamped saved model e.g. log_dir/{latest timestamp}
+    '''
+    # try:
+    #     warm_start_from = get_latest_checkpoint_dir(config.log_dir)
+    # except IndexError:  # no saved checkpoints
+    #     warm_start_from = None
+
+    '''
+    warm_start_from 'checkpoint' file (index-like) in log_dir base directory
+    '''
+    # warm_start_from = os.path.join(config.log_dir, 'checkpoint')
+    # if not os.path.exists(warm_start_from):
+    #     warm_start_from = None
+
+    '''
+    if there's a 'checkpoint' file in config.log_dir,
+    warm start from config.log_dir using ckpt_to_initialize_from arg in WarmStartSettings
+    save model to new_dir
+    otherwise, save (first, implicitly) model to log_dir
+    '''
+    # if os.path.exists(os.path.join(config.log_dir, 'checkpoint')):
+    #     model_dir = os.path.join(config.log_dir, 'new_dir')
+    #     warm_start_from = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=config.log_dir)
+    # else:
+    #     model_dir = config.log_dir
+    #     warm_start_from = None
+    # model_dir = warm_start_from
+
+
+    logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
         params=config.model
+        # warm_start_from=warm_start_from,
+        # config=fast_checkpoint_config
     )
 
     # can't move out of run_estimator, uses closure to avoid passing config as argument
@@ -139,9 +203,8 @@ def run_estimator(config):
 
     while epoch_n < config.epochs:
 
-        logging.info('Global step on epoch {}: {}'.format(epoch_n, tf.train.get_global_step()))
-
         # Train the estimator
+        # logging.debug('training {} steps'.format(config.train_batches))
         estimator.train(
             input_fn=train_input_partial,
             steps=config.train_batches,

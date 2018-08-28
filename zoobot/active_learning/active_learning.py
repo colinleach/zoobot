@@ -204,6 +204,7 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    logging.info('Adding {} subjects  (e.g. {}) to tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
     cursor = db.cursor()
 
     # TODO move earlier, to get_top_acquisitions
@@ -247,8 +248,6 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         })
     
     top_subject_df = pd.DataFrame(data=rows)
-    print(top_subject_df.iloc[0])
-    print(top_subject_df.iloc[1])
     catalog_to_tfrecord.write_image_df_to_tfrecord(
         top_subject_df, 
         tfrecord_loc, 
@@ -287,9 +286,7 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
         train_callable()  # could be docker container run, save model
 
         # make predictions and save to db, could be docker container
-        saved_models = os.listdir(predictor_dir)  # subfolders
-        saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
-        predictor_loc = os.path.join(predictor_dir, saved_models[-1])  # the subfolder with the most recent time
+        predictor_loc = get_latest_checkpoint_dir(predictor_dir)
         logging.info('Loading model from {}'.format(predictor_loc))
         predictor = make_predictions.load_predictor(predictor_loc)
         # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
@@ -310,6 +307,12 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
         add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, train_tfrecord_loc, size)
 
         iteration += 1
+
+
+def get_latest_checkpoint_dir(base_dir):
+        saved_models = os.listdir(base_dir)  # subfolders
+        saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
+        return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
 
 
 def add_labels_to_db(subject_ids, labels, db):

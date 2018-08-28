@@ -13,18 +13,12 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
 
     channels = 3
 
-    logging.basicConfig(
-        filename=run_name + '.log',
-        format='%(asctime)s %(message)s',
-        filemode='w',
-        level=logging.INFO)
-
     run_config = run_estimator.RunEstimatorConfig(
         initial_size=initial_size,
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1,  # temporarily reduced
+        epochs=1,
         train_batches=30,
         eval_batches=3,
         batch_size=128,
