@@ -315,14 +315,24 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
 
+    cursor.execute(
+        '''
+        SELECT * FROM catalog
+        LIMIT 50
+        '''
+    )
+    logging.debug(list(cursor.fetchall()))
+
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         subject_id = subject_ids[subject_n]
 
-        assert isinstance(label, np.int64) or isinstance(label, int)
+        # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
+        if isinstance(label, np.int64):
+            label = int(label)
+        assert isinstance(label, int)
         assert isinstance(subject_id, str)
 
-        logging.debug('label {}, id {}'.format(label, subject_id))
         cursor.execute(
             '''
             UPDATE catalog
@@ -336,7 +346,7 @@ def add_labels_to_db(subject_ids, labels, db):
         )
         db.commit()
 
-        # check labels really have been added
+        # check labels really have been added, and not as byte string
         cursor.execute(
             '''
             SELECT label FROM catalog
@@ -346,8 +356,6 @@ def add_labels_to_db(subject_ids, labels, db):
             (subject_id,)
         )
         retrieved_label = cursor.fetchone()[0]
-        logging.warning('{} {} {}'.format(subject_id, retrieved_label, label))
-        # writes to nan not int when called with run_active_learning
         assert retrieved_label == label
 
 
