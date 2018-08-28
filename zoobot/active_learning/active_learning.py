@@ -23,7 +23,7 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import mock_panoptes
 
 
-def create_db(catalog, db_loc, id_col, label_col):  # very similar to empty db fixture
+def create_db(catalog, db_loc, id_col):  # very similar to empty db fixture
     
     db = sqlite3.connect(db_loc)
 
@@ -33,7 +33,7 @@ def create_db(catalog, db_loc, id_col, label_col):  # very similar to empty db f
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT,
+            label INT DEFAULT NULL,
             fits_loc STRING)
         '''
     )
@@ -57,15 +57,14 @@ def create_db(catalog, db_loc, id_col, label_col):  # very similar to empty db f
     )
     db.commit()
 
-    add_catalog_to_db(catalog, db, id_col, label_col)
+    add_catalog_to_db(catalog, db, id_col)  # does NOT add labels, labels are unknown at this point
 
     return db
 
 
-def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, columns_to_save, save_dir, shard_size=10000):
+def write_catalog_to_tfrecord_shards(df, db, img_size, id_col, columns_to_save, save_dir, shard_size=10000):
     assert not df.empty
     assert id_col in columns_to_save
-    assert label_col in columns_to_save
 
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle
     # split into shards
@@ -80,12 +79,12 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, label_col, id_col, column
     return df
 
 
-def add_catalog_to_db(df, db, id_col, label_col):
-    catalog_entries = list(df[[id_col, label_col, 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
+def add_catalog_to_db(df, db, id_col):
+    catalog_entries = list(df[[id_col, 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc) VALUES(?,?,?)''',
+        INSERT INTO catalog(id_str, label, fits_loc) VALUES(?,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -154,8 +153,10 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     if shard_loc is None:  # top subjects from any shard
         cursor.execute(
             '''
-            SELECT id_str, acquisition_value 
-            FROM acquisitions 
+            SELECT acquisitions.id_str, acquisitions.acquisition_value
+            FROM acquisitions
+            INNER JOIN catalog ON acquisitions.id_str = catalog.id_str
+            WHERE catalog.label IS NULL
             ORDER BY acquisition_value DESC
             LIMIT (:n_subjects)
             ''',
@@ -172,13 +173,14 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
         )
         rows_in_shard = cursor.fetchone()
         assert rows_in_shard is not None
-        # get top subjects from that shard only
+        # get top subjects from that shard only TODO catalog.id_str is null
         cursor.execute(  
             '''
             SELECT acquisitions.id_str, acquisitions.acquisition_value, shardindex.id_str, shardindex.tfrecord
             FROM acquisitions 
             INNER JOIN shardindex ON acquisitions.id_str = shardindex.id_str
-            WHERE shardindex.tfrecord = (:shard_loc)
+            INNER JOIN catalog ON acquisitions.id_str = catalog.id_str
+            WHERE shardindex.tfrecord = (:shard_loc) AND catalog.label IS NULL
             ORDER BY acquisition_value DESC
             LIMIT (:n_subjects)
             ''',
@@ -201,12 +203,22 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
 #     return catalog
 
 
-def add_top_acquisitions_to_tfrecord(db, n_subjects, shard_loc, tfrecord_loc, size):
-    top_acquisitions = get_top_acquisitions(db, n_subjects, shard_loc)
-
+def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
     cursor = db.cursor()
+
+    # TODO move earlier, to get_top_acquisitions
+    cursor.execute(
+        '''
+        SELECT id_str FROM catalog
+        WHERE label IS NOT NULL
+        LIMIT 3
+        '''
+    )
+    if len(cursor.fetchall()) == 0:
+        raise ValueError('Fatal: all subjects have labels in db. No more subjects to add!')
+
     rows = []
-    for subject_id in top_acquisitions:
+    for subject_id in subject_ids:
         assert isinstance(subject_id, str)
         logging.debug(subject_id)
         cursor.execute(
@@ -219,7 +231,7 @@ def add_top_acquisitions_to_tfrecord(db, n_subjects, shard_loc, tfrecord_loc, si
         # namedtuple would allow better type checking
         subject = cursor.fetchone()  # TODO ensure distinct
         if subject is None:
-            raise ValueError('Fatal: top ids not found in catalog!')
+            raise ValueError('Fatal: top ids not found in catalog or label missing!')
         # if not isinstance(subject[0], str):
         #     raise ValueError('Fatal: {} subject id is not str!'.format(subject_id))
         # if not isinstance(subject[1], int):
@@ -246,11 +258,10 @@ def add_top_acquisitions_to_tfrecord(db, n_subjects, shard_loc, tfrecord_loc, si
         source='fits')
 
 
-def setup(catalog, db_loc, id_col, label_col, size, shard_dir, shard_size):
-    db = create_db(catalog, db_loc, id_col, label_col)
-    columns_to_save = [id_col, label_col]
-    # writing is slow
-    write_catalog_to_tfrecord_shards(catalog, db, size, label_col, id_col, columns_to_save, shard_dir, shard_size=shard_size)
+def setup(catalog, db_loc, id_col, size, shard_dir, shard_size):
+    db = create_db(catalog, db_loc, id_col)
+    columns_to_save = [id_col]
+    write_catalog_to_tfrecord_shards(catalog, db, size, id_col, columns_to_save, shard_dir, shard_size=shard_size)
 
 
 def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
@@ -296,34 +307,48 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
         add_labels_to_db(top_acquisition_ids, labels, db)
 
         logging.info('Saving top acquisition subjects to {}, labels: {}'.format(train_tfrecord_loc, labels))
-        add_top_acquisitions_to_tfrecord(db, n_subjects_per_iter, shard_loc, train_tfrecord_loc, size)
+        add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, train_tfrecord_loc, size)
 
         iteration += 1
-
-# def request_labels(subject_ids):
-#     # TODO request labels, import from somewhere else
-#     pass
-
-
-# def recieve_labels(subject_ids, labels):
-#     pass
 
 
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
+
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         subject_id = subject_ids[subject_n]
+
         assert isinstance(label, np.int64) or isinstance(label, int)
         assert isinstance(subject_id, str)
+
+        logging.debug('label {}, id {}'.format(label, subject_id))
         cursor.execute(
             '''
             UPDATE catalog
-            SET label = ?
-            WHERE id_str = ?
+            SET label = (:label)
+            WHERE id_str = (:subject_id)
             ''',
-            (label, subject_id)
+            {
+                'label': label,
+                'subject_id': subject_id
+            }
         )
+        db.commit()
+
+        # check labels really have been added
+        cursor.execute(
+            '''
+            SELECT label FROM catalog
+            WHERE id_str = (:subject_id)
+            LIMIT 1
+            ''',
+            (subject_id,)
+        )
+        retrieved_label = cursor.fetchone()[0]
+        logging.warning('{} {} {}'.format(subject_id, retrieved_label, label))
+        # writes to nan not int when called with run_active_learning
+        assert retrieved_label == label
 
 
 def get_all_shard_locs(db):
