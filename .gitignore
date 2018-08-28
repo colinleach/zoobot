@@ -25,3 +25,5 @@ zoobot/runs
 build/*
 *.whl
 *.egg-info
+*.db
+*shard_*.tfrecord
