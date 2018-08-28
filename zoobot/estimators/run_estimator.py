@@ -18,8 +18,8 @@ class RunEstimatorConfig():
             channels,
             label_col,
             epochs=50,
-            train_batches=30,
-            eval_batches=3,
+            train_steps=30,
+            eval_steps=3,
             batch_size=128,
             min_epochs=0,
             early_stopping_window=10,
@@ -33,8 +33,8 @@ class RunEstimatorConfig():
         self.channels = channels
         self.label_col = label_col
         self.epochs = epochs
-        self.train_batches = train_batches
-        self.eval_batches = eval_batches
+        self.train_batches = train_steps
+        self.eval_batches = eval_steps
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
@@ -143,8 +143,8 @@ def run_estimator(config):
     #     warm_start_from = None
     # model_dir = warm_start_from
 
+    # logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
 
-    logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,

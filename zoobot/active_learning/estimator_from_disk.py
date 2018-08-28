@@ -18,9 +18,9 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1,
-        train_batches=30,
-        eval_batches=3,
+        epochs=5,
+        train_steps=5,
+        eval_steps=3,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,

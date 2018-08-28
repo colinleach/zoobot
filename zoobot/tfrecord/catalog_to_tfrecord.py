@@ -60,22 +60,21 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
 
 
 def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, append=False, source='fits', load_fits_as_pil=load_decals_as_pil):
-
-    if not append:
+    # TODO tfrecord does not support appending :'(
+    if append:
+        raise NotImplementedError('tfrecord does not support appending')
+    else:
         if os.path.exists(tfrecord_loc):
-            print('{} already exists - deleting'.format(tfrecord_loc))
+            logging.warning('{} already exists - deleting'.format(tfrecord_loc))
             os.remove(tfrecord_loc)
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
-
     for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
         serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, source, load_fits_as_pil)
         writer.write(serialized_example)
+    writer.close()  # good to be explicit - will give 'DataLoss' error if writer not closed
 
-    writer.close()  # very important - will give 'DataLoss' error if writer not closed
-    sys.stdout.flush()
 
-# problem: must contain a label to be written to tfrecord. Should fix!
 def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_as_pil):
     # row should have columns that exactly match a read_tfrecord feature spec function
 

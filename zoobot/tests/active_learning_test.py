@@ -362,9 +362,7 @@ def test_get_top_acquisitions(filled_shard_db):
 
 
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
-    shard_loc = 'tfrecord_a'  # only get top acquisitions from here
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
-    # TODO there should already be a record here with some other entries, should only append
     subject_ids = ['some_hash', 'yet_another_hash']
     active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size)
 

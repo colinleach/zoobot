@@ -193,18 +193,9 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     return top_acquisitions # list of id_str's
 
 
-# def add_labels_to_catalog(catalog, subject_ids, subject_labels, id_col, label_col):
-#     # better done with a database probably
-#     labeller = dict(zip(subject_ids, subject_labels))
-#     def add_label(row):
-#         if row[id_col] in labeller.keys():
-#             return labeller[row[id_col]]
-#     catalog['label'] = catalog.apply(add_label, axis=1)
-#     return catalog
-
-
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
-    logging.info('Adding {} subjects  (e.g. {}) to tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
+    logging.info('Adding {} subjects  (e.g. {}) to new tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
+    assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     cursor = db.cursor()
 
     # TODO move earlier, to get_top_acquisitions
@@ -233,27 +224,23 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         subject = cursor.fetchone()  # TODO ensure distinct
         if subject is None:
             raise ValueError('Fatal: top ids not found in catalog or label missing!')
-        # if not isinstance(subject[0], str):
-        #     raise ValueError('Fatal: {} subject id is not str!'.format(subject_id))
-        # if not isinstance(subject[1], int):
-        #     raise ValueError('Fatal: {} label is not int!'.format(subject_id))
-        logging.debug(subject)
+
         if subject[1] is None:
             raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
-        assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. null label
+        assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': int(subject[1]),
             'fits_loc': str(subject[2])
         })
-    
+
     top_subject_df = pd.DataFrame(data=rows)
+    assert len(top_subject_df) == len(subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
-        top_subject_df, 
-        tfrecord_loc, 
-        size, 
-        columns_to_save=['id_str', 'label'], 
-        append=True, # must append, don't overwrite previous training data! 
+        top_subject_df,
+        tfrecord_loc,
+        size,
+        columns_to_save=['id_str', 'label'],
         source='fits')
 
 
@@ -263,7 +250,7 @@ def setup(catalog, db_loc, id_col, size, shard_dir, shard_size):
     write_catalog_to_tfrecord_shards(catalog, db, size, id_col, columns_to_save, shard_dir, shard_size=shard_size)
 
 
-def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable):
+def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable, n_subjects_per_iter=100):
     try:
         del catalog['label']  # catalog is unknown to begin with!
     except KeyError:
@@ -273,8 +260,9 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
     n_samples = 20
     db = sqlite3.connect(db_loc)
     shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
-    n_subjects_per_iter = 10
     max_iterations = 5
+    train_records_dir = os.path.dirname(train_tfrecord_loc)
+    train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
 
     iteration = 0
     while iteration < max_iterations:
@@ -283,8 +271,9 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
 
         # train as usual, with saved_model being placed in predictor_dir
         logging.info('Training')
-        train_callable()  # could be docker container run, save model
-
+        # callable should expect list of tfrecord files to train on
+        train_callable(train_records)  # could be docker container run, save model
+        # train_callable()
         # make predictions and save to db, could be docker container
         predictor_loc = get_latest_checkpoint_dir(predictor_dir)
         logging.info('Loading model from {}'.format(predictor_loc))
@@ -303,8 +292,10 @@ def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train
 
         add_labels_to_db(top_acquisition_ids, labels, db)
 
-        logging.info('Saving top acquisition subjects to {}, labels: {}'.format(train_tfrecord_loc, labels))
-        add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, train_tfrecord_loc, size)
+        new_train_tfrecord = os.path.join(train_records_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
+        logging.info('Saving top acquisition subjects to {}, labels: {}'.format(new_train_tfrecord, labels))
+        add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, size)
+        train_records.append(new_train_tfrecord)
 
         iteration += 1
 
