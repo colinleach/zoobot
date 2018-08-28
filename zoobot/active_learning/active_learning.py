@@ -329,7 +329,10 @@ def add_labels_to_db(subject_ids, labels, db):
             SET label = (:label)
             WHERE id_str = (:subject_id)
             ''',
-            (label, subject_id)
+            {
+                'label': label,
+                'subject_id': subject_id
+            }
         )
         db.commit()
 
@@ -343,7 +346,7 @@ def add_labels_to_db(subject_ids, labels, db):
             (subject_id,)
         )
         retrieved_label = cursor.fetchone()[0]
-        logging.warning('{} {}'.format(retrieved_label, label))
+        logging.warning('{} {} {}'.format(subject_id, retrieved_label, label))
         # writes to nan not int when called with run_active_learning
         assert retrieved_label == label
 
