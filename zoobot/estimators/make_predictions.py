@@ -31,17 +31,17 @@ def load_predictor(predictor_loc):
 
 def get_samples_of_subjects(model, subjects, n_samples):
     """Get many model predictions on each subject
-    
+
     Args:
         model (function): callable mapping parsed subjects to class scores
         subjects (list): subject matrices on which to make a prediction
         n_samples (int): number of samples (i.e. model calls) to calculate per subject
-    
+
     Returns:
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
     results = np.zeros((len(subjects), n_samples))
-    
+
     for nth_run in range(n_samples):  # for each desired sample,
         results[:, nth_run] = model(subjects)  # predict once on every example
 
@@ -50,7 +50,7 @@ def get_samples_of_subjects(model, subjects, n_samples):
 
 def entropy(probabilites):
     """Find the total entropy in a sampled probability distribution
-    
+
     Args:
         probabilites (np.array): observed probabilities e.g. calibrated class scores from ML model
     
@@ -61,10 +61,19 @@ def entropy(probabilites):
     return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
 
 
-def acquisition_func(model, n_samples):
-    def acquisition_callable(subjects):
-        samples = get_samples_of_subjects(model, subjects, n_samples)
-        return entropy(samples)  # TODO return a list instead for convenience
+def get_acquisition_func(model, n_samples):
+    """Provide callable for active learning acquisition
+    Args:
+        model (function): callable mapping parsed subjects to class scores
+        n_samples (int): number of samples (i.e. model calls) to calculate per subject
+    
+    Returns:
+        callable: expects model, returns callable for entropy list of matrix list (given that model)
+    """
+    def acquisition_callable(subjects):  # subjects must be a list of matrices
+        samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
+        values_array = entropy(samples)  # calculate on ndarray for speed
+        return [float(values_array[n]) for n in range(values_array)]  # return a list
     return acquisition_callable
 
 

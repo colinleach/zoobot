@@ -46,9 +46,23 @@ class RunEstimatorConfig():
         self.eval_config = None
         self.model = None
 
+    
+    def assemble(self, train_config, eval_config, model):
+        self.train_config = train_config
+        self.eval_config = eval_config
+        self.model = model
+        assert self.is_ready_to_train()
+
+
     def is_ready_to_train(self):
         # TODO can make this check much more comprehensive
         return (self.train_config is not None) and (self.eval_config is not None)
+
+    def log():
+        logging.info('Parameters used: ')
+        for config_object in [run_config, train_config, eval_config, model]:
+            for key, value in config_object.asdict().items():
+                logging.info('{}: {}'.format(key, value))
 
     # TODO move to shared utilities
     def asdict(self):

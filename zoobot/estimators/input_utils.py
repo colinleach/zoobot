@@ -1,6 +1,7 @@
 import copy
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
@@ -48,6 +49,12 @@ class InputConfig():
         self.photographic_augmentation = photographic_augmentation
         self.max_brightness_delta = max_brightness_delta
         self.contrast_range = contrast_range
+
+
+    def set_stratify_probs_from_csv(self, csv_loc):
+        subject_df = pd.read_csv(csv_loc)
+        self.stratify_probs = [1. - subject_df[self.label_col].mean(), subject_df[self.label_col].mean()]
+
 
     # TODO move to shared utilities
     def asdict(self):

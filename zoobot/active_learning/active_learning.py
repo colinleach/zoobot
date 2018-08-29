@@ -23,8 +23,19 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import mock_panoptes
 
 
-def create_db(catalog, db_loc, id_col):  # very similar to empty db fixture
+def create_db(catalog, db_loc):
+    """Instantiate sqlite database at db_loc with the following tables:
+    1. `catalog`: analogy of catalog dataframe, for fits locations and (sometimes) labels
+    2. `shardindex`: which shard contains each (serialized) galaxy
+    3. `acquisitions`: the latest acquistion function value for each galaxy
     
+    Args:
+        catalog (pd.DataFrame): with id_col (id string) and fits_loc (image on disk) columns
+        db_loc (str): file location to save database
+    
+    Returns:
+        sqlite3.Connection: connection to database as described above. Intended for active learning
+    """
     db = sqlite3.connect(db_loc)
 
     cursor = db.cursor()
@@ -57,30 +68,20 @@ def create_db(catalog, db_loc, id_col):  # very similar to empty db fixture
     )
     db.commit()
 
-    add_catalog_to_db(catalog, db, id_col)  # does NOT add labels, labels are unknown at this point
+    add_catalog_to_db(catalog, db)  # does NOT add labels, labels are unknown at this point
 
     return db
 
 
-def write_catalog_to_tfrecord_shards(df, db, img_size, id_col, columns_to_save, save_dir, shard_size=10000):
-    assert not df.empty
-    assert id_col in columns_to_save
+def add_catalog_to_db(df, db):
+    """Add id and fits image location info from galaxy catalog to db `catalog` table
+    
+    Args:
+        df (pd.DataFrame): Galaxy catalog with 'id_str' and 'fits_loc' fields
+        db (sqlite3.Connection): database with `catalog` table to record df id_col and fits_loc
+    """
 
-    df = df.sample(frac=1).reset_index(drop=True)  # shuffle
-    # split into shards
-    shard_n = 0
-    n_shards = (len(df) // shard_size) + 1
-    df_shards = [df.iloc[n * shard_size:(n + 1) * shard_size] for n in range(n_shards)]
-
-    for shard_n, df_shard in enumerate(df_shards):
-        save_loc = os.path.join(save_dir, 's{}_shard_{}.tfrecord'.format(img_size, shard_n))
-        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
-        add_tfrecord_to_db(save_loc, db, df_shard, id_col)
-    return df
-
-
-def add_catalog_to_db(df, db, id_col):
-    catalog_entries = list(df[[id_col, 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
+    catalog_entries = list(df[['id_str', 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
     cursor = db.cursor()
     cursor.executemany(
         '''
@@ -90,20 +91,48 @@ def add_catalog_to_db(df, db, id_col):
     db.commit()
 
 
-def add_tfrecord_to_db(tfrecord_loc, db, df, id_col):
-    # scan through the record to make certain everything is truly there,
-    # rather than just reading df?
-    # eventually, consider the catalog being SQL as source-of-truth and csv output
-    # ShardIndexEntry = namedtuple('ShardIndexEntry', 'id, tfrecord')
+def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size=1000):
+    """Write galaxy catalog across many tfrecords.
+    Useful to quickly load images for repeated predictions.
+
+    Args:
+        df (pd.DataFrame): Galaxy catalog with 'id_str' and 'fits_loc' fields
+        db (sqlite3.Connection): database with `catalog` table to record df id_col and fits_loc
+        img_size (int): height/width dimension of image matrix to rescale and save to tfrecords
+        columns_to_save (list): Catalog data to save with each subject. Names will match tfrecord.
+        save_dir (str): disk directory path into which to save tfrecords
+        shard_size (int, optional): Defaults to 1000. Max subjects per shard. Final shard has less.
+    """
+    assert not df.empty
+    assert 'id_str' in columns_to_save
+
+    df = df.copy().sample(frac=1).reset_index(drop=True)  # shuffle
+    # split into shards
+    shard_n = 0
+    n_shards = (len(df) // shard_size) + 1
+    df_shards = [df.iloc[n * shard_size:(n + 1) * shard_size] for n in range(n_shards)]
+
+    for shard_n, df_shard in enumerate(df_shards):
+        save_loc = os.path.join(save_dir, 's{}_shard_{}.tfrecord'.format(img_size, shard_n))
+        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
+        add_tfrecord_to_db(save_loc, db, df_shard)
+
+
+def add_tfrecord_to_db(tfrecord_loc, db, df):
+    """Update db to record catalog entries as inside a tfrecord.
+    Note: does not actually load/verify the tfrecord, simply takes info from catalog
+    TODO scan through the record rather than just reading df?
+    TODO eventually, consider the catalog being SQL as source-of-truth and csv output
+
+    Args:
+        tfrecord_loc (str): disk path of tfrecord
+        db (sqlite3.Connection): database with `catalog` table to record df id_col and fits_loc
+        df (pd.DataFrame): Galaxy catalog with 'id_str' and 'fits_loc' fields
+    """
     shard_index_entries = list(zip(
-        df[id_col].values, 
+        df['id_str'].values, 
         [tfrecord_loc for n in range(len(df))]
     ))
-    # shard_index_entries = list(map(
-    #     lambda x, y: ShardIndexEntry._make(id=x, tfrecord=y),
-    #     d,
-          # could alternatively modify df beforehand
-    # ))  
     cursor = db.cursor()
     cursor.executemany(
         '''
@@ -113,43 +142,83 @@ def add_tfrecord_to_db(tfrecord_loc, db, df, id_col):
     db.commit()
 
 
-def record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func):
-    # iterate though the shards and get the acq. func of all unlabelled examples
-    # one shard should fit in memory for one machine
-    # TODO currently predicts on ALL, even labelled. Should flag labelled and exclude
-    # TODO fix messy mixing of arrays, dicts, lists
-    # TODO update tests with more realistic acq. function!
+def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisition_func):
+    """For every subject in tfrecord, get the acq. func value and save to db
+    Records acq. func. value on all examples, even labelled ones.
+    Acquisition func 
+    Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
+    
+    Args:
+        db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
+        tfrecord_loc (str): disk path to tfrecord. Loaded tfrecord must fit in memory.
+        size (int): height/width dimension of each image matrix to load from tfrecord
+        channels (int): channels of each image matrix to load from tfrecord
+        acquisition_func (callable): expecting list of image matrices, returning list of scalars
+    """
     subjects = read_tfrecord.load_examples_from_tfrecord(
-        [shard_loc],
+        [tfrecord_loc],
         read_tfrecord.matrix_id_feature_spec(size, channels)
     )
-    logging.debug('Loaded subjects from {} of size {}'.format(shard_loc, size))
+    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
     # acq func expects a list of matrices
     subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
-    acquisitions = acquisition_func(subjects_data)  # returns np array of acq. values
-    acquistion_values = [acquisitions[n] for n in range(len(acquisitions))]  # convert back to list
-    for subject, acquisition in zip(subjects, acquistion_values):
-        if isinstance(subject['id_str'], bytes):
-            subject['id_str'] = subject['id_str'].decode('utf-8')
-        save_acquisition_to_db(subject, acquisition, db)
+    acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
+
+    for subject, acquisition in zip(subjects, acquisitions):
+        subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
+        save_acquisition_to_db(subject_id, acquisition, db)
 
 
-def save_acquisition_to_db(subject, acquisition, db): 
-    # will overwrite previous acquisitions
-    # could make faster with batches, but not needed I think
-    # TODO needs test for duplicate values/replace behaviour
+def save_acquisition_to_db(subject_id, acquisition, db): 
+    """Save the acquisition value for the subject to the database
+    Warning: will overwrite previous acquisitions for that subject
+    
+    Args:
+        subject_id (str): id string of subject, expected to match db.acquisitions.id_str values
+        acquisition (float): latest acquisition value for subject with `subject_id` id string
+        db (sqlite3.Connection): database with `acquisitions` table to record acquisition
+    """
+    assert isinstance(acquisition, float)  # can't be np.float32, else written as bytes
+    assert isinstance(subject_id, str)
     cursor = db.cursor()  
     cursor.execute('''  
     INSERT OR REPLACE INTO acquisitions(id_str, acquisition_value)  
                   VALUES(:id_str, :acquisition_value)''',
                   {
-                      'id_str':subject['id_str'], 
-                      'acquisition_value':acquisition})
+                      'id_str': subject_id, 
+                      'acquisition_value': acquisition})
     db.commit()
 
 
 def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
+    """Get the subject ids of up to `n_subjects`:
+        1. Without labels (required for later training)
+        1. With the highest acquisition values, up to the first `n_subjects`
+
+    Args:
+        db (sqlite3.Connection): database with `acquisitions` table to read acquisition
+        n_subjects (int, optional): Defaults to 1000. Max subject ids to return.
+        shard_loc (str, optional): Defaults to None. Get top subjects from only this shard.
+
+    Raises:
+        ValueError: all subjects in `db.catalog` have labels
+        IndexError: if no top subjects are found, optionally looking only in shard_loc
+
+    Returns:
+        list: ordered list (descending) of subject id strings with highest acquisition values
+    """
     cursor = db.cursor()
+    # check that at least 1 subject has no label
+    cursor.execute(
+        '''
+        SELECT id_str FROM catalog
+        WHERE label IS NULL
+        '''
+    )
+    unlabelled_subject = cursor.fetchone()
+    if unlabelled_subject is None:
+        raise ValueError('Fatal: all subjects have labels in db. No more subjects to add!')
+
     if shard_loc is None:  # top subjects from any shard
         cursor.execute(
             '''
@@ -163,7 +232,7 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
             (n_subjects,)
         )
     else:
-        # verify that shard_loc is in at least one row of shardindex table
+        # first, verify that shard_loc is in at least one row of shardindex table
         cursor.execute(
             '''
             SELECT tfrecord from shardindex
@@ -173,7 +242,7 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
         )
         rows_in_shard = cursor.fetchone()
         assert rows_in_shard is not None
-        # get top subjects from that shard only TODO catalog.id_str is null
+        # since the shard checks out, get top unlabelled subjects from that shard only
         cursor.execute(  
             '''
             SELECT acquisitions.id_str, acquisitions.acquisition_value, shardindex.id_str, shardindex.tfrecord
@@ -186,28 +255,36 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
             ''',
             (shard_loc, n_subjects),
         )
-    top_subjects = cursor.fetchall()  # somehow autoconverts to id_str to int...
-    top_acquisitions = [str(x[0]) for x in top_subjects]  # ensure id_str really is str
+
+    top_subjects = cursor.fetchall()  # sqlite3 may autoconvert id_str to int at this step
+    top_acquisitions = [str(x[0]) for x in top_subjects]  # to avoid, ensure id_str really is str
     if len(top_acquisitions) == 0:
-        raise ValueError
-    return top_acquisitions # list of id_str's
+        raise IndexError(
+            'Fatal: No top subjects. Perhaps no unlabelled subjects in shard {} ?'.format(shard_loc)
+            )
+    return top_acquisitions
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    """Write the subjects with ids in `subject_ids` to a tfrecord at `tfrecord_loc`
+    tfrecord will save the image stored at `db.catalog.fits_loc` at size `size`
+    tfrecord will include the label stored under `db.catalog.label`
+    Useful for creating additional training tfrecords during active learning
+    
+    Args:
+        db (sqlite3.Connection): database with `db.catalog` table to get subject image and label
+        subject_ids (list): of subject ids matching `db.catalog.id_str` values
+        tfrecord_loc (str): path into which to save new tfrecord
+        size (int): height/width dimension of image matrix to rescale and save to tfrecords
+    
+    Raises:
+        IndexError: No matches found to an id in `subject_ids` within db.catalog.id_str
+        ValueError: Subject with an id in `subject_ids` has null label (code error in this func.)
+    """
+
     logging.info('Adding {} subjects  (e.g. {}) to new tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
     assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     cursor = db.cursor()
-
-    # TODO move earlier, to get_top_acquisitions
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        WHERE label IS NOT NULL
-        LIMIT 3
-        '''
-    )
-    if len(cursor.fetchall()) == 0:
-        raise ValueError('Fatal: all subjects have labels in db. No more subjects to add!')
 
     rows = []
     for subject_id in subject_ids:
@@ -223,7 +300,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         # namedtuple would allow better type checking
         subject = cursor.fetchone()  # TODO ensure distinct
         if subject is None:
-            raise ValueError('Fatal: top ids not found in catalog or label missing!')
+            raise IndexError('Fatal: top ids not found in catalog or label missing!')
 
         if subject[1] is None:
             raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
@@ -242,62 +319,6 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         size,
         columns_to_save=['id_str', 'label'],
         source='fits')
-
-
-def setup(catalog, db_loc, id_col, size, shard_dir, shard_size):
-    db = create_db(catalog, db_loc, id_col)
-    columns_to_save = [id_col]
-    write_catalog_to_tfrecord_shards(catalog, db, size, id_col, columns_to_save, shard_dir, shard_size=shard_size)
-
-
-def run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable, n_subjects_per_iter=100):
-    try:
-        del catalog['label']  # catalog is unknown to begin with!
-    except KeyError:
-        pass
-    
-    logging.basicConfig(level=logging.INFO)
-    n_samples = 20
-    db = sqlite3.connect(db_loc)
-    shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
-    max_iterations = 5
-    train_records_dir = os.path.dirname(train_tfrecord_loc)
-    train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
-
-    iteration = 0
-    while iteration < max_iterations:
-        shard_loc = next(shard_locs)
-        logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
-
-        # train as usual, with saved_model being placed in predictor_dir
-        logging.info('Training')
-        # callable should expect list of tfrecord files to train on
-        train_callable(train_records)  # could be docker container run, save model
-        # train_callable()
-        # make predictions and save to db, could be docker container
-        predictor_loc = get_latest_checkpoint_dir(predictor_dir)
-        logging.info('Loading model from {}'.format(predictor_loc))
-        predictor = make_predictions.load_predictor(predictor_loc)
-        # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
-        acquisition_func = make_predictions.acquisition_func(predictor, n_samples)
-        logging.info('Making and recording predictions')
-        record_acquisition_on_unlabelled(db, shard_loc, size, channels, acquisition_func)
-
-        top_acquisition_ids = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
-        # TODO would pause here in practice
-
-        logging.debug('ids {}'.format(top_acquisition_ids))
-        labels = mock_panoptes.get_labels(top_acquisition_ids)
-        logging.debug('labels {}'.format(labels))
-
-        add_labels_to_db(top_acquisition_ids, labels, db)
-
-        new_train_tfrecord = os.path.join(train_records_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
-        logging.info('Saving top acquisition subjects to {}, labels: {}'.format(new_train_tfrecord, labels))
-        add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, size)
-        train_records.append(new_train_tfrecord)
-
-        iteration += 1
 
 
 def get_latest_checkpoint_dir(base_dir):
@@ -362,3 +383,61 @@ def get_all_shard_locs(db):
         '''
     )
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
+
+
+# TODO the below can be a class (ActiveLearning) 
+# or even composed of several (ActiveLearningCoordinator, Trainer, Predictor, etc)
+
+
+def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func):
+    # TODO currently makes strong assumptions about the subject properties
+
+    assert 'label' not in catalog.columns.values
+
+    db = sqlite3.connect(db_loc)
+    shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
+    # TODO refactor these settings into an object
+    shards_per_iteration = 1
+    max_iterations = 5
+    n_subjects_per_iter = 100
+    train_records_dir = os.path.dirname(train_tfrecord_loc)
+
+    train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
+    iteration = 0
+    while iteration < max_iterations:
+
+        # train as usual, with saved_model being placed in predictor_dir
+        logging.info('Training iteration {}'.format(iteration))
+    
+        # callable should expect list of tfrecord files to train on
+        train_callable(train_records)  # could be docker container to run, save model
+
+        # make predictions and save to db, could be docker container
+        predictor_loc = get_latest_checkpoint_dir(predictor_dir)
+        logging.info('Loading model from {}'.format(predictor_loc))
+        predictor = make_predictions.load_predictor(predictor_loc)
+        # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
+        acquisition_func = get_acquisition_func(predictor)
+
+        logging.info('Making and recording predictions')
+        shards_used = 0
+        top_acquisition_ids = []
+        while shards_used < shards_per_iteration:
+            shard_loc = next(shard_locs)
+            logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
+            record_acquisitions_on_tfrecord(db, shard_loc, size, channels, acquisition_func)
+            top_ids_in_shard = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
+            top_acquisition_ids += top_ids_in_shard  # concat lists
+            shards_used += 1
+            # TODO would pause here in practice
+
+        labels = mock_panoptes.get_labels(top_acquisition_ids)  # TODO replace with generic
+
+        add_labels_to_db(top_acquisition_ids, labels, db)
+
+        new_train_tfrecord = os.path.join(train_records_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
+        logging.info('Saving top acquisition subjects to {}, labels: {}...'.format(new_train_tfrecord, labels[:5]))
+        add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, size)
+        train_records.append(new_train_tfrecord)
+
+        iteration += 1

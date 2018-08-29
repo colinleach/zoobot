@@ -10,11 +10,6 @@ from estimators import bayesian_estimator_funcs, run_estimator, input_utils, war
 import panoptes_to_tfrecord
 
 
-def get_stratify_probs_from_csv(input_config: input_utils.InputConfig):
-    subject_df = pd.read_csv(train_config.tfrecord_loc + '.csv')
-    return [1. - subject_df[input_config.label_col].mean(), subject_df[input_config.label_col].mean()]
-
-
 if __name__ == '__main__':
 
     initial_size = 128
@@ -66,7 +61,7 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    train_config.stratify_probs = get_stratify_probs_from_csv(train_config)
+    train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
@@ -84,7 +79,7 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    eval_config.stratify_probs = get_stratify_probs_from_csv(eval_config)
+    eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     model = bayesian_estimator_funcs.BayesianBinaryModel(
         learning_rate=0.001,

@@ -9,13 +9,13 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
 
 
-def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_size, label_split_value, log_dir):
+def get_run_config(active_config):
 
     channels = 3
 
     run_config = run_estimator.RunEstimatorConfig(
-        initial_size=initial_size,
-        final_size=final_size,
+        initial_size=active_config.initial_size,
+        final_size=active_config.final_size,
         channels=channels,
         label_col='label',
         epochs=5,
@@ -25,14 +25,14 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
         max_sadness=4.,
-        log_dir=log_dir,
+        log_dir=active_config.predictor_dir,
         save_freq=10,
         fresh_start=False  # Will restore previous run from disk, if saved
     )
 
     train_config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc=train_tfrecord_loc,
+        tfrecord_loc=active_config.train_tfrecord_loc,
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,
@@ -46,11 +46,11 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    train_config.stratify_probs = get_stratify_probs_from_csv(train_config)
+    train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
-        tfrecord_loc=eval_tfrecord_loc,
+        tfrecord_loc=active_config.eval_tfrecord_loc,
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,
@@ -64,7 +64,7 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    eval_config.stratify_probs = get_stratify_probs_from_csv(train_config)  # eval not allowed!
+    eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
 
     model = bayesian_estimator_funcs.BayesianBinaryModel(
         learning_rate=0.001,
@@ -81,30 +81,5 @@ def setup(run_name, train_tfrecord_loc, eval_tfrecord_loc, initial_size, final_s
         image_dim=run_config.final_size  # not initial size
     )
 
-    run_config.train_config = train_config
-    run_config.eval_config = eval_config
-    run_config.model = model
-    assert run_config.is_ready_to_train()
-
-    logging.info('Parameters used: ')
-    for config_object in [run_config, train_config, eval_config, model]:
-        for key, value in config_object.asdict().items():
-            logging.info('{}: {}'.format(key, value))
-        logging.info('Next object \n')
-
+    run_config.assemble(train_config, eval_config, model)
     return run_config
-
-
-def get_stratify_probs_from_csv(input_config):
-    subject_df = pd.read_csv(input_config.tfrecord_loc + '.csv')
-    return [1. - subject_df[input_config.label_col].mean(), subject_df[input_config.label_col].mean()]
-
-
-# def train_from_disk():
-#     run_config = setup()
-#     run_estimator.run_estimator(run_config)
-
-
-# def predict_from_disk():
-#     run_config = setup()
-#     return warm_start.restart_estimator(run_config)

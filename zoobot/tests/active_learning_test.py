@@ -10,6 +10,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import pandas as pd
+from astropy.io import fits
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tfrecord import create_tfrecord, read_tfrecord
@@ -89,8 +90,8 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc)
-                  VALUES(:id_str, NULL, :fits_loc)
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
         ''',
         {
             'id_str': 'some_hash',
@@ -105,7 +106,6 @@ def filled_shard_db(empty_shard_db):
         ''',
         {
             'id_str': 'some_hash',
-            # label is NULL
             'acquisition_value': 0.9
         }
     )
@@ -124,12 +124,11 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc)
-                  VALUES(:id_str, NULL, :fits_loc)
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
         ''',
         {
             'id_str': 'some_other_hash',
-            # NULL label
             'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
         }
     )
@@ -158,12 +157,11 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc)
-                  VALUES(:id_str, NULL, :fits_loc)
+        INSERT INTO catalog(id_str, fits_loc)
+                  VALUES(:id_str, :fits_loc)
         ''',
         {
             'id_str': 'yet_another_hash',
-            # NULL label
             'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
         }
     )
@@ -222,9 +220,14 @@ def filled_shard_db_with_labels(filled_shard_db):
 
 @pytest.fixture()
 def acquisition_func():
-    # converts loaded subjects to acquisition scores. Here, random.
-    # should be used within record_top_acquistions, different to mock_acq._func used in test_run
-    return lambda x: np.random.rand(len(x))
+    # Converts loaded subjects to acquisition scores. Here, takes the mean.
+    # Must return float, not np.float32, else db will be confused and write as bytes
+    def mock_acquisition_callable(matrix_list):
+        assert isinstance(matrix_list, list)
+        assert all([isinstance(x, np.ndarray) for x in matrix_list])
+        assert all([x.shape[0] == x.shape[1] for x in matrix_list])
+        return [float(x.mean()) for x in matrix_list]
+    return mock_acquisition_callable
 
 
 @pytest.fixture()
@@ -232,14 +235,14 @@ def acquisition():
     return np.random.rand()
 
 
-def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, id_col, columns_to_save, tfrecord_dir):
-    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, id_col, columns_to_save, tfrecord_dir, shard_size=15)
-    # verify_db_matches_catalog(catalog, empty_shard_db, id_col, label_col)
+def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, columns_to_save, tfrecord_dir):
+    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, columns_to_save, tfrecord_dir, shard_size=15)
+    # verify_db_matches_catalog(catalog, empty_shard_db, 'id_str', label_col)
     verify_db_matches_shards(empty_shard_db, size, channels)
     verify_catalog_matches_shards(catalog, empty_shard_db, size, channels)
 
 
-def verify_db_matches_catalog(catalog, db, id_col, label_col):
+def verify_db_matches_catalog(catalog, db):
      # db should contain the catalog in 'catalog' table
     cursor = db.cursor()
     cursor.execute(
@@ -251,7 +254,7 @@ def verify_db_matches_catalog(catalog, db, id_col, label_col):
     for entry in catalog_entries:
         recovered_id = str(entry[0])
         recovered_label = entry[1]
-        expected_label = catalog[catalog[id_col] == recovered_id].squeeze()[label_col]
+        expected_label = catalog[catalog['id_str'] == recovered_id].squeeze()['label']
         assert recovered_label == expected_label
 
 
@@ -310,8 +313,8 @@ def verify_catalog_matches_shards(catalog, db, size, channels):
 
 
 
-def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_col):  # bad loc
-    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_col)
+def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog):  # bad loc
+    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -320,12 +323,12 @@ def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog, id_co
     )
     saved_subjects = cursor.fetchall()
     for n, subject in enumerate(saved_subjects):
-        assert str(subject[0]) == catalog.iloc[n][id_col]  # strange string casting when read back
+        assert str(subject[0]) == catalog.iloc[n]['id_str']  # strange string casting when read back
         assert subject[1] == example_tfrecord_loc
 
 
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
-    active_learning.save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db)
+    active_learning.save_acquisition_to_db(unknown_subject['id_str'], acquisition, empty_shard_db)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -337,18 +340,19 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_record_acquisition_on_unlabelled(filled_shard_db, acquisition_func, shard_locs, size, channels):
+def test_record_acquisitions_on_tfrecord(filled_shard_db, acquisition_func, shard_locs, size, channels):
+    # TODO needs test for duplicate values/replace behaviour
     shard_loc = shard_locs[0]
-    active_learning.record_acquisition_on_unlabelled(filled_shard_db, shard_loc, size, channels, acquisition_func)
+    active_learning.record_acquisitions_on_tfrecord(filled_shard_db, shard_loc, size, channels, acquisition_func)
     cursor = filled_shard_db.cursor()
     cursor.execute(
         '''
-        SELECT id_str, acquisition_value FROM acquisitions
+        SELECT acquisition_value FROM acquisitions
         '''
     )
     saved_subjects = cursor.fetchall()
     for subject in saved_subjects:
-        assert 0. < subject[1] < 1.  # doesn't actually verify value is consistent
+        assert 0. < subject[0] < 1.  # doesn't actually verify value is consistent
 
 
 def test_get_top_acquisitions_any_shard(filled_shard_db):
@@ -407,20 +411,33 @@ def test_add_labels_to_db(filled_shard_db):
 
 
 
-def test_setup(catalog, db_loc, id_col, size, channels, tfrecord_dir):
+def test_setup(catalog, db_loc, size, channels, tfrecord_dir):
     # falls over if threads start too fast
-    active_learning.setup(catalog, db_loc, id_col, size, tfrecord_dir, shard_size=25)
+    active_learning.setup(catalog, db_loc, size, tfrecord_dir, shard_size=25)
     db = sqlite3.connect(db_loc)
-    # verify_db_matches_catalog(catalog, db, id_col, label_col)
+    # verify_db_matches_catalog(catalog, db)
     verify_db_matches_shards(db, size, channels)
     verify_catalog_matches_shards(catalog, db, size, channels)
 
 
-def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_col, size, channels):  # TODO
-    # depends on setup working okay
-    active_learning.setup(catalog, db_loc, id_col, size, tfrecord_dir, shard_size=25)
+def test_run(monkeypatch, db_loc, tmpdir, tfrecord_dir, size, channels, acquisition_func):
+    # TODO should pass subjects with constant matrices, and check if orders in increasing value
 
-    def train_callable():
+    n_subjects = 128
+    id_strings = [str(n) for n in range(n_subjects)]
+    matrices = np.random.rand(n_subjects, size, size, channels)
+    fits_locs = [os.path.join(tfrecord_dir, '_{}.fits'.format(n)) for n in range(n_subjects)]
+    for matrix, loc in zip(matrices, fits_locs):
+        # write to fits
+        hdu = fits.PrimaryHDU(matrix)
+        hdu.writeto(loc)
+
+    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+
+    # depends on setup working okay
+    active_learning.setup(catalog, db_loc, size, tfrecord_dir, shard_size=25)
+
+    def train_callable(train_tfrecord_locs):
         # pretend to save a model in subdirectory of predictor_dir
         subdir_loc = os.path.join(predictor_dir, str(time.time()))
         os.mkdir(subdir_loc)
@@ -429,19 +446,22 @@ def test_run(monkeypatch, catalog, db_loc, tmpdir, tfrecord_dir, id_col, label_c
         return None
     monkeypatch.setattr(active_learning.make_predictions, 'load_predictor', mock_load_predictor)
 
-    def mock_acquistion_func(predictor, n_samples):
-        return lambda x: np.random.rand(len(x))
-    monkeypatch.setattr(active_learning.make_predictions, 'acquisition_func', mock_acquistion_func)
-
     def mock_get_labels(subject_ids):  # don't actually read from saved catalog, just make up
         return [np.random.randint(2) for n in range(len(subject_ids))]
     monkeypatch.setattr(active_learning.mock_panoptes, 'get_labels', mock_get_labels)
 
-    # train_callable = lambda x: True  # does nothing
+    def get_acquistion_func(predictor):
+        return acquisition_func
+
     train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     predictor_dir = tmpdir.mkdir('predictor_dir').strpath
+
     # TODO add something else (time, string) in predictor dir and make sure the latest timestamp is loaded
-    active_learning.run(catalog, db_loc, id_col, label_col, size, channels, predictor_dir, train_tfrecord_loc, train_callable)
+    active_learning.run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquistion_func)
+    # TODO instead of blindly cycling through shards, record where the shards are and latest update
+
+    # read back the training tfrecords and verify they are sorted by order of mean
+
 
 
 def test_get_all_shard_locs(filled_shard_db):
