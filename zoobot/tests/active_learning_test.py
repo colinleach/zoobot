@@ -15,7 +15,7 @@ from astropy.io import fits
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.active_learning import active_learning
+from zoobot.active_learning import active_learning, setup
 from zoobot.estimators import make_predictions
 
 
@@ -376,11 +376,6 @@ def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_lab
     assert subjects[1]['id_str'] == 'yet_another_hash'.encode('utf-8')  #tfrecord saves as bytes
 
 
-@pytest.fixture()
-def db_loc(tmpdir):
-    return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
-
-
 def test_add_labels_to_db(filled_shard_db):
     subjects = [
         {
@@ -411,31 +406,14 @@ def test_add_labels_to_db(filled_shard_db):
 
 
 
-def test_setup(catalog, db_loc, size, channels, tfrecord_dir):
-    # falls over if threads start too fast
-    active_learning.setup(catalog, db_loc, size, tfrecord_dir, shard_size=25)
-    db = sqlite3.connect(db_loc)
-    # verify_db_matches_catalog(catalog, db)
-    verify_db_matches_shards(db, size, channels)
-    verify_catalog_matches_shards(catalog, db, size, channels)
 
 
-def test_run(monkeypatch, db_loc, tmpdir, tfrecord_dir, size, channels, acquisition_func):
+def test_run(monkeypatch, catalog_random_images, db_loc, tmpdir, tfrecord_dir, size, channels, acquisition_func):
     # TODO should pass subjects with constant matrices, and check if orders in increasing value
-
-    n_subjects = 128
-    id_strings = [str(n) for n in range(n_subjects)]
-    matrices = np.random.rand(n_subjects, size, size, channels)
-    fits_locs = [os.path.join(tfrecord_dir, '_{}.fits'.format(n)) for n in range(n_subjects)]
-    for matrix, loc in zip(matrices, fits_locs):
-        # write to fits
-        hdu = fits.PrimaryHDU(matrix)
-        hdu.writeto(loc)
-
-    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+    catalog = catalog_random_images  # fits files must really exist
 
     # depends on setup working okay
-    active_learning.setup(catalog, db_loc, size, tfrecord_dir, shard_size=25)
+    setup.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
 
     def train_callable(train_tfrecord_locs):
         # pretend to save a model in subdirectory of predictor_dir
@@ -461,6 +439,14 @@ def test_run(monkeypatch, db_loc, tmpdir, tfrecord_dir, size, channels, acquisit
     # TODO instead of blindly cycling through shards, record where the shards are and latest update
 
     # read back the training tfrecords and verify they are sorted by order of mean
+    training_shards = train_tfrecord_loc # TODO will fail, actually want all but this
+    
+    subjects = read_tfrecord.load_examples_from_tfrecord(
+        training_shards, 
+        read_tfrecord.matrix_label_id_feature_spec(size, channels)
+    )
+    matrix_means = [x['matrix'].mean() for x in subjects]
+    assert np.all(matrix_means[1:] > matrix_means[:-1])  # monotonically increasing
 
 
 

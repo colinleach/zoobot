@@ -385,10 +385,6 @@ def get_all_shard_locs(db):
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
 
 
-# TODO the below can be a class (ActiveLearning) 
-# or even composed of several (ActiveLearningCoordinator, Trainer, Predictor, etc)
-
-
 def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func):
     # TODO currently makes strong assumptions about the subject properties
 

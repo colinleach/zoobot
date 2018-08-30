@@ -274,3 +274,31 @@ def catalog(label_col, id_col, unique_id):
     df = pd.DataFrame([zoo1, zoo2] * 128)  # 256 examples
     df[id_col] = [str(n) for n in range(len(df))]
     return df
+
+
+@pytest.fixture()
+def fits_native_dir(tmpdir):
+    return tmpdir.mkdir('fits_native').strpath
+
+@pytest.fixture
+def catalog_random_images(size, channels, fits_native_dir):
+    assert os.path.exists(fits_native_dir)
+    n_subjects = 64
+    id_strings = [str(n) for n in range(n_subjects)]
+    matrices = np.random.rand(n_subjects, size, size, channels)
+    fits_locs = [os.path.join(fits_native_dir, 'random_{}.fits'.format(n)) for n in range(n_subjects)]
+    for matrix, loc in zip(matrices, fits_locs):  # write to fits
+        hdu = fits.PrimaryHDU(matrix)
+        hdu.writeto(loc, overwrite=True)
+        assert os.path.isfile(loc)
+    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+    return catalog
+
+
+@pytest.fixture()
+def db_loc(tmpdir):
+    return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
+
+
+'/private/var/folders/bz/lzzqdhw554sfsdzh2_m73044000qlh/T/pytest-of-walmsleym/pytest-10/test_setup_fixed_images0/tfrecord_dir/random_30.fits'
+'/private/var/folders/bz/lzzqdhw554sfsdzh2_m73044000qlh/T/pytest-of-walmsleym/pytest-10/test_setup_fixed_images0/tfrecord_dir/random_30.fits'
