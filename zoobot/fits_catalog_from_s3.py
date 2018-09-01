@@ -24,6 +24,7 @@ predictions_loc = os.path.join(TEST_EXAMPLE_DIR, 'panoptes_predictions.csv')  # 
 df = pd.read_csv(
     predictions_loc, 
     dtype={'id_loc': str, 'label': float},
+    usecols=['fits_loc', 'fits_loc_relative', 'id_loc', 'label']
     # nrows=10
 )
 
