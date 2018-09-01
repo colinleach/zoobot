@@ -64,8 +64,10 @@ class ShardConfig():
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)
 
-        labelled_catalog['fits_loc'] = self.ec2_fits_dir + labelled_catalog['fits_loc_relative']
-        unlabelled_catalog['fits_loc'] = self.ec2_fits_dir + unlabelled_catalog['fits_loc_relative']
+        # assume the catalog is true, don't modify halfway through!
+        # labelled_catalog['fits_loc'] = self.ec2_fits_dir + labelled_catalog['fits_loc_relative']
+        # unlabelled_catalog['fits_loc'] = self.ec2_fits_dir + unlabelled_catalog['fits_loc_relative']
+
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
@@ -218,16 +220,16 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
 
 if __name__ == '__main__':
 
-    # laptop_base = '/users/mikewalmsley/pretend_ec2_root'
+    laptop_base = '/users/mikewalmsley/pretend_ec2_root'
     ec2_base = '/home/ec2-user'
 
-    # laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
+    laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
     ec2_catalog_loc = ec2_base + '/panoptes_predictions.csv'
 
-    # laptop_shard_loc = '/users/mikewalmsley/pretend_ec2_root/'
+    laptop_shard_loc = '/users/mikewalmsley/pretend_ec2_root/'
     ec2_shard_loc = ec2_base + '/shards_si64_sf28_l0.4/shard_config.json'
 
-    # laptop_run_dir_baseline = '/users/mikewalmsley/pretend_ec2_root/run_baseline'
+    laptop_run_dir_baseline = '/users/mikewalmsley/pretend_ec2_root/run_baseline'
     ec2_run_dir_baseline = ec2_base + '/run_baseline'
     ec2_run_dir = ec2_base + '/run'
     
@@ -242,8 +244,16 @@ if __name__ == '__main__':
     #     volume_base_dir=ec2_base,
     #     catalog_loc=ec2_catalog_loc)
 
+    # baseline
+    # execute_active_learning(
+    #     shard_config_loc=ec2_shard_loc,
+    #     run_dir=ec2_run_dir_baseline,
+    #     baseline=True
+    # )
+
+    # bayesian
     execute_active_learning(
         shard_config_loc=ec2_shard_loc,
-        run_dir=ec2_run_dir_baseline,
-        baseline=True
+        run_dir=ec2_run_dir,
+        baseline=False
     )
