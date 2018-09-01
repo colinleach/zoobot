@@ -30,7 +30,7 @@ s3_dir = 's3://galaxy-zoo/decals/fits_native'
 df['fits_loc_s3'] = s3_dir + df['fits_loc_relative']
 
 # target_dir = '/users/mikewalmsley/pretend_ec2_root/fits_native'
-target_dir = 'fits_native'
+target_dir = '/home/ec2-user/fits_native'
 if not os.path.isdir(target_dir):
     os.mkdir(target_dir)
 df['fits_loc'] = target_dir + df['fits_loc_relative']
