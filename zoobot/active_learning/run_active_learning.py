@@ -123,6 +123,7 @@ class ActiveConfig():
         self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
+        self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
 
         self.max_iterations = 6
         self.n_subjects_per_iter = 1024
@@ -214,7 +215,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
         active_config.max_iterations,
         active_config.n_subjects_per_iter,
         active_config.requested_fits_dir,
-        active_config.requested_tfrecords_dir
+        active_config.requested_tfrecords_dir,
+        active_config.train_records_index_loc
     )
 
 
@@ -245,15 +247,15 @@ if __name__ == '__main__':
     #     catalog_loc=ec2_catalog_loc)
 
     # baseline
-    # execute_active_learning(
-    #     shard_config_loc=ec2_shard_loc,
-    #     run_dir=ec2_run_dir_baseline,
-    #     baseline=True
-    # )
-
-    # bayesian
     execute_active_learning(
         shard_config_loc=ec2_shard_loc,
-        run_dir=ec2_run_dir,
-        baseline=False
+        run_dir=ec2_run_dir_baseline,
+        baseline=True
     )
+
+    # bayesian
+    # execute_active_learning(
+    #     shard_config_loc=ec2_shard_loc,
+    #     run_dir=ec2_run_dir,
+    #     baseline=False
+    # )

@@ -5,9 +5,9 @@ import functools
 import itertools
 import sqlite3
 import time
+import json
 from collections import namedtuple
 
-import pytest  # nice assertions
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -385,7 +385,7 @@ def get_all_shard_locs(db):
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
 
 
-def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func, max_iterations, n_subjects_per_iter, requested_fits_dir, requested_tfrecords_dir):
+def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func, max_iterations, n_subjects_per_iter, requested_fits_dir, requested_tfrecords_dir, train_records_index_loc):
     # TODO currently makes strong assumptions about the subject properties
 
     assert 'label' not in catalog.columns.values
@@ -435,5 +435,8 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
         # fits_loc_s3 column?
         add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, size)
         train_records.append(new_train_tfrecord)
+
+        with open(train_records_index_loc, 'w') as f:
+            json.dump(train_records)
 
         iteration += 1
