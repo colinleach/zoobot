@@ -218,6 +218,12 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
 
 if __name__ == '__main__':
 
+    laptop_base = '/users/mikewalmsley/pretend_ec2_root'
+    ec2_base = '/home/ec2-user'
+
+    laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
+    ec2_catalog_loc = ec2_base + 'zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
+
     logging.basicConfig(
         filename='run_active_learning.log',
         filemode='w',
@@ -225,8 +231,8 @@ if __name__ == '__main__':
         level=logging.DEBUG)
 
     snapshot_shards(
-        volume_base_dir='/users/mikewalmsley/pretend_ec2_root',
-        catalog_loc='/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv')
+        volume_base_dir=ec2_base,
+        catalog_loc=ec2_catalog_loc)
 
     # execute_active_learning(
     #     shard_config_loc='/users/mikewalmsley/pretend_ec2_root/shards_si64_sf28_l0.4/shard_config.json',
