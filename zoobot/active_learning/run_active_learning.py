@@ -224,6 +224,14 @@ if __name__ == '__main__':
     # laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
     ec2_catalog_loc = ec2_base + '/panoptes_predictions.csv'
 
+    # laptop_shard_loc = '/users/mikewalmsley/pretend_ec2_root/'
+    ec2_shard_loc = ec2_base + '/shards_si64_sf28_l0.4/shard_config.json'
+
+    # laptop_run_dir_baseline = '/users/mikewalmsley/pretend_ec2_root/run_baseline'
+    ec2_run_dir_baseline = ec2_base + '/run_baseline'
+    ec2_run_dir = ec2_base + '/run'
+    
+
     logging.basicConfig(
         filename='run_active_learning.log',
         filemode='w',
@@ -235,7 +243,7 @@ if __name__ == '__main__':
     #     catalog_loc=ec2_catalog_loc)
 
     execute_active_learning(
-        shard_config_loc='/users/mikewalmsley/pretend_ec2_root/shards_si64_sf28_l0.4/shard_config.json',
-        run_dir='/users/mikewalmsley/pretend_ec2_root/run_baseline',
+        shard_config_loc=ec2_shard_loc,
+        run_dir=ec2_run_dir_baseline,
         baseline=True
     )
