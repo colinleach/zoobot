@@ -20,10 +20,11 @@ import pandas as pd
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 
+predictions_loc = os.path.join(TEST_EXAMPLE_DIR, 'panoptes_predictions.csv')  # will overwrite
 df = pd.read_csv(
-    os.path.join(TEST_EXAMPLE_DIR, 'panoptes_predictions.csv'), 
+    predictions_loc, 
     dtype={'id_loc': str, 'label': float},
-    nrows=10
+    # nrows=10
 )
 
 s3_dir = 's3://galaxy-zoo/decals/fits_native'
