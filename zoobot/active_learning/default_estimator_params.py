@@ -20,7 +20,7 @@ def get_run_config(active_config):
         label_col='label',
         epochs=10,
         train_steps=10,
-        eval_steps=3,
+        eval_steps=2,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
