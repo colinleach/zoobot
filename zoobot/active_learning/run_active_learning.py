@@ -51,8 +51,7 @@ class ShardConfig():
         # catalog `fits_loc_relative` column is relative to this directory
         # holds all fits in both catalogs, used for writing shards
         # NOT copied to snapshot: fits are only copied as they are labelled
-        # self.s3_fits_dir = '/users/mikewalmsley/aws/s3/galaxy-zoo/decals/fits_native'
-        self.s3_fits_dir = None
+        self.ec2_fits_dir = '/home/ec2-user/fits_native'
 
         self.labelled_catalog_loc = os.path.join(self.shard_dir, 'labelled_catalog.csv')
         self.unlabelled_catalog_loc = os.path.join(self.shard_dir, 'unlabelled_catalog.csv')
@@ -65,8 +64,8 @@ class ShardConfig():
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)
 
-        labelled_catalog['fits_loc'] = self.s3_fits_dir + labelled_catalog['fits_loc_relative']
-        unlabelled_catalog['fits_loc'] = self.s3_fits_dir + unlabelled_catalog['fits_loc_relative']
+        labelled_catalog['fits_loc'] = self.ec2_fits_dir + labelled_catalog['fits_loc_relative']
+        unlabelled_catalog['fits_loc'] = self.ec2_fits_dir + unlabelled_catalog['fits_loc_relative']
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
@@ -90,7 +89,7 @@ class ShardConfig():
 
     def ready(self):
         assert os.path.isdir(self.shard_dir)
-        assert os.path.isdir(self.s3_fits_dir)
+        assert os.path.isdir(self.ec2_fits_dir)
         assert os.path.isfile(self.train_tfrecord_loc)
         assert os.path.isfile(self.eval_tfrecord_loc)
         assert os.path.isfile(self.db_loc)
