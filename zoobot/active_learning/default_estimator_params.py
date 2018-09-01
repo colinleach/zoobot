@@ -14,25 +14,25 @@ def get_run_config(active_config):
     channels = 3
 
     run_config = run_estimator.RunEstimatorConfig(
-        initial_size=active_config.initial_size,
-        final_size=active_config.final_size,
+        initial_size=active_config.shards.initial_size,
+        final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=5,
-        train_steps=5,
+        epochs=10,
+        train_steps=10,
         eval_steps=3,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
         max_sadness=4.,
-        log_dir=active_config.predictor_dir,
+        log_dir=active_config.estimator_dir,
         save_freq=10,
         fresh_start=False  # Will restore previous run from disk, if saved
     )
 
     train_config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc=active_config.train_tfrecord_loc,
+        tfrecord_loc=active_config.shards.train_tfrecord_loc,
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,
@@ -50,7 +50,7 @@ def get_run_config(active_config):
 
     eval_config = input_utils.InputConfig(
         name='eval',
-        tfrecord_loc=active_config.eval_tfrecord_loc,
+        tfrecord_loc=active_config.shards.eval_tfrecord_loc,
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,

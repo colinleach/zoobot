@@ -385,7 +385,7 @@ def get_all_shard_locs(db):
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
 
 
-def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func):
+def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquisition_func, max_iterations, n_subjects_per_iter, requested_fits_dir, requested_tfrecords_dir):
     # TODO currently makes strong assumptions about the subject properties
 
     assert 'label' not in catalog.columns.values
@@ -394,9 +394,6 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
     shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
     # TODO refactor these settings into an object
     shards_per_iteration = 1
-    max_iterations = 5
-    n_subjects_per_iter = 100
-    train_records_dir = os.path.dirname(train_tfrecord_loc)
 
     train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
     iteration = 0
@@ -431,8 +428,11 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
 
         add_labels_to_db(top_acquisition_ids, labels, db)
 
-        new_train_tfrecord = os.path.join(train_records_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
+        new_train_tfrecord = os.path.join(requested_tfrecords_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
         logging.info('Saving top acquisition subjects to {}, labels: {}...'.format(new_train_tfrecord, labels[:5]))
+        # TODO download the top acquisitions from S3 if not on local system, for EC2
+        # Can do this when switching to production, not necessary to demonstrate the system
+        # fits_loc_s3 column?
         add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, size)
         train_records.append(new_train_tfrecord)
 

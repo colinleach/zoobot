@@ -58,9 +58,9 @@ class RunEstimatorConfig():
         # TODO can make this check much more comprehensive
         return (self.train_config is not None) and (self.eval_config is not None)
 
-    def log():
+    def log(self):
         logging.info('Parameters used: ')
-        for config_object in [run_config, train_config, eval_config, model]:
+        for config_object in [self, self.train_config, self.eval_config, self.model]:
             for key, value in config_object.asdict().items():
                 logging.info('{}: {}'.format(key, value))
 

@@ -73,7 +73,9 @@ def get_acquisition_func(model, n_samples):
     def acquisition_callable(subjects):  # subjects must be a list of matrices
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
         values_array = entropy(samples)  # calculate on ndarray for speed
-        return [float(values_array[n]) for n in range(values_array)]  # return a list
+        print(values_array)
+        print(values_array[0])
+        return [float(values_array[n]) for n in range(len(values_array))]  # return a list
     return acquisition_callable
 
 
