@@ -222,7 +222,7 @@ if __name__ == '__main__':
     ec2_base = '/home/ec2-user'
 
     laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
-    ec2_catalog_loc = ec2_base + 'zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
+    ec2_catalog_loc = ec2_base + '/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
 
     logging.basicConfig(
         filename='run_active_learning.log',
