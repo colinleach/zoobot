@@ -35,6 +35,7 @@ if not os.path.isdir(target_dir):
     os.mkdir(target_dir)
 df['fits_loc'] = target_dir + df['fits_loc_relative']
 
+df.to_csv('panoptes_predictions.csv', index=False)
 
 for _, row in df.iterrows():
     # copy file to new native directory from s3
@@ -53,5 +54,3 @@ for _, row in df.iterrows():
 
 
 # del df['fits_loc_old']
-
-# df.to_csv('panoptes_predictions.csv', index=False)
