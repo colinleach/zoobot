@@ -437,6 +437,6 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
         train_records.append(new_train_tfrecord)
 
         with open(train_records_index_loc, 'w') as f:
-            json.dump(train_records)
+            json.dump(train_records, f)
 
         iteration += 1
