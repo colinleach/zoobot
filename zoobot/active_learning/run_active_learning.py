@@ -12,7 +12,7 @@ from zoobot.active_learning import active_learning, default_estimator_params, se
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tests import active_learning_test
 
-
+ROOT = '/home/ubuntu'
 
 class ShardConfig():
     # catalog, unlabelled shards, and single shard of labelled subjects
@@ -51,7 +51,7 @@ class ShardConfig():
         # catalog `fits_loc_relative` column is relative to this directory
         # holds all fits in both catalogs, used for writing shards
         # NOT copied to snapshot: fits are only copied as they are labelled
-        self.ec2_fits_dir = '/home/ec2-user/fits_native'
+        self.ec2_fits_dir = os.path.join(ROOT, 'fits_native')
 
         self.labelled_catalog_loc = os.path.join(self.shard_dir, 'labelled_catalog.csv')
         self.unlabelled_catalog_loc = os.path.join(self.shard_dir, 'unlabelled_catalog.csv')
@@ -223,7 +223,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
 if __name__ == '__main__':
 
     laptop_base = '/users/mikewalmsley/pretend_ec2_root'
-    ec2_base = '/home/ec2-user'
+    # ec2_base = '/home/ec2-user'
+    ec2_base = '/home/ubuntu'
 
     laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
     ec2_catalog_loc = ec2_base + '/panoptes_predictions.csv'

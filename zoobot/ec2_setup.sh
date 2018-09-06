@@ -22,9 +22,11 @@ conda create --name zoobot python=3.6
 source activate zoobot
 pip install -r zoobot/requirements.txt  # needs C compiler for photutils, disabled for now
 
-aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv /home/ec2-user/panoptes_predictions_original.csv
-aws s3 sync s3://galaxy-zoo/decals/fits_native /home/ec2-user/fits_native  # gets everything
-python /home/ec2-user/zoobot/zoobot/update_catalog_fits_loc.py
-python /home/ec2-user/zoobot/zoobot/active_learning/run_active_learning.py  # shards only, use comments
+root=home/ubuntu
+
+aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv /$root/panoptes_predictions_original.csv
+aws s3 sync s3://galaxy-zoo/decals/fits_native /$root/fits_native  # gets everything, for now only the 7k we need. About 6GB.
+python /$root/zoobot/zoobot/update_catalog_fits_loc.py
+python /$root/zoobot/zoobot/active_learning/run_active_learning.py  # shards only, use comments
 
 

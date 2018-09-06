@@ -21,13 +21,15 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 # must already have fits_loc_relative column
 
-base_dir = '/home/ec2-user'
+# base_dir = '/home/ec2-user'
+base_dir = '/home/ubuntu'
 predictions_loc = os.path.join(base_dir, 'panoptes_predictions_original.csv')
 
 s3_dir = 's3://galaxy-zoo/decals/fits_native'
 
 # target_dir = '/users/mikewalmsley/pretend_ec2_root/fits_native'
-target_dir = '/home/ec2-user/fits_native'
+# target_dir = '/home/ec2-user/fits_native'
+target_dir = '/home/ubuntu/fits_native'
 
 df = pd.read_csv(
     predictions_loc, 
