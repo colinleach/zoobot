@@ -41,12 +41,14 @@ Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
 `zoobot/zoobot/active_learning/ec2_setup.sh`
 
+## Make Shards
+
+`python $root/zoobot/zoobot/update_catalog_fits_loc.py`
+`python $root/zoobot/zoobot/active_learning/make_shards.py`
+
 ## Run Active Learning
 
-TODO add command line arg for base dir = root
-`python $root/zoobot/zoobot/update_catalog_fits_loc.py`
-`python $root/zoobot/zoobot/active_learning/run_active_learning.py`
-
+`python $root/zoobot/zoobot/active_learning/execute.py`
 
 ## Run Tensorboard to Monitor
 

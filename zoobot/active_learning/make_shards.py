@@ -150,9 +150,9 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser(description='Make shards')
-    parser.add_argument('base_dir', dest='base_dir', type=str,
+    parser.add_argument('base_dir', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('catalog_loc', dest='catalog_loc', type=str,
+    parser.add_argument('catalog_loc', type=str,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
