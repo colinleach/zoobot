@@ -26,5 +26,35 @@ Copy public DNS (e.g. ec2-174-129-152-61.compute-1.amazonaws.com) from instance 
 The EC2 page has a handy button to create this command: press connect/standalone ssh client
 
 If you get the error "Permission denied (publickey)"
-- Check the username is `ubun re-run aws configure with an active id.
-https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials
+- Check the username is `ubuntu`, not `ec2-user`
+- Re-run `aws configure` on local machine using an [active id](https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials)
+
+
+## Zoobot Installation
+
+From root...
+
+Get the Zoobot directory from git
+`git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout bayesian-cnn`
+
+Run the setup shell script. Downloads fits files and makes shards.
+Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
+`zoobot/zoobot/active_learning/ec2_setup.sh`
+
+## Run Active Learning
+
+TODO add command line arg for base dir = root
+`python $root/zoobot/zoobot/update_catalog_fits_loc.py`
+`python $root/zoobot/zoobot/active_learning/run_active_learning.py`
+
+
+## Run Tensorboard to Monitor
+
+On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
+`ssh -i ~/mykeypair.pem -L 6006:127.0.0.1:6006 ubuntu@ec2-###-##-##-###.compute-1.amazonaws.com`
+
+Then, via that SSH connection (or another), run
+`tensorboard --logdir=.`
+to run a Tensorboard server showing both baseline and real runs, if available
+
+

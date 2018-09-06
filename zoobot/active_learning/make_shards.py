@@ -1,7 +1,9 @@
+import argparse
 import os
 import shutil
 import logging
 import json
+import time
 
 import numpy as np
 import pandas as pd
@@ -111,41 +113,6 @@ class ShardConfig():
             json.dump(self.to_dict(), f)
 
 
-class ActiveConfig():
-
-    def __init__(self, shard_config, run_dir):
-        self.shards = shard_config
-        self.run_dir = run_dir
-        self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
-        self.estimator_dir = os.path.join(self.run_dir, 'estimator')
-
-        # will download/copy fits of top acquisitions into here
-        self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
-        # and then write them into tfrecords here
-        self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
-        self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-
-        self.max_iterations = 6
-        self.n_subjects_per_iter = 1024
-
-
-    def prepare_run_folders(self):
-        # new predictors (apart from initial disk load) for now
-        if os.path.exists(self.run_dir):
-            shutil.rmtree(self.run_dir)
-        os.mkdir(self.run_dir)
-        os.mkdir(self.estimator_dir)
-        os.mkdir(self.requested_fits_dir)
-        os.mkdir(self.requested_tfrecords_dir)
-
-        shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
-
-
-    def ready(self):
-        assert self.shards.ready()
-        # TODO more validation checks for the run
-        return True
-
 
 def snapshot_shards(volume_base_dir, catalog_loc):
     # in memory for now, but will be serialized for later/logs
@@ -172,91 +139,37 @@ def snapshot_shards(volume_base_dir, catalog_loc):
     shard_config.write()
 
 
-def execute_active_learning(shard_config_loc, run_dir, baseline=False):
-    # on another machine, at another time...
-    with open(shard_config_loc, 'r') as f:
-        shard_config_dict = json.load(f)
-    shard_config = ShardConfig(**shard_config_dict)
-    active_config = ActiveConfig(shard_config, run_dir)
-    active_config.prepare_run_folders()
-
-    # define the estimator - load settings (rename 'setup' to 'settings'?)
-    run_config = default_estimator_params.get_run_config(active_config)
-    def train_callable(train_records):
-        run_config.train_config.tfrecord_loc = train_records
-        return run_estimator.run_estimator(run_config)
-
-    if baseline:
-        def mock_acquisition_func(predictor):  # predictor does nothing
-            def mock_acquisition_callable(matrix_list):
-                assert isinstance(matrix_list, list)
-                assert all([isinstance(x, np.ndarray) for x in matrix_list])
-                assert all([x.shape[0] == x.shape[1] for x in matrix_list])
-                return [float(np.random.rand()) for x in matrix_list]
-            return mock_acquisition_callable
-        logging.warning('Using mock acquisition function, baseline test mode')
-        get_acquisition_func = lambda predictor: mock_acquisition_func(predictor)  # random
-    else:  # callable expecting predictor, returning a callable expecting matrix list
-        get_acquisition_func = lambda predictor: make_predictions.get_acquisition_func(predictor, n_samples=20)
-
-    unlabelled_catalog = pd.read_csv(
-        active_config.shards.unlabelled_catalog_loc, 
-        dtype={'id_str': str, 'label': int}
-    )
-    active_learning.run(
-        unlabelled_catalog, 
-        active_config.db_loc, 
-        active_config.shards.initial_size, 
-        3,  # TODO channels not really generalized
-        active_config.estimator_dir, 
-        active_config.shards.train_tfrecord_loc, 
-        train_callable, 
-        get_acquisition_func,
-        active_config.max_iterations,
-        active_config.n_subjects_per_iter,
-        active_config.requested_fits_dir,
-        active_config.requested_tfrecords_dir,
-        active_config.train_records_index_loc
-    )
-
-
 if __name__ == '__main__':
 
-    laptop_base = '/users/mikewalmsley/pretend_ec2_root'
-    # ec2_base = '/home/ec2-user'
-    ec2_base = '/home/ubuntu'
-
-    laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
-    ec2_catalog_loc = ec2_base + '/panoptes_predictions.csv'
-
-    laptop_shard_loc = '/users/mikewalmsley/pretend_ec2_root/'
-    ec2_shard_loc = ec2_base + '/shards_si64_sf28_l0.4/shard_config.json'
-
-    laptop_run_dir_baseline = '/users/mikewalmsley/pretend_ec2_root/run_baseline'
-    ec2_run_dir_baseline = ec2_base + '/run_baseline'
-    ec2_run_dir = ec2_base + '/run'
-    
-
     logging.basicConfig(
-        filename='run_active_learning.log',
+        filename='make_shards_{}.log'.format(time.time()),
         filemode='w',
         format='%(asctime)s %(message)s',
-        level=logging.DEBUG)
-
-    # snapshot_shards(
-    #     volume_base_dir=ec2_base,
-    #     catalog_loc=ec2_catalog_loc)
-
-    # baseline
-    # execute_active_learning(
-    #     shard_config_loc=ec2_shard_loc,
-    #     run_dir=ec2_run_dir_baseline,
-    #     baseline=True
-    # )
-
-    # bayesian
-    execute_active_learning(
-        shard_config_loc=ec2_shard_loc,
-        run_dir=ec2_run_dir,
-        baseline=False
+        level=logging.DEBUG
     )
+
+
+    parser = argparse.ArgumentParser(description='Make shards')
+    parser.add_argument('base_dir', dest='base_dir', type=str,
+                    help='Directory into which to place shard directory')
+    parser.add_argument('catalog_loc', dest='catalog_loc', type=str,
+                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+    args = parser.parse_args()
+
+    # laptop_base = '/users/mikewalmsley/pretend_ec2_root'
+    # ec2_base = '/home/ec2-user'
+    # ec2_base = '/home/ubuntu'
+
+    # laptop_catalog_loc = '/users/mikewalmsley/repos/zoobot/zoobot/tests/test_examples/panoptes_predictions.csv'
+    # ec2_catalog_loc = ec2_base + '/panoptes_predictions.csv'
+
+    # laptop_shard_loc = '/users/mikewalmsley/pretend_ec2_root/'
+    # ec2_shard_loc = ec2_base + '/shards_si64_sf28_l0.4/shard_config.json'
+
+    # laptop_run_dir_baseline = '/users/mikewalmsley/pretend_ec2_root/run_baseline'
+    # ec2_run_dir_baseline = ec2_base + '/run_baseline'
+    # ec2_run_dir = ec2_base + '/run'
+    
+    snapshot_shards(
+        volume_base_dir=args.base_dir,
+        catalog_loc=args.catalog_loc)
