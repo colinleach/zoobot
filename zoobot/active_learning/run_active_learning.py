@@ -248,15 +248,15 @@ if __name__ == '__main__':
         catalog_loc=ec2_catalog_loc)
 
     # baseline
-    execute_active_learning(
-        shard_config_loc=ec2_shard_loc,
-        run_dir=ec2_run_dir_baseline,
-        baseline=True
-    )
-
-    # bayesian
     # execute_active_learning(
     #     shard_config_loc=ec2_shard_loc,
-    #     run_dir=ec2_run_dir,
-    #     baseline=False
+    #     run_dir=ec2_run_dir_baseline,
+    #     baseline=True
     # )
+
+    # bayesian
+    execute_active_learning(
+        shard_config_loc=ec2_shard_loc,
+        run_dir=ec2_run_dir,
+        baseline=False
+    )
