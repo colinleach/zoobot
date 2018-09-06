@@ -8,8 +8,8 @@
 
 # sudo yum update
 # sudo yum install git
-git clone https://github.com/RustyPanda/zoobot.git
-git checkout bayesian-cnn
+# git clone https://github.com/RustyPanda/zoobot.git
+# git checkout bayesian-cnn
 
 conda update -n base conda
 conda create --name zoobot python=3.6
