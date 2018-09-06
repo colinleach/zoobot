@@ -6,13 +6,12 @@
 
 # run beforehand 'aws configure' and add secrets. Not in this script, obviously.
 
-sudo yum update
-
-sudo yum install git
+# sudo yum update
+# sudo yum install git
 git clone https://github.com/RustyPanda/zoobot.git
 git checkout bayesian-cnn
 
-conda update -n base condaß
+conda update -n base conda
 conda create --name zoobot python=3.6
 source activate zoobot
 pip install -r zoobot/requirements.txt  # needs C compiler for photutils, disabled for now
