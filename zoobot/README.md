@@ -53,7 +53,7 @@ If shards are not already on the instance:
 `shard_dir={desired_shard_dir}`, matching an S3 shard dir
 `aws s3 sync s3://galaxy-zoo/active_learning/$shard_dir} $shard_dir`
 Once shards are ready:
-`python --shard_config=$root/zoobot/zoobot/active_learning/execute.py --run_dir=$shard_dir/shard_config.json $root/run`
+`python $root/zoobot/zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$root/run`
 where the first arg is the config object describing the shards, and the second is the directory to create run data (estimator, new tfrecords, etc).
 
 ## Run Tensorboard to Monitor

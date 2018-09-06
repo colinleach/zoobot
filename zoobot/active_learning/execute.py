@@ -115,7 +115,7 @@ if __name__ == '__main__':
                     help='Directory into which to place shard directory')
     parser.add_argument('--run_dir', dest='run_dir', type=str,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
-    parser.add_argument('--baseline', dest='baseline', type=bool,
+    parser.add_argument('--baseline', dest='baseline', type=bool, default=False,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
