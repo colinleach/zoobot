@@ -243,9 +243,9 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         level=logging.DEBUG)
 
-    snapshot_shards(
-        volume_base_dir=ec2_base,
-        catalog_loc=ec2_catalog_loc)
+    # snapshot_shards(
+    #     volume_base_dir=ec2_base,
+    #     catalog_loc=ec2_catalog_loc)
 
     # baseline
     # execute_active_learning(
