@@ -111,11 +111,9 @@ if __name__ == '__main__':
     )
 
     parser = argparse.ArgumentParser(description='Execute active learning')
-    parser.add_argument('shard_config_loc', dest='base_dir', type=str,
+    parser.add_argument('--shard_config', dest='shard_config_loc', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('run_dir', dest='catalog_loc', type=str,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
-    parser.add_argument('run_dir', dest='catalog_loc', type=str,
+    parser.add_argument('--run_dir', dest='run_dir', type=str,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 

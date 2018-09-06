@@ -44,11 +44,17 @@ Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 imag
 ## Make Shards
 
 `python $root/zoobot/zoobot/update_catalog_fits_loc.py`
-`python $root/zoobot/zoobot/active_learning/make_shards.py`
+`python $root/zoobot/zoobot/active_learning/make_shards.py $root $root/panoptes_predictions.csv`
+Where the first arg is the directory into which to place the shard directory, and the second arg is the location of the catalog to use.
 
 ## Run Active Learning
 
-`python $root/zoobot/zoobot/active_learning/execute.py`
+If shards are not already on the instance:
+`shard_dir={desired_shard_dir}`, matching an S3 shard dir
+`aws s3 sync s3://galaxy-zoo/active_learning/$shard_dir} $shard_dir`
+Once shards are ready:
+`python --shard_config=$root/zoobot/zoobot/active_learning/execute.py --run_dir=$shard_dir/shard_config.json $root/run`
+where the first arg is the config object describing the shards, and the second is the directory to create run data (estimator, new tfrecords, etc).
 
 ## Run Tensorboard to Monitor
 
