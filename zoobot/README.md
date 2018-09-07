@@ -45,8 +45,6 @@ Get the Zoobot directory from git
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
-<!-- `zoobot/zoobot/active_learning/ec2_setup.sh` -->
-<!-- `source` is not preserved after the script (TODO?) -->
 `root=/home/ubuntu`
 `source activate tensorflow_p36`
 `pip install -r zoobot/requirements.txt`
@@ -75,9 +73,6 @@ Always re-upload to S3:
 `aws s3 sync s3://galaxy-zoo/active-learning/$shard_dir $root/$shard_dir`
 
 ## Run Active Learning
-
-TODO urgently fix getting panoptes catalog with true votes when shards downloaded indirectly
-`s3://galaxy-zoo/decals/panoptes_predictions.csv to zoobot/zoobot/tests/test_examples/panoptes.csv`
 
 Once shards are ready:
 `run_dir = {run dir relative to root}`

@@ -6,6 +6,7 @@ import random
 import hashlib
 import sqlite3
 import time
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -23,7 +24,7 @@ logging.basicConfig(
     filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),
     filemode='w',
     format='%(asctime)s %(message)s',
-    level=logging.DEBUG)
+    level=logging.INFO)
 
 
 @pytest.fixture()
@@ -409,15 +410,14 @@ def test_add_labels_to_db(filled_shard_db):
 
 
 def test_run(monkeypatch, catalog_random_images, db_loc, tmpdir, tfrecord_dir, size, channels, acquisition_func):
-    # TODO should pass subjects with constant matrices, and check if orders in increasing value
     catalog = catalog_random_images  # fits files must really exist
 
     # depends on setup working okay
     setup.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
 
     def train_callable(train_tfrecord_locs):
-        # pretend to save a model in subdirectory of predictor_dir
-        subdir_loc = os.path.join(predictor_dir, str(time.time()))
+        # pretend to save a model in subdirectory of estimator_dir
+        subdir_loc = os.path.join(estimator_dir, str(time.time()))
         os.mkdir(subdir_loc)
 
     def mock_load_predictor(loc):
@@ -432,21 +432,24 @@ def test_run(monkeypatch, catalog_random_images, db_loc, tmpdir, tfrecord_dir, s
         return acquisition_func
 
     train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
-    predictor_dir = tmpdir.mkdir('predictor_dir').strpath
+    estimator_dir = tmpdir.mkdir('estimator_dir').strpath
 
     # TODO add something else (time, string) in predictor dir and make sure the latest timestamp is loaded
-    active_learning.run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, train_callable, get_acquistion_func)
+    train_records_index_loc=os.path.join(tmpdir.mkdir('index').strpath, 'train_index.json')
+    active_learning.run(catalog, db_loc, size, channels, estimator_dir, train_tfrecord_loc, train_callable, get_acquistion_func, max_iterations=2, n_subjects_per_iter=10, requested_fits_dir=tmpdir.mkdir('fits').strpath, requested_tfrecords_dir=tmpdir.mkdir('tfrecords').strpath, train_records_index_loc=train_records_index_loc)
     # TODO instead of blindly cycling through shards, record where the shards are and latest update
 
     # read back the training tfrecords and verify they are sorted by order of mean
-    training_shards = train_tfrecord_loc # TODO will fail, actually want all but this
+    with open(train_records_index_loc, 'r') as f:
+        training_shards = json.load(f)[1:]  # includes the initial shard, which is unsorted
     
-    subjects = read_tfrecord.load_examples_from_tfrecord(
-        training_shards, 
-        read_tfrecord.matrix_label_id_feature_spec(size, channels)
-    )
-    matrix_means = [x['matrix'].mean() for x in subjects]
-    assert np.all(matrix_means[1:] > matrix_means[:-1])  # monotonically increasing
+    for shard in training_shards:
+        subjects = read_tfrecord.load_examples_from_tfrecord(
+            [shard], 
+            read_tfrecord.matrix_label_id_feature_spec(size, channels)
+        )
+        matrix_means = np.array([x['matrix'].mean() for x in subjects])
+        assert np.all(matrix_means[1:] < matrix_means[:-1])  # monotonically decreasing (highest written first)
 
 
 

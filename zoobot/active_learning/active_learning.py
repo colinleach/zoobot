@@ -336,7 +336,6 @@ def add_labels_to_db(subject_ids, labels, db):
         LIMIT 50
         '''
     )
-    logging.debug(list(cursor.fetchall()))
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]

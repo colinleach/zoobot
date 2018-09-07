@@ -17,12 +17,12 @@ def test_setup_fixed_images(catalog, db_loc, size, channels, tfrecord_dir):
 
 
 # TODO use proper fixture factory instead of just duplicating
-def test_setup_fixed_images(catalog_random_images, db_loc, size, channels, tfrecord_dir):
-    catalog = catalog_random_images
-    assert os.path.isdir(tfrecord_dir)
-    setup.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
-    db = sqlite3.connect(db_loc)
-    # verify_db_matches_catalog(catalog, db)
-    verify_db_matches_shards(db, size, channels)
-    verify_catalog_matches_shards(catalog, db, size, channels)
+# def test_setup_fixed_images(catalog_random_images, db_loc, size, channels, tfrecord_dir):
+#     catalog = catalog_random_images
+#     assert os.path.isdir(tfrecord_dir)
+#     setup.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
+#     db = sqlite3.connect(db_loc)
+#     # verify_db_matches_catalog(catalog, db)
+#     verify_db_matches_shards(db, size, channels)
+#     verify_catalog_matches_shards(catalog, db, size, channels)
 
