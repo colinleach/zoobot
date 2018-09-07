@@ -300,5 +300,18 @@ def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
 
 
-'/private/var/folders/bz/lzzqdhw554sfsdzh2_m73044000qlh/T/pytest-of-walmsleym/pytest-10/test_setup_fixed_images0/tfrecord_dir/random_30.fits'
-'/private/var/folders/bz/lzzqdhw554sfsdzh2_m73044000qlh/T/pytest-of-walmsleym/pytest-10/test_setup_fixed_images0/tfrecord_dir/random_30.fits'
+@pytest.fixture()
+def acquisition_func():
+    # Converts loaded subjects to acquisition scores. Here, takes the mean.
+    # Must return float, not np.float32, else db will be confused and write as bytes
+    def mock_acquisition_callable(matrix_list):
+        assert isinstance(matrix_list, list)
+        assert all([isinstance(x, np.ndarray) for x in matrix_list])
+        assert all([x.shape[0] == x.shape[1] for x in matrix_list])
+        return [float(x.mean()) for x in matrix_list]
+    return mock_acquisition_callable
+
+
+@pytest.fixture()
+def acquisition():
+    return np.random.rand()

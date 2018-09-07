@@ -68,15 +68,28 @@ You can either make the shards directly, or download them from S3 (faster):
 ## Get Shards
 
 ### Option A: Make Shards Directly 
+
+Get catalog with latest labels
+
 `aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv`
+
+
+Update catalog to point fits_loc at local fits_native folder
+
 `python $root/zoobot/zoobot/update_catalog_fits_loc.py`
+
+Create shards using make_shards.py ShardConfig defaults and current catalog
 
 `python $root/zoobot/zoobot/active_learning/make_shards.py --base_dir=$root --catalog=$root/panoptes_predictions.csv`
 
 Where the first arg is the directory into which to place the shard directory, and the second arg is the location of the catalog to use.
+
+Update `shard_dir` shell variable
+
 `shard_dir={path FROM ROOT to newly_created_shard_dir}`
 
-Always re-upload to S3:
+Re-upload to S3
+
 `aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/$shard_dir`
 
 ### Option B: Download from S3
@@ -92,12 +105,15 @@ TODO: Dynamically, for when a minority become labelled, and then delete. Free!
 ## Run Active Learning
 
 Once shards are ready:
+
 `run_dir = {run dir relative to root}`
+
 `python $root/zoobot/zoobot/active_learning/execute.py --shard_config=$root/$shard_dir/shard_config.json --run_dir=$root/$run_dir`
+
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.
 
-## Run Tensorboard to Monitor
+## Optional: Run Tensorboard to Monitor
 
 On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
 `ssh -i $key -L 6006:127.0.0.1:6006 $user@$public_dns`
@@ -107,6 +123,6 @@ Then, via that SSH connection (or another), run
 to run a Tensorboard server showing both baseline and real runs, if available
 
 
-## Save results to S3
+## Optional: Save results to S3
 
-`aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/runs/ $run_dir`
+`aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/runs/$run_dir`

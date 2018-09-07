@@ -219,22 +219,6 @@ def filled_shard_db_with_labels(filled_shard_db):
 #     assert False
 
 
-@pytest.fixture()
-def acquisition_func():
-    # Converts loaded subjects to acquisition scores. Here, takes the mean.
-    # Must return float, not np.float32, else db will be confused and write as bytes
-    def mock_acquisition_callable(matrix_list):
-        assert isinstance(matrix_list, list)
-        assert all([isinstance(x, np.ndarray) for x in matrix_list])
-        assert all([x.shape[0] == x.shape[1] for x in matrix_list])
-        return [float(x.mean()) for x in matrix_list]
-    return mock_acquisition_callable
-
-
-@pytest.fixture()
-def acquisition():
-    return np.random.rand()
-
 
 def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, columns_to_save, tfrecord_dir):
     active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, columns_to_save, tfrecord_dir, shard_size=15)
@@ -404,53 +388,6 @@ def test_add_labels_to_db(filled_shard_db):
         results = list(cursor.fetchall())
         assert len(results) == 1
         assert results[0][0] == subject['label']
-
-
-
-
-
-def test_run(monkeypatch, catalog_random_images, db_loc, tmpdir, tfrecord_dir, size, channels, acquisition_func):
-    catalog = catalog_random_images  # fits files must really exist
-
-    # depends on setup working okay
-    setup.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
-
-    def train_callable(train_tfrecord_locs):
-        # pretend to save a model in subdirectory of estimator_dir
-        subdir_loc = os.path.join(estimator_dir, str(time.time()))
-        os.mkdir(subdir_loc)
-
-    def mock_load_predictor(loc):
-        return None
-    monkeypatch.setattr(active_learning.make_predictions, 'load_predictor', mock_load_predictor)
-
-    def mock_get_labels(subject_ids):  # don't actually read from saved catalog, just make up
-        return [np.random.randint(2) for n in range(len(subject_ids))]
-    monkeypatch.setattr(active_learning.mock_panoptes, 'get_labels', mock_get_labels)
-
-    def get_acquistion_func(predictor):
-        return acquisition_func
-
-    train_tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
-    estimator_dir = tmpdir.mkdir('estimator_dir').strpath
-
-    # TODO add something else (time, string) in predictor dir and make sure the latest timestamp is loaded
-    train_records_index_loc=os.path.join(tmpdir.mkdir('index').strpath, 'train_index.json')
-    active_learning.run(catalog, db_loc, size, channels, estimator_dir, train_tfrecord_loc, train_callable, get_acquistion_func, max_iterations=2, n_subjects_per_iter=10, requested_fits_dir=tmpdir.mkdir('fits').strpath, requested_tfrecords_dir=tmpdir.mkdir('tfrecords').strpath, train_records_index_loc=train_records_index_loc)
-    # TODO instead of blindly cycling through shards, record where the shards are and latest update
-
-    # read back the training tfrecords and verify they are sorted by order of mean
-    with open(train_records_index_loc, 'r') as f:
-        training_shards = json.load(f)[1:]  # includes the initial shard, which is unsorted
-    
-    for shard in training_shards:
-        subjects = read_tfrecord.load_examples_from_tfrecord(
-            [shard], 
-            read_tfrecord.matrix_label_id_feature_spec(size, channels)
-        )
-        matrix_means = np.array([x['matrix'].mean() for x in subjects])
-        assert np.all(matrix_means[1:] < matrix_means[:-1])  # monotonically decreasing (highest written first)
-
 
 
 def test_get_all_shard_locs(filled_shard_db):

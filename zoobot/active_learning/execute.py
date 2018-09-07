@@ -4,13 +4,16 @@ import shutil
 import logging
 import json
 import time
+import sqlite3
+import json
+import itertools
 
 import numpy as np
 import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, setup, make_shards
+from zoobot.active_learning import active_learning, default_estimator_params, setup, make_shards, analysis, mock_panoptes
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tests import active_learning_test
 
@@ -29,8 +32,9 @@ class ActiveConfig():
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
 
-        self.max_iterations = 12
+        self.max_iterations = 10
         self.n_subjects_per_iter = 512
+        self.shards_per_iteration = 3
 
 
     def prepare_run_folders(self):
@@ -49,6 +53,60 @@ class ActiveConfig():
         assert self.shards.ready()
         # TODO more validation checks for the run
         return True
+
+
+    def run(self, catalog, train_callable, get_acquisition_func):
+        assert 'label' not in catalog.columns.values
+
+        db = sqlite3.connect(self.db_loc)
+        shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
+        # TODO refactor these settings into an object
+        shards_per_iteration = self.shards_per_iteration
+
+        train_records = [self.shards.train_tfrecord_loc]  # will append new train records (save to db?)
+        iteration = 0
+        while iteration < self.max_iterations:
+            # train as usual, with saved_model being placed in estimator_dir
+            logging.info('Training iteration {}'.format(iteration))
+        
+            # callable should expect list of tfrecord files to train on
+            train_callable(train_records)  # could be docker container to run, save model
+
+            # make predictions and save to db, could be docker container
+            predictor_loc = active_learning.get_latest_checkpoint_dir(self.estimator_dir)
+            logging.info('Loading model from {}'.format(predictor_loc))
+            predictor = make_predictions.load_predictor(predictor_loc)
+            # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
+            acquisition_func = get_acquisition_func(predictor)
+
+            logging.info('Making and recording predictions')
+            shards_used = 0
+            top_acquisition_ids = []
+            while shards_used < shards_per_iteration:
+                shard_loc = next(shard_locs)
+                logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
+                active_learning.record_acquisitions_on_tfrecord(db, shard_loc, self.shards.initial_size, self.shards.channels, acquisition_func)
+                shards_used += 1
+
+            top_acquisition_ids = active_learning.get_top_acquisitions(db, self.n_subjects_per_iter, shard_loc=None)
+
+            labels = mock_panoptes.get_labels(top_acquisition_ids)
+
+            active_learning.add_labels_to_db(top_acquisition_ids, labels, db)
+
+            new_train_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
+            logging.info('Saving top acquisition subjects to {}, labels: {}...'.format(new_train_tfrecord, labels[:5]))
+            # TODO download the top acquisitions from S3 if not on local system, for EC2
+            # Can do this when switching to production, not necessary to demonstrate the system
+            # fits_loc_s3 column?
+            active_learning.add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, self.shards.initial_size)
+            train_records.append(new_train_tfrecord)
+
+            with open(self.train_records_index_loc, 'w') as f:
+                json.dump(train_records, f)
+
+            iteration += 1
+
 
 
 
@@ -83,21 +141,17 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
         active_config.shards.unlabelled_catalog_loc, 
         dtype={'id_str': str, 'label': int}
     )
-    active_learning.run(
+
+    active_config.run(
         unlabelled_catalog, 
-        active_config.db_loc, 
-        active_config.shards.initial_size, 
-        3,  # TODO channels not really generalized
-        active_config.estimator_dir, 
-        active_config.shards.train_tfrecord_loc, 
-        train_callable, 
-        get_acquisition_func,
-        active_config.max_iterations,
-        active_config.n_subjects_per_iter,
-        active_config.requested_fits_dir,
-        active_config.requested_tfrecords_dir,
-        active_config.train_records_index_loc
+        train_callable,
+        get_acquisition_func
     )
+
+
+    analysis.show_subjects_by_iteration(active_config.train_records_index_loc, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+
+
 
 
 

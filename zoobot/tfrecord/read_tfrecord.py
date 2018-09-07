@@ -5,47 +5,29 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+from zoobot.tfrecord.tfrecord_io import load_dataset
+
 
 def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):
-    # see http://www.machinelearninguru.com/deep_learning/tensorflow/basics/tfrecord/tfrecord.html
+    dataset = load_dataset(tfrecord_locs, feature_spec)
+    iterator = dataset.make_one_shot_iterator()
+    dataset = dataset.batch(1)  # 1 image per batch
+    dataset = dataset.prefetch(1)
+    batch = iterator.get_next()
+
     with tf.Session() as sess:
-        # Create a list of filenames and pass it to a queue
-        filename_queue = tf.train.string_input_producer(tfrecord_locs, num_epochs=1)
-        # Define a reader and read the next record
-        reader = tf.TFRecordReader()
-        _, serialized_example = reader.read(filename_queue)
-        example = tf.parse_single_example(serialized_example, features=feature_spec)
-
-         # initialize all global and local variables
-        # this op must be defined (not only executed) within the session
-        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-        sess.run(init_op)
-
-        # create a coordinator and run all QueueRunner objects
-        coord = tf.train.Coordinator()
-        logging.debug('Starting queue to load examples from {}'.format(tfrecord_locs))
-        threads = tf.train.start_queue_runners(coord=coord, daemon=False)  # block exit until closed
-        logging.debug(threads)
-        logging.debug('Queue started')
-
-        # execute
         if n_examples is None:  # load full record
             data = []
             while True:
-    
                 try:
-                    loaded_example = sess.run(example)
+                    loaded_example = sess.run(batch)
                     data.append(loaded_example)
                 except tf.errors.OutOfRangeError:
                     logging.debug('tfrecords {} exhausted'.format(tfrecord_locs))
                     break
         else:
             logging.debug('Loading the first {} examples from {}'.format(n_examples, tfrecord_locs))
-            data = [sess.run(example) for n in range(n_examples)]
-
-        # weird behaviour when used with pytest - threads may not stop on test end. Be explicit.
-        coord.request_stop() # ask the threads to stop
-        coord.join(threads)  # wait for them to actually do it
+            data = [sess.run(batch) for n in range(n_examples)]
 
     return data
 
@@ -96,10 +78,11 @@ def show_examples(examples, size, channels):
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
     im = example['matrix'].reshape(size, size, channels) 
+    print(im)
     label = example['label']
     name_mapping = {
         0: 'Feat.',
         1: 'Smooth'
     }
-    ax.imshow(im)
-    ax.text(60, 110, name_mapping[label], fontsize=16, color='r')
+    ax.imshow(im.astype(int))
+    # ax.text(60, 110, name_mapping[label], fontsize=16, color='r')
