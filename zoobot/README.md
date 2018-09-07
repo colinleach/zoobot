@@ -71,7 +71,7 @@ You can either make the shards directly, or download them from S3 (faster):
 `aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv`
 `python $root/zoobot/zoobot/update_catalog_fits_loc.py`
 
-`python $root/zoobot/zoobot/active_learning/make_shards.py $root $root/panoptes_predictions.csv`
+`python $root/zoobot/zoobot/active_learning/make_shards.py --base_dir=$root --catalog=$root/panoptes_predictions.csv`
 
 Where the first arg is the directory into which to place the shard directory, and the second arg is the location of the catalog to use.
 `shard_dir={path FROM ROOT to newly_created_shard_dir}`
