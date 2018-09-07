@@ -26,7 +26,7 @@ class RunEstimatorConfig():
             max_sadness=4.,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
-            fresh_start=False
+            warm_start=True
     ):  # TODO refactor for consistent order
         self.initial_size = initial_size
         self.final_size=final_size
@@ -38,7 +38,7 @@ class RunEstimatorConfig():
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
-        self.fresh_start = fresh_start
+        self.warm_start=warm_start
         self.max_sadness = max_sadness
         self.early_stopping_window = early_stopping_window
         self.min_epochs = min_epochs
@@ -99,7 +99,6 @@ def run_estimator(config):
     if config.fresh_start:  # don't try to load any existing models
         if os.path.exists(config.log_dir):
             shutil.rmtree(config.log_dir)
-
 
     '''
     initial problem: checkpointing was not frequent enough (steps) for trained model to be saved

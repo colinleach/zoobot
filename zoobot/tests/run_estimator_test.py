@@ -92,7 +92,7 @@ def run_config(size, log_dir):
         epochs=2,
         min_epochs=2,
         log_dir=log_dir,
-        fresh_start=True
+        warm_start=True
     )
 
 

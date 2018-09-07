@@ -27,7 +27,7 @@ def get_run_config(active_config):
         max_sadness=4.,
         log_dir=active_config.estimator_dir,
         save_freq=10,
-        fresh_start=False  # Will restore previous run from disk, if saved
+        warm_start=True  # Will restore previous run from disk, if saved
     )
 
     train_config = input_utils.InputConfig(
@@ -77,7 +77,7 @@ def get_run_config(active_config):
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        log_freq=10,
+        log_freq=1,
         image_dim=run_config.final_size  # not initial size
     )
 
