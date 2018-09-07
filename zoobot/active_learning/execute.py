@@ -50,16 +50,25 @@ class ActiveConfig():
 
     def prepare_run_folders(self):
         # new predictors (apart from initial disk load) for now
-        if os.path.exists(self.run_dir):
-            if self.warm_start == False:
-                shutil.rmtree(self.run_dir)
-        else:
-            os.mkdir(self.run_dir)
-        os.mkdir(self.estimator_dir)
-        os.mkdir(self.requested_fits_dir)
-        os.mkdir(self.requested_tfrecords_dir)
 
-        shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
+        # order is important due to rmtree
+        directories = [self.run_dir, self.estimator_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
+
+        # if warm start, check all exist and, if not, make.
+        if self.warm_start:
+            for directory in directories:
+                if not os.path.isdir(directory):
+                    os.mkdir(directory)
+
+        # if not warm start, delete root and remake all
+        if not self.warm_start:
+            for directory in directories:
+                if os.path.isdir(directory):
+                    shutil.rmtree(directory)
+                    os.mkdir(directory)
+
+        if not os.path.isfile(self.db_loc):
+            shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
 
 
     def ready(self):
