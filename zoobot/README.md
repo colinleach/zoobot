@@ -58,19 +58,29 @@ Also log in to the S3 console:
 
 You can either make the shards directly, or download them from S3 (faster):
 
+## Get Shards
+
 ### Option A: Make Shards Directly 
 `aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv`
-`aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native`  # For now only the 7k we need. About 6GB.
 `python $root/zoobot/zoobot/update_catalog_fits_loc.py`
+
 `python $root/zoobot/zoobot/active_learning/make_shards.py $root $root/panoptes_predictions.csv`
+
 Where the first arg is the directory into which to place the shard directory, and the second arg is the location of the catalog to use.
 `shard_dir={path FROM ROOT to newly_created_shard_dir}`
+
 Always re-upload to S3:
 `aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/$shard_dir`
 
 ### Option B: Download from S3
 `shard_dir={desired_shard_dir}`, matching an S3 shard dir e.g. `shards_si64_sf28_l0.4`
 `aws s3 sync s3://galaxy-zoo/active-learning/$shard_dir $root/$shard_dir`
+
+
+## Get Fits (for new shards)
+TODO: Dynamically, for when a minority become labelled, and then delete. Free!
+`aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native`  For now only the 7k we need. About 6GB.
+
 
 ## Run Active Learning
 

@@ -392,7 +392,7 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
     db = sqlite3.connect(db_loc)
     shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
     # TODO refactor these settings into an object
-    shards_per_iteration = 1
+    shards_per_iteration = 3
 
     train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
     iteration = 0
@@ -418,10 +418,12 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
             shard_loc = next(shard_locs)
             logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
             record_acquisitions_on_tfrecord(db, shard_loc, size, channels, acquisition_func)
-            top_ids_in_shard = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
-            top_acquisition_ids += top_ids_in_shard  # concat lists
+            # top_ids_in_shard = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=shard_loc)
+            # top_acquisition_ids += top_ids_in_shard  # concat lists
             shards_used += 1
             # TODO would pause here in practice
+
+        top_acquisition_ids = get_top_acquisitions(db, n_subjects_per_iter, shard_loc=None)
 
         labels = mock_panoptes.get_labels(top_acquisition_ids)  # TODO replace with generic
 
