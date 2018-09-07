@@ -27,3 +27,5 @@ build/*
 *.egg-info
 *.db
 *shard_*.tfrecord
+acquired_shard_*
+.vscode/*

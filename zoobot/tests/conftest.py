@@ -286,7 +286,8 @@ def catalog_random_images(size, channels, fits_native_dir):
     n_subjects = 64
     id_strings = [str(n) for n in range(n_subjects)]
     matrices = np.random.rand(n_subjects, size, size, channels)
-    fits_locs = [os.path.join(fits_native_dir, 'random_{}.fits'.format(n)) for n in range(n_subjects)]
+    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
+    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
     for matrix, loc in zip(matrices, fits_locs):  # write to fits
         hdu = fits.PrimaryHDU(matrix)
         hdu.writeto(loc, overwrite=True)

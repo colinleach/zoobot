@@ -16,7 +16,7 @@ from astropy.io import fits
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.active_learning import active_learning, setup
+from zoobot.active_learning import active_learning
 from zoobot.estimators import make_predictions
 
 
@@ -205,19 +205,6 @@ def filled_shard_db_with_labels(filled_shard_db):
         )
         db.commit()
     return db
-
-
-# def test_filled_shard_db_with_labels(filled_shard_db_with_labels):
-#     cursor = filled_shard_db_with_labels.cursor()
-#     cursor.execute(
-#         '''
-#         SELECT *
-#         FROM catalog
-#         '''
-#     )
-#     print(cursor.fetchall())
-#     assert False
-
 
 
 def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, columns_to_save, tfrecord_dir):

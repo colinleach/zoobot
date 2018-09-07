@@ -13,28 +13,36 @@ import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, setup, make_shards, analysis, mock_panoptes
+from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes
 from zoobot.tests import TEST_EXAMPLE_DIR
-from zoobot.tests import active_learning_test
+from zoobot.tests.active_learning import active_learning_test
 
 
 class ActiveConfig():
 
-    def __init__(self, shard_config, run_dir):
+    def __init__(
+        self, 
+        shard_config, 
+        run_dir, 
+        iterations=10, 
+        subjects_per_iter=512, 
+        shards_per_iter=3):
+
         self.shards = shard_config
         self.run_dir = run_dir
+
+        self.iterations = iterations
+        self.subjects_per_iter = subjects_per_iter
+        self.shards_per_iter = shards_per_iter
+
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
         self.estimator_dir = os.path.join(self.run_dir, 'estimator')
-
+    
         # will download/copy fits of top acquisitions into here
         self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-
-        self.max_iterations = 10
-        self.n_subjects_per_iter = 512
-        self.shards_per_iteration = 3
 
 
     def prepare_run_folders(self):
@@ -60,12 +68,10 @@ class ActiveConfig():
 
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
-        # TODO refactor these settings into an object
-        shards_per_iteration = self.shards_per_iteration
 
         train_records = [self.shards.train_tfrecord_loc]  # will append new train records (save to db?)
         iteration = 0
-        while iteration < self.max_iterations:
+        while iteration < self.iterations:
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration))
         
@@ -82,13 +88,13 @@ class ActiveConfig():
             logging.info('Making and recording predictions')
             shards_used = 0
             top_acquisition_ids = []
-            while shards_used < shards_per_iteration:
+            while shards_used < self.shards_per_iter:
                 shard_loc = next(shard_locs)
                 logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
                 active_learning.record_acquisitions_on_tfrecord(db, shard_loc, self.shards.initial_size, self.shards.channels, acquisition_func)
                 shards_used += 1
 
-            top_acquisition_ids = active_learning.get_top_acquisitions(db, self.n_subjects_per_iter, shard_loc=None)
+            top_acquisition_ids = active_learning.get_top_acquisitions(db, self.subjects_per_iter, shard_loc=None)
 
             labels = mock_panoptes.get_labels(top_acquisition_ids)
 
@@ -111,10 +117,7 @@ class ActiveConfig():
 
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False):
-    # on another machine, at another time...
-    with open(shard_config_loc, 'r') as f:
-        shard_config_dict = json.load(f)
-    shard_config = make_shards.ShardConfig(**shard_config_dict)
+    shard_config = make_shards.load_shard_config(shard_config_loc)
     active_config = ActiveConfig(shard_config, run_dir)
     active_config.prepare_run_folders()
 
@@ -148,21 +151,10 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
         get_acquisition_func
     )
 
-
     analysis.show_subjects_by_iteration(active_config.train_records_index_loc, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
 
 
-
-
-
 if __name__ == '__main__':
-
-    logging.basicConfig(
-        filename='execute_{}.log'.format(time.time()),
-        filemode='w',
-        format='%(asctime)s %(message)s',
-        level=logging.DEBUG
-    )
 
     parser = argparse.ArgumentParser(description='Execute active learning')
     parser.add_argument('--shard_config', dest='shard_config_loc', type=str,
@@ -172,6 +164,13 @@ if __name__ == '__main__':
     parser.add_argument('--baseline', dest='baseline', type=bool, default=False,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        filename='{}_execute_{}.log'.format(args.run_dir, time.time()),
+        filemode='w',
+        format='%(asctime)s %(message)s',
+        level=logging.DEBUG
+    )
 
     execute_active_learning(
         shard_config_loc=args.shard_config_loc,
