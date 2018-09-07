@@ -96,7 +96,7 @@ def run_estimator(config):
     """
     assert config.is_ready_to_train()
 
-    if config.fresh_start:  # don't try to load any existing models
+    if not config.warm_start:  # don't try to load any existing models
         if os.path.exists(config.log_dir):
             shutil.rmtree(config.log_dir)
 
