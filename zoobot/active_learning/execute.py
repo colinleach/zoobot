@@ -29,8 +29,8 @@ class ActiveConfig():
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
 
-        self.max_iterations = 6
-        self.n_subjects_per_iter = 1024
+        self.max_iterations = 12
+        self.n_subjects_per_iter = 512
 
 
     def prepare_run_folders(self):
