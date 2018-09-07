@@ -33,7 +33,7 @@ class ShardConfig():
         self,
         base_dir,  # to hold a new folder, named after the shard config 
         inital_size=128,
-        final_size=96,
+        final_size=64,
         shard_size=1024,
         label_split_value='0.4',
         **overflow_args

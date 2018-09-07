@@ -26,7 +26,8 @@ class ActiveConfig():
         run_dir, 
         iterations=10, 
         subjects_per_iter=512, 
-        shards_per_iter=3):
+        shards_per_iter=3,
+        warm_start=True):
 
         self.shards = shard_config
         self.run_dir = run_dir
@@ -34,6 +35,8 @@ class ActiveConfig():
         self.iterations = iterations
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
+
+        self.warm_start = warm_start
 
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
         self.estimator_dir = os.path.join(self.run_dir, 'estimator')
@@ -48,8 +51,10 @@ class ActiveConfig():
     def prepare_run_folders(self):
         # new predictors (apart from initial disk load) for now
         if os.path.exists(self.run_dir):
-            shutil.rmtree(self.run_dir)
-        os.mkdir(self.run_dir)
+            if self.warm_start == False:
+                shutil.rmtree(self.run_dir)
+        else:
+            os.mkdir(self.run_dir)
         os.mkdir(self.estimator_dir)
         os.mkdir(self.requested_fits_dir)
         os.mkdir(self.requested_tfrecords_dir)

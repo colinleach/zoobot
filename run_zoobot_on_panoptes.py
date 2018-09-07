@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 
-from estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
+from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
 import panoptes_to_tfrecord
 
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     channels = 3
     final_size = 64
     label_split_value = '0.4'
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_l{}_augs_both_normed_activated_wide'.format(initial_size, final_size, label_split_value)
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_l{}_augs_both_normed_activated_wide_repeat'.format(initial_size, final_size, label_split_value)
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -35,8 +35,8 @@ if __name__ == '__main__':
         channels=channels,
         label_col='label',
         epochs=1000,
-        train_batches=30,
-        eval_batches=3,
+        train_steps=30,
+        eval_steps=3,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
@@ -104,16 +104,16 @@ if __name__ == '__main__':
 
 
     # logging.info('Parameters used: ')
-    # for config_object in [run_config, train_config, eval_config, model]:
-    #     for key, value in config_object.asdict().items():
-    #         logging.info('{}: {}'.format(key, value))
-    #     logging.info('Next object \n')
+    for config_object in [run_config, train_config, eval_config, model]:
+        for key, value in config_object.asdict().items():
+            logging.info('{}: {}'.format(key, value))
+        logging.info('Next object \n')
 
-    # run_estimator.run_estimator(run_config)
+    run_estimator.run_estimator(run_config)
 
     # start fresh? No!
-    run_config.start_fresh = False
-    run_config.log_dir = 'runs/wide_restart'
-    assert os.path.exists(run_config.log_dir)
+    # run_config.start_fresh = False
+    # run_config.log_dir = 'runs/wide_restart'
+    # assert os.path.exists(run_config.log_dir)
 
-    warm_start.restart_estimator(run_config)
+    # warm_start.restart_estimator(run_config)

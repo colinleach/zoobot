@@ -23,7 +23,7 @@ class InputConfig():
             stratify_probs,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
-            max_zoom=1.1,
+            max_zoom=1.2,
             fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,

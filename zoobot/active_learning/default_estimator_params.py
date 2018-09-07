@@ -19,7 +19,7 @@ def get_run_config(active_config):
         channels=channels,
         label_col='label',
         epochs=10,
-        train_steps=20,
+        train_steps=30,
         eval_steps=3,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
@@ -77,7 +77,7 @@ def get_run_config(active_config):
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        log_freq=1,
+        log_freq=10,
         image_dim=run_config.final_size  # not initial size
     )
 
