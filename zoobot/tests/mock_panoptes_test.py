@@ -3,10 +3,7 @@ import pytest
 from zoobot.active_learning import mock_panoptes
 
 
-# @pytest.fixture()
-
-
-# def test_get_labels():
-#     subject_ids = ['20530826', '20531460']
-#     labels = mock_panoptes.get_labels(subject_ids)
-#     assert labels == [1, 1]
+def test_get_labels():
+    subject_ids = ['20927311', '20530807']
+    labels = mock_panoptes.get_labels(subject_ids)
+    assert labels == [1, 0]

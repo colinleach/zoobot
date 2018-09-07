@@ -125,11 +125,14 @@ def snapshot_shards(volume_base_dir, catalog_loc):
     catalog['label'] = (catalog['smooth-or-featured_smooth_fraction'] > float(shard_config.label_split_value)).astype(int)  # 0 for featured
     catalog['id_str'] = catalog['subject_id'].astype(str) 
 
-    # temporary hack for mocking panoptes
+    # temporary hacks for mocking panoptes
+    # save catalog for mock_panoptes.py to return (now added to git)
+    # catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
+    # split catalog and pretend most is unlabelled
     labelled_catalog = catalog[:1024]  # for initial training data
     unlabelled_catalog = catalog[1024:1024*7]  # for new data
     del unlabelled_catalog['label']
-    unlabelled_catalog.to_csv(os.path.join(TEST_EXAMPLE_DIR, 'panoptes.csv'))
+
 
     shard_config.prepare_shards(
         labelled_catalog,
@@ -150,9 +153,9 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser(description='Make shards')
-    parser.add_argument('base_dir', type=str,
+    parser.add_argument('--base_dir', dest='base_dir', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('catalog_loc', type=str,
+    parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 

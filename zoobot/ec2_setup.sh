@@ -15,12 +15,9 @@
 # source activate zoobot
 
 # be in root
-cd
+# cd
 # TODO get automatically
-root=/home/ubuntu
+# root=/home/ubuntu
 
-source activate tensorflow_p36
-pip install -r zoobot/requirements.txt  # needs C compiler for photutils, disabled for now
 
-aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv
-aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native  # gets everything, for now only the 7k we need. About 6GB.
+  # Note: needs C compiler for photutils
