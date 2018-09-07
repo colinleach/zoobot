@@ -1,0 +1,180 @@
+2018-06-25 14:05:38,871 Parameters used: 
+2018-06-25 14:05:38,871 initial_size: 128
+2018-06-25 14:05:38,871 final_size: 128
+2018-06-25 14:05:38,871 channels: 3
+2018-06-25 14:05:38,871 label_col: label
+2018-06-25 14:05:38,871 epochs: 250
+2018-06-25 14:05:38,871 train_batches: 30
+2018-06-25 14:05:38,871 eval_batches: 3
+2018-06-25 14:05:38,871 batch_size: 128
+2018-06-25 14:05:38,871 log_dir: runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs
+2018-06-25 14:05:38,871 save_freq: 10
+2018-06-25 14:05:38,871 max_sadness: 4.0
+2018-06-25 14:05:38,872 early_stopping_window: 10
+2018-06-25 14:05:38,872 min_epochs: 0
+2018-06-25 14:05:38,872 train_config: <zoobot.estimators.input_utils.InputConfig object at 0x1825e87828>
+2018-06-25 14:05:38,872 eval_config: <zoobot.estimators.input_utils.InputConfig object at 0x1825e878d0>
+2018-06-25 14:05:38,872 model: <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x1825e87940>
+2018-06-25 14:05:38,872 Next object 
+
+2018-06-25 14:05:38,872 name: train
+2018-06-25 14:05:38,872 tfrecord_loc: data/panoptes_featured_s128_l0.5_train.tfrecord
+2018-06-25 14:05:38,872 label_col: label
+2018-06-25 14:05:38,872 initial_size: 128
+2018-06-25 14:05:38,872 final_size: 128
+2018-06-25 14:05:38,872 channels: 3
+2018-06-25 14:05:38,872 batch_size: 128
+2018-06-25 14:05:38,872 stratify: True
+2018-06-25 14:05:38,872 stratify_probs: [0.4007022471910112, 0.5992977528089888]
+2018-06-25 14:05:38,872 geometric_augmentation: True
+2018-06-25 14:05:38,872 shift_range: None
+2018-06-25 14:05:38,872 max_zoom: 1.2
+2018-06-25 14:05:38,872 fill_mode: wrap
+2018-06-25 14:05:38,872 photographic_augmentation: False
+2018-06-25 14:05:38,872 max_brightness_delta: 0.05
+2018-06-25 14:05:38,872 contrast_range: (0.95, 1.05)
+2018-06-25 14:05:38,872 Next object 
+
+2018-06-25 14:05:38,873 name: eval
+2018-06-25 14:05:38,873 tfrecord_loc: data/panoptes_featured_s128_l0.5_test.tfrecord
+2018-06-25 14:05:38,873 label_col: label
+2018-06-25 14:05:38,873 initial_size: 128
+2018-06-25 14:05:38,873 final_size: 128
+2018-06-25 14:05:38,873 channels: 3
+2018-06-25 14:05:38,873 batch_size: 128
+2018-06-25 14:05:38,873 stratify: True
+2018-06-25 14:05:38,873 stratify_probs: [0.4007022471910112, 0.5992977528089888]
+2018-06-25 14:05:38,873 geometric_augmentation: True
+2018-06-25 14:05:38,873 shift_range: None
+2018-06-25 14:05:38,873 max_zoom: 1.2
+2018-06-25 14:05:38,873 fill_mode: wrap
+2018-06-25 14:05:38,873 photographic_augmentation: False
+2018-06-25 14:05:38,873 max_brightness_delta: 0.05
+2018-06-25 14:05:38,873 contrast_range: (0.95, 1.05)
+2018-06-25 14:05:38,873 Next object 
+
+2018-06-25 14:05:38,873 image_dim: 128
+2018-06-25 14:05:38,873 optimizer: <class 'tensorflow.python.training.adam.AdamOptimizer'>
+2018-06-25 14:05:38,873 learning_rate: 0.001
+2018-06-25 14:05:38,873 conv1_filters: 32
+2018-06-25 14:05:38,873 conv1_kernel: 1
+2018-06-25 14:05:38,873 conv2_filters: 32
+2018-06-25 14:05:38,873 conv2_kernel: 3
+2018-06-25 14:05:38,873 conv3_filters: 16
+2018-06-25 14:05:38,873 conv3_kernel: 3
+2018-06-25 14:05:38,873 dense1_units: 128
+2018-06-25 14:05:38,873 dense1_dropout: 0.5
+2018-06-25 14:05:38,873 conv1_activation: <function relu at 0x110dc6ae8>
+2018-06-25 14:05:38,874 conv2_activation: <function relu at 0x110dc6ae8>
+2018-06-25 14:05:38,874 conv3_activation: <function relu at 0x110dc6ae8>
+2018-06-25 14:05:38,874 dense1_activation: <function relu at 0x110dc6ae8>
+2018-06-25 14:05:38,874 pool1_size: 2
+2018-06-25 14:05:38,874 pool1_strides: 2
+2018-06-25 14:05:38,874 pool2_size: 2
+2018-06-25 14:05:38,874 pool2_strides: 2
+2018-06-25 14:05:38,874 pool3_size: 2
+2018-06-25 14:05:38,874 pool3_strides: 2
+2018-06-25 14:05:38,874 padding: same
+2018-06-25 14:05:38,874 log_freq: 10
+2018-06-25 14:05:38,874 model_fn: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x1825e87940>>
+2018-06-25 14:05:38,874 logging_hooks: [None, None, None]
+2018-06-25 14:05:38,874 entry_point: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x1825e87940>>
+2018-06-25 14:05:38,874 Next object 
+
+2018-06-25 14:05:38,881 Using default config.
+2018-06-25 14:05:38,881 Using config: {'_model_dir': 'runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs', '_tf_random_seed': None, '_save_summary_steps': 100, '_save_checkpoints_steps': None, '_save_checkpoints_secs': 600, '_session_config': None, '_keep_checkpoint_max': 5, '_keep_checkpoint_every_n_hours': 10000, '_log_step_count_steps': 100, '_train_distribute': None, '_service': None, '_cluster_spec': <tensorflow.python.training.server_lib.ClusterSpec object at 0x1826604c50>, '_task_type': 'worker', '_task_id': 0, '_global_id_in_cluster': 0, '_master': '', '_evaluation_master': '', '_is_chief': True, '_num_ps_replicas': 0, '_num_worker_replicas': 1}
+2018-06-25 14:05:42,241 From /Data/repos/zoobot/zoobot/estimators/input_utils.py:110: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+2018-06-25 14:05:42,441 Calling model_fn.
+2018-06-25 14:05:42,757 Done calling model_fn.
+2018-06-25 14:05:42,758 Create CheckpointSaverHook.
+2018-06-25 14:05:43,094 Graph was finalized.
+2018-06-25 14:05:43,200 Running local_init_op.
+2018-06-25 14:05:43,207 Done running local_init_op.
+2018-06-25 14:05:50,707 Saving checkpoints for 1 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:05:51,771 loss = 1.0113466, step = 1
+2018-06-25 14:06:37,138 Saving checkpoints for 30 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:06:37,401 Loss for final step: 0.65909934.
+2018-06-25 14:06:37,757 Calling model_fn.
+2018-06-25 14:06:38,239 Done calling model_fn.
+2018-06-25 14:06:38,250 Starting evaluation at 2018-06-25-13:06:38
+2018-06-25 14:06:38,313 Graph was finalized.
+2018-06-25 14:06:38,313 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-30
+2018-06-25 14:06:38,356 Running local_init_op.
+2018-06-25 14:06:38,377 Done running local_init_op.
+2018-06-25 14:06:44,851 Evaluation [1/3]
+2018-06-25 14:06:45,584 Evaluation [2/3]
+2018-06-25 14:06:46,181 Evaluation [3/3]
+2018-06-25 14:06:46,291 Finished evaluation at 2018-06-25-13:06:46
+2018-06-25 14:06:46,291 Saving dict for global step 30: acc/accuracy = 0.5442708, acc/mean_per_class_accuracy = 0.5599842, confusion/false_negatives = 30.0, confusion/false_positives = 145.0, confusion/true_negatives = 58.0, confusion/true_positives = 151.0, global_step = 30, loss = 0.66831857, pr/auc = 0.5599842, pr/precision = 0.5101351, pr/recall = 0.83425415, sanity/predictions_above_95% = 0.0, sanity/predictions_below_5% = 0.0
+2018-06-25 14:06:46,476 Saving model at epoch 0
+2018-06-25 14:06:46,672 Calling model_fn.
+2018-06-25 14:06:46,747 Done calling model_fn.
+2018-06-25 14:06:46,748 Signatures INCLUDED in export for Classify: None
+2018-06-25 14:06:46,748 Signatures INCLUDED in export for Regress: None
+2018-06-25 14:06:46,748 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 14:06:46,762 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-30
+2018-06-25 14:06:46,778 Assets added to graph.
+2018-06-25 14:06:46,778 No assets to write.
+2018-06-25 14:06:46,880 SavedModel written to: b"runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/temp-b'1529932006'/saved_model.pb"
+2018-06-25 14:06:46,886 End epoch 0
+2018-06-25 14:06:47,285 Calling model_fn.
+2018-06-25 14:06:47,603 Done calling model_fn.
+2018-06-25 14:06:47,604 Create CheckpointSaverHook.
+2018-06-25 14:06:47,701 Graph was finalized.
+2018-06-25 14:06:47,701 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-30
+2018-06-25 14:06:47,775 Running local_init_op.
+2018-06-25 14:06:47,783 Done running local_init_op.
+2018-06-25 14:06:55,166 Saving checkpoints for 31 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:06:55,845 loss = 0.6534393, step = 31
+2018-06-25 14:07:52,883 Saving checkpoints for 60 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:07:53,203 Loss for final step: 0.67425.
+2018-06-25 14:07:53,545 Calling model_fn.
+2018-06-25 14:07:54,079 Done calling model_fn.
+2018-06-25 14:07:54,093 Starting evaluation at 2018-06-25-13:07:54
+2018-06-25 14:07:54,166 Graph was finalized.
+2018-06-25 14:07:54,166 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-60
+2018-06-25 14:07:54,213 Running local_init_op.
+2018-06-25 14:07:54,237 Done running local_init_op.
+2018-06-25 14:08:02,904 Evaluation [1/3]
+2018-06-25 14:08:03,643 Evaluation [2/3]
+2018-06-25 14:08:04,454 Evaluation [3/3]
+2018-06-25 14:08:04,574 Finished evaluation at 2018-06-25-13:08:04
+2018-06-25 14:08:04,575 Saving dict for global step 60: acc/accuracy = 0.5677083, acc/mean_per_class_accuracy = 0.568836, confusion/false_negatives = 41.0, confusion/false_positives = 125.0, confusion/true_negatives = 68.0, confusion/true_positives = 150.0, global_step = 60, loss = 0.6653733, pr/auc = 0.568836, pr/precision = 0.54545456, pr/recall = 0.7853403, sanity/predictions_above_95% = 0.0, sanity/predictions_below_5% = 0.0
+2018-06-25 14:08:04,575 Current sadness: 0.0
+2018-06-25 14:08:04,575 End epoch 1
+2018-06-25 14:08:04,927 Calling model_fn.
+2018-06-25 14:08:05,174 Done calling model_fn.
+2018-06-25 14:08:05,174 Create CheckpointSaverHook.
+2018-06-25 14:08:05,282 Graph was finalized.
+2018-06-25 14:08:05,282 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-60
+2018-06-25 14:08:05,354 Running local_init_op.
+2018-06-25 14:08:05,362 Done running local_init_op.
+2018-06-25 14:08:13,815 Saving checkpoints for 61 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:08:14,004 loss = 0.66826105, step = 61
+2018-06-25 14:09:04,831 Saving checkpoints for 90 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:09:05,140 Loss for final step: 0.6982387.
+2018-06-25 14:09:05,478 Calling model_fn.
+2018-06-25 14:09:05,764 Done calling model_fn.
+2018-06-25 14:09:05,777 Starting evaluation at 2018-06-25-13:09:05
+2018-06-25 14:09:05,847 Graph was finalized.
+2018-06-25 14:09:05,847 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-90
+2018-06-25 14:09:05,893 Running local_init_op.
+2018-06-25 14:09:05,916 Done running local_init_op.
+2018-06-25 14:09:13,079 Evaluation [1/3]
+2018-06-25 14:09:13,781 Evaluation [2/3]
+2018-06-25 14:09:14,430 Evaluation [3/3]
+2018-06-25 14:09:14,533 Finished evaluation at 2018-06-25-13:09:14
+2018-06-25 14:09:14,533 Saving dict for global step 90: acc/accuracy = 0.5859375, acc/mean_per_class_accuracy = 0.6200385, confusion/false_negatives = 14.0, confusion/false_positives = 145.0, confusion/true_negatives = 69.0, confusion/true_positives = 156.0, global_step = 90, loss = 0.6429309, pr/auc = 0.6200385, pr/precision = 0.5182724, pr/recall = 0.91764706, sanity/predictions_above_95% = 0.0026041667, sanity/predictions_below_5% = 0.0
+2018-06-25 14:09:14,534 Current sadness: 0.0
+2018-06-25 14:09:14,534 End epoch 2
+2018-06-25 14:09:15,088 Calling model_fn.
+2018-06-25 14:09:15,316 Done calling model_fn.
+2018-06-25 14:09:15,317 Create CheckpointSaverHook.
+2018-06-25 14:09:15,404 Graph was finalized.
+2018-06-25 14:09:15,436 Restoring parameters from runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt-90
+2018-06-25 14:09:15,500 Running local_init_op.
+2018-06-25 14:09:15,508 Done running local_init_op.
+2018-06-25 14:09:23,918 Saving checkpoints for 91 into runs/bayesian_panoptes_featured_si128_sf128_l0.5_augs/model.ckpt.
+2018-06-25 14:09:24,461 loss = 0.6493312, step = 91

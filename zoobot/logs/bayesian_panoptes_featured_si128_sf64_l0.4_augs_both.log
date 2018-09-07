@@ -1,0 +1,93 @@
+2018-06-26 10:50:11,693 Parameters used: 
+2018-06-26 10:50:11,693 initial_size: 128
+2018-06-26 10:50:11,693 final_size: 64
+2018-06-26 10:50:11,693 channels: 3
+2018-06-26 10:50:11,693 label_col: label
+2018-06-26 10:50:11,693 epochs: 1000
+2018-06-26 10:50:11,693 train_batches: 30
+2018-06-26 10:50:11,693 eval_batches: 3
+2018-06-26 10:50:11,693 batch_size: 128
+2018-06-26 10:50:11,693 log_dir: runs/bayesian_panoptes_featured_si128_sf64_l0.4_augs_both
+2018-06-26 10:50:11,693 save_freq: 10
+2018-06-26 10:50:11,693 max_sadness: 4.0
+2018-06-26 10:50:11,693 early_stopping_window: 10
+2018-06-26 10:50:11,693 min_epochs: 1000
+2018-06-26 10:50:11,694 train_config: <zoobot.estimators.input_utils.InputConfig object at 0x181c9057b8>
+2018-06-26 10:50:11,694 eval_config: <zoobot.estimators.input_utils.InputConfig object at 0x181d7d1e48>
+2018-06-26 10:50:11,694 model: <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181d09cc88>
+2018-06-26 10:50:11,694 Next object 
+
+2018-06-26 10:50:11,694 name: train
+2018-06-26 10:50:11,694 tfrecord_loc: data/panoptes_featured_s128_l0.4_train.tfrecord
+2018-06-26 10:50:11,694 label_col: label
+2018-06-26 10:50:11,694 initial_size: 128
+2018-06-26 10:50:11,694 final_size: 64
+2018-06-26 10:50:11,694 channels: 3
+2018-06-26 10:50:11,694 batch_size: 128
+2018-06-26 10:50:11,694 stratify: True
+2018-06-26 10:50:11,694 stratify_probs: [0.3304775280898876, 0.6695224719101124]
+2018-06-26 10:50:11,694 geometric_augmentation: True
+2018-06-26 10:50:11,694 shift_range: None
+2018-06-26 10:50:11,694 max_zoom: 1.2
+2018-06-26 10:50:11,694 fill_mode: wrap
+2018-06-26 10:50:11,694 photographic_augmentation: True
+2018-06-26 10:50:11,694 max_brightness_delta: 0.05
+2018-06-26 10:50:11,694 contrast_range: (0.95, 1.05)
+2018-06-26 10:50:11,694 Next object 
+
+2018-06-26 10:50:11,694 name: eval
+2018-06-26 10:50:11,694 tfrecord_loc: data/panoptes_featured_s128_l0.4_test.tfrecord
+2018-06-26 10:50:11,694 label_col: label
+2018-06-26 10:50:11,694 initial_size: 128
+2018-06-26 10:50:11,694 final_size: 64
+2018-06-26 10:50:11,694 channels: 3
+2018-06-26 10:50:11,694 batch_size: 128
+2018-06-26 10:50:11,694 stratify: True
+2018-06-26 10:50:11,694 stratify_probs: [0.3304775280898876, 0.6695224719101124]
+2018-06-26 10:50:11,695 geometric_augmentation: True
+2018-06-26 10:50:11,695 shift_range: None
+2018-06-26 10:50:11,695 max_zoom: 1.2
+2018-06-26 10:50:11,695 fill_mode: wrap
+2018-06-26 10:50:11,695 photographic_augmentation: True
+2018-06-26 10:50:11,695 max_brightness_delta: 0.05
+2018-06-26 10:50:11,695 contrast_range: (0.95, 1.05)
+2018-06-26 10:50:11,695 Next object 
+
+2018-06-26 10:50:11,695 image_dim: 64
+2018-06-26 10:50:11,695 optimizer: <class 'tensorflow.python.training.adam.AdamOptimizer'>
+2018-06-26 10:50:11,695 learning_rate: 0.001
+2018-06-26 10:50:11,695 conv1_filters: 32
+2018-06-26 10:50:11,695 conv1_kernel: 1
+2018-06-26 10:50:11,695 conv2_filters: 32
+2018-06-26 10:50:11,695 conv2_kernel: 3
+2018-06-26 10:50:11,695 conv3_filters: 16
+2018-06-26 10:50:11,695 conv3_kernel: 3
+2018-06-26 10:50:11,695 dense1_units: 128
+2018-06-26 10:50:11,695 dense1_dropout: 0.5
+2018-06-26 10:50:11,695 conv1_activation: <function relu at 0x110e61a60>
+2018-06-26 10:50:11,695 conv2_activation: <function relu at 0x110e61a60>
+2018-06-26 10:50:11,695 conv3_activation: <function relu at 0x110e61a60>
+2018-06-26 10:50:11,695 dense1_activation: <function relu at 0x110e61a60>
+2018-06-26 10:50:11,695 pool1_size: 2
+2018-06-26 10:50:11,695 pool1_strides: 2
+2018-06-26 10:50:11,695 pool2_size: 2
+2018-06-26 10:50:11,695 pool2_strides: 2
+2018-06-26 10:50:11,695 pool3_size: 2
+2018-06-26 10:50:11,695 pool3_strides: 2
+2018-06-26 10:50:11,695 padding: same
+2018-06-26 10:50:11,696 log_freq: 10
+2018-06-26 10:50:11,696 model_fn: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181d09cc88>>
+2018-06-26 10:50:11,696 logging_hooks: [None, None, None]
+2018-06-26 10:50:11,696 entry_point: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181d09cc88>>
+2018-06-26 10:50:11,696 Next object 
+
+2018-06-26 10:50:11,714 Using default config.
+2018-06-26 10:50:11,714 Using config: {'_model_dir': 'runs/bayesian_panoptes_featured_si128_sf64_l0.4_augs_both', '_tf_random_seed': None, '_save_summary_steps': 100, '_save_checkpoints_steps': None, '_save_checkpoints_secs': 600, '_session_config': None, '_keep_checkpoint_max': 5, '_keep_checkpoint_every_n_hours': 10000, '_log_step_count_steps': 100, '_train_distribute': None, '_service': None, '_cluster_spec': <tensorflow.python.training.server_lib.ClusterSpec object at 0x181d8dc4a8>, '_task_type': 'worker', '_task_id': 0, '_global_id_in_cluster': 0, '_master': '', '_evaluation_master': '', '_is_chief': True, '_num_ps_replicas': 0, '_num_worker_replicas': 1}
+2018-06-26 10:50:19,442 Calling model_fn.
+2018-06-26 10:50:19,774 Done calling model_fn.
+2018-06-26 10:50:19,775 Create CheckpointSaverHook.
+2018-06-26 10:50:20,129 Graph was finalized.
+2018-06-26 10:50:20,268 Running local_init_op.
+2018-06-26 10:50:20,279 Done running local_init_op.
+2018-06-26 10:50:27,448 Saving checkpoints for 1 into runs/bayesian_panoptes_featured_si128_sf64_l0.4_augs_both/model.ckpt.
+2018-06-26 10:50:27,594 loss = 8.801867, step = 1
