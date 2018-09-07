@@ -3,10 +3,12 @@
 ## Setup
 
 Make sure aws cli is installed:
+
 `pip install aws`
+
 `pip install awscli`
-aws configure
-(add ID, secret key, region=us-east-1, format=json)
+
+`aws configure` (add ID, secret key, region=us-east-1, format=json)
 
 
 ## Launch an instance. 
@@ -23,12 +25,17 @@ Save the .pem, if not already saved.
 
 **Set up convience shell variables**
 
-Copy public DNS from instance details 
+Copy public DNS from instance details
+
 `public_dns={e.g. ec2-174-129-152-61.compute-1.amazonaws.com}`  
+
 `key=/path/my-key-pair.pem`
+
 `user=ubuntu` (or ec2-user if plain linux rather than DL AMI)
 
+
 **Connect**
+
 `ssh -i $key $user@$public_dns`
 
 If you get the error "Permission denied (publickey)"
