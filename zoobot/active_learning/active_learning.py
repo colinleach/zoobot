@@ -392,7 +392,7 @@ def run(catalog, db_loc, size, channels, predictor_dir, train_tfrecord_loc, trai
     db = sqlite3.connect(db_loc)
     shard_locs = itertools.cycle(get_all_shard_locs(db))  # cycle through shards
     # TODO refactor these settings into an object
-    shards_per_iteration = 3
+    shards_per_iteration = len(shard_locs)
 
     train_records = [train_tfrecord_loc]  # will append new train records (save to db?)
     iteration = 0
