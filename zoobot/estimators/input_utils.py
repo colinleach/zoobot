@@ -106,7 +106,7 @@ def load_batches(config):
         if config.shuffle:
             dataset = dataset.shuffle(config.batch_size * 5)
 
-        if config.repeat():
+        if config.repeat:
             dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
         dataset = dataset.batch(config.batch_size)
         dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
