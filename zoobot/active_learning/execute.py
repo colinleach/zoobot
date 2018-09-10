@@ -194,7 +194,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(
-        filename='execute_{}.log'.format(time.time()),
+        filename='/home/ubuntu/execute_{}.log'.format(time.time()),
         filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
