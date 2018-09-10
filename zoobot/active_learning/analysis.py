@@ -11,7 +11,9 @@ def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, s
         tfrecord_locs = json.load(f)
         assert isinstance(tfrecord_locs, list)
     
-    fig, axes = plt.subplots(nrows=len(tfrecord_locs), ncols=n_subjects)
+    nrows = len(tfrecord_locs)
+    ncols = n_subjects
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows * 3, ncols * 3)
 
     for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
         subjects = read_tfrecord.load_examples_from_tfrecord(
