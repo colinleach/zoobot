@@ -28,6 +28,7 @@ class BayesianBinaryModel():
             dense1_units=128,
             dense1_dropout=0.5,
             dense1_activation=tf.nn.relu,
+            predict_dropout=0.25,
             log_freq=10,
     ):
         self.image_dim = image_dim
@@ -52,6 +53,7 @@ class BayesianBinaryModel():
         self.pool3_size = 2
         self.pool3_strides = 2
         self.padding = 'same'
+        self.predict_dropout = predict_dropout  # dropout rate for predict mode
         self.log_freq = log_freq
         self.model_fn = self.four_layer_binary_classifier
         # self.logging_hooks = logging_hooks(self)  # TODO strange error with passing this to estimator in params
@@ -133,12 +135,12 @@ class BayesianBinaryModel():
 
             with tf.variable_scope("sample"):
                 # Feedforward from dense1. Always apply dropout.
-                _, sample_predictions = dense_to_prediction(dense1, labels, self, dropout_on=True)
+                _, sample_predictions = dense_to_prediction(dense1, labels, dropout_on=True, dropout_rate=self.predict_dropout)
             return sample_predictions, None  # no loss, as labels not known (in general)
 
         else:  # Calculate Loss for TRAIN and EVAL modes)
             # only feedforward once for one set of predictions
-            logits, response = dense_to_prediction(dense1, labels, self, dropout_on=mode == tf.estimator.ModeKeys.TRAIN)
+            logits, response = dense_to_prediction(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
             onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
             onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
             loss = tf.nn.softmax_cross_entropy_with_logits_v2(
@@ -152,7 +154,7 @@ class BayesianBinaryModel():
             # TODO this is potentially wasteful as we don't actually need the feedforwards.
             # Unclear if it executes - check.
             with tf.variable_scope("sample"):
-                _, _ = dense_to_prediction(dense1, labels, self, dropout_on=True)
+                _, _ = dense_to_prediction(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
 
             return response, mean_loss
 
@@ -309,12 +311,12 @@ def input_to_dense_normed(features, mode, model):
     return dense1
 
 
-def dense_to_prediction(dense1, labels, params, dropout_on):
+def dense_to_prediction(dense1, labels, dropout_on, dropout_rate):
 
     # Add dropout operation
     dropout = tf.layers.dropout(
         inputs=dense1,
-        rate=params.dense1_dropout,
+        rate=dropout_rate,
         training=dropout_on)
     tf.summary.tensor_summary('dropout_summary', dropout)
 

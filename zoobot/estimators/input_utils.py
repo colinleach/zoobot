@@ -19,11 +19,12 @@ class InputConfig():
             channels,
             batch_size,
             shuffle,
+            repeat,
             stratify,
             stratify_probs,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
-            max_zoom=1.2,
+            max_zoom=1.1,
             fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,
@@ -38,6 +39,7 @@ class InputConfig():
         self.channels = channels
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.repeat = repeat
         self.stratify = stratify
         self.stratify_probs = stratify_probs
 
@@ -103,7 +105,9 @@ def load_batches(config):
 
         if config.shuffle:
             dataset = dataset.shuffle(config.batch_size * 5)
-        # dataset = dataset.repeat(5)  Careful, don't repeat for eval - make param
+
+        if config.repeat():
+            dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
         dataset = dataset.batch(config.batch_size)
         dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
         iterator = dataset.make_one_shot_iterator()

@@ -18,16 +18,16 @@ def get_run_config(active_config):
         final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=10,
+        epochs=2,  # as temporary test
         train_steps=30,
         eval_steps=3,
         batch_size=128,
-        min_epochs=1000,  # don't stop early automatically, wait for me
+        min_epochs=265,  # don't stop early automatically
         early_stopping_window=10,
         max_sadness=4.,
         log_dir=active_config.estimator_dir,
         save_freq=10,
-        warm_start=True  # Will restore previous run from disk, if saved
+        warm_start=False  # Will restore previous run from disk, if saved
     )
 
     train_config = input_utils.InputConfig(
@@ -36,6 +36,7 @@ def get_run_config(active_config):
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,
+        repeat=True,
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
@@ -54,6 +55,7 @@ def get_run_config(active_config):
         label_col=run_config.label_col,
         stratify=True,
         shuffle=True,
+        repeat=False,
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,

@@ -21,13 +21,14 @@ from zoobot.tests.active_learning import active_learning_test
 class ActiveConfig():
 
     def __init__(
-        self, 
-        shard_config, 
-        run_dir, 
-        iterations=10, 
-        subjects_per_iter=512, 
-        shards_per_iter=3,
-        warm_start=True):
+        self,
+        shard_config,
+        run_dir,
+        iterations=6, 
+        subjects_per_iter=1024,
+        shards_per_iter=4,
+        warm_start=False,  # warning
+        restart_each_iter=True):  # warning
 
         self.shards = shard_config
         self.run_dir = run_dir
@@ -124,6 +125,11 @@ class ActiveConfig():
 
             with open(self.train_records_index_loc, 'w') as f:
                 json.dump(train_records, f)
+
+            if self.restart_each_iter:
+                # copy estimator directory to run_dir, and make a new empty estimator_dir
+                shutil.move(self.estimator_dir, os.path.join(self.run_dir, 'iteration_{}'.format(iteration)))
+                shutil.mkdir(self.estimator_dir)
 
             iteration += 1
 
