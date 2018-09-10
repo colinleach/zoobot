@@ -290,3 +290,6 @@ def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
     estimator.export_savedmodel(
         export_dir_base=config.log_dir,
         serving_input_receiver_fn=serving_input_receiver_fn)
+
+
+# run_dir=run_si128_sf64_its10_label512_shards1_baseline

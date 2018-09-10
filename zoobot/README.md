@@ -56,7 +56,6 @@ Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 imag
 `source activate tensorflow_p36`
 `pip install -r zoobot/requirements.txt`
 `pip install -e $root/zoobot`
-Variables are not preserved
 
 
 Also log in to the S3 console:
@@ -64,6 +63,11 @@ Also log in to the S3 console:
 
 
 You can either make the shards directly, or download them from S3 (faster):
+
+## Get Fits (for new shards)
+TODO: Dynamically, for when a minority become labelled, and then delete. Free!
+`aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native`  For now only the 7k we need. About 6GB.
+
 
 ## Get Shards
 
@@ -95,11 +99,6 @@ Re-upload to S3
 ### Option B: Download from S3
 `shard_dir={desired_shard_dir}`, matching an S3 shard dir e.g. `shards_si64_sf28_l0.4`
 `aws s3 sync s3://galaxy-zoo/active-learning/$shard_dir $root/$shard_dir`
-
-
-## Get Fits (for new shards)
-TODO: Dynamically, for when a minority become labelled, and then delete. Free!
-`aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native`  For now only the 7k we need. About 6GB.
 
 
 ## Run Active Learning

@@ -145,7 +145,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(
-        filename='{}_make_shards_{}.log'.format(args.base_dir, time.time()),
+        filename='{}/make_shards_{}.log'.format(args.base_dir, time.time()),
         filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
