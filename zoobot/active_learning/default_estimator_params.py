@@ -18,7 +18,7 @@ def get_run_config(active_config):
         final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=2,  # as temporary test
+        epochs=265,  # as temporary test
         train_steps=30,
         eval_steps=3,
         batch_size=128,

@@ -194,7 +194,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(
-        filename='{}_execute_{}.log'.format(args.run_dir, time.time()),
+        filename=os.path.join(args.run_dir, 'execute_{}.log'.format(time.time())),
         filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
