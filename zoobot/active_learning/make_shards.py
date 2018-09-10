@@ -72,8 +72,8 @@ class ShardConfig():
         os.mkdir(self.shard_dir)
 
         # check that fits_loc columns resolve correctly
-        assert os.path.isfile(labelled_catalog['fits_loc'][0])
-        assert os.path.isfile(unlabelled_catalog['fits_loc'][0])
+        assert os.path.isfile(labelled_catalog['fits_loc'].iloc[0])
+        assert os.path.isfile(unlabelled_catalog['fits_loc'].iloc[0])
 
         # assume the catalog is true, don't modify halfway through
         labelled_catalog.to_csv(self.labelled_catalog_loc)
