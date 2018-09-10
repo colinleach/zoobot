@@ -110,6 +110,7 @@ Once shards are ready:
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.
+**Check that logs are being recorded**. They should be in the directory the script was run from (i.e. root).
 
 ## Optional: Run Tensorboard to Monitor
 

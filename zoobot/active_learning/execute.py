@@ -193,13 +193,13 @@ if __name__ == '__main__':
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
+
     logging.basicConfig(
-        filename='/home/ubuntu/execute_{}.log'.format(time.time()),
+        filename='/home/ubuntu/execute_{}'.format(args.run_dir),
         filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
     )
-
     execute_active_learning(
         shard_config_loc=args.shard_config_loc,
         run_dir=args.run_dir,  # warning, may overwrite if not careful
