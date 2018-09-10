@@ -38,6 +38,7 @@ class ActiveConfig():
         self.shards_per_iter = shards_per_iter
 
         self.warm_start = warm_start
+        self.restart_each_iter = restart_each_iter
 
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
         self.estimator_dir = os.path.join(self.run_dir, 'estimator')
@@ -47,6 +48,7 @@ class ActiveConfig():
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
+
 
 
     def prepare_run_folders(self):
@@ -66,7 +68,8 @@ class ActiveConfig():
             for directory in directories:
                 if os.path.isdir(directory):
                     shutil.rmtree(directory)
-                    os.mkdir(directory)
+            for directory in directories:
+                os.mkdir(directory)
 
         if not os.path.isfile(self.db_loc):
             shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
@@ -75,6 +78,11 @@ class ActiveConfig():
     def ready(self):
         assert self.shards.ready()
         # TODO more validation checks for the run
+        assert os.path.isdir(self.estimator_dir)
+        assert os.path.isdir(self.run_dir)
+        assert os.path.isdir(self.requested_fits_dir)
+        assert os.path.isdir(self.requested_tfrecords_dir)
+
         return True
 
 
@@ -129,7 +137,7 @@ class ActiveConfig():
             if self.restart_each_iter:
                 # copy estimator directory to run_dir, and make a new empty estimator_dir
                 shutil.move(self.estimator_dir, os.path.join(self.run_dir, 'iteration_{}'.format(iteration)))
-                shutil.mkdir(self.estimator_dir)
+                os.mkdir(self.estimator_dir)
 
             iteration += 1
 
