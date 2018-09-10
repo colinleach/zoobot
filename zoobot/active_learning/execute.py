@@ -200,6 +200,9 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
     )
+    
+    logging.info('Saving logs to: ' + '/home/ubuntu/execute_{}'.format(args.run_dir))
+
     execute_active_learning(
         shard_config_loc=args.shard_config_loc,
         run_dir=args.run_dir,  # warning, may overwrite if not careful
