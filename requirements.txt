@@ -2,7 +2,7 @@ coverage
 python-coveralls
 pytest-cov
 codecov
-tensorflow==1.8.0
+# tensorflow==1.8.0
 tqdm
 pillow
 numpy
