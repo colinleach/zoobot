@@ -77,7 +77,6 @@ Get catalog with latest labels
 
 `aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv`
 
-
 Update catalog to point fits_loc at local fits_native folder
 
 `python $root/zoobot/zoobot/update_catalog_fits_loc.py`
@@ -90,7 +89,7 @@ Where the first arg is the directory into which to place the shard directory, an
 
 Update `shard_dir` shell variable
 
-`shard_dir={path FROM ROOT to newly_created_shard_dir}`
+`shard_dir={path FROM ROOT to newly_created_shard_dir, automatically named based on ShardConfig}`
 
 Re-upload to S3
 

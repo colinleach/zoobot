@@ -1,8 +1,11 @@
 import logging
 
 import pandas as pd
-from tfrecord import catalog_to_tfrecord
+from zoobot.tfrecord import catalog_to_tfrecord
 
+
+CATALOG_LOC = '/home/ubuntu/panoptes_predictions.csv'
+TFRECORD_DIR = '/home/ubuntu/tfrecords/'
 
 def save_panoptes_to_tfrecord():
 
@@ -28,8 +31,7 @@ def save_panoptes_to_tfrecord():
         'ra',
         'dec']
 
-    df_loc = '/data/repos/galaxy-zoo-panoptes/reduction/data/output/panoptes_predictions_with_catalog.csv'
-    df = pd.read_csv(df_loc, usecols=columns_to_save + ['fits_loc', 'png_loc', 'png_ready'])
+    df = pd.read_csv(CATALOG_LOC, usecols=columns_to_save + ['fits_loc', 'png_loc', 'png_ready'])
     logging.info('Loaded {} catalog galaxies with predictions'.format(len(df)))
 
     # use the majority vote as a label
@@ -46,8 +48,8 @@ def save_panoptes_to_tfrecord():
 
     for size in [128]:  # TODO 96, 256, 424 in 0.4 and 0.5
 
-        train_loc = 'zoobot/data/panoptes_featured_s{}_l{}_train.tfrecord'.format(size, str(label_split_value)[:3])
-        test_loc = 'zoobot/data/panoptes_featured_s{}_l{}_test.tfrecord'.format(size, str(label_split_value)[:3])
+        train_loc = os.path.join(TFRECORD_DIR, 'panoptes_featured_s{}_l{}_train.tfrecord'.format(size, str(label_split_value)[:3]))
+        test_loc = os.path.join(TFRECORD_DIR, 'panoptes_featured_s{}_l{}_test.tfrecord'.format(size, str(label_split_value)[:3]))
 
         catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
             df,

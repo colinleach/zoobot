@@ -10,13 +10,15 @@ from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_uti
 import panoptes_to_tfrecord
 
 
+# expects tfrecord in data, and logs/estimator in runs
+
 if __name__ == '__main__':
 
     initial_size = 128
     channels = 3
     final_size = 64
     label_split_value = '0.4'
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_l{}_augs_both_normed_activated_wide_repeat'.format(initial_size, final_size, label_split_value)
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_l{}_augs_both_normed_activated_wide_aws'.format(initial_size, final_size, label_split_value)
 
     logging.basicConfig(
         filename=run_name + '.log',
