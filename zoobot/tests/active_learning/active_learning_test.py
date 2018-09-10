@@ -19,12 +19,12 @@ from zoobot.estimators.estimator_params import default_four_layer_architecture, 
 from zoobot.active_learning import active_learning
 from zoobot.estimators import make_predictions
 
-
-logging.basicConfig(
-    filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),
-    filemode='w',
-    format='%(asctime)s %(message)s',
-    level=logging.INFO)
+if __name__ == '__main__':
+    logging.basicConfig(
+        filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),
+        filemode='w',
+        format='%(asctime)s %(message)s',
+        level=logging.INFO)
 
 
 @pytest.fixture()
