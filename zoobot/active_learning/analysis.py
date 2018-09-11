@@ -90,14 +90,7 @@ def is_eval_log_entry(line):
     return 'Saving dict for global step' in line
 
 
-def plot_log_metrics(metrics, save_loc):
-
-    # cm = plt.get_cmap('hot') TODO use 'hot' colormap for lines. Really awkward.
-    #     cNorm = colors.Normalize(vmin=0, vmax=metrics['iteration'].max())
-    #     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
-    metrics['image_pc'] = ((1 + metrics['iteration']) * 100 / 6).astype(int)
-    metrics_list = [metrics[metrics['iteration'] == iteration] for iteration in metrics['iteration'].unique()]
-
+def smooth_metrics(metrics_list):
     # smooth (TODO refactor)
     smoothed_list = []
     for df in metrics_list:
@@ -109,18 +102,25 @@ def plot_log_metrics(metrics, save_loc):
             frac=0.25)
         df['smoothed_acc'] = smoothed_metrics[:, 1]
         smoothed_list.append(df)
+    return smoothed_list
+
+
+def plot_log_metrics(metrics_list, save_loc):
 
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 6))
-    for iteration, df in enumerate(smoothed_list):
+    for df in metrics_list:
+        iteration = df['iteration'].iloc[0]
         ax1.plot(
             df['step'],
             df['smoothed_acc'],
-            label='{:3}pc images'.format(iteration * 100 / 5))
+            label='{:3}pc images'.format(iteration)
+        )
 
         ax2.plot(
             df['step'],
             df['acc/accuracy'],
-            label='{:3}pc images'.format(iteration * 100 / 5))
+            label='{:3}pc images'.format(iteration)
+        )
 
     ax2.set_xlabel('Step')
     ax1.set_ylabel('Eval Accuracy')
@@ -132,25 +132,33 @@ def plot_log_metrics(metrics, save_loc):
 
 
 def compare_metrics(all_metrics, save_loc):
-    # bars of final acc 
-    metrics = pd.concat(all_metrics, axis=0)
-    print(metrics.head())
-    print(metrics.tail())
-    # TODO refactor
-    # TODO use 'hue' to add comparison with baseline
+    
+    best_rows = []
+    for df in all_metrics:
+        df = df.reset_index()
+        best_acc_idx = df['smoothed_acc'].idxmax()
+        best_row = df.iloc[best_acc_idx]
+        best_rows.append(best_row)
+
+    metrics = pd.DataFrame(best_rows)
+
+
     fig, ax = plt.subplots()
     sns.barplot(
-        data=metrics[metrics['step'] > 7000], 
-        x='image_pc', 
-        y='acc/accuracy', 
+        data=metrics, 
+        x='iteration', 
+        y='smoothed_acc', 
         hue='name', 
-        ax=ax
+        ax=ax,
+        ci=80
     )
-    ax.set_ylim([0.75, 0.9])
+    ax.set_ylim([0.75, 0.95])
     ax.set_ylabel('Final eval accuracy')
     fig.tight_layout()
     fig.savefig(save_loc)
 
+def split_by_iter(df):
+    return [df[df['iteration'] == iteration] for iteration in df['iteration'].unique()]
 
 
 if __name__ == '__main__':
@@ -159,13 +167,17 @@ if __name__ == '__main__':
     active_save_loc = os.path.join(TEST_FIGURE_DIR, 'active_acc_metrics.png')
     active_metrics = get_metrics_from_log(active_log_loc)
     active_metrics['name'] = 'active'
-    plot_log_metrics(active_metrics, active_save_loc)
+    active_metric_iters = split_by_iter(active_metrics)
+    active_metric_smooth = smooth_metrics(active_metric_iters)
+    plot_log_metrics(active_metric_smooth, active_save_loc)
     
-    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536613916.8920033.log'
-    baseline_save_loc = os.path.join(TEST_FIGURE_DIR, 'baseline_acc_comparison_bar.png')
+    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536645503.6763988.log'
+    baseline_save_loc = os.path.join(TEST_FIGURE_DIR, 'baseline_acc_metrics.png')
     baseline_metrics = get_metrics_from_log(baseline_log_loc)
     baseline_metrics['name'] = 'baseline'
-    plot_log_metrics(baseline_metrics, baseline_save_loc)
+    baseline_metric_iters = split_by_iter(baseline_metrics)
+    baseline_metric_smooth = smooth_metrics(baseline_metric_iters)
+    plot_log_metrics(baseline_metric_smooth, baseline_save_loc)
 
     comparison_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_bar_comparison.png')
-    compare_metrics([baseline_metrics, active_metrics], comparison_save_loc)
+    compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc)
