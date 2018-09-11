@@ -92,7 +92,7 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=0.8)
+            train_test_fraction=0.3)  # 30% train, 70% test
 
         assert self.ready()
 
@@ -165,8 +165,8 @@ if __name__ == '__main__':
     # save catalog for mock_panoptes.py to return (now added to git)
     # catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:256]  # for initial training data
-    unlabelled_catalog = catalog[256:]  # for new data
+    labelled_catalog = catalog[:1024]  # for initial training data
+    unlabelled_catalog = catalog[1024:]  # for new data
     del unlabelled_catalog['label']
 
     shard_config.prepare_shards(
