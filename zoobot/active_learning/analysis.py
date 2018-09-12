@@ -113,13 +113,13 @@ def plot_log_metrics(metrics_list, save_loc):
         ax1.plot(
             df['step'],
             df['smoothed_acc'],
-            label='{:3}pc images'.format(iteration)
+            label='Iteration {}'.format(iteration)
         )
 
         ax2.plot(
             df['step'],
             df['acc/accuracy'],
-            label='{:3}pc images'.format(iteration)
+            label='Iteration {}'.format(iteration)
         )
 
     ax2.set_xlabel('Step')
@@ -163,7 +163,8 @@ def split_by_iter(df):
 
 if __name__ == '__main__':
 
-    active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536613916.8920033.log'
+    # active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/active_thousand.log'
+    active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536675021.4682727.log'
     active_save_loc = os.path.join(TEST_FIGURE_DIR, 'active_acc_metrics.png')
     active_metrics = get_metrics_from_log(active_log_loc)
     active_metrics['name'] = 'active'
@@ -171,7 +172,9 @@ if __name__ == '__main__':
     active_metric_smooth = smooth_metrics(active_metric_iters)
     plot_log_metrics(active_metric_smooth, active_save_loc)
     
-    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536645503.6763988.log'
+    # TODO update this with baseline log loc
+    # baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/baseline_thousand.log'
+    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536706355.0711193.log'
     baseline_save_loc = os.path.join(TEST_FIGURE_DIR, 'baseline_acc_metrics.png')
     baseline_metrics = get_metrics_from_log(baseline_log_loc)
     baseline_metrics['name'] = 'baseline'
