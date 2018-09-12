@@ -21,6 +21,7 @@ zoobot/runs
 *.png
 *.ipynb_checkpoints*
 !zoobot/test_examples/*
+zoobot/tests/test_examples/mnist_fits/*.fits
 *.ropeproject*
 build/*
 *.whl

@@ -2,7 +2,6 @@ import json
 import ast
 import itertools
 import os
-
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
@@ -105,9 +104,9 @@ def smooth_metrics(metrics_list):
     return smoothed_list
 
 
-def plot_log_metrics(metrics_list, save_loc):
+def plot_log_metrics(metrics_list, save_loc, title=None):
 
-    fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 6))
+    fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 6), sharex=True, sharey=True)
     for df in metrics_list:
         iteration = df['iteration'].iloc[0]
         ax1.plot(
@@ -127,11 +126,13 @@ def plot_log_metrics(metrics_list, save_loc):
     ax2.set_ylabel('Eval Accuracy')
     ax1.legend()
     ax2.legend()
+    if title is not None:
+        ax1.set_title(title)
     fig.tight_layout()
     fig.savefig(save_loc)
 
 
-def compare_metrics(all_metrics, save_loc):
+def compare_metrics(all_metrics, save_loc, title=None):
     
     best_rows = []
     for df in all_metrics:
@@ -154,6 +155,8 @@ def compare_metrics(all_metrics, save_loc):
     )
     ax.set_ylim([0.75, 0.95])
     ax.set_ylabel('Final eval accuracy')
+    if title is not None:
+        ax.set_title(title)
     fig.tight_layout()
     fig.savefig(save_loc)
 
@@ -163,24 +166,26 @@ def split_by_iter(df):
 
 if __name__ == '__main__':
 
-    # active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/active_thousand.log'
-    active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536675021.4682727.log'
-    active_save_loc = os.path.join(TEST_FIGURE_DIR, 'active_acc_metrics.png')
+    initial = 307
+    per_iter = 256
+    title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)
+    name = '{}init_{}per'.format(initial, per_iter)
+
+    active_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/active_' + name + '.log'
+    active_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_metrics_active_' + name + '.png')
     active_metrics = get_metrics_from_log(active_log_loc)
     active_metrics['name'] = 'active'
     active_metric_iters = split_by_iter(active_metrics)
     active_metric_smooth = smooth_metrics(active_metric_iters)
     plot_log_metrics(active_metric_smooth, active_save_loc)
     
-    # TODO update this with baseline log loc
-    # baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/baseline_thousand.log'
-    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536706355.0711193.log'
-    baseline_save_loc = os.path.join(TEST_FIGURE_DIR, 'baseline_acc_metrics.png')
+    baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/baseline_' + name + '.log'
+    baseline_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_metrics_baseline_' + name + '.png')
     baseline_metrics = get_metrics_from_log(baseline_log_loc)
     baseline_metrics['name'] = 'baseline'
     baseline_metric_iters = split_by_iter(baseline_metrics)
     baseline_metric_smooth = smooth_metrics(baseline_metric_iters)
-    plot_log_metrics(baseline_metric_smooth, baseline_save_loc)
+    plot_log_metrics(baseline_metric_smooth, baseline_save_loc, title=title)
 
-    comparison_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_bar_comparison.png')
-    compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc)
+    comparison_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_comparison_' + name + '.png')
+    compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc, title=title)
