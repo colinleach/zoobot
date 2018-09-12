@@ -3,6 +3,7 @@ import os
 import tensorflow as tf
 from astropy.io import fits
 import pandas as pd
+import numpy as np
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 
@@ -22,13 +23,17 @@ def download_to_fits():
     for im_n, im in enumerate(x_train):  # iterates over first dimension, subjects
         fits_name = 'train_im_' + str(im_n) + '.fits'
         fits_loc = os.path.join(fits_dir, fits_name)
-        # hdu = fits.PrimaryHDU(im)
-        # hdu.writeto(fits_loc)
+        hdu = fits.PrimaryHDU(np.concatenate([im, im, im], axis=0))
+        hdu.writeto(fits_loc, overwrite=True)
         train_fits_locs.append(fits_loc)
         train_fits_names.append(fits_name)
 
     train_catalog = pd.DataFrame(
-        data={'label': y_train, 'fits_loc': train_fits_locs, 'fits_loc_relative': train_fits_names}
+        data={
+            'id_str': [str(n) for n in range(len(y_train))],
+            'label': y_train, 
+            'fits_loc': train_fits_locs, 
+            'fits_loc_relative': train_fits_names}
     )
 
     test_fits_locs = []
@@ -36,13 +41,17 @@ def download_to_fits():
     for im_n, im in enumerate(x_test):  # iterates over first dimension, subjects
         fits_name = 'test_im_' + str(im_n) + '.fits'
         fits_loc = os.path.join(fits_dir, fits_name)
-        # hdu = fits.PrimaryHDU(im)
-        # hdu.writeto(fits_loc)
+        hdu = fits.PrimaryHDU(np.concatenate([im, im, im], axis=0))
+        hdu.writeto(fits_loc, overwrite=True)
         test_fits_locs.append(fits_loc)
         test_fits_names.append(fits_name)
 
     test_catalog = pd.DataFrame(
-        data={'label': y_test, 'fits_loc': test_fits_locs, 'fits_loc_relative': test_fits_names}
+        data={
+            'id_str': [str(n) for n in range(len(y_test))],
+            'label': y_test, 
+            'fits_loc': test_fits_locs, 
+            'fits_loc_relative': test_fits_names}
     )
 
     train_catalog.to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mnist_catalog_train.csv'), index=False)

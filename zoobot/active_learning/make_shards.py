@@ -96,6 +96,9 @@ class ShardConfig():
 
         assert self.ready()
 
+        # serialized for later/logs
+        self.write()
+
 
     def ready(self):
         assert os.path.isdir(self.shard_dir)
@@ -151,9 +154,6 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    # in memory for now, but will be serialized for later/logs
-    shard_config = ShardConfig(base_dir=args.base_dir)  
-
     # in memory for now, but will be saved to csv
     catalog = pd.read_csv(args.catalog_loc)
     # >36 votes required, gives low count uncertainty
@@ -169,9 +169,9 @@ if __name__ == '__main__':
     unlabelled_catalog = catalog[1024:]  # for new data
     del unlabelled_catalog['label']
 
+    # in memory for now, but will be serialized for later/logs
+    shard_config = ShardConfig(base_dir=args.base_dir)  
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog)
-
-    shard_config.write()
     # must be able to end here, snapshot created and ready to go (hopefully)
