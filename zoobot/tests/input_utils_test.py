@@ -95,6 +95,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
         channels=3,
         batch_size=16,
         stratify=False,
+        repeat=False,
         shuffle=False,
         stratify_probs=None,
         geometric_augmentation=True,
@@ -153,6 +154,7 @@ def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values
         label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=False,
+        repeat=False,
         shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,
@@ -170,6 +172,7 @@ def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values
         label_col=None,  # TODO not sure about this
         batch_size=train_batch,
         stratify=True,
+        repeat=False,
         shuffle=False,
         stratify_probs=np.array([0.8, 0.2]),
         geometric_augmentation=False,
@@ -187,6 +190,7 @@ def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values
         label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=False,
+        repeat=False,
         shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,
@@ -204,6 +208,7 @@ def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values
         label_col=None,  # TODO not sure about this
         batch_size=test_batch,
         stratify=True,
+        repeat=False,
         shuffle=False,
         stratify_probs=np.array([0.8, 0.2]),
         geometric_augmentation=False,
@@ -266,6 +271,7 @@ def test_input_utils_visual(example_tfrecord_loc, size, channels):
         label_col=None,  # TODO not sure about this
         batch_size=batch_size,
         stratify=False,
+        repeat=False,
         shuffle=False,
         stratify_probs=None,
         geometric_augmentation=False,

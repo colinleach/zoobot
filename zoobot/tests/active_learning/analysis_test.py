@@ -26,8 +26,7 @@ def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):
 # TODO temporary, will need one in TEST_EXAMPLES
 @pytest.fixture()
 def log_loc():
-    return '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536613916.8920033.log'
-    # return '/Users/mikewalmsley/repos/zoobot/zoobot/logs/bayesian_panoptes_featured_si128_sf64_l0.4_augs_both_normed_activated_wide_aws.log'
+    return os.path.join(TEST_EXAMPLE_DIR, 'active_learning_example.log')
 
 
 @pytest.fixture()
