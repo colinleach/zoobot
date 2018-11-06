@@ -23,6 +23,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ec2 = args.ec2
+    gc = GlobalConfig(ec2)
+    initial_size = 128
+    channels = 3
+    final_size = 64
+
     if ec2:
         train_tfrecord_loc = 'data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = 'data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
@@ -30,10 +35,7 @@ if __name__ == '__main__':
         train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
-    gc = GlobalConfig(ec2)
-    initial_size = 128
-    channels = 3
-    final_size = 64
+
 
 
     run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_regr'.format(initial_size, final_size)
