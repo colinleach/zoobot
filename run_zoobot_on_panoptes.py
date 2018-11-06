@@ -7,18 +7,24 @@ import matplotlib
 matplotlib.use('Agg')
 
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
+
 import panoptes_to_tfrecord
+from zoobot.settings import GlobalConfig
 
 
 # expects tfrecord in data, and logs/estimator in runs
 
 if __name__ == '__main__':
 
+    ec2 = False
+    gc = GlobalConfig(ec2)
     initial_size = 128
     channels = 3
     final_size = 64
-    label_split_value = '0.4'
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_l{}_augs_both_normed_activated_wide_aws'.format(initial_size, final_size, label_split_value)
+    train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+    test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_regr'.format(initial_size, final_size)
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -29,7 +35,7 @@ if __name__ == '__main__':
     new_tfrecords = False
 
     if new_tfrecords:
-        panoptes_to_tfrecord.save_panoptes_to_tfrecord()
+        panoptes_to_tfrecord.save_panoptes_to_tfrecord(gc.catalog_loc, gc.tfrecord_dir)
 
     run_config = run_estimator.RunEstimatorConfig(
         initial_size=initial_size,
@@ -49,12 +55,13 @@ if __name__ == '__main__':
 
     train_config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc='data/panoptes_featured_s{}_l{}_train.tfrecord'.format(initial_size, label_split_value),
+        tfrecord_loc=train_tfrecord_loc,
         label_col=run_config.label_col,
-        stratify=True,
+        stratify=False,
         shuffle=True,
         repeat=True,
         stratify_probs=None,
+        regression=True,
         geometric_augmentation=True,
         photographic_augmentation=True,
         max_zoom=1.2,
@@ -64,16 +71,17 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
+    # train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
-        tfrecord_loc='data/panoptes_featured_s{}_l{}_test.tfrecord'.format(initial_size, label_split_value),
+        tfrecord_loc=test_tfrecord_loc,
         label_col=run_config.label_col,
-        stratify=True,
+        stratify=False,
         shuffle=True,
         repeat=False,
         stratify_probs=None,
+        regression=True,
         geometric_augmentation=True,
         photographic_augmentation=True,
         max_zoom=1.2,
@@ -83,9 +91,9 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
+    # eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
-    model = bayesian_estimator_funcs.BayesianBinaryModel(
+    model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,
         optimizer=tf.train.AdamOptimizer,
         conv1_filters=128,
@@ -96,6 +104,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
+        regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
     )

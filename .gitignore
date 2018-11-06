@@ -30,3 +30,4 @@ build/*
 *shard_*.tfrecord
 acquired_shard_*
 .vscode/*
+*.pb

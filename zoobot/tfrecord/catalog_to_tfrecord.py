@@ -93,7 +93,6 @@ def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_
         Image.FLIP_TOP_BOTTOM)
     matrix = np.array(final_pil_img)
 
-    # label = int(row[label_col])  # TODO don't do this within the row->serialize!
     extra_kwargs = {}
     for col in columns_to_save:
         extra_kwargs.update({col: row[col]})

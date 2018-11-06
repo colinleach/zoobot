@@ -75,12 +75,22 @@ def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
         writer.close()
 
 
-@pytest.fixture()
-def model(size):
-    # TODO use pytest repeating testing features to try all three?
-    # return dummy_image_estimator.dummy_model_fn
-    # return estimator_funcs.four_layer_binary_classifier
-    return bayesian_estimator_funcs.BayesianBinaryModel(image_dim=size)
+@pytest.fixture(params=[
+    # 'dummy',
+    # 'basic', 
+    'bayesian_binary', 
+    'bayesian_regression'
+    ])
+def model(request, size):
+    # if request.param == 'dummy':
+    #     return dummy_image_estimator.dummy_model_fn
+    # if request.param == 'basic':
+    #     return estimator_funcs.four_layer_binary_classifier  # TODO move elsewhere?
+    if request.param == 'bayesian_binary':
+        return bayesian_estimator_funcs.BayesianModel(image_dim=size, regression=False)
+    if request.param == 'bayesian_regression':
+        return bayesian_estimator_funcs.BayesianModel(image_dim=size, regression=True)
+
 
 @pytest.fixture()
 def run_config(size, log_dir):
@@ -113,13 +123,21 @@ def features(n_examples):
         }
 
 
-@pytest.fixture()
-def labels(n_examples):
-    return tf.constant(
-        np.random.randint(low=0, high=2, size=n_examples),
-        shape=[n_examples],
-        dtype=tf.int32)
-
+@pytest.fixture(params=[
+    'binary', 
+    'continuous'
+    ])
+def labels(request, n_examples):
+    if request.param == 'binary':
+        return tf.constant(
+            np.random.randint(low=0, high=2, size=n_examples),
+            shape=[n_examples],
+            dtype=tf.int32)
+    if request.param == 'continuous':
+        return tf.constant(
+            np.random.uniform(size=n_examples),
+            shape=[n_examples],
+            dtype=tf.float32)
 
 def test_run_experiment(
     run_config, 

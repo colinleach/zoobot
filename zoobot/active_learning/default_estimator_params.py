@@ -68,7 +68,7 @@ def get_run_config(active_config):
     )
     eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
 
-    model = bayesian_estimator_funcs.BayesianBinaryModel(
+    model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,
         optimizer=tf.train.AdamOptimizer,
         conv1_filters=128,

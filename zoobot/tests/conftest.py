@@ -64,8 +64,15 @@ def random_labels(n_examples):
 def parsed_example(visual_check_image_data):
     return {
         'matrix': np.array(visual_check_image_data).flatten(),  # Parsed matrix is a 1D vector, needs reshaping
-        'label': 1
+        'label': 1.
     }
+
+
+
+@pytest.fixture()
+def parsed_binary_example(parsed_example):
+    parsed_example['label'] = 1
+    return parsed_example
 
 
 @pytest.fixture()
@@ -148,7 +155,7 @@ def tfrecord_dir(tmpdir):
 def serialized_matrix_label_example(size, channels):
     return create_tfrecord.serialize_image_example(
         matrix=np.random.rand(size, size, channels),
-        label=1
+        label=1.
         )
 
 
@@ -164,7 +171,7 @@ def serialized_matrix_id_example(size, channels, unique_id):
 def serialized_matrix_label_id_example(size, channels, unique_id):
     return create_tfrecord.serialize_image_example(
         matrix=np.random.rand(size, size, channels),
-        label=1,
+        label=1.,
         id_str=unique_id
         )
 
@@ -254,7 +261,7 @@ def unique_id():  # not currently used
 def catalog(label_col, id_col, unique_id):
 
     zoo1 = {
-        label_col: 1,
+        label_col: 1.,
         'ra': 12.0,
         'dec': -1.0,
         'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
@@ -263,7 +270,7 @@ def catalog(label_col, id_col, unique_id):
     }
 
     zoo2 = {
-        label_col: 0,
+        label_col: 0.,
         'ra': 15.0,
         'dec': -1.0,
         'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),

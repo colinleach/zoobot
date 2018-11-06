@@ -22,6 +22,7 @@ class InputConfig():
             repeat,
             stratify,
             stratify_probs,
+            regression=True,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
             max_zoom=1.1,
@@ -42,6 +43,12 @@ class InputConfig():
         self.repeat = repeat
         self.stratify = stratify
         self.stratify_probs = stratify_probs
+        self.regression = regression
+
+        if regression:
+            assert not stratify
+        if stratify:
+            assert not regression
 
         self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
         self.shift_range = shift_range  # not yet implemented
@@ -99,7 +106,7 @@ def load_batches(config):
         (tf.Tensor, tf.Tensor)
     """
     with tf.name_scope('load_batches_{}'.format(config.name)):
-        feature_spec = matrix_label_feature_spec(config.initial_size, config.channels)
+        feature_spec = matrix_label_feature_spec(config.initial_size, config.channels, float_label=config.regression)
 
         dataset = load_dataset(config.tfrecord_loc, feature_spec)
 
@@ -113,6 +120,9 @@ def load_batches(config):
         iterator = dataset.make_one_shot_iterator()
         batch = iterator.get_next()
         batch_data, batch_labels = batch['matrix'], batch['label']
+
+        if not config.regression:
+            batch_labels = tf.cast(batch_labels, tf.int64)
 
         if config.stratify:
             #  warning - stratify only works if initial probabilities are specified
@@ -181,10 +191,14 @@ def stratify_images(image, label, batch_size, init_probs):
     return data_batch, label_batch
 
 
-def matrix_label_feature_spec(size, channels):
+def matrix_label_feature_spec(size, channels, float_label=True):
+    if float_label:
+        label_dtype = tf.float32
+    else:
+        label_dtype = tf.int64
     return {
         "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64)}
+        "label": tf.FixedLenFeature((), label_dtype)}
 
 
 def matrix_feature_spec(size, channels):  # used for predict mode
