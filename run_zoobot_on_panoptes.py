@@ -36,8 +36,6 @@ if __name__ == '__main__':
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
-
-
     run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_regr'.format(initial_size, final_size)
 
     logging.basicConfig(

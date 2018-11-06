@@ -40,7 +40,7 @@ Copy public DNS from instance details
 
 If you get the error "Permission denied (publickey)"
 - Check the username is `ubuntu`, not `ec2-user`, or vica versa
-- Re-run `aws configure` on local machine using an [active id](https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials)
+- Re-run `aws configure` on local machine using an [active id](https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials). Choose us-east-1 as region and json as output format.
 
 
 ## Zoobot Installation
@@ -48,8 +48,8 @@ If you get the error "Permission denied (publickey)"
 From root...
 
 Get the Zoobot directory from git
-<!-- `git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
-`git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout active-learning-regression`
+<!-- `git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
+`git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression`
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
@@ -57,6 +57,9 @@ Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 imag
 `source activate tensorflow_p36`
 `pip install -r zoobot/requirements.txt`
 `pip install -e $root/zoobot`
+<!-- extra requirement not on pypi -->
+`git clone https://github.com/mwalmsley/shared-astro-utilities.git`
+`pip install -e $root/shared-astro-utilities`
 
 
 Also log in to the S3 console:
@@ -119,10 +122,10 @@ On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
 `ssh -i $key -L 6006:127.0.0.1:6006 $user@$public_dns`
 
 Then, via that SSH connection (or another), run
+`source activate tensorflow_p36`
 `tensorboard --logdir=.`
 to run a Tensorboard server showing both baseline and real runs, if available
 
 
 ## Optional: Save results to S3
-
 `aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/runs/$run_dir`
