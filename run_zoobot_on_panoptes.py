@@ -1,5 +1,6 @@
 import logging
 import os
+import argparse
 
 import tensorflow as tf
 import pandas as pd
@@ -16,13 +17,24 @@ from zoobot.settings import GlobalConfig
 
 if __name__ == '__main__':
 
-    ec2 = False
+    parser = argparse.ArgumentParser(description='Run Zoobot on basic panoptes split')
+    parser.add_argument('--ec2', dest='ec2', type=bool,
+                    help='Running on EC2?')
+    args = parser.parse_args()
+
+    ec2 = args.ec2
+    if ec2:
+        train_tfrecord_loc = 'data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = 'data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+    else:
+        train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+
     gc = GlobalConfig(ec2)
     initial_size = 128
     channels = 3
     final_size = 64
-    train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-    test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+
 
     run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_regr'.format(initial_size, final_size)
 

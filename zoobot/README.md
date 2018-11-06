@@ -48,7 +48,8 @@ If you get the error "Permission denied (publickey)"
 From root...
 
 Get the Zoobot directory from git
-`git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout bayesian-cnn`
+<!-- `git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
+`git clone https://github.com/RustyPanda/zoobot.git && cd zoobot && git checkout active-learning-regression`
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
