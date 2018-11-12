@@ -17,4 +17,6 @@ def samples_to_posterior(samples):
 
 
 def samples_to_interval(samples, alpha=0.05):
+    # for sample sizes below a couple of hundred, this is biased towards over-confidence
+    # WARNING assumes univariate distribution - will likely need to be done with statsmodels instead
     return pymc3.stats.hpd(samples, alpha)

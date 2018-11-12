@@ -15,9 +15,14 @@ def samples_scale():
     return 0.1
 
 
+@pytest.fixture(params=[5, 50, 1000])
+def n_samples(request):
+    return request.param
+
+
 @pytest.fixture()
 def samples(samples_mean, samples_scale):
-    return np.random.normal(loc=samples_mean, scale=samples_scale, size=50)
+    return np.random.normal(loc=samples_mean, scale=samples_scale, size=(50, 50)).mean(axis=1)
 
 
 def test_samples_to_posterior(samples, samples_mean, samples_scale):
