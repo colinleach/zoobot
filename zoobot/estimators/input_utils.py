@@ -5,6 +5,7 @@ import pandas as pd
 import tensorflow as tf
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
+from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_label_feature_spec
 
 
 class InputConfig():
@@ -139,7 +140,7 @@ def load_batches(config):
 
         batch_images = tf.reshape(
             batch_data,
-            [-1, config.initial_size, config.initial_size,
+            [config.batch_size, config.initial_size, config.initial_size,
              config.channels])
         tf.summary.image('a_original', batch_images)
 
@@ -189,21 +190,6 @@ def stratify_images(image, label, batch_size, init_probs):
         queue_capacity=batch_size * 100
     )
     return data_batch, label_batch
-
-
-def matrix_label_feature_spec(size, channels, float_label=True):
-    if float_label:
-        label_dtype = tf.float32
-    else:
-        label_dtype = tf.int64
-    return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
-        "label": tf.FixedLenFeature((), label_dtype)}
-
-
-def matrix_feature_spec(size, channels):  # used for predict mode
-    return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
 
 
 def augment_images(images, input_config):

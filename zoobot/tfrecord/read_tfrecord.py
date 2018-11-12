@@ -32,11 +32,19 @@ def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):
     return data
 
 
-def matrix_label_feature_spec(size, channels):
+def matrix_feature_spec(size, channels):  # used for predict mode
+    return {
+        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
+
+
+def matrix_label_feature_spec(size, channels, float_label=True):
+    if float_label:
+        label_dtype = tf.float32
+    else:
+        label_dtype = tf.int64
     return {
         "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64)
-        }
+        "label": tf.FixedLenFeature((), label_dtype)}
 
 
 def matrix_id_feature_spec(size, channels):
@@ -77,14 +85,16 @@ def show_examples(examples, size, channels):
 
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
-    im = example['matrix'].reshape(size, size, channels) 
+    im = example['matrix'].reshape(size, size, channels).astype(int)
+    ax.imshow(im)
+
     label = example['label']
-    name_mapping = {
-        0: 'Feat.',
-        1: 'Smooth'
-    }
-    try:
-        ax.imshow(im)
-    except ValueError: 
-        ax.imshow(im.astype(int))
-    # ax.text(60, 110, name_mapping[label], fontsize=16, color='r')
+    if isinstance(label, int):
+        name_mapping = {
+            0: 'Feat.',
+            1: 'Smooth'
+        }
+        label_str = name_mapping[label]
+    else:
+        label_str = '{:.2}'.format(label)
+    ax.text(60, 110, label_str, fontsize=16, color='r')

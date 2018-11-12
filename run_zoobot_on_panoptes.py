@@ -54,7 +54,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1000,
+        epochs=1,
         train_steps=30,
         eval_steps=3,
         batch_size=128,
@@ -116,6 +116,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
+        predict_dropout=0.0,  # changed from 0.5
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
@@ -126,19 +127,15 @@ if __name__ == '__main__':
     run_config.model = model
     assert run_config.is_ready_to_train()
 
-
-
     # logging.info('Parameters used: ')
     for config_object in [run_config, train_config, eval_config, model]:
         for key, value in config_object.asdict().items():
             logging.info('{}: {}'.format(key, value))
         logging.info('Next object \n')
 
-    run_estimator.run_estimator(run_config)
 
     # start fresh? No!
-    # run_config.start_fresh = False
-    # run_config.log_dir = 'runs/wide_restart'
-    # assert os.path.exists(run_config.log_dir)
+    run_config.start_fresh = False
 
+    run_estimator.run_estimator(run_config)
     # warm_start.restart_estimator(run_config)

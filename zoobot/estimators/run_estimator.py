@@ -166,42 +166,20 @@ def run_estimator(config):
         # config=fast_checkpoint_config
     )
 
-    # can't move out of run_estimator, uses closure to avoid passing config as argument
-    # def serving_input_receiver_fn():
-    #     """
-    #     An input receiver that expects a serialized tf.Example.
-    #     """
-    #     serialized_tf_example = tf.placeholder(dtype=tf.string,
-    #                                            name='input_example_tensor')
-    #     receiver_tensors = {'examples': serialized_tf_example}  # one or many??
-    #     feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
-    #     features = tf.parse_example(serialized_tf_example, feature_spec)
 
-    #     images = tf.reshape(
-    #         features['matrix'],
-    #         [-1, config.initial_size, config.initial_size,
-    #          config.channels])
-
-    #     new_features = input_utils.preprocess_batch(
-    #         images,
-    #         config=config.eval_config
-    #     )
-    #     return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
-
-    
     def serving_input_receiver_fn_image():
         """
-        An input receiver that expects an image array
+        An input receiver that expects an image array (batch, size, size, channels)
         """
         images = tf.placeholder(
             dtype=tf.float32,
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
-        receiver_tensors = {'examples': images}
+        receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect
 
-        new_features = input_utils.preprocess_batch(
+        new_features = input_utils.preprocess_batch(  # apply greyscale, augment, etc
             images,
-            config=config.eval_config
+            config=config.eval_config  # using eval config setup
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 
@@ -209,7 +187,7 @@ def run_estimator(config):
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)
 
-    train_logging, eval_logging, _ = config.model.logging_hooks
+    train_logging, eval_logging, predict_logging = config.model.logging_hooks
 
     eval_loss_history = []
     epoch_n = 0
@@ -241,7 +219,7 @@ def run_estimator(config):
         # logging.debug('Predictions ({}): '.format(len(prediction_rows)))
         # for row in prediction_rows[:10]:
         #     logging.info(row)
-
+        
         if (epoch_n % config.save_freq == 0) or (epoch_n == config.epochs):
             save_model(estimator, config, epoch_n, serving_input_receiver_fn_image)
 
@@ -290,6 +268,3 @@ def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
     estimator.export_savedmodel(
         export_dir_base=config.log_dir,
         serving_input_receiver_fn=serving_input_receiver_fn)
-
-
-# run_dir=run_si128_sf64_its10_label512_shards1_baseline

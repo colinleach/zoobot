@@ -347,9 +347,8 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
         units=1, 
         # activation=tf.nn.relu, 
         name='layer_after_dropout')
-    # clipped = tf.clip_by_value(rectified, 0., 1., name='clipped_after_relu')
+
     tf.summary.histogram('layer_after_dropout', linear)
-    # tf.summary.histogram('clipped_after_relu', clipped)
 
     prediction = tf.squeeze(linear, 1)
     response = {

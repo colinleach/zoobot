@@ -15,6 +15,9 @@ import seaborn as sns
 
 def load_predictor(predictor_loc):
     """Load a saved model as a callable mapping parsed subjects to class scores
+    PredictorFromSavedModel expects feeddict of form {examples: batch of data}
+    Batch of data should match predict input of estimator, e.g. (?, size, size, channels) shape
+    Where '?' is the (flexible) batch dimension
 
     Args:
         predictor_loc (str): location of predictor (i.e. saved model)
@@ -27,7 +30,8 @@ def load_predictor(predictor_loc):
     # expects image matrix, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
     # TODO stop flipping, regression problem
-    return lambda x: 1 - model_unwrapped({'examples': x})['predictions_for_true']
+
+    return lambda x: model_unwrapped({'examples': x})['prediction']
 
 
 def get_samples_of_subjects(model, subjects, n_samples):
@@ -44,8 +48,8 @@ def get_samples_of_subjects(model, subjects, n_samples):
     results = np.zeros((len(subjects), n_samples))
 
     for nth_run in range(n_samples):  # for each desired sample,
+        responses = model(subjects) 
         results[:, nth_run] = model(subjects)  # predict once on every example
-
     return results
 
 
@@ -59,6 +63,7 @@ def entropy(probabilites):
         float: total entropy in distribution
     """
     # do p * log p for every sample, sum for each subject
+    probabilites = np.clip(probabilites, 0., 1.)
     return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
 
 
@@ -74,8 +79,6 @@ def get_acquisition_func(model, n_samples):
     def acquisition_callable(subjects):  # subjects must be a list of matrices
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
         values_array = entropy(samples)  # calculate on ndarray for speed
-        print(values_array)
-        print(values_array[0])
         return [float(values_array[n]) for n in range(len(values_array))]  # return a list
     return acquisition_callable
 
@@ -87,13 +90,12 @@ def view_samples(scores, labels):
         scores (np.array): class scores, of shape (n_subjects, n_samples)
         labels (np.array): class labels, of shape (n_subjects)
     """
-    correct = (np.mean(scores, axis=1) > 0.5) == labels
+    # correct = (np.mean(scores, axis=1) > 0.5) == labels
+    entropies = entropy(scores)  # fast array calculation on all results, look up as needed later
+
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True)
     for galaxy_n, ax in enumerate(axes):
         hist_data = ax.hist(scores[galaxy_n])
-        c='r'
-        if correct[galaxy_n]:
-            c='g'
 
         lbound = 0
         ubound = 0.5
@@ -101,10 +103,18 @@ def view_samples(scores, labels):
             lbound = 0.5
             ubound = 1
 
-        ax.axvspan(lbound, ubound, alpha=0.1, color=c)
+        ax.axvline(labels[galaxy_n], c='k')
+        ax.axvline(labels[galaxy_n], c='r')
+        # c='r'
+        # if correct[galaxy_n]:
+        #     c='g'
+        # ax.axvspan(lbound, ubound, alpha=0.1, color=c)
+
         ax.text(
             0.7, 
             0.75 * np.max(hist_data[0]),
-            'H: {}'.format(str(entropy(scores[galaxy_n]))[:4])
-            )
+            'H: {:.2}'.format(entropies[galaxy_n])
+        )
         ax.set_xlim([0, 1])
+
+    return fig, axes
