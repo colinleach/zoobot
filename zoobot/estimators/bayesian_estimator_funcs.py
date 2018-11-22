@@ -199,17 +199,17 @@ class BayesianModel():
         else:  # Calculate Loss for TRAIN and EVAL modes)
             # only feedforward once for one set of predictions
 
-            logits, response = dense_to_multiclass_prediction(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
-            onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
-            onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                labels=onehot_labels,
-                logits=logits,
-                name='model/layer4/loss')
+            with tf.variable_scope("training_loss"):
+                logits, response = dense_to_multiclass_prediction(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
+                onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
+                onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
+                loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+                    labels=onehot_labels,
+                    logits=logits,
+                    name='model/layer4/loss')
 
-
-            # loss = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logits, name='model/layer4/loss')
-            mean_loss = tf.reduce_mean(loss, name='mean_loss')
+                # loss = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logits, name='model/layer4/loss')
+                mean_loss = tf.reduce_mean(loss, name='mean_loss')
 
             # create dummy variables that match names in predict mode
             # TODO this is potentially wasteful as we don't actually need the feedforwards.

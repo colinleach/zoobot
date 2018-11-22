@@ -36,7 +36,7 @@ if __name__ == '__main__':
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_no_norm'.format(initial_size, final_size)
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_no_pred_dropout'.format(initial_size, final_size)
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=0.0,  # changed from 0.5
+        predict_dropout=0.00001,  # changed from 0.5
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
