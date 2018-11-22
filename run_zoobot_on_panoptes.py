@@ -36,7 +36,7 @@ if __name__ == '__main__':
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_regr'.format(initial_size, final_size)
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_norm'.format(initial_size, final_size)
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -54,7 +54,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=10,  # for debugging
+        epochs=3000,  # for debugging
         train_steps=30,
         eval_steps=3,
         batch_size=128,
