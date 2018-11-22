@@ -145,7 +145,7 @@ class BayesianModel():
         """
         dropout_rate = self.dense1_dropout
         if mode == tf.estimator.ModeKeys.PREDICT:
-            dropout_rate = self.predict_dropout)
+            dropout_rate = self.predict_dropout
 
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
 
