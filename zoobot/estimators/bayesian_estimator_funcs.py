@@ -214,8 +214,8 @@ class BayesianModel():
             # create dummy variables that match names in predict mode
             # TODO this is potentially wasteful as we don't actually need the feedforwards.
             # Unclear if it executes - check.
-            with tf.variable_scope("sample"):
-                _, _ = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
+            # with tf.variable_scope("sample"):
+            #     _, _ = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
 
             return response, mean_loss
 
