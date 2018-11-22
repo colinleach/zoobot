@@ -112,6 +112,7 @@ class BayesianModel():
                 # important to explicitly use within update_ops for batch norm to work
                 # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
                 update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                logging.warning(update_ops)
                 with tf.control_dependencies(update_ops):
                     train_op = optimizer.minimize(
                         loss=loss,
@@ -183,7 +184,6 @@ class BayesianModel():
         Returns:
 
         """
-
         # dense1 = input_to_dense(features, mode, self)  # run from input to dense1 output
         dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
 
@@ -192,8 +192,9 @@ class BayesianModel():
 
             with tf.variable_scope("sample"):
                 # Feedforward from dense1. Always apply dropout.
-                _, sample_predictions = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.predict_dropout)
-            return sample_predictions, None  # no loss, as labels not known (in general)
+                _, response = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.predict_dropout)
+                response.update({'features': features})  # for now, also export the model input
+            return response, None  # no loss, as labels not known (in general)
 
         else:  # Calculate Loss for TRAIN and EVAL modes)
             # only feedforward once for one set of predictions
@@ -233,6 +234,8 @@ def input_to_dense_normed(features, mode, model):
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
 
+    logging.info(mode)
+
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=model.conv1_filters,
@@ -240,7 +243,9 @@ def input_to_dense_normed(features, mode, model):
         padding=model.padding,
         activation=None,
         name='model/layer1/conv1')
-    norm1 = tf.layers.batch_normalization(conv1)
+    norm1 = tf.layers.batch_normalization(
+        conv1,
+        training = mode == tf.estimator.ModeKeys.TRAIN)
     # TODO Does batch norm apply activation as well? I assume not, but model ran okay without any explicit activ...
     relu1 = model.conv1_activation(norm1)
 
@@ -257,7 +262,9 @@ def input_to_dense_normed(features, mode, model):
         padding=model.padding,
         activation=None,
         name='model/layer2/conv2')
-    norm2 = tf.layers.batch_normalization(conv2)
+    norm2 = tf.layers.batch_normalization(
+        conv2,
+        training = mode == tf.estimator.ModeKeys.TRAIN)
     relu2 = model.conv2_activation(norm2)
     pool2 = tf.layers.max_pooling2d(
         inputs=relu2,
@@ -272,7 +279,9 @@ def input_to_dense_normed(features, mode, model):
         padding=model.padding,
         activation=None,
         name='model/layer3/conv3')
-    norm3 = tf.layers.batch_normalization(conv3)
+    norm3 = tf.layers.batch_normalization(
+        conv3,
+        training = mode == tf.estimator.ModeKeys.TRAIN)
     relu3 = model.conv3_activation(norm3)
     pool3 = tf.layers.max_pooling2d(
         inputs=relu3,

@@ -2,11 +2,42 @@ import logging
 import os
 import shutil
 import time
+import copy
 from functools import partial
 
 import numpy as np
 import tensorflow as tf
 from zoobot.estimators import input_utils, bayesian_estimator_funcs
+
+
+
+def predict_input_func():
+    # with tf.Session() as sess:
+    config = input_utils.InputConfig(
+        name='predict',
+        tfrecord_loc='/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s128_lfloat_test.tfrecord',
+        label_col='label',
+        stratify=False,
+        shuffle=False,
+        repeat=False,
+        stratify_probs=None,
+        regression=True,
+        geometric_augmentation=True,
+        photographic_augmentation=True,
+        max_zoom=1.2,
+        fill_mode='wrap',
+        batch_size=128,
+        initial_size=128,
+        final_size=64,
+        channels=3,
+    )
+    batch_images, batch_labels = input_utils.load_batches(config)
+    # not going through servinginputreciever, so need to preprocess 'manually'
+    preprocessed_batch_images = input_utils.preprocess_batch(batch_images, config)
+    return preprocessed_batch_images, batch_labels
+    # features, labels = sess.run([preprocessed_batch_images, batch_labels])
+    # return features, labels
+
 
 
 class RunEstimatorConfig():
@@ -177,11 +208,35 @@ def run_estimator(config):
             name='images')
         receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect
 
+        predict_config = copy.copy(config.eval_config)
+        predict_config.name = 'predict'
+        predict_config.shuffle = False
+        predict_config.repeat = False
+
         new_features = input_utils.preprocess_batch(  # apply greyscale, augment, etc
             images,
             config=config.eval_config  # using eval config setup
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
+
+    # def serving_input_receiver_fn_record():
+    #     """
+    #     An input receiver that expects an image array (batch, size, size, channels)
+    #     Doesn't work as tf doesn't allow graph to be set using placeholder for dataset tfrecord loc
+    #     """
+    #     record = tf.placeholder(
+    #         dtype=tf.string,
+    #         shape=(1), 
+    #         name='record')
+    #     receiver_tensors = {'examples': record}  # dict of tensors the predictor will expect
+
+    #     predict_config = copy.copy(config.eval_config)
+    #     predict_config.repeat = False
+    #     predict_config.name = 'predict'
+    #     predict_config.tfrecord_loc = record
+    #     preprocessed_batch_features, batch_labels = input_utils.get_input(predict_config)
+    #     return tf.estimator.export.ServingInputReceiver(preprocessed_batch_features, receiver_tensors)
 
 
     train_input_partial = partial(train_input, input_config=config.train_config)
@@ -211,14 +266,6 @@ def run_estimator(config):
         )
         eval_loss_history.append(eval_metrics['loss'])
 
-        # predictions = estimator.predict(
-        #     eval_input_partial,
-        #     hooks=predict_logging
-        # )
-        # prediction_rows = list(predictions)
-        # logging.debug('Predictions ({}): '.format(len(prediction_rows)))
-        # for row in prediction_rows[:10]:
-        #     logging.info(row)
         
         if (epoch_n % config.save_freq == 0) or (epoch_n == config.epochs):
             save_model(estimator, config, epoch_n, serving_input_receiver_fn_image)
@@ -234,6 +281,18 @@ def run_estimator(config):
 
         logging.info('End epoch {}'.format(epoch_n))
         epoch_n += 1
+
+    logging.info('Making final predictions')
+    with open('predictions_new_norm_final.txt', 'w') as f:
+        predictions = estimator.predict(
+            predict_input_func,
+            hooks=predict_logging
+        )
+        prediction_rows = list(predictions)
+        logging.info('Predictions ({}): '.format(len(prediction_rows)))
+        for row in prediction_rows:
+            # logging.info(row)
+            f.write('{}\n'.format(row))
 
     logging.info('All epochs completed - finishing gracefully')
 

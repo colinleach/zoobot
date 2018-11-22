@@ -46,11 +46,23 @@ def get_samples_of_subjects(model, subjects, n_samples):
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
     results = np.zeros((len(subjects), n_samples))
-
-    for nth_run in range(n_samples):  # for each desired sample,
-        responses = model(subjects) 
-        results[:, nth_run] = model(subjects)  # predict once on every example
+    # temp: enforce batch size of 1
+    for subject_n in range(len(subjects)):
+        subject = subjects[subject_n]
+        for sample_n in range(n_samples):
+            results[subject_n, sample_n] = model(np.expand_dims(subject, axis=0))
     return results
+
+    # for nth_run in range(n_samples):  # for each desired sample,
+    #     results[:, nth_run] = model(subjects)  # predict once on every example
+    # return results
+
+
+# def get_samples_of_tfrecord(model, tfrecord, n_samples):
+#     samples = []
+#     for n in range(n_samples):
+#         samples.append(model(tfrecord))
+#     return np.array(samples)
 
 
 def entropy(probabilites):

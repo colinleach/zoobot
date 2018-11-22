@@ -54,7 +54,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1,
+        epochs=10,  # for debugging
         train_steps=30,
         eval_steps=3,
         batch_size=128,
@@ -83,7 +83,6 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    # train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
@@ -103,7 +102,6 @@ if __name__ == '__main__':
         final_size=run_config.final_size,
         channels=run_config.channels,
     )
-    # eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,

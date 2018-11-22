@@ -116,32 +116,32 @@ def load_batches(config):
 
         if config.repeat:
             dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
+
         dataset = dataset.batch(config.batch_size)
         dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
         iterator = dataset.make_one_shot_iterator()
         batch = iterator.get_next()
         batch_data, batch_labels = batch['matrix'], batch['label']
 
-        if not config.regression:
-            batch_labels = tf.cast(batch_labels, tf.int64)
+        # if not config.regression:
+        #     batch_labels = tf.cast(batch_labels, tf.int64)
 
-        if config.stratify:
-            #  warning - stratify only works if initial probabilities are specified
-            batch_images_stratified, batch_labels_stratified = stratify_images(
-                batch_data,
-                batch_labels,
-                config.batch_size,
-                config.stratify_probs
-            )
-            batch_data = batch_images_stratified
-            batch_labels = batch_labels_stratified
-        else:
-            assert config.stratify_probs is None  # check in case user has accidentally forgotten to activate stratify
+        # if config.stratify:
+        #     #  warning - stratify only works if initial probabilities are specified
+        #     batch_images_stratified, batch_labels_stratified = stratify_images(
+        #         batch_data,
+        #         batch_labels,
+        #         config.batch_size,
+        #         config.stratify_probs
+        #     )
+        #     batch_data = batch_images_stratified
+        #     batch_labels = batch_labels_stratified
+        # else:
+        #     assert config.stratify_probs is None  # check in case user has accidentally forgotten to activate stratify
 
         batch_images = tf.reshape(
             batch_data,
-            [config.batch_size, config.initial_size, config.initial_size,
-             config.channels])
+            [-1, config.initial_size, config.initial_size, config.channels])  # may not get full batch at end of dataset
         tf.summary.image('a_original', batch_images)
 
     assert len(batch_images.shape) == 4
@@ -155,6 +155,8 @@ def preprocess_batch(batch_images, config):
 
         greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
         assert greyscale_images.shape[1] == config.initial_size
+        assert greyscale_images.shape[2] == config.initial_size
+        assert greyscale_images.shape[3] == 1
         tf.summary.image('b_greyscale', greyscale_images)
 
         augmented_images = augment_images(greyscale_images, config)
