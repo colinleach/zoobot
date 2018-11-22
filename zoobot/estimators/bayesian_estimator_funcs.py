@@ -148,27 +148,27 @@ class BayesianModel():
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
 
-            with tf.variable_scope("sample"):
+            with tf.variable_scope("predict_samples"):
                 # Feedforward from dense1. Always apply dropout.
                 _, sample_predictions = dense_to_regression(dense1, labels, dropout_on=True, dropout_rate=self.predict_dropout)
             return sample_predictions, None  # no loss, as labels not known (in general)
 
         else:  # Calculate Loss for TRAIN and EVAL modes)
             # only feedforward once for one set of predictions
+            with tf.variable_scope("training_loss"):
+                predictions, response = dense_to_regression(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
+                labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
 
-            predictions, response = dense_to_regression(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
-            labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
+                # Calculate loss using mean squared error
+                mean_loss = tf.losses.mean_squared_error(labels, predictions)
 
-              # Calculate loss using mean squared error
-            mean_loss = tf.losses.mean_squared_error(labels, predictions)
+                # create dummy variables that match names in predict mode
+                # TODO this is potentially wasteful as we don't actually need the feedforwards.
+                # Unclear if it executes - check.
+                # with tf.variable_scope("sample"):
+                #     _, _ = dense_to_regression(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
 
-            # create dummy variables that match names in predict mode
-            # TODO this is potentially wasteful as we don't actually need the feedforwards.
-            # Unclear if it executes - check.
-            with tf.variable_scope("sample"):
-                _, _ = dense_to_regression(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
-
-            return response, mean_loss
+                return response, mean_loss
 
     def bayesian_classifier(self, features, labels, mode):
         """
