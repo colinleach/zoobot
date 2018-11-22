@@ -2,14 +2,13 @@
 
 ## Setup
 
-Make sure aws cli is installed:
+<!-- Make sure aws cli is installed: -->
+<!-- `pip install aws` -->
+<!-- `pip install awscli` -->
+<!-- `aws configure` (add ID, secret key, region=us-east-1, format=json) -->
 
-`pip install aws`
-
-`pip install awscli`
-
-`aws configure` (add ID, secret key, region=us-east-1, format=json)
-
+Make sure the instance has an IAM role with S3 read/write permissions attached.
+This can be done post-launch.
 
 ## Launch an instance. 
 
@@ -40,7 +39,7 @@ Copy public DNS from instance details
 
 If you get the error "Permission denied (publickey)"
 - Check the username is `ubuntu`, not `ec2-user`, or vica versa
-- Re-run `aws configure` on local machine using an [active id](https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials). Choose us-east-1 as region and json as output format.
+<!-- - Re-run `aws configure` on local machine using an [active id](https://console.aws.amazon.com/iam/home?#/users/mikewalmsley?section=security_credentials). Choose us-east-1 as region and json as output format. -->
 
 
 ## Zoobot Installation
@@ -49,7 +48,7 @@ From root...
 
 Get the Zoobot directory from git
 <!-- `git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
-`git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression`
+`git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression && cd`
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
@@ -62,8 +61,8 @@ Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 imag
 `pip install -e $root/shared-astro-utilities`
 
 
-Also log in to the S3 console:
-`aws configure`
+<!-- Also log in to the S3 console: -->
+<!-- `aws configure` -->
 
 
 You can either make the shards directly, or download them from S3 (faster):

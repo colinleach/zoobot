@@ -143,7 +143,7 @@ class BayesianModel():
         Returns:
 
         """
-        dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
+        dense1 = input_to_dense(features, mode, self)  # use batch normalisation
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -184,8 +184,8 @@ class BayesianModel():
         Returns:
 
         """
-        # dense1 = input_to_dense(features, mode, self)  # run from input to dense1 output
-        dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
+        dense1 = input_to_dense(features, mode, self)  # run from input to dense1 output
+        # dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -220,9 +220,9 @@ class BayesianModel():
             return response, mean_loss
 
 
-def input_to_dense_normed(features, mode, model):
+def input_to_dense(features, mode, model):
     """
-    # TODO refactor to avoid duplication with input_to_dense, or always norm
+
     Args:
         features ():
         mode():
@@ -234,23 +234,15 @@ def input_to_dense_normed(features, mode, model):
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
 
-    logging.info(mode)
-
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=model.conv1_filters,
         kernel_size=[model.conv1_kernel, model.conv1_kernel],
         padding=model.padding,
-        activation=None,
+        activation=model.conv1_activation,
         name='model/layer1/conv1')
-    norm1 = tf.layers.batch_normalization(
-        conv1,
-        training = mode == tf.estimator.ModeKeys.TRAIN)
-    # TODO Does batch norm apply activation as well? I assume not, but model ran okay without any explicit activ...
-    relu1 = model.conv1_activation(norm1)
-
     pool1 = tf.layers.max_pooling2d(
-        inputs=relu1,
+        inputs=conv1,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
@@ -260,14 +252,10 @@ def input_to_dense_normed(features, mode, model):
         filters=model.conv2_filters,
         kernel_size=[model.conv2_kernel, model.conv2_kernel],
         padding=model.padding,
-        activation=None,
+        activation=model.conv2_activation,
         name='model/layer2/conv2')
-    norm2 = tf.layers.batch_normalization(
-        conv2,
-        training = mode == tf.estimator.ModeKeys.TRAIN)
-    relu2 = model.conv2_activation(norm2)
     pool2 = tf.layers.max_pooling2d(
-        inputs=relu2,
+        inputs=conv2,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
@@ -277,14 +265,10 @@ def input_to_dense_normed(features, mode, model):
         filters=model.conv3_filters,
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
         padding=model.padding,
-        activation=None,
+        activation=model.conv3_activation,
         name='model/layer3/conv3')
-    norm3 = tf.layers.batch_normalization(
-        conv3,
-        training = mode == tf.estimator.ModeKeys.TRAIN)
-    relu3 = model.conv3_activation(norm3)
     pool3 = tf.layers.max_pooling2d(
-        inputs=relu3,
+        inputs=conv3,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer3/pool3')
@@ -306,6 +290,96 @@ def input_to_dense_normed(features, mode, model):
         name='model/layer4/dense1')
 
     return dense1
+
+
+
+
+# def input_to_dense_normed(features, mode, model):
+#     """
+#     # TODO refactor to avoid duplication with input_to_dense, or always norm
+#     Args:
+#         features ():
+#         mode():
+#         model (BayesianBinaryModel):
+
+#     Returns:
+
+#     """
+#     input_layer = features["x"]
+#     tf.summary.image('model_input', input_layer, 1)
+
+#     logging.info(mode)
+
+#     conv1 = tf.layers.conv2d(
+#         inputs=input_layer,
+#         filters=model.conv1_filters,
+#         kernel_size=[model.conv1_kernel, model.conv1_kernel],
+#         padding=model.padding,
+#         activation=None,
+#         name='model/layer1/conv1')
+#     norm1 = tf.layers.batch_normalization(
+#         conv1,
+#         training = mode == tf.estimator.ModeKeys.TRAIN)
+#     # TODO Does batch norm apply activation as well? I assume not, but model ran okay without any explicit activ...
+#     relu1 = model.conv1_activation(norm1)
+
+#     pool1 = tf.layers.max_pooling2d(
+#         inputs=relu1,
+#         pool_size=[model.pool1_size, model.pool1_size],
+#         strides=model.pool1_strides,
+#         name='model/layer1/pool1')
+
+#     conv2 = tf.layers.conv2d(
+#         inputs=pool1,
+#         filters=model.conv2_filters,
+#         kernel_size=[model.conv2_kernel, model.conv2_kernel],
+#         padding=model.padding,
+#         activation=None,
+#         name='model/layer2/conv2')
+#     norm2 = tf.layers.batch_normalization(
+#         conv2,
+#         training = mode == tf.estimator.ModeKeys.TRAIN)
+#     relu2 = model.conv2_activation(norm2)
+#     pool2 = tf.layers.max_pooling2d(
+#         inputs=relu2,
+#         pool_size=model.pool2_size,
+#         strides=model.pool2_strides,
+#         name='model/layer2/pool2')
+
+#     conv3 = tf.layers.conv2d(
+#         inputs=pool2,
+#         filters=model.conv3_filters,
+#         kernel_size=[model.conv3_kernel, model.conv3_kernel],
+#         padding=model.padding,
+#         activation=None,
+#         name='model/layer3/conv3')
+#     norm3 = tf.layers.batch_normalization(
+#         conv3,
+#         training = mode == tf.estimator.ModeKeys.TRAIN)
+#     relu3 = model.conv3_activation(norm3)
+#     pool3 = tf.layers.max_pooling2d(
+#         inputs=relu3,
+#         pool_size=[model.pool3_size, model.pool3_size],
+#         strides=model.pool3_strides,
+#         name='model/layer3/pool3')
+
+#     """
+#     Flatten tensor into a batch of vectors
+#     Start with image_dim shape, 1 channel
+#     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
+#     length ^ 2 to make shape 1D
+#     64 filters in final layer
+#     """
+#     pool3_flat = tf.reshape(pool3, [-1, int(model.image_dim / 8) ** 2 * model.conv3_filters], name='model/layer3/flat')
+
+#     # Dense Layer
+#     dense1 = tf.layers.dense(
+#         inputs=pool3_flat,
+#         units=model.dense1_units,
+#         activation=model.dense1_activation,
+#         name='model/layer4/dense1')
+
+#     return dense1
 
 
 def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
