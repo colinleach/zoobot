@@ -54,7 +54,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=3000,  # for debugging, min is 1
+        epochs=1,  # for debugging, min is 1
         train_steps=30,
         eval_steps=3,
         batch_size=128,
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=0.00001,  # changed from 0.5
+        predict_dropout=.5,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size

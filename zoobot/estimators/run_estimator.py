@@ -282,17 +282,17 @@ def run_estimator(config):
         logging.info('End epoch {}'.format(epoch_n))
         epoch_n += 1
 
-    logging.info('Making final predictions')
-    with open('predictions_new_norm_final.txt', 'w') as f:
-        predictions = estimator.predict(
-            predict_input_func,
-            hooks=predict_logging
-        )
-        prediction_rows = list(predictions)
-        logging.info('Predictions ({}): '.format(len(prediction_rows)))
-        for row in prediction_rows:
-            # logging.info(row)
-            f.write('{}\n'.format(row))
+    # logging.info('Making final predictions')
+    # with open('predictions_no_pred_dropout.txt', 'w') as f:
+    #     predictions = estimator.predict(
+    #         predict_input_func,
+    #         hooks=predict_logging
+    #     )
+    #     prediction_rows = list(predictions)
+    #     logging.info('Predictions ({}): '.format(len(prediction_rows)))
+    #     for row in prediction_rows:
+    #         # logging.info(row)
+    #         f.write('{}\n'.format(row))
 
     logging.info('All epochs completed - finishing gracefully')
 

@@ -147,10 +147,13 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             dropout_rate = self.predict_dropout
 
+        print('Using dropout {}'.format(dropout_rate))
+        logging.info('Using dropout {}'.format(dropout_rate))
+
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=self.dense1_dropout)
+        predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:

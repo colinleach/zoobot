@@ -11,6 +11,7 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.uncertainty import dropout_calibration
 from zoobot.estimators import input_utils
 
+import seaborn as sns
 
 
 def predict_input_func():
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     # final model, dropout of 50%
     # predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_regr/1541491411'
 
-    predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_regr/final_d{}'.format(dropout)
+    predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_no_pred_dropout/final_d{}'.format(dropout)
 
     model = make_predictions.load_predictor(predictor_loc)
 
@@ -58,35 +59,30 @@ if __name__ == '__main__':
     
     subjects, labels = predict_input_func()
 
-    with open('truth.txt', 'w') as f:
-        for label in labels:
-            f.write('{}\n'.format(label))
-    exit(0)
+    # with open('truth.txt', 'w') as f:
+    #     for label in labels:
+    #         f.write('{}\n'.format(label))
 
-    # raw_subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=128)
-    # subjects = [s['matrix'].reshape(size, size, channels) for s in raw_subjects]
-    # labels = np.array([s['label'] for s in raw_subjects])
-    # print(subjects.shape, 'subjects shape')
-    plt.imshow(subjects[4].astype(int))
-    plt.savefig('temp_test.png')  # should show bar/ring galaxy, featured, if not shuffled (yes)
+    # # raw_subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=128)
+    # # subjects = [s['matrix'].reshape(size, size, channels) for s in raw_subjects]
+    # # labels = np.array([s['label'] for s in raw_subjects])
+    # # print(subjects.shape, 'subjects shape')
+    # plt.imshow(subjects[4].astype(int))
+    # plt.savefig('temp_test.png')  # should show bar/ring galaxy, featured, if not shuffled (yes)
 
-    print(labels[4])
-    # exit(0)
+    # # fig, axes = read_tfrecord.show_examples(raw_subjects, size, channels)
+    # # fig.tight_layout()
+    # # fig.savefig('regression_examples_via_dataset.png')
 
-    # fig, axes = read_tfrecord.show_examples(raw_subjects, size, channels)
-    # fig.tight_layout()
-    # fig.savefig('regression_examples_via_dataset.png')
+    results_loc = 'results_nd_d{}.txt'.format(dropout)
 
-    results_loc = 'results_d{}.txt'.format(dropout)
-
-    results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=25)
-    np.savetxt(results_loc, results)
-    # exit(0)
+    # results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=50)
+    # np.savetxt(results_loc, results)
 
     results = np.loadtxt(results_loc)
     fig, axes = make_predictions.view_samples(results[:20], labels[:20])
     fig.tight_layout()
-    fig.savefig('regression_d{}.png'.format(dropout))
+    fig.savefig('regression_nd_d{}.png'.format(dropout))
 
     mse = metrics.mean_squared_error(labels, results.mean(axis=1))
     print('Mean mse: {}'.format(mse))
@@ -99,9 +95,16 @@ if __name__ == '__main__':
     plt.hist(np.abs(labels.mean() - labels), label='Baseline', density=True, alpha=0.5)
     plt.legend()
     plt.xlabel('Mean Square Error')
-    plt.savefig('mse_d{}.png'.format(dropout))
+    plt.savefig('mse_nd_d{}.png'.format(dropout))
 
     plt.figure()
-    save_loc = 'model_coverage_{}.png'.format(dropout)
+    save_loc = 'model_coverage_nd_{}.png'.format(dropout)
     alpha_eval, coverage_at_alpha = dropout_calibration.check_coverage_fractions(results, labels)
     dropout_calibration.visualise_calibration(alpha_eval, coverage_at_alpha, save_loc)
+
+    plt.figure()
+    sns.regplot(make_predictions.entropy(results), np.abs(results.mean(axis=1) - labels))
+    plt.xlabel('Entropy')
+    plt.ylabel('Abs. Error')
+    fig.tight_layout()
+    plt.savefig('entropy_correlation.png')
