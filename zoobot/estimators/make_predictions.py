@@ -12,6 +12,7 @@ from sklearn import metrics
 
 import seaborn as sns
 
+import statistics  # thanks Python 3.4!
 
 def load_predictor(predictor_loc):
     """Load a saved model as a callable mapping parsed subjects to class scores
@@ -46,11 +47,8 @@ def get_samples_of_subjects(model, subjects, n_samples):
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
     results = np.zeros((len(subjects), n_samples))
-    # temp: enforce batch size of 1
-    for subject_n in range(len(subjects)):
-        subject = subjects[subject_n]
-        for sample_n in range(n_samples):
-            results[subject_n, sample_n] = model(np.expand_dims(subject, axis=0))
+    for sample_n in range(n_samples):
+        results[:, sample_n] = model(subjects)
     return results
 
     # for nth_run in range(n_samples):  # for each desired sample,
@@ -79,6 +77,20 @@ def entropy(probabilites):
     return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
 
 
+def sample_variance(samples):
+    """Mean deviation from the mean. Only meaningful for unimodal distributions.
+    See http://mathworld.wolfram.com/SampleVariance.html
+    
+    Args:
+        samples (np.array): predictions of shape (galaxy_n, sample_n)
+    
+    Returns:
+        np.array: variance by galaxy, of shape (galaxy_n)
+    """
+
+    return np.apply_along_axis(statistics.variance, arr=samples, axis=1)
+
+
 def get_acquisition_func(model, n_samples):
     """Provide callable for active learning acquisition
     Args:
@@ -95,7 +107,7 @@ def get_acquisition_func(model, n_samples):
     return acquisition_callable
 
 
-def view_samples(scores, labels):
+def view_samples(scores, labels, annotate=False):
     """For many subjects, view the distribution of scores and labels for that subject
 
     Args:
@@ -122,11 +134,12 @@ def view_samples(scores, labels):
         #     c='g'
         # ax.axvspan(lbound, ubound, alpha=0.1, color=c)
 
-        ax.text(
-            0.7, 
-            0.75 * np.max(hist_data[0]),
-            'H: {:.2}'.format(entropies[galaxy_n])
-        )
-        ax.set_xlim([0, 1])
+        if annotate:
+            ax.text(
+                0.7, 
+                0.75 * np.max(hist_data[0]),
+                'H: {:.2}'.format(entropies[galaxy_n])
+            )
+            ax.set_xlim([0, 1])
 
     return fig, axes
