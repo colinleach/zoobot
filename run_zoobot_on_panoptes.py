@@ -114,7 +114,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=.5,  # change this to calibrate
+        predict_dropout=0.05,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
