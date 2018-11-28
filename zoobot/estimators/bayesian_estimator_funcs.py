@@ -163,9 +163,9 @@ class BayesianModel():
             # Calculate loss using mean squared error
             sq_error = tf.pow(labels - predictions, tf.constant(2., dtype=tf.float32))
             var_weighted_error = tf.truediv(sq_error, variance)
-            tf.summary.histogram('squared error', sq_error)
+            tf.summary.histogram('squared_error', sq_error)
             tf.summary.histogram('var_weighted_error', var_weighted_error)
-            loss = var_weighted_error - tf.log(variance)
+            loss = - var_weighted_error - tf.log(variance)
             tf.summary.histogram('loss', loss)
             mean_loss = tf.reduce_mean(loss)  # loss needs to be a scalar
             tf.losses.add_loss(mean_loss)
