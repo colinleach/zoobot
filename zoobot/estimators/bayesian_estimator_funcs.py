@@ -166,7 +166,7 @@ class BayesianModel():
 
             sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))
             var_weighted_error = tf.realdiv(sq_error, variance)
-            vector_loss = var_weighted_error + tf.log(tf.constant(1. + 1e-6, dtype=tf.float32) + variance)
+            vector_loss = var_weighted_error + variance
 
             error_p = tf.print('error first val', error[0])
             sq_error_p = tf.print('sq_error first val', sq_error[0])
@@ -180,7 +180,7 @@ class BayesianModel():
 
                 tf.summary.histogram('squared_error', sq_error)
                 tf.summary.histogram('var_weighted_error', var_weighted_error)
-                tf.summary.histogram('vector loss', vector_loss)
+                tf.summary.histogram('vector_loss', vector_loss)
 
                 return response, mean_loss
 
