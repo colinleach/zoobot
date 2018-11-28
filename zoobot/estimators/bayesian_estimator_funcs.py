@@ -147,13 +147,12 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             dropout_rate = self.predict_dropout
 
-        print('Using dropout {}'.format(dropout_rate))
         logging.info('Using dropout {}'.format(dropout_rate))
 
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
+        predictions, variance, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -162,15 +161,12 @@ class BayesianModel():
         else:  # Calculate Loss for TRAIN and EVAL modes)
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
             # Calculate loss using mean squared error
-            mean_loss = tf.losses.mean_squared_error(labels, predictions)
-
-            # create dummy variables that match names in predict mode
-            # TODO this is potentially wasteful as we don't actually need the feedforwards.
-            # Unclear if it executes - check.
-            # with tf.variable_scope("sample"):
-            #     _, _ = dense_to_regression(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
-
+            log_loss = tf.abs(labels - predictions)
+            loss_with_var = tf.truediv(log_loss, variance)
+            mean_loss = tf.reduce_mean(loss_with_var + variance)  # loss needs to be a scalar
+            tf.losses.add_loss(mean_loss)
             return response, mean_loss
+
 
     def bayesian_classifier(self, features, labels, mode):
         """
@@ -429,22 +425,25 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout, 
-        units=1, 
+        units=2, 
         # activation=tf.nn.relu, 
         name='layer_after_dropout')
 
+    linear_2 = tf.Print(linear, [linear], 'linear')
     tf.summary.histogram('layer_after_dropout', linear)
 
-    prediction = tf.squeeze(linear, 1)
+    prediction = linear_2[:, 0]
+    variance = tf.pow(linear_2[:, 1], tf.constant(2., dtype=tf.float32), name='variance')
     response = {
         "prediction": prediction,
+        "variance": variance
     }
     if labels is not None:
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
 
-    return prediction, response
+    return prediction, variance, response
 
 
 
