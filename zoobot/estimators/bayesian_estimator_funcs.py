@@ -165,7 +165,7 @@ class BayesianModel():
             error = tf.abs(labels - predictions)
 
             sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))
-            var_weighted_error = tf.realdiv(sq_error, variance)
+            var_weighted_error = tf.realdiv(error, variance)
             vector_loss = var_weighted_error + variance
 
             error_p = tf.print('error first val', error[0])
