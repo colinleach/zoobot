@@ -161,27 +161,32 @@ class BayesianModel():
 
         else:  # Calculate Loss for TRAIN and EVAL modes)
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
-            # Calculate loss using mean squared error
-            error = tf.abs(labels - predictions)  # large to {0, 1}, hopefully
-            sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))  # disabled
-            var_weighted_error = tf.realdiv(error, variance)
-            vector_loss = var_weighted_error + variance
+            # Calculate loss using mean squared error + L2
 
-            error_p = tf.print('error first val', error[0])
-            sq_error_p = tf.print('sq_error first val', sq_error[0])
-            variance_p = tf.print('variance first val', variance[0])
-            var_weighted_error_p = tf.print('weighted first val', var_weighted_error[0])
-            vector_loss_p = tf.print('vector loss first val', vector_loss[0])
+            mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
+            tf.losses.add_loss(mean_loss)
 
-            with tf.control_dependencies([error_p, sq_error_p, variance_p, var_weighted_error_p, vector_loss_p]):
-                mean_loss = tf.reduce_mean(vector_loss)  # loss needs to be a scalar
-                tf.losses.add_loss(mean_loss)
+            # OR with custom loss
+            # error = tf.abs(labels - predictions)  # large to {0, 1}, hopefully
+            # sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))  # disabled
+            # var_weighted_error = tf.realdiv(error, variance)
+            # vector_loss = var_weighted_error + variance
 
-                tf.summary.histogram('squared_error', sq_error)
-                tf.summary.histogram('var_weighted_error', var_weighted_error)
-                tf.summary.histogram('vector_loss', vector_loss)
+            # error_p = tf.print('error first val', error[0])
+            # sq_error_p = tf.print('sq_error first val', sq_error[0])
+            # variance_p = tf.print('variance first val', variance[0])
+            # var_weighted_error_p = tf.print('weighted first val', var_weighted_error[0])
+            # vector_loss_p = tf.print('vector loss first val', vector_loss[0])
 
-                return response, mean_loss
+            # with tf.control_dependencies([error_p, sq_error_p, variance_p, var_weighted_error_p, vector_loss_p]):
+            #     mean_loss = tf.reduce_mean(vector_loss)  # loss needs to be a scalar
+            #     tf.losses.add_loss(mean_loss)
+
+            #     tf.summary.histogram('squared_error', sq_error)
+            #     tf.summary.histogram('var_weighted_error', var_weighted_error)
+            #     tf.summary.histogram('vector_loss', vector_loss)
+
+            return response, mean_loss
 
 
     def bayesian_classifier(self, features, labels, mode):
@@ -248,12 +253,15 @@ def input_to_dense(features, mode, model):
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
 
+    regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
+
     conv1 = tf.layers.conv2d(
         inputs=input_layer,
         filters=model.conv1_filters,
         kernel_size=[model.conv1_kernel, model.conv1_kernel],
         padding=model.padding,
         activation=model.conv1_activation,
+        kernel_regularizer=regularizer,
         name='model/layer1/conv1')
     pool1 = tf.layers.max_pooling2d(
         inputs=conv1,
@@ -267,6 +275,7 @@ def input_to_dense(features, mode, model):
         kernel_size=[model.conv2_kernel, model.conv2_kernel],
         padding=model.padding,
         activation=model.conv2_activation,
+        kernel_regularizer=regularizer,
         name='model/layer2/conv2')
     pool2 = tf.layers.max_pooling2d(
         inputs=conv2,
@@ -280,6 +289,7 @@ def input_to_dense(features, mode, model):
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
         padding=model.padding,
         activation=model.conv3_activation,
+        kernel_regularizer=regularizer,
         name='model/layer3/conv3')
     pool3 = tf.layers.max_pooling2d(
         inputs=conv3,
@@ -301,6 +311,7 @@ def input_to_dense(features, mode, model):
         inputs=pool3_flat,
         units=model.dense1_units,
         activation=model.dense1_activation,
+        kernel_regularizer=regularizer,
         name='model/layer4/dense1')
 
     return dense1
