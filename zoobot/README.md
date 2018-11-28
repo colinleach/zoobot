@@ -44,6 +44,8 @@ If you get the error "Permission denied (publickey)"
 
 ## Zoobot Installation
 
+`source activate tensorflow_p36`
+
 From root...
 
 Get the Zoobot directory from git
@@ -53,7 +55,6 @@ Get the Zoobot directory from git
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
 `root=/home/ubuntu`
-`source activate tensorflow_p36`
 `pip install -r zoobot/requirements.txt`
 `pip install -e $root/zoobot`
 <!-- extra requirement not on pypi -->
@@ -61,11 +62,20 @@ Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 imag
 `pip install -e $root/shared-astro-utilities`
 
 
-<!-- Also log in to the S3 console: -->
-<!-- `aws configure` -->
+# Basic Split 
 
+Download the tfrecords:
+
+`aws s3 sync s3://galaxy-zoo/basic-split/float data`
+
+Run the regressor:
+
+`python zoobot/run_zoobot_on_panoptes.py --ec2=True`
 
 You can either make the shards directly, or download them from S3 (faster):
+
+
+# Active Learning
 
 ## Get Fits (for new shards)
 TODO: Dynamically, for when a minority become labelled, and then delete. Free!
