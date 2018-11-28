@@ -1,0 +1,4 @@
+['remote "alpha"']
+url = /Volumes/alpha/dvc/repos/zoobot
+[core]
+remote = alpha
