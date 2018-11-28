@@ -162,9 +162,8 @@ class BayesianModel():
         else:  # Calculate Loss for TRAIN and EVAL modes)
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
             # Calculate loss using mean squared error
-            error = tf.abs(labels - predictions)
-
-            sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))
+            error = tf.abs(labels - predictions)  # large to {0, 1}, hopefully
+            sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))  # disabled
             var_weighted_error = tf.realdiv(error, variance)
             vector_loss = var_weighted_error + variance
 
@@ -450,7 +449,8 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     tf.summary.histogram('layer_after_dropout', linear)
 
     prediction = linear_2[:, 0]
-    variance = tf.pow(linear_2[:, 1], tf.constant(2., dtype=tf.float32), name='variance')
+    # variance = tf.pow(linear_2[:, 1], tf.constant(2., dtype=tf.float32), name='variance')
+    variance = tf.abs(linear_2[:, 1])
     tf.summary.histogram('prediction', prediction)
     tf.summary.histogram('variance', variance)
     response = {
