@@ -31,3 +31,4 @@ build/*
 acquired_shard_*
 .vscode/*
 *.pb
+/data.xml
