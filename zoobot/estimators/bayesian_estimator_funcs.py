@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import tensorflow as tf
 from tensorflow.python.saved_model import signature_constants
@@ -161,15 +162,27 @@ class BayesianModel():
         else:  # Calculate Loss for TRAIN and EVAL modes)
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
             # Calculate loss using mean squared error
-            sq_error = tf.pow(labels - predictions, tf.constant(2., dtype=tf.float32))
-            var_weighted_error = tf.truediv(sq_error, variance)
-            tf.summary.histogram('squared_error', sq_error)
-            tf.summary.histogram('var_weighted_error', var_weighted_error)
-            loss = - var_weighted_error - tf.log(variance)
-            tf.summary.histogram('loss', loss)
-            mean_loss = tf.reduce_mean(loss)  # loss needs to be a scalar
-            tf.losses.add_loss(mean_loss)
-            return response, mean_loss
+            error = tf.abs(labels - predictions)
+
+            sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))
+            var_weighted_error = tf.realdiv(sq_error, variance)
+            vector_loss = var_weighted_error + tf.log(tf.constant(1. + 1e-6, dtype=tf.float32) + variance)
+
+            error_p = tf.print('error first val', error[0])
+            sq_error_p = tf.print('sq_error first val', sq_error[0])
+            variance_p = tf.print('variance first val', variance[0])
+            var_weighted_error_p = tf.print('weighted first val', var_weighted_error[0])
+            vector_loss_p = tf.print('vector loss first val', vector_loss[0])
+
+            with tf.control_dependencies([error_p, sq_error_p, variance_p, var_weighted_error_p, vector_loss_p]):
+                mean_loss = tf.reduce_mean(vector_loss)  # loss needs to be a scalar
+                tf.losses.add_loss(mean_loss)
+
+                tf.summary.histogram('squared_error', sq_error)
+                tf.summary.histogram('var_weighted_error', var_weighted_error)
+                tf.summary.histogram('vector loss', vector_loss)
+
+                return response, mean_loss
 
 
     def bayesian_classifier(self, features, labels, mode):
