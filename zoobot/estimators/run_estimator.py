@@ -1,143 +1,295 @@
+import logging
 import os
 import shutil
+import time
 from functools import partial
 
+import numpy as np
 import tensorflow as tf
-from zoobot.estimators import input_utils
-from tensorboard import summary as tensorboard_summary
-
-from zoobot.estimators.architecture_scaffolds import four_layer_cnn
+from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
 
-def four_layer_binary_classifier(features, labels, mode, params):
+class RunEstimatorConfig():
+
+    def __init__(
+            self,
+            initial_size,
+            final_size,
+            channels,
+            label_col,
+            epochs=50,
+            train_steps=30,
+            eval_steps=3,
+            batch_size=128,
+            min_epochs=0,
+            early_stopping_window=10,
+            max_sadness=4.,
+            log_dir='runs/default_run_{}'.format(time.time()),
+            save_freq=10,
+            warm_start=True
+    ):  # TODO refactor for consistent order
+        self.initial_size = initial_size
+        self.final_size=final_size
+        self.channels = channels
+        self.label_col = label_col
+        self.epochs = epochs
+        self.train_batches = train_steps
+        self.eval_batches = eval_steps
+        self.batch_size = batch_size
+        self.log_dir = log_dir
+        self.save_freq = save_freq
+        self.warm_start=warm_start
+        self.max_sadness = max_sadness
+        self.early_stopping_window = early_stopping_window
+        self.min_epochs = min_epochs
+        self.train_config = None
+        self.eval_config = None
+        self.model = None
+
+    
+    def assemble(self, train_config, eval_config, model):
+        self.train_config = train_config
+        self.eval_config = eval_config
+        self.model = model
+        assert self.is_ready_to_train()
+
+
+    def is_ready_to_train(self):
+        # TODO can make this check much more comprehensive
+        return (self.train_config is not None) and (self.eval_config is not None)
+
+    def log(self):
+        logging.info('Parameters used: ')
+        for config_object in [self, self.train_config, self.eval_config, self.model]:
+            for key, value in config_object.asdict().items():
+                logging.info('{}: {}'.format(key, value))
+
+    # TODO move to shared utilities
+    def asdict(self):
+        excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
+        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
+
+
+def train_input(input_config):
+    return input_utils.get_input(config=input_config)
+
+
+def eval_input(input_config):
+    return input_utils.get_input(config=input_config)
+
+# temporary
+# def get_latest_checkpoint_dir(base_dir):
+#         saved_models = os.listdir(base_dir)  # subfolders
+#         saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
+#         return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
+    
+
+def run_estimator(config):
     """
-    Classify images of galaxies into spiral/not spiral
+    Train and evaluate an estimator
 
     Args:
-        features ():
-        labels ():
-        mode ():
-        params ():
+        config (RunEstimatorConfig): parameters controlling both estimator and train/test procedure
+
+    Returns:
+        None
+    """
+    assert config.is_ready_to_train()
+
+    if not config.warm_start:  # don't try to load any existing models
+        if os.path.exists(config.log_dir):
+            shutil.rmtree(config.log_dir)
+
+    '''
+    initial problem: checkpointing was not frequent enough (steps) for trained model to be saved
+    hence, loading model from 'latest' checkpoint always started from scratch
+    resolution - run for longer or train for more steps
+
+    current problem: 
+    initial 'fresh' model trains fine
+    model loaded from checkpoint via model_dir = config.log_dir steps do not increment
+    log no longer shows training results: loss = x, steps = y. Only eval results.
+    tensorboard similarly shows new eval results (at same step), but no new train results
+    inference: training appears to be either disabled or blocked after loading checkpoint from model dir
+
+    logging updated to record each training call and steps requested
+    steps are used in incrementing mode i.e. do another 20, not max_steps i.e. never do more than 20 total
+    '''
+        
+
+    # Create the Estimator
+
+    model_fn_partial = partial(bayesian_estimator_funcs.estimator_wrapper)
+    # fast_checkpoint_config = tf.estimator.RunConfig(
+        # save_checkpoints_secs = 20,  # Save checkpoints every 20 secs
+        # keep_checkpoint_max = 10       # Retain the 10 most recent checkpoints.
+        # save_checkpoints_steps = 2  # save a checkpoint every 2 steps
+    # )
+
+
+    '''
+    warm_start_from loc of latest timestamped saved model e.g. log_dir/{latest timestamp}
+    '''
+    # try:
+    #     warm_start_from = get_latest_checkpoint_dir(config.log_dir)
+    # except IndexError:  # no saved checkpoints
+    #     warm_start_from = None
+
+    '''
+    warm_start_from 'checkpoint' file (index-like) in log_dir base directory
+    '''
+    # warm_start_from = os.path.join(config.log_dir, 'checkpoint')
+    # if not os.path.exists(warm_start_from):
+    #     warm_start_from = None
+
+    '''
+    if there's a 'checkpoint' file in config.log_dir,
+    warm start from config.log_dir using ckpt_to_initialize_from arg in WarmStartSettings
+    save model to new_dir
+    otherwise, save (first, implicitly) model to log_dir
+    '''
+    # if os.path.exists(os.path.join(config.log_dir, 'checkpoint')):
+    #     model_dir = os.path.join(config.log_dir, 'new_dir')
+    #     warm_start_from = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=config.log_dir)
+    # else:
+    #     model_dir = config.log_dir
+    #     warm_start_from = None
+    # model_dir = warm_start_from
+
+    # logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
+
+    estimator = tf.estimator.Estimator(
+        model_fn=model_fn_partial,
+        model_dir=config.log_dir,
+        params=config.model
+        # warm_start_from=warm_start_from,
+        # config=fast_checkpoint_config
+    )
+
+    # can't move out of run_estimator, uses closure to avoid passing config as argument
+    # def serving_input_receiver_fn():
+    #     """
+    #     An input receiver that expects a serialized tf.Example.
+    #     """
+    #     serialized_tf_example = tf.placeholder(dtype=tf.string,
+    #                                            name='input_example_tensor')
+    #     receiver_tensors = {'examples': serialized_tf_example}  # one or many??
+    #     feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
+    #     features = tf.parse_example(serialized_tf_example, feature_spec)
+
+    #     images = tf.reshape(
+    #         features['matrix'],
+    #         [-1, config.initial_size, config.initial_size,
+    #          config.channels])
+
+    #     new_features = input_utils.preprocess_batch(
+    #         images,
+    #         config=config.eval_config
+    #     )
+    #     return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
+    
+    def serving_input_receiver_fn_image():
+        """
+        An input receiver that expects an image array
+        """
+        images = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, config.initial_size, config.initial_size, config.channels), 
+            name='images')
+        receiver_tensors = {'examples': images}
+
+        new_features = input_utils.preprocess_batch(
+            images,
+            config=config.eval_config
+        )
+        return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
+
+
+    train_input_partial = partial(train_input, input_config=config.train_config)
+    eval_input_partial = partial(eval_input, input_config=config.eval_config)
+
+    train_logging, eval_logging, _ = config.model.logging_hooks
+
+    eval_loss_history = []
+    epoch_n = 0
+
+    while epoch_n < config.epochs:
+
+        # Train the estimator
+        # logging.debug('training {} steps'.format(config.train_batches))
+        estimator.train(
+            input_fn=train_input_partial,
+            steps=config.train_batches,
+            # hooks=train_logging + [tf.train.ProfilerHook(save_secs=10)]
+            hooks=train_logging
+        )
+
+        # Evaluate the estimator and logging.info results
+        eval_metrics = estimator.evaluate(
+            input_fn=eval_input_partial,
+            steps=config.eval_batches,
+            hooks=eval_logging
+        )
+        eval_loss_history.append(eval_metrics['loss'])
+
+        # predictions = estimator.predict(
+        #     eval_input_partial,
+        #     hooks=predict_logging
+        # )
+        # prediction_rows = list(predictions)
+        # logging.debug('Predictions ({}): '.format(len(prediction_rows)))
+        # for row in prediction_rows[:10]:
+        #     logging.info(row)
+
+        if (epoch_n % config.save_freq == 0) or (epoch_n == config.epochs):
+            save_model(estimator, config, epoch_n, serving_input_receiver_fn_image)
+
+        if epoch_n > config.min_epochs:
+            sadness = early_stopper(eval_loss_history, config.early_stopping_window)
+            logging.info('Current sadness: {}'.format(sadness))
+            if sadness > config.max_sadness:
+                logging.info('Ending training at epoch {} with {} sadness'.format(
+                    epoch_n,
+                    sadness))
+                break  # stop training early
+
+        logging.info('End epoch {}'.format(epoch_n))
+        epoch_n += 1
+
+    logging.info('All epochs completed - finishing gracefully')
+
+    return eval_loss_history
+
+
+def loss_instability(loss_history, window):
+    return (np.mean(loss_history[-window:]) / np.min(loss_history[-window:])) - 1
+
+
+def generalised_loss(loss_history):
+    return (loss_history[-1] / np.min(loss_history)) - 1
+
+
+def early_stopper(loss_history, window):
+    return generalised_loss(loss_history) / loss_instability(loss_history, window)
+
+
+def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
+    """
+
+    Args:
+        estimator:
+        config (R:
+        epoch_n:
+        serving_input_receiver_fn:
 
     Returns:
 
     """
-
-    predictions, loss = four_layer_cnn(features, labels, mode, params)
-
-    if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-
-    if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = params['optimizer'](learning_rate=params['learning_rate'])
-        train_op = optimizer.minimize(
-            loss=loss,
-            global_step=tf.train.get_global_step())
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
-
-    tensorboard_summary.pr_curve_streaming_op(
-        name='spirals',
-        labels=labels,
-        predictions=predictions['probabilities'][:, 1],
-    )
-    # Add evaluation metrics (for EVAL mode)
-    eval_metric_ops = get_eval_metric_ops(labels, predictions)
-    return tf.estimator.EstimatorSpec(
-        mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+    logging.info('Saving model at epoch {} to {}'.format(epoch_n, config.log_dir))
+    estimator.export_savedmodel(
+        export_dir_base=config.log_dir,
+        serving_input_receiver_fn=serving_input_receiver_fn)
 
 
-def get_eval_metric_ops(labels, predictions):
-
-    # record distribution of predictions for tensorboard
-    tf.summary.histogram('Probabilities', predictions['probabilities'])
-    tf.summary.histogram('Classes', predictions['classes'])
-
-    return {
-        "acc/accuracy": tf.metrics.accuracy(
-            labels=labels, predictions=predictions["classes"]),
-        "pr/auc": tf.metrics.auc(labels=labels, predictions=predictions['classes']),
-        "acc/mean_per_class_accuracy": tf.metrics.mean_per_class_accuracy(labels=labels, predictions=predictions['classes'], num_classes=2),
-        'pr/precision': tf.metrics.precision(labels=labels, predictions=predictions['classes']),
-        'pr/recall': tf.metrics.recall(labels=labels, predictions=predictions['classes']),
-        'confusion/true_positives': tf.metrics.true_positives(labels=labels, predictions=predictions['classes']),
-        'confusion/true_negatives': tf.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
-        'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
-        'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
-    }
-
-
-def train_input(params):
-    mode = 'train'
-    return input_utils.input(
-        tfrecord_loc=params['train_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['train_stratify'])
-
-
-def eval_input(params):
-    mode = 'test'
-    return input_utils.input(
-        tfrecord_loc=params['test_loc'], size=params['image_dim'], name=mode, batch=params['batch_size'], stratify=params['eval_stratify'])
-
-
-# def serving_input_receiver_fn():
-#     """Build the serving inputs."""
-#     # The outer dimension (None) allows us to batch up inputs for
-#     # efficiency. However, it also means that if we want a prediction
-#     # for a single instance, we'll need to wrap it in an outer list.
-#     inputs = {"x": tf.placeholder(shape=[None, 4], dtype=tf.float32)}
-#     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-
-#
-# def serving_input_receiver_fn():
-#   """An input receiver that expects a serialized tf.Example."""
-#   serialized_tf_example = tf.placeholder(dtype=tf.string,
-#                                          shape=[default_batch_size],
-#                                          name='input_example_tensor')
-#   receiver_tensors = {'examples': serialized_tf_example}
-#   features = tf.parse_example(serialized_tf_example, matrix_label_feature_spec)
-#   return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
-
-
-def run_experiment(model_fn, params):
-
-    if os.path.exists(params['log_dir']):
-        shutil.rmtree(params['log_dir'])
-
-    # Create the Estimator
-    model_fn_partial = partial(model_fn, params=params)
-    estimator = tf.estimator.Estimator(
-        model_fn=model_fn_partial, model_dir=params['log_dir'])
-
-    # Set up logging for predictions
-    tensors_to_log = {"probabilities": "softmax_tensor"}
-    logging_hook = tf.train.LoggingTensorHook(
-        tensors=tensors_to_log, every_n_iter=params['log_freq'])
-
-    train_input_partial = partial(train_input, params=params)
-    eval_input_partial = partial(eval_input, params=params)
-
-    epoch_n = 0
-    while epoch_n < params['epochs']:
-        print('training begins')
-        # Train the estimator
-        estimator.train(
-            input_fn=train_input_partial,
-            steps=params['train_batches'],
-            max_steps=params['max_train_batches'],
-            hooks=[logging_hook]
-        )
-
-        # Evaluate the estimator and print results
-        print('eval begins')
-        eval_results = estimator.evaluate(
-            input_fn=eval_input_partial,
-            steps=params['eval_batches'],
-            hooks=[logging_hook]
-        )
-        print(eval_results)
-
-        print('saving model at epoch {}'.format(epoch_n))
-        # estimator.export_savedmodel(
-        #     export_dir_base="/path/to/model",
-        #     serving_input_receiver_fn=serving_input_receiver_fn)
-
-        epoch_n += 1
+# run_dir=run_si128_sf64_its10_label512_shards1_baseline

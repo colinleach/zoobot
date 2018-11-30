@@ -1,0 +1,1 @@
+TODO instructions for downloading GZ2 catalog using the code in this folder

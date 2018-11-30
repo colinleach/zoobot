@@ -1,0 +1,1422 @@
+2018-06-25 13:39:31,442 Parameters used: 
+2018-06-25 13:39:31,442 initial_size: 64
+2018-06-25 13:39:31,442 final_size: 64
+2018-06-25 13:39:31,442 channels: 3
+2018-06-25 13:39:31,442 label_col: label
+2018-06-25 13:39:31,443 epochs: 50
+2018-06-25 13:39:31,443 train_batches: 30
+2018-06-25 13:39:31,443 eval_batches: 3
+2018-06-25 13:39:31,443 batch_size: 128
+2018-06-25 13:39:31,443 log_dir: runs/bayesian_panoptes_featured_s64_l0.5_augs
+2018-06-25 13:39:31,443 save_freq: 10
+2018-06-25 13:39:31,443 max_sadness: 4.0
+2018-06-25 13:39:31,443 early_stopping_window: 10
+2018-06-25 13:39:31,443 min_epochs: 0
+2018-06-25 13:39:31,443 train_config: <zoobot.estimators.input_utils.InputConfig object at 0x181ac768d0>
+2018-06-25 13:39:31,443 eval_config: <zoobot.estimators.input_utils.InputConfig object at 0x181ac76908>
+2018-06-25 13:39:31,443 model: <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181ac76da0>
+2018-06-25 13:39:31,443 Next object 
+
+2018-06-25 13:39:31,443 name: train
+2018-06-25 13:39:31,443 tfrecord_loc: data/panoptes_featured_s64_l0.5_train.tfrecord
+2018-06-25 13:39:31,443 label_col: label
+2018-06-25 13:39:31,443 initial_size: 64
+2018-06-25 13:39:31,443 final_size: 64
+2018-06-25 13:39:31,443 channels: 3
+2018-06-25 13:39:31,443 batch_size: 128
+2018-06-25 13:39:31,443 stratify: True
+2018-06-25 13:39:31,443 stratify_probs: [0.39521382044746534, 0.6047861795525347]
+2018-06-25 13:39:31,443 geometric_augmentation: True
+2018-06-25 13:39:31,443 shift_range: None
+2018-06-25 13:39:31,443 max_zoom: 1.2
+2018-06-25 13:39:31,443 fill_mode: wrap
+2018-06-25 13:39:31,443 photographic_augmentation: False
+2018-06-25 13:39:31,443 max_brightness_delta: 0.05
+2018-06-25 13:39:31,443 contrast_range: (0.95, 1.05)
+2018-06-25 13:39:31,443 Next object 
+
+2018-06-25 13:39:31,443 name: eval
+2018-06-25 13:39:31,444 tfrecord_loc: data/panoptes_featured_s64_l0.5_test.tfrecord
+2018-06-25 13:39:31,444 label_col: label
+2018-06-25 13:39:31,444 initial_size: 64
+2018-06-25 13:39:31,444 final_size: 64
+2018-06-25 13:39:31,444 channels: 3
+2018-06-25 13:39:31,444 batch_size: 128
+2018-06-25 13:39:31,444 stratify: True
+2018-06-25 13:39:31,444 stratify_probs: [0.39521382044746534, 0.6047861795525347]
+2018-06-25 13:39:31,444 geometric_augmentation: True
+2018-06-25 13:39:31,444 shift_range: None
+2018-06-25 13:39:31,444 max_zoom: 1.2
+2018-06-25 13:39:31,444 fill_mode: wrap
+2018-06-25 13:39:31,444 photographic_augmentation: False
+2018-06-25 13:39:31,444 max_brightness_delta: 0.05
+2018-06-25 13:39:31,444 contrast_range: (0.95, 1.05)
+2018-06-25 13:39:31,444 Next object 
+
+2018-06-25 13:39:31,444 image_dim: 64
+2018-06-25 13:39:31,444 optimizer: <class 'tensorflow.python.training.adam.AdamOptimizer'>
+2018-06-25 13:39:31,444 learning_rate: 0.001
+2018-06-25 13:39:31,444 conv1_filters: 32
+2018-06-25 13:39:31,444 conv1_kernel: 1
+2018-06-25 13:39:31,444 conv2_filters: 32
+2018-06-25 13:39:31,444 conv2_kernel: 3
+2018-06-25 13:39:31,444 conv3_filters: 16
+2018-06-25 13:39:31,444 conv3_kernel: 3
+2018-06-25 13:39:31,444 dense1_units: 128
+2018-06-25 13:39:31,444 dense1_dropout: 0.5
+2018-06-25 13:39:31,444 conv1_activation: <function relu at 0x10f1cba60>
+2018-06-25 13:39:31,444 conv2_activation: <function relu at 0x10f1cba60>
+2018-06-25 13:39:31,444 conv3_activation: <function relu at 0x10f1cba60>
+2018-06-25 13:39:31,444 dense1_activation: <function relu at 0x10f1cba60>
+2018-06-25 13:39:31,444 pool1_size: 2
+2018-06-25 13:39:31,445 pool1_strides: 2
+2018-06-25 13:39:31,445 pool2_size: 2
+2018-06-25 13:39:31,445 pool2_strides: 2
+2018-06-25 13:39:31,445 pool3_size: 2
+2018-06-25 13:39:31,445 pool3_strides: 2
+2018-06-25 13:39:31,445 padding: same
+2018-06-25 13:39:31,445 log_freq: 10
+2018-06-25 13:39:31,445 model_fn: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181ac76da0>>
+2018-06-25 13:39:31,445 logging_hooks: [None, None, None]
+2018-06-25 13:39:31,445 entry_point: <bound method BayesianBinaryModel.four_layer_binary_classifier of <zoobot.estimators.bayesian_estimator_funcs.BayesianBinaryModel object at 0x181ac76da0>>
+2018-06-25 13:39:31,445 Next object 
+
+2018-06-25 13:39:31,446 Using default config.
+2018-06-25 13:39:31,446 Using config: {'_model_dir': 'runs/bayesian_panoptes_featured_s64_l0.5_augs', '_tf_random_seed': None, '_save_summary_steps': 100, '_save_checkpoints_steps': None, '_save_checkpoints_secs': 600, '_session_config': None, '_keep_checkpoint_max': 5, '_keep_checkpoint_every_n_hours': 10000, '_log_step_count_steps': 100, '_train_distribute': None, '_service': None, '_cluster_spec': <tensorflow.python.training.server_lib.ClusterSpec object at 0x181b3ebc88>, '_task_type': 'worker', '_task_id': 0, '_global_id_in_cluster': 0, '_master': '', '_evaluation_master': '', '_is_chief': True, '_num_ps_replicas': 0, '_num_worker_replicas': 1}
+2018-06-25 13:39:36,401 From /Data/repos/zoobot/zoobot/estimators/input_utils.py:110: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+2018-06-25 13:39:36,568 Calling model_fn.
+2018-06-25 13:39:36,835 Done calling model_fn.
+2018-06-25 13:39:36,836 Create CheckpointSaverHook.
+2018-06-25 13:39:37,084 Graph was finalized.
+2018-06-25 13:39:37,166 Running local_init_op.
+2018-06-25 13:39:37,174 Done running local_init_op.
+2018-06-25 13:39:38,626 Saving checkpoints for 1 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:39:38,749 loss = 7.1762896, step = 1
+2018-06-25 13:39:49,235 Saving checkpoints for 30 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:39:49,407 Loss for final step: 0.67544496.
+2018-06-25 13:39:49,725 Calling model_fn.
+2018-06-25 13:39:50,057 Done calling model_fn.
+2018-06-25 13:39:50,068 Starting evaluation at 2018-06-25-12:39:50
+2018-06-25 13:39:50,131 Graph was finalized.
+2018-06-25 13:39:50,131 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-30
+2018-06-25 13:39:50,171 Running local_init_op.
+2018-06-25 13:39:50,193 Done running local_init_op.
+2018-06-25 13:39:51,759 Evaluation [1/3]
+2018-06-25 13:39:51,922 Evaluation [2/3]
+2018-06-25 13:39:52,076 Evaluation [3/3]
+2018-06-25 13:39:52,164 Finished evaluation at 2018-06-25-12:39:52
+2018-06-25 13:39:52,165 Saving dict for global step 30: acc/accuracy = 0.6067708, acc/mean_per_class_accuracy = 0.60858697, confusion/false_negatives = 64.0, confusion/false_positives = 87.0, confusion/true_negatives = 113.0, confusion/true_positives = 120.0, global_step = 30, loss = 0.66525286, pr/auc = 0.60858697, pr/precision = 0.5797101, pr/recall = 0.65217394, sanity/predictions_above_95% = 0.0, sanity/predictions_below_5% = 0.0
+2018-06-25 13:39:52,341 Saving model at epoch 0
+2018-06-25 13:39:52,506 Calling model_fn.
+2018-06-25 13:39:52,566 Done calling model_fn.
+2018-06-25 13:39:52,567 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:39:52,567 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:39:52,567 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:39:52,579 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-30
+2018-06-25 13:39:52,590 Assets added to graph.
+2018-06-25 13:39:52,590 No assets to write.
+2018-06-25 13:39:52,665 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529930392'/saved_model.pb"
+2018-06-25 13:39:52,670 End epoch 0
+2018-06-25 13:39:52,987 Calling model_fn.
+2018-06-25 13:39:53,269 Done calling model_fn.
+2018-06-25 13:39:53,270 Create CheckpointSaverHook.
+2018-06-25 13:39:53,351 Graph was finalized.
+2018-06-25 13:39:53,351 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-30
+2018-06-25 13:39:53,402 Running local_init_op.
+2018-06-25 13:39:53,410 Done running local_init_op.
+2018-06-25 13:39:54,611 Saving checkpoints for 31 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:39:54,723 loss = 0.71178514, step = 31
+2018-06-25 13:40:05,186 Saving checkpoints for 60 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:05,344 Loss for final step: 0.62049735.
+2018-06-25 13:40:05,688 Calling model_fn.
+2018-06-25 13:40:06,028 Done calling model_fn.
+2018-06-25 13:40:06,040 Starting evaluation at 2018-06-25-12:40:06
+2018-06-25 13:40:06,105 Graph was finalized.
+2018-06-25 13:40:06,105 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-60
+2018-06-25 13:40:06,145 Running local_init_op.
+2018-06-25 13:40:06,169 Done running local_init_op.
+2018-06-25 13:40:06,636 Evaluation [1/3]
+2018-06-25 13:40:06,793 Evaluation [2/3]
+2018-06-25 13:40:06,946 Evaluation [3/3]
+2018-06-25 13:40:07,034 Finished evaluation at 2018-06-25-12:40:07
+2018-06-25 13:40:07,034 Saving dict for global step 60: acc/accuracy = 0.625, acc/mean_per_class_accuracy = 0.6232804, confusion/false_negatives = 92.0, confusion/false_positives = 52.0, confusion/true_negatives = 143.0, confusion/true_positives = 97.0, global_step = 60, loss = 0.65724915, pr/auc = 0.62328047, pr/precision = 0.6510067, pr/recall = 0.5132275, sanity/predictions_above_95% = 0.010416667, sanity/predictions_below_5% = 0.0
+2018-06-25 13:40:07,034 Current sadness: 0.0
+2018-06-25 13:40:07,034 End epoch 1
+2018-06-25 13:40:07,341 Calling model_fn.
+2018-06-25 13:40:07,610 Done calling model_fn.
+2018-06-25 13:40:07,611 Create CheckpointSaverHook.
+2018-06-25 13:40:07,758 Graph was finalized.
+2018-06-25 13:40:07,759 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-60
+2018-06-25 13:40:07,835 Running local_init_op.
+2018-06-25 13:40:07,844 Done running local_init_op.
+2018-06-25 13:40:09,551 Saving checkpoints for 61 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:09,682 loss = 0.67680335, step = 61
+2018-06-25 13:40:20,444 Saving checkpoints for 90 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:20,617 Loss for final step: 0.61642957.
+2018-06-25 13:40:20,935 Calling model_fn.
+2018-06-25 13:40:21,252 Done calling model_fn.
+2018-06-25 13:40:21,265 Starting evaluation at 2018-06-25-12:40:21
+2018-06-25 13:40:21,333 Graph was finalized.
+2018-06-25 13:40:21,334 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-90
+2018-06-25 13:40:21,374 Running local_init_op.
+2018-06-25 13:40:21,397 Done running local_init_op.
+2018-06-25 13:40:21,871 Evaluation [1/3]
+2018-06-25 13:40:22,052 Evaluation [2/3]
+2018-06-25 13:40:22,231 Evaluation [3/3]
+2018-06-25 13:40:22,328 Finished evaluation at 2018-06-25-12:40:22
+2018-06-25 13:40:22,328 Saving dict for global step 90: acc/accuracy = 0.6380208, acc/mean_per_class_accuracy = 0.65625, confusion/false_negatives = 22.0, confusion/false_positives = 117.0, confusion/true_negatives = 91.0, confusion/true_positives = 154.0, global_step = 90, loss = 0.61825377, pr/auc = 0.65625, pr/precision = 0.5682657, pr/recall = 0.875, sanity/predictions_above_95% = 0.0026041667, sanity/predictions_below_5% = 0.0
+2018-06-25 13:40:22,329 Current sadness: 0.0
+2018-06-25 13:40:22,329 End epoch 2
+2018-06-25 13:40:22,795 Calling model_fn.
+2018-06-25 13:40:23,127 Done calling model_fn.
+2018-06-25 13:40:23,128 Create CheckpointSaverHook.
+2018-06-25 13:40:23,237 Graph was finalized.
+2018-06-25 13:40:23,238 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-90
+2018-06-25 13:40:23,311 Running local_init_op.
+2018-06-25 13:40:23,321 Done running local_init_op.
+2018-06-25 13:40:24,599 Saving checkpoints for 91 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:24,706 loss = 0.6665815, step = 91
+2018-06-25 13:40:36,239 Saving checkpoints for 120 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:36,439 Loss for final step: 0.578068.
+2018-06-25 13:40:36,866 Calling model_fn.
+2018-06-25 13:40:37,171 Done calling model_fn.
+2018-06-25 13:40:37,185 Starting evaluation at 2018-06-25-12:40:37
+2018-06-25 13:40:37,253 Graph was finalized.
+2018-06-25 13:40:37,253 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-120
+2018-06-25 13:40:37,298 Running local_init_op.
+2018-06-25 13:40:37,323 Done running local_init_op.
+2018-06-25 13:40:38,644 Evaluation [1/3]
+2018-06-25 13:40:38,821 Evaluation [2/3]
+2018-06-25 13:40:38,996 Evaluation [3/3]
+2018-06-25 13:40:39,068 Finished evaluation at 2018-06-25-12:40:39
+2018-06-25 13:40:39,068 Saving dict for global step 120: acc/accuracy = 0.6510417, acc/mean_per_class_accuracy = 0.645783, confusion/false_negatives = 30.0, confusion/false_positives = 104.0, confusion/true_negatives = 83.0, confusion/true_positives = 167.0, global_step = 120, loss = 0.62313586, pr/auc = 0.645783, pr/precision = 0.61623615, pr/recall = 0.84771574, sanity/predictions_above_95% = 0.013020833, sanity/predictions_below_5% = 0.0
+2018-06-25 13:40:39,069 Current sadness: 0.21488748098190158
+2018-06-25 13:40:39,069 End epoch 3
+2018-06-25 13:40:39,412 Calling model_fn.
+2018-06-25 13:40:39,634 Done calling model_fn.
+2018-06-25 13:40:39,635 Create CheckpointSaverHook.
+2018-06-25 13:40:39,718 Graph was finalized.
+2018-06-25 13:40:39,719 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-120
+2018-06-25 13:40:39,771 Running local_init_op.
+2018-06-25 13:40:39,779 Done running local_init_op.
+2018-06-25 13:40:41,061 Saving checkpoints for 121 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:41,173 loss = 0.6233493, step = 121
+2018-06-25 13:40:52,466 Saving checkpoints for 150 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:52,639 Loss for final step: 0.6877193.
+2018-06-25 13:40:52,963 Calling model_fn.
+2018-06-25 13:40:53,240 Done calling model_fn.
+2018-06-25 13:40:53,253 Starting evaluation at 2018-06-25-12:40:53
+2018-06-25 13:40:53,318 Graph was finalized.
+2018-06-25 13:40:53,318 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-150
+2018-06-25 13:40:53,361 Running local_init_op.
+2018-06-25 13:40:53,384 Done running local_init_op.
+2018-06-25 13:40:53,918 Evaluation [1/3]
+2018-06-25 13:40:54,112 Evaluation [2/3]
+2018-06-25 13:40:54,288 Evaluation [3/3]
+2018-06-25 13:40:54,376 Finished evaluation at 2018-06-25-12:40:54
+2018-06-25 13:40:54,376 Saving dict for global step 150: acc/accuracy = 0.6875, acc/mean_per_class_accuracy = 0.6875, confusion/false_negatives = 68.0, confusion/false_positives = 52.0, confusion/true_negatives = 140.0, confusion/true_positives = 124.0, global_step = 150, loss = 0.6088411, pr/auc = 0.68749994, pr/precision = 0.70454544, pr/recall = 0.6458333, sanity/predictions_above_95% = 0.026041666, sanity/predictions_below_5% = 0.0
+2018-06-25 13:40:54,378 Current sadness: 0.0
+2018-06-25 13:40:54,378 End epoch 4
+2018-06-25 13:40:54,819 Calling model_fn.
+2018-06-25 13:40:55,077 Done calling model_fn.
+2018-06-25 13:40:55,078 Create CheckpointSaverHook.
+2018-06-25 13:40:55,175 Graph was finalized.
+2018-06-25 13:40:55,175 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-150
+2018-06-25 13:40:55,238 Running local_init_op.
+2018-06-25 13:40:55,247 Done running local_init_op.
+2018-06-25 13:40:56,782 Saving checkpoints for 151 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:40:56,907 loss = 0.63247776, step = 151
+2018-06-25 13:41:09,436 Saving checkpoints for 180 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:09,632 Loss for final step: 0.7204596.
+2018-06-25 13:41:10,010 Calling model_fn.
+2018-06-25 13:41:10,298 Done calling model_fn.
+2018-06-25 13:41:10,310 Starting evaluation at 2018-06-25-12:41:10
+2018-06-25 13:41:10,373 Graph was finalized.
+2018-06-25 13:41:10,374 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-180
+2018-06-25 13:41:10,415 Running local_init_op.
+2018-06-25 13:41:10,438 Done running local_init_op.
+2018-06-25 13:41:12,505 Evaluation [1/3]
+2018-06-25 13:41:12,681 Evaluation [2/3]
+2018-06-25 13:41:12,848 Evaluation [3/3]
+2018-06-25 13:41:12,935 Finished evaluation at 2018-06-25-12:41:12
+2018-06-25 13:41:12,936 Saving dict for global step 180: acc/accuracy = 0.5833333, acc/mean_per_class_accuracy = 0.5992986, confusion/false_negatives = 11.0, confusion/false_positives = 149.0, confusion/true_negatives = 52.0, confusion/true_positives = 172.0, global_step = 180, loss = 0.67839, pr/auc = 0.5992986, pr/precision = 0.53582555, pr/recall = 0.9398907, sanity/predictions_above_95% = 0.0, sanity/predictions_below_5% = 0.0
+2018-06-25 13:41:12,936 Current sadness: 2.1067299257555803
+2018-06-25 13:41:12,936 End epoch 5
+2018-06-25 13:41:13,253 Calling model_fn.
+2018-06-25 13:41:13,545 Done calling model_fn.
+2018-06-25 13:41:13,546 Create CheckpointSaverHook.
+2018-06-25 13:41:13,638 Graph was finalized.
+2018-06-25 13:41:13,638 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-180
+2018-06-25 13:41:13,691 Running local_init_op.
+2018-06-25 13:41:13,700 Done running local_init_op.
+2018-06-25 13:41:15,307 Saving checkpoints for 181 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:15,420 loss = 0.73227227, step = 181
+2018-06-25 13:41:27,090 Saving checkpoints for 210 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:27,225 Loss for final step: 0.6278258.
+2018-06-25 13:41:27,533 Calling model_fn.
+2018-06-25 13:41:27,888 Done calling model_fn.
+2018-06-25 13:41:27,902 Starting evaluation at 2018-06-25-12:41:27
+2018-06-25 13:41:27,969 Graph was finalized.
+2018-06-25 13:41:27,969 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-210
+2018-06-25 13:41:28,011 Running local_init_op.
+2018-06-25 13:41:28,033 Done running local_init_op.
+2018-06-25 13:41:29,892 Evaluation [1/3]
+2018-06-25 13:41:30,061 Evaluation [2/3]
+2018-06-25 13:41:30,213 Evaluation [3/3]
+2018-06-25 13:41:30,284 Finished evaluation at 2018-06-25-12:41:30
+2018-06-25 13:41:30,284 Saving dict for global step 210: acc/accuracy = 0.65625, acc/mean_per_class_accuracy = 0.6551284, confusion/false_negatives = 107.0, confusion/false_positives = 25.0, confusion/true_negatives = 168.0, confusion/true_positives = 84.0, global_step = 210, loss = 0.62325925, pr/auc = 0.6551285, pr/precision = 0.7706422, pr/recall = 0.43979058, sanity/predictions_above_95% = 0.041666668, sanity/predictions_below_5% = 0.0
+2018-06-25 13:41:30,285 Current sadness: 0.4749634786933143
+2018-06-25 13:41:30,285 End epoch 6
+2018-06-25 13:41:30,588 Calling model_fn.
+2018-06-25 13:41:30,878 Done calling model_fn.
+2018-06-25 13:41:30,880 Create CheckpointSaverHook.
+2018-06-25 13:41:30,991 Graph was finalized.
+2018-06-25 13:41:30,991 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-210
+2018-06-25 13:41:31,052 Running local_init_op.
+2018-06-25 13:41:31,063 Done running local_init_op.
+2018-06-25 13:41:32,350 Saving checkpoints for 211 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:32,480 loss = 0.74172294, step = 211
+2018-06-25 13:41:44,860 Saving checkpoints for 240 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:45,090 Loss for final step: 0.5631347.
+2018-06-25 13:41:45,445 Calling model_fn.
+2018-06-25 13:41:45,717 Done calling model_fn.
+2018-06-25 13:41:45,729 Starting evaluation at 2018-06-25-12:41:45
+2018-06-25 13:41:45,792 Graph was finalized.
+2018-06-25 13:41:45,792 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-240
+2018-06-25 13:41:45,832 Running local_init_op.
+2018-06-25 13:41:45,855 Done running local_init_op.
+2018-06-25 13:41:46,574 Evaluation [1/3]
+2018-06-25 13:41:46,722 Evaluation [2/3]
+2018-06-25 13:41:46,880 Evaluation [3/3]
+2018-06-25 13:41:46,968 Finished evaluation at 2018-06-25-12:41:46
+2018-06-25 13:41:46,968 Saving dict for global step 240: acc/accuracy = 0.6901042, acc/mean_per_class_accuracy = 0.690586, confusion/false_negatives = 69.0, confusion/false_positives = 50.0, confusion/true_negatives = 140.0, confusion/true_positives = 125.0, global_step = 240, loss = 0.5890532, pr/auc = 0.69058603, pr/precision = 0.71428573, pr/recall = 0.6443299, sanity/predictions_above_95% = 0.026041666, sanity/predictions_below_5% = 0.0
+2018-06-25 13:41:46,969 Current sadness: 0.0
+2018-06-25 13:41:46,969 End epoch 7
+2018-06-25 13:41:47,292 Calling model_fn.
+2018-06-25 13:41:47,584 Done calling model_fn.
+2018-06-25 13:41:47,584 Create CheckpointSaverHook.
+2018-06-25 13:41:47,666 Graph was finalized.
+2018-06-25 13:41:47,667 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-240
+2018-06-25 13:41:47,722 Running local_init_op.
+2018-06-25 13:41:47,730 Done running local_init_op.
+2018-06-25 13:41:48,879 Saving checkpoints for 241 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:48,994 loss = 0.61442494, step = 241
+2018-06-25 13:41:58,960 Saving checkpoints for 270 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:41:59,110 Loss for final step: 0.5943483.
+2018-06-25 13:41:59,424 Calling model_fn.
+2018-06-25 13:41:59,765 Done calling model_fn.
+2018-06-25 13:41:59,776 Starting evaluation at 2018-06-25-12:41:59
+2018-06-25 13:41:59,839 Graph was finalized.
+2018-06-25 13:41:59,840 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-270
+2018-06-25 13:41:59,880 Running local_init_op.
+2018-06-25 13:41:59,902 Done running local_init_op.
+2018-06-25 13:42:00,349 Evaluation [1/3]
+2018-06-25 13:42:00,495 Evaluation [2/3]
+2018-06-25 13:42:00,646 Evaluation [3/3]
+2018-06-25 13:42:00,712 Finished evaluation at 2018-06-25-12:42:00
+2018-06-25 13:42:00,713 Saving dict for global step 270: acc/accuracy = 0.6588542, acc/mean_per_class_accuracy = 0.65119565, confusion/false_negatives = 98.0, confusion/false_positives = 33.0, confusion/true_negatives = 167.0, confusion/true_positives = 86.0, global_step = 270, loss = 0.6071608, pr/auc = 0.65119565, pr/precision = 0.7226891, pr/recall = 0.4673913, sanity/predictions_above_95% = 0.018229166, sanity/predictions_below_5% = 0.0
+2018-06-25 13:42:00,713 Current sadness: 0.4415084777394065
+2018-06-25 13:42:00,713 End epoch 8
+2018-06-25 13:42:01,017 Calling model_fn.
+2018-06-25 13:42:01,261 Done calling model_fn.
+2018-06-25 13:42:01,262 Create CheckpointSaverHook.
+2018-06-25 13:42:01,359 Graph was finalized.
+2018-06-25 13:42:01,360 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-270
+2018-06-25 13:42:01,419 Running local_init_op.
+2018-06-25 13:42:01,426 Done running local_init_op.
+2018-06-25 13:42:02,959 Saving checkpoints for 271 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:03,083 loss = 0.59930784, step = 271
+2018-06-25 13:42:14,675 Saving checkpoints for 300 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:14,856 Loss for final step: 0.65820825.
+2018-06-25 13:42:15,187 Calling model_fn.
+2018-06-25 13:42:15,482 Done calling model_fn.
+2018-06-25 13:42:15,494 Starting evaluation at 2018-06-25-12:42:15
+2018-06-25 13:42:15,556 Graph was finalized.
+2018-06-25 13:42:15,556 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-300
+2018-06-25 13:42:15,595 Running local_init_op.
+2018-06-25 13:42:15,617 Done running local_init_op.
+2018-06-25 13:42:16,617 Evaluation [1/3]
+2018-06-25 13:42:16,780 Evaluation [2/3]
+2018-06-25 13:42:16,937 Evaluation [3/3]
+2018-06-25 13:42:17,027 Finished evaluation at 2018-06-25-12:42:17
+2018-06-25 13:42:17,027 Saving dict for global step 300: acc/accuracy = 0.7057292, acc/mean_per_class_accuracy = 0.70524645, confusion/false_negatives = 74.0, confusion/false_positives = 39.0, confusion/true_negatives = 154.0, confusion/true_positives = 117.0, global_step = 300, loss = 0.588155, pr/auc = 0.70524645, pr/precision = 0.75, pr/recall = 0.61256546, sanity/predictions_above_95% = 0.013020833, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:42:17,028 Current sadness: 0.0
+2018-06-25 13:42:17,028 End epoch 9
+2018-06-25 13:42:17,439 Calling model_fn.
+2018-06-25 13:42:17,655 Done calling model_fn.
+2018-06-25 13:42:17,656 Create CheckpointSaverHook.
+2018-06-25 13:42:17,738 Graph was finalized.
+2018-06-25 13:42:17,739 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-300
+2018-06-25 13:42:17,793 Running local_init_op.
+2018-06-25 13:42:17,801 Done running local_init_op.
+2018-06-25 13:42:19,071 Saving checkpoints for 301 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:19,197 loss = 0.56398743, step = 301
+2018-06-25 13:42:30,156 Saving checkpoints for 330 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:30,287 Loss for final step: 0.6188479.
+2018-06-25 13:42:30,651 Calling model_fn.
+2018-06-25 13:42:30,920 Done calling model_fn.
+2018-06-25 13:42:30,933 Starting evaluation at 2018-06-25-12:42:30
+2018-06-25 13:42:30,997 Graph was finalized.
+2018-06-25 13:42:30,997 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-330
+2018-06-25 13:42:31,037 Running local_init_op.
+2018-06-25 13:42:31,058 Done running local_init_op.
+2018-06-25 13:42:31,493 Evaluation [1/3]
+2018-06-25 13:42:31,645 Evaluation [2/3]
+2018-06-25 13:42:31,799 Evaluation [3/3]
+2018-06-25 13:42:31,886 Finished evaluation at 2018-06-25-12:42:31
+2018-06-25 13:42:31,886 Saving dict for global step 330: acc/accuracy = 0.6770833, acc/mean_per_class_accuracy = 0.6823068, confusion/false_negatives = 41.0, confusion/false_positives = 83.0, confusion/true_negatives = 120.0, confusion/true_positives = 140.0, global_step = 330, loss = 0.59319097, pr/auc = 0.6823068, pr/precision = 0.62780267, pr/recall = 0.77348065, sanity/predictions_above_95% = 0.0078125, sanity/predictions_below_5% = 0.0
+2018-06-25 13:42:31,887 Saving model at epoch 10
+2018-06-25 13:42:32,078 Calling model_fn.
+2018-06-25 13:42:32,139 Done calling model_fn.
+2018-06-25 13:42:32,140 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:42:32,141 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:42:32,141 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:42:32,153 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-330
+2018-06-25 13:42:32,164 Assets added to graph.
+2018-06-25 13:42:32,164 No assets to write.
+2018-06-25 13:42:32,247 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529930552'/saved_model.pb"
+2018-06-25 13:42:32,252 Current sadness: 0.16503832650135108
+2018-06-25 13:42:32,252 End epoch 10
+2018-06-25 13:42:32,563 Calling model_fn.
+2018-06-25 13:42:32,845 Done calling model_fn.
+2018-06-25 13:42:32,845 Create CheckpointSaverHook.
+2018-06-25 13:42:32,927 Graph was finalized.
+2018-06-25 13:42:32,928 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-330
+2018-06-25 13:42:32,982 Running local_init_op.
+2018-06-25 13:42:32,991 Done running local_init_op.
+2018-06-25 13:42:34,248 Saving checkpoints for 331 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:34,359 loss = 0.601508, step = 331
+2018-06-25 13:42:44,786 Saving checkpoints for 360 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:44,959 Loss for final step: 0.6133059.
+2018-06-25 13:42:45,287 Calling model_fn.
+2018-06-25 13:42:45,632 Done calling model_fn.
+2018-06-25 13:42:45,643 Starting evaluation at 2018-06-25-12:42:45
+2018-06-25 13:42:45,707 Graph was finalized.
+2018-06-25 13:42:45,707 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-360
+2018-06-25 13:42:45,751 Running local_init_op.
+2018-06-25 13:42:45,776 Done running local_init_op.
+2018-06-25 13:42:46,231 Evaluation [1/3]
+2018-06-25 13:42:46,385 Evaluation [2/3]
+2018-06-25 13:42:46,536 Evaluation [3/3]
+2018-06-25 13:42:46,621 Finished evaluation at 2018-06-25-12:42:46
+2018-06-25 13:42:46,622 Saving dict for global step 360: acc/accuracy = 0.7005208, acc/mean_per_class_accuracy = 0.7056956, confusion/false_negatives = 39.0, confusion/false_positives = 76.0, confusion/true_negatives = 129.0, confusion/true_positives = 140.0, global_step = 360, loss = 0.5780862, pr/auc = 0.70569557, pr/precision = 0.6481481, pr/recall = 0.7821229, sanity/predictions_above_95% = 0.0234375, sanity/predictions_below_5% = 0.0
+2018-06-25 13:42:46,622 Current sadness: 0.0
+2018-06-25 13:42:46,622 End epoch 11
+2018-06-25 13:42:46,937 Calling model_fn.
+2018-06-25 13:42:47,168 Done calling model_fn.
+2018-06-25 13:42:47,168 Create CheckpointSaverHook.
+2018-06-25 13:42:47,259 Graph was finalized.
+2018-06-25 13:42:47,260 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-360
+2018-06-25 13:42:47,317 Running local_init_op.
+2018-06-25 13:42:47,325 Done running local_init_op.
+2018-06-25 13:42:49,036 Saving checkpoints for 361 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:42:49,156 loss = 0.5617903, step = 361
+2018-06-25 13:43:00,943 Saving checkpoints for 390 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:01,122 Loss for final step: 0.5721529.
+2018-06-25 13:43:01,500 Calling model_fn.
+2018-06-25 13:43:01,784 Done calling model_fn.
+2018-06-25 13:43:01,798 Starting evaluation at 2018-06-25-12:43:01
+2018-06-25 13:43:01,870 Graph was finalized.
+2018-06-25 13:43:01,870 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-390
+2018-06-25 13:43:01,916 Running local_init_op.
+2018-06-25 13:43:01,940 Done running local_init_op.
+2018-06-25 13:43:02,787 Evaluation [1/3]
+2018-06-25 13:43:02,959 Evaluation [2/3]
+2018-06-25 13:43:03,117 Evaluation [3/3]
+2018-06-25 13:43:03,188 Finished evaluation at 2018-06-25-12:43:03
+2018-06-25 13:43:03,188 Saving dict for global step 390: acc/accuracy = 0.671875, acc/mean_per_class_accuracy = 0.67318344, confusion/false_negatives = 53.0, confusion/false_positives = 73.0, confusion/true_negatives = 125.0, confusion/true_positives = 133.0, global_step = 390, loss = 0.6229091, pr/auc = 0.67318344, pr/precision = 0.6456311, pr/recall = 0.71505374, sanity/predictions_above_95% = 0.010416667, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:43:03,188 Current sadness: 1.352859323845933
+2018-06-25 13:43:03,188 End epoch 12
+2018-06-25 13:43:03,586 Calling model_fn.
+2018-06-25 13:43:03,842 Done calling model_fn.
+2018-06-25 13:43:03,843 Create CheckpointSaverHook.
+2018-06-25 13:43:03,956 Graph was finalized.
+2018-06-25 13:43:03,956 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-390
+2018-06-25 13:43:04,012 Running local_init_op.
+2018-06-25 13:43:04,019 Done running local_init_op.
+2018-06-25 13:43:05,449 Saving checkpoints for 391 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:05,584 loss = 0.57089543, step = 391
+2018-06-25 13:43:17,152 Saving checkpoints for 420 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:17,304 Loss for final step: 0.581072.
+2018-06-25 13:43:17,689 Calling model_fn.
+2018-06-25 13:43:17,955 Done calling model_fn.
+2018-06-25 13:43:17,967 Starting evaluation at 2018-06-25-12:43:17
+2018-06-25 13:43:18,032 Graph was finalized.
+2018-06-25 13:43:18,032 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-420
+2018-06-25 13:43:18,072 Running local_init_op.
+2018-06-25 13:43:18,094 Done running local_init_op.
+2018-06-25 13:43:19,722 Evaluation [1/3]
+2018-06-25 13:43:19,893 Evaluation [2/3]
+2018-06-25 13:43:20,046 Evaluation [3/3]
+2018-06-25 13:43:20,128 Finished evaluation at 2018-06-25-12:43:20
+2018-06-25 13:43:20,128 Saving dict for global step 420: acc/accuracy = 0.6927083, acc/mean_per_class_accuracy = 0.68172777, confusion/false_negatives = 86.0, confusion/false_positives = 32.0, confusion/true_negatives = 173.0, confusion/true_positives = 93.0, global_step = 420, loss = 0.5679863, pr/auc = 0.68172777, pr/precision = 0.744, pr/recall = 0.51955307, sanity/predictions_above_95% = 0.028645834, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:43:20,129 Current sadness: 0.0
+2018-06-25 13:43:20,129 End epoch 13
+2018-06-25 13:43:20,446 Calling model_fn.
+2018-06-25 13:43:20,680 Done calling model_fn.
+2018-06-25 13:43:20,681 Create CheckpointSaverHook.
+2018-06-25 13:43:20,762 Graph was finalized.
+2018-06-25 13:43:20,762 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-420
+2018-06-25 13:43:20,815 Running local_init_op.
+2018-06-25 13:43:20,822 Done running local_init_op.
+2018-06-25 13:43:22,085 Saving checkpoints for 421 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:22,191 loss = 0.622543, step = 421
+2018-06-25 13:43:33,441 Saving checkpoints for 450 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:33,616 Loss for final step: 0.5553344.
+2018-06-25 13:43:33,984 Calling model_fn.
+2018-06-25 13:43:34,391 Done calling model_fn.
+2018-06-25 13:43:34,403 Starting evaluation at 2018-06-25-12:43:34
+2018-06-25 13:43:34,469 Graph was finalized.
+2018-06-25 13:43:34,470 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-450
+2018-06-25 13:43:34,511 Running local_init_op.
+2018-06-25 13:43:34,533 Done running local_init_op.
+2018-06-25 13:43:36,365 Evaluation [1/3]
+2018-06-25 13:43:36,561 Evaluation [2/3]
+2018-06-25 13:43:36,724 Evaluation [3/3]
+2018-06-25 13:43:36,795 Finished evaluation at 2018-06-25-12:43:36
+2018-06-25 13:43:36,795 Saving dict for global step 450: acc/accuracy = 0.7135417, acc/mean_per_class_accuracy = 0.71732026, confusion/false_negatives = 40.0, confusion/false_positives = 70.0, confusion/true_negatives = 134.0, confusion/true_positives = 140.0, global_step = 450, loss = 0.56525856, pr/auc = 0.71732026, pr/precision = 0.6666667, pr/recall = 0.7777778, sanity/predictions_above_95% = 0.010416667, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:43:36,795 Current sadness: 0.0
+2018-06-25 13:43:36,796 End epoch 14
+2018-06-25 13:43:37,227 Calling model_fn.
+2018-06-25 13:43:37,481 Done calling model_fn.
+2018-06-25 13:43:37,482 Create CheckpointSaverHook.
+2018-06-25 13:43:37,667 Graph was finalized.
+2018-06-25 13:43:37,667 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-450
+2018-06-25 13:43:37,726 Running local_init_op.
+2018-06-25 13:43:37,735 Done running local_init_op.
+2018-06-25 13:43:38,992 Saving checkpoints for 451 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:39,415 loss = 0.51682013, step = 451
+2018-06-25 13:43:51,133 Saving checkpoints for 480 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:51,338 Loss for final step: 0.5830878.
+2018-06-25 13:43:51,738 Calling model_fn.
+2018-06-25 13:43:52,058 Done calling model_fn.
+2018-06-25 13:43:52,070 Starting evaluation at 2018-06-25-12:43:52
+2018-06-25 13:43:52,144 Graph was finalized.
+2018-06-25 13:43:52,144 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-480
+2018-06-25 13:43:52,186 Running local_init_op.
+2018-06-25 13:43:52,208 Done running local_init_op.
+2018-06-25 13:43:52,740 Evaluation [1/3]
+2018-06-25 13:43:52,907 Evaluation [2/3]
+2018-06-25 13:43:53,065 Evaluation [3/3]
+2018-06-25 13:43:53,135 Finished evaluation at 2018-06-25-12:43:53
+2018-06-25 13:43:53,136 Saving dict for global step 480: acc/accuracy = 0.7135417, acc/mean_per_class_accuracy = 0.7135785, confusion/false_negatives = 52.0, confusion/false_positives = 58.0, confusion/true_negatives = 144.0, confusion/true_positives = 130.0, global_step = 480, loss = 0.5750979, pr/auc = 0.7135785, pr/precision = 0.69148934, pr/recall = 0.71428573, sanity/predictions_above_95% = 0.013020833, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:43:53,136 Current sadness: 0.3820036887336656
+2018-06-25 13:43:53,136 End epoch 15
+2018-06-25 13:43:53,453 Calling model_fn.
+2018-06-25 13:43:53,706 Done calling model_fn.
+2018-06-25 13:43:53,707 Create CheckpointSaverHook.
+2018-06-25 13:43:53,877 Graph was finalized.
+2018-06-25 13:43:53,878 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-480
+2018-06-25 13:43:53,932 Running local_init_op.
+2018-06-25 13:43:53,939 Done running local_init_op.
+2018-06-25 13:43:55,301 Saving checkpoints for 481 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:43:55,421 loss = 0.5734198, step = 481
+2018-06-25 13:44:06,520 Saving checkpoints for 510 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:06,686 Loss for final step: 0.5603622.
+2018-06-25 13:44:07,012 Calling model_fn.
+2018-06-25 13:44:07,293 Done calling model_fn.
+2018-06-25 13:44:07,305 Starting evaluation at 2018-06-25-12:44:07
+2018-06-25 13:44:07,391 Graph was finalized.
+2018-06-25 13:44:07,392 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-510
+2018-06-25 13:44:07,440 Running local_init_op.
+2018-06-25 13:44:07,470 Done running local_init_op.
+2018-06-25 13:44:08,147 Evaluation [1/3]
+2018-06-25 13:44:08,313 Evaluation [2/3]
+2018-06-25 13:44:08,480 Evaluation [3/3]
+2018-06-25 13:44:08,566 Finished evaluation at 2018-06-25-12:44:08
+2018-06-25 13:44:08,566 Saving dict for global step 510: acc/accuracy = 0.7369792, acc/mean_per_class_accuracy = 0.73672414, confusion/false_negatives = 51.0, confusion/false_positives = 50.0, confusion/true_negatives = 135.0, confusion/true_positives = 148.0, global_step = 510, loss = 0.5477727, pr/auc = 0.7367242, pr/precision = 0.74747473, pr/recall = 0.74371856, sanity/predictions_above_95% = 0.013020833, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:44:08,566 Current sadness: 0.0
+2018-06-25 13:44:08,566 End epoch 16
+2018-06-25 13:44:08,964 Calling model_fn.
+2018-06-25 13:44:09,190 Done calling model_fn.
+2018-06-25 13:44:09,190 Create CheckpointSaverHook.
+2018-06-25 13:44:09,275 Graph was finalized.
+2018-06-25 13:44:09,275 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-510
+2018-06-25 13:44:09,333 Running local_init_op.
+2018-06-25 13:44:09,342 Done running local_init_op.
+2018-06-25 13:44:10,678 Saving checkpoints for 511 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:10,803 loss = 0.5694622, step = 511
+2018-06-25 13:44:21,900 Saving checkpoints for 540 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:22,048 Loss for final step: 0.5903481.
+2018-06-25 13:44:22,420 Calling model_fn.
+2018-06-25 13:44:22,698 Done calling model_fn.
+2018-06-25 13:44:22,710 Starting evaluation at 2018-06-25-12:44:22
+2018-06-25 13:44:22,776 Graph was finalized.
+2018-06-25 13:44:22,776 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-540
+2018-06-25 13:44:22,817 Running local_init_op.
+2018-06-25 13:44:22,841 Done running local_init_op.
+2018-06-25 13:44:23,285 Evaluation [1/3]
+2018-06-25 13:44:23,440 Evaluation [2/3]
+2018-06-25 13:44:23,601 Evaluation [3/3]
+2018-06-25 13:44:23,669 Finished evaluation at 2018-06-25-12:44:23
+2018-06-25 13:44:23,670 Saving dict for global step 540: acc/accuracy = 0.7213542, acc/mean_per_class_accuracy = 0.7263072, confusion/false_negatives = 35.0, confusion/false_positives = 72.0, confusion/true_negatives = 132.0, confusion/true_positives = 145.0, global_step = 540, loss = 0.55993235, pr/auc = 0.7263073, pr/precision = 0.66820276, pr/recall = 0.8055556, sanity/predictions_above_95% = 0.0052083335, sanity/predictions_below_5% = 0.0052083335
+2018-06-25 13:44:23,670 Current sadness: 0.3709208033798844
+2018-06-25 13:44:23,670 End epoch 17
+2018-06-25 13:44:24,009 Calling model_fn.
+2018-06-25 13:44:24,304 Done calling model_fn.
+2018-06-25 13:44:24,305 Create CheckpointSaverHook.
+2018-06-25 13:44:24,394 Graph was finalized.
+2018-06-25 13:44:24,395 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-540
+2018-06-25 13:44:24,447 Running local_init_op.
+2018-06-25 13:44:24,455 Done running local_init_op.
+2018-06-25 13:44:25,680 Saving checkpoints for 541 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:25,793 loss = 0.5129856, step = 541
+2018-06-25 13:44:36,311 Saving checkpoints for 570 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:36,455 Loss for final step: 0.5110105.
+2018-06-25 13:44:36,817 Calling model_fn.
+2018-06-25 13:44:37,186 Done calling model_fn.
+2018-06-25 13:44:37,197 Starting evaluation at 2018-06-25-12:44:37
+2018-06-25 13:44:37,268 Graph was finalized.
+2018-06-25 13:44:37,268 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-570
+2018-06-25 13:44:37,312 Running local_init_op.
+2018-06-25 13:44:37,335 Done running local_init_op.
+2018-06-25 13:44:37,967 Evaluation [1/3]
+2018-06-25 13:44:38,142 Evaluation [2/3]
+2018-06-25 13:44:38,314 Evaluation [3/3]
+2018-06-25 13:44:38,401 Finished evaluation at 2018-06-25-12:44:38
+2018-06-25 13:44:38,401 Saving dict for global step 570: acc/accuracy = 0.7213542, acc/mean_per_class_accuracy = 0.71670514, confusion/false_negatives = 76.0, confusion/false_positives = 31.0, confusion/true_negatives = 168.0, confusion/true_positives = 109.0, global_step = 570, loss = 0.5446623, pr/auc = 0.71670514, pr/precision = 0.7785714, pr/recall = 0.5891892, sanity/predictions_above_95% = 0.028645834, sanity/predictions_below_5% = 0.020833334
+2018-06-25 13:44:38,402 Current sadness: 0.0
+2018-06-25 13:44:38,402 End epoch 18
+2018-06-25 13:44:38,751 Calling model_fn.
+2018-06-25 13:44:39,002 Done calling model_fn.
+2018-06-25 13:44:39,003 Create CheckpointSaverHook.
+2018-06-25 13:44:39,086 Graph was finalized.
+2018-06-25 13:44:39,087 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-570
+2018-06-25 13:44:39,140 Running local_init_op.
+2018-06-25 13:44:39,147 Done running local_init_op.
+2018-06-25 13:44:40,418 Saving checkpoints for 571 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:40,599 loss = 0.5556197, step = 571
+2018-06-25 13:44:51,139 Saving checkpoints for 600 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:51,301 Loss for final step: 0.5002433.
+2018-06-25 13:44:51,617 Calling model_fn.
+2018-06-25 13:44:51,907 Done calling model_fn.
+2018-06-25 13:44:51,918 Starting evaluation at 2018-06-25-12:44:51
+2018-06-25 13:44:51,983 Graph was finalized.
+2018-06-25 13:44:51,983 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-600
+2018-06-25 13:44:52,027 Running local_init_op.
+2018-06-25 13:44:52,050 Done running local_init_op.
+2018-06-25 13:44:52,537 Evaluation [1/3]
+2018-06-25 13:44:52,706 Evaluation [2/3]
+2018-06-25 13:44:52,875 Evaluation [3/3]
+2018-06-25 13:44:52,959 Finished evaluation at 2018-06-25-12:44:52
+2018-06-25 13:44:52,959 Saving dict for global step 600: acc/accuracy = 0.7317708, acc/mean_per_class_accuracy = 0.720793, confusion/false_negatives = 79.0, confusion/false_positives = 24.0, confusion/true_negatives = 181.0, confusion/true_positives = 100.0, global_step = 600, loss = 0.56232077, pr/auc = 0.720793, pr/precision = 0.8064516, pr/recall = 0.5586592, sanity/predictions_above_95% = 0.052083332, sanity/predictions_below_5% = 0.0
+2018-06-25 13:44:52,960 Current sadness: 0.6525824525200657
+2018-06-25 13:44:52,960 End epoch 19
+2018-06-25 13:44:53,367 Calling model_fn.
+2018-06-25 13:44:53,597 Done calling model_fn.
+2018-06-25 13:44:53,598 Create CheckpointSaverHook.
+2018-06-25 13:44:53,687 Graph was finalized.
+2018-06-25 13:44:53,688 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-600
+2018-06-25 13:44:53,744 Running local_init_op.
+2018-06-25 13:44:53,752 Done running local_init_op.
+2018-06-25 13:44:55,048 Saving checkpoints for 601 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:44:55,174 loss = 0.57610774, step = 601
+2018-06-25 13:45:06,598 Saving checkpoints for 630 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:06,752 Loss for final step: 0.5611253.
+2018-06-25 13:45:07,080 Calling model_fn.
+2018-06-25 13:45:07,424 Done calling model_fn.
+2018-06-25 13:45:07,438 Starting evaluation at 2018-06-25-12:45:07
+2018-06-25 13:45:07,531 Graph was finalized.
+2018-06-25 13:45:07,531 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-630
+2018-06-25 13:45:07,580 Running local_init_op.
+2018-06-25 13:45:07,604 Done running local_init_op.
+2018-06-25 13:45:08,380 Evaluation [1/3]
+2018-06-25 13:45:08,527 Evaluation [2/3]
+2018-06-25 13:45:08,680 Evaluation [3/3]
+2018-06-25 13:45:08,748 Finished evaluation at 2018-06-25-12:45:08
+2018-06-25 13:45:08,749 Saving dict for global step 630: acc/accuracy = 0.7239583, acc/mean_per_class_accuracy = 0.7328408, confusion/false_negatives = 30.0, confusion/false_positives = 76.0, confusion/true_negatives = 134.0, confusion/true_positives = 144.0, global_step = 630, loss = 0.5378468, pr/auc = 0.7328407, pr/precision = 0.6545454, pr/recall = 0.82758623, sanity/predictions_above_95% = 0.010416667, sanity/predictions_below_5% = 0.0052083335
+2018-06-25 13:45:08,749 Saving model at epoch 20
+2018-06-25 13:45:08,938 Calling model_fn.
+2018-06-25 13:45:09,006 Done calling model_fn.
+2018-06-25 13:45:09,007 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:45:09,007 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:45:09,007 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:45:09,020 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-630
+2018-06-25 13:45:09,033 Assets added to graph.
+2018-06-25 13:45:09,033 No assets to write.
+2018-06-25 13:45:09,111 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529930709'/saved_model.pb"
+2018-06-25 13:45:09,116 Current sadness: 0.0
+2018-06-25 13:45:09,116 End epoch 20
+2018-06-25 13:45:09,503 Calling model_fn.
+2018-06-25 13:45:09,875 Done calling model_fn.
+2018-06-25 13:45:09,876 Create CheckpointSaverHook.
+2018-06-25 13:45:09,971 Graph was finalized.
+2018-06-25 13:45:09,971 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-630
+2018-06-25 13:45:10,030 Running local_init_op.
+2018-06-25 13:45:10,038 Done running local_init_op.
+2018-06-25 13:45:11,347 Saving checkpoints for 631 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:11,482 loss = 0.5129438, step = 631
+2018-06-25 13:45:23,872 Saving checkpoints for 660 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:24,025 Loss for final step: 0.540388.
+2018-06-25 13:45:24,336 Calling model_fn.
+2018-06-25 13:45:24,725 Done calling model_fn.
+2018-06-25 13:45:24,739 Starting evaluation at 2018-06-25-12:45:24
+2018-06-25 13:45:24,811 Graph was finalized.
+2018-06-25 13:45:24,812 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-660
+2018-06-25 13:45:24,858 Running local_init_op.
+2018-06-25 13:45:24,883 Done running local_init_op.
+2018-06-25 13:45:26,511 Evaluation [1/3]
+2018-06-25 13:45:26,678 Evaluation [2/3]
+2018-06-25 13:45:26,829 Evaluation [3/3]
+2018-06-25 13:45:26,899 Finished evaluation at 2018-06-25-12:45:26
+2018-06-25 13:45:26,899 Saving dict for global step 660: acc/accuracy = 0.7526042, acc/mean_per_class_accuracy = 0.7494874, confusion/false_negatives = 50.0, confusion/false_positives = 45.0, confusion/true_negatives = 164.0, confusion/true_positives = 125.0, global_step = 660, loss = 0.5345352, pr/auc = 0.7494874, pr/precision = 0.7352941, pr/recall = 0.71428573, sanity/predictions_above_95% = 0.049479168, sanity/predictions_below_5% = 0.036458332
+2018-06-25 13:45:26,900 Current sadness: 0.0
+2018-06-25 13:45:26,900 End epoch 21
+2018-06-25 13:45:27,204 Calling model_fn.
+2018-06-25 13:45:27,419 Done calling model_fn.
+2018-06-25 13:45:27,420 Create CheckpointSaverHook.
+2018-06-25 13:45:27,504 Graph was finalized.
+2018-06-25 13:45:27,504 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-660
+2018-06-25 13:45:27,558 Running local_init_op.
+2018-06-25 13:45:27,566 Done running local_init_op.
+2018-06-25 13:45:28,898 Saving checkpoints for 661 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:29,082 loss = 0.53127205, step = 661
+2018-06-25 13:45:40,943 Saving checkpoints for 690 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:41,090 Loss for final step: 0.5320601.
+2018-06-25 13:45:41,417 Calling model_fn.
+2018-06-25 13:45:41,700 Done calling model_fn.
+2018-06-25 13:45:41,711 Starting evaluation at 2018-06-25-12:45:41
+2018-06-25 13:45:41,773 Graph was finalized.
+2018-06-25 13:45:41,773 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-690
+2018-06-25 13:45:41,812 Running local_init_op.
+2018-06-25 13:45:41,834 Done running local_init_op.
+2018-06-25 13:45:43,277 Evaluation [1/3]
+2018-06-25 13:45:43,429 Evaluation [2/3]
+2018-06-25 13:45:43,582 Evaluation [3/3]
+2018-06-25 13:45:43,650 Finished evaluation at 2018-06-25-12:45:43
+2018-06-25 13:45:43,650 Saving dict for global step 690: acc/accuracy = 0.7552083, acc/mean_per_class_accuracy = 0.7542279, confusion/false_negatives = 53.0, confusion/false_positives = 41.0, confusion/true_negatives = 156.0, confusion/true_positives = 134.0, global_step = 690, loss = 0.5400717, pr/auc = 0.7542279, pr/precision = 0.7657143, pr/recall = 0.71657753, sanity/predictions_above_95% = 0.0546875, sanity/predictions_below_5% = 0.0234375
+2018-06-25 13:45:43,650 Current sadness: 0.29119243917152626
+2018-06-25 13:45:43,650 End epoch 22
+2018-06-25 13:45:44,033 Calling model_fn.
+2018-06-25 13:45:44,244 Done calling model_fn.
+2018-06-25 13:45:44,245 Create CheckpointSaverHook.
+2018-06-25 13:45:44,341 Graph was finalized.
+2018-06-25 13:45:44,342 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-690
+2018-06-25 13:45:44,396 Running local_init_op.
+2018-06-25 13:45:44,404 Done running local_init_op.
+2018-06-25 13:45:45,636 Saving checkpoints for 691 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:45,768 loss = 0.5827359, step = 691
+2018-06-25 13:45:57,044 Saving checkpoints for 720 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:45:57,256 Loss for final step: 0.5167843.
+2018-06-25 13:45:57,612 Calling model_fn.
+2018-06-25 13:45:57,959 Done calling model_fn.
+2018-06-25 13:45:57,971 Starting evaluation at 2018-06-25-12:45:57
+2018-06-25 13:45:58,037 Graph was finalized.
+2018-06-25 13:45:58,037 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-720
+2018-06-25 13:45:58,079 Running local_init_op.
+2018-06-25 13:45:58,101 Done running local_init_op.
+2018-06-25 13:45:58,639 Evaluation [1/3]
+2018-06-25 13:45:58,816 Evaluation [2/3]
+2018-06-25 13:45:58,991 Evaluation [3/3]
+2018-06-25 13:45:59,079 Finished evaluation at 2018-06-25-12:45:59
+2018-06-25 13:45:59,079 Saving dict for global step 720: acc/accuracy = 0.7369792, acc/mean_per_class_accuracy = 0.7343404, confusion/false_negatives = 53.0, confusion/false_positives = 48.0, confusion/true_negatives = 159.0, confusion/true_positives = 124.0, global_step = 720, loss = 0.51332825, pr/auc = 0.7343404, pr/precision = 0.7209302, pr/recall = 0.700565, sanity/predictions_above_95% = 0.03125, sanity/predictions_below_5% = 0.0078125
+2018-06-25 13:45:59,079 Current sadness: 0.0
+2018-06-25 13:45:59,079 End epoch 23
+2018-06-25 13:45:59,405 Calling model_fn.
+2018-06-25 13:45:59,630 Done calling model_fn.
+2018-06-25 13:45:59,631 Create CheckpointSaverHook.
+2018-06-25 13:45:59,721 Graph was finalized.
+2018-06-25 13:45:59,722 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-720
+2018-06-25 13:45:59,778 Running local_init_op.
+2018-06-25 13:45:59,786 Done running local_init_op.
+2018-06-25 13:46:01,238 Saving checkpoints for 721 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:01,358 loss = 0.5701697, step = 721
+2018-06-25 13:46:13,654 Saving checkpoints for 750 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:13,830 Loss for final step: 0.5678229.
+2018-06-25 13:46:14,173 Calling model_fn.
+2018-06-25 13:46:14,448 Done calling model_fn.
+2018-06-25 13:46:14,461 Starting evaluation at 2018-06-25-12:46:14
+2018-06-25 13:46:14,532 Graph was finalized.
+2018-06-25 13:46:14,532 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-750
+2018-06-25 13:46:14,575 Running local_init_op.
+2018-06-25 13:46:14,598 Done running local_init_op.
+2018-06-25 13:46:16,028 Evaluation [1/3]
+2018-06-25 13:46:16,195 Evaluation [2/3]
+2018-06-25 13:46:16,355 Evaluation [3/3]
+2018-06-25 13:46:16,444 Finished evaluation at 2018-06-25-12:46:16
+2018-06-25 13:46:16,444 Saving dict for global step 750: acc/accuracy = 0.7005208, acc/mean_per_class_accuracy = 0.70190954, confusion/false_negatives = 48.0, confusion/false_positives = 67.0, confusion/true_negatives = 150.0, confusion/true_positives = 119.0, global_step = 750, loss = 0.57566595, pr/auc = 0.70190954, pr/precision = 0.63978493, pr/recall = 0.71257484, sanity/predictions_above_95% = 0.0390625, sanity/predictions_below_5% = 0.010416667
+2018-06-25 13:46:16,445 Current sadness: 1.7415129498247715
+2018-06-25 13:46:16,445 End epoch 24
+2018-06-25 13:46:16,859 Calling model_fn.
+2018-06-25 13:46:17,070 Done calling model_fn.
+2018-06-25 13:46:17,071 Create CheckpointSaverHook.
+2018-06-25 13:46:17,155 Graph was finalized.
+2018-06-25 13:46:17,156 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-750
+2018-06-25 13:46:17,211 Running local_init_op.
+2018-06-25 13:46:17,219 Done running local_init_op.
+2018-06-25 13:46:18,483 Saving checkpoints for 751 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:18,584 loss = 0.54954576, step = 751
+2018-06-25 13:46:29,514 Saving checkpoints for 780 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:29,669 Loss for final step: 0.58376956.
+2018-06-25 13:46:30,041 Calling model_fn.
+2018-06-25 13:46:30,337 Done calling model_fn.
+2018-06-25 13:46:30,350 Starting evaluation at 2018-06-25-12:46:30
+2018-06-25 13:46:30,423 Graph was finalized.
+2018-06-25 13:46:30,423 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-780
+2018-06-25 13:46:30,466 Running local_init_op.
+2018-06-25 13:46:30,491 Done running local_init_op.
+2018-06-25 13:46:30,979 Evaluation [1/3]
+2018-06-25 13:46:31,134 Evaluation [2/3]
+2018-06-25 13:46:31,287 Evaluation [3/3]
+2018-06-25 13:46:31,355 Finished evaluation at 2018-06-25-12:46:31
+2018-06-25 13:46:31,355 Saving dict for global step 780: acc/accuracy = 0.7057292, acc/mean_per_class_accuracy = 0.7053259, confusion/false_negatives = 58.0, confusion/false_positives = 55.0, confusion/true_negatives = 142.0, confusion/true_positives = 129.0, global_step = 780, loss = 0.5605766, pr/auc = 0.70532596, pr/precision = 0.70108694, pr/recall = 0.6898396, sanity/predictions_above_95% = 0.0234375, sanity/predictions_below_5% = 0.0234375
+2018-06-25 13:46:31,356 Current sadness: 1.3757777698585225
+2018-06-25 13:46:31,356 End epoch 25
+2018-06-25 13:46:31,691 Calling model_fn.
+2018-06-25 13:46:31,907 Done calling model_fn.
+2018-06-25 13:46:31,908 Create CheckpointSaverHook.
+2018-06-25 13:46:32,070 Graph was finalized.
+2018-06-25 13:46:32,071 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-780
+2018-06-25 13:46:32,128 Running local_init_op.
+2018-06-25 13:46:32,137 Done running local_init_op.
+2018-06-25 13:46:33,442 Saving checkpoints for 781 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:33,596 loss = 0.54587775, step = 781
+2018-06-25 13:46:45,890 Saving checkpoints for 810 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:46,132 Loss for final step: 0.4820058.
+2018-06-25 13:46:46,428 Calling model_fn.
+2018-06-25 13:46:46,692 Done calling model_fn.
+2018-06-25 13:46:46,704 Starting evaluation at 2018-06-25-12:46:46
+2018-06-25 13:46:46,766 Graph was finalized.
+2018-06-25 13:46:46,766 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-810
+2018-06-25 13:46:46,805 Running local_init_op.
+2018-06-25 13:46:46,827 Done running local_init_op.
+2018-06-25 13:46:48,339 Evaluation [1/3]
+2018-06-25 13:46:48,514 Evaluation [2/3]
+2018-06-25 13:46:48,689 Evaluation [3/3]
+2018-06-25 13:46:48,773 Finished evaluation at 2018-06-25-12:46:48
+2018-06-25 13:46:48,773 Saving dict for global step 810: acc/accuracy = 0.7135417, acc/mean_per_class_accuracy = 0.71163243, confusion/false_negatives = 65.0, confusion/false_positives = 45.0, confusion/true_negatives = 153.0, confusion/true_positives = 121.0, global_step = 810, loss = 0.56403124, pr/auc = 0.71163243, pr/precision = 0.7289157, pr/recall = 0.6505376, sanity/predictions_above_95% = 0.059895832, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:46:48,773 Current sadness: 1.4096350901428913
+2018-06-25 13:46:48,773 End epoch 26
+2018-06-25 13:46:49,172 Calling model_fn.
+2018-06-25 13:46:49,382 Done calling model_fn.
+2018-06-25 13:46:49,383 Create CheckpointSaverHook.
+2018-06-25 13:46:49,464 Graph was finalized.
+2018-06-25 13:46:49,465 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-810
+2018-06-25 13:46:49,517 Running local_init_op.
+2018-06-25 13:46:49,525 Done running local_init_op.
+2018-06-25 13:46:50,825 Saving checkpoints for 811 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:46:50,930 loss = 0.5657778, step = 811
+2018-06-25 13:47:01,232 Saving checkpoints for 840 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:01,376 Loss for final step: 0.5785789.
+2018-06-25 13:47:01,784 Calling model_fn.
+2018-06-25 13:47:02,060 Done calling model_fn.
+2018-06-25 13:47:02,072 Starting evaluation at 2018-06-25-12:47:02
+2018-06-25 13:47:02,135 Graph was finalized.
+2018-06-25 13:47:02,135 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-840
+2018-06-25 13:47:02,175 Running local_init_op.
+2018-06-25 13:47:02,197 Done running local_init_op.
+2018-06-25 13:47:03,823 Evaluation [1/3]
+2018-06-25 13:47:03,978 Evaluation [2/3]
+2018-06-25 13:47:04,127 Evaluation [3/3]
+2018-06-25 13:47:04,194 Finished evaluation at 2018-06-25-12:47:04
+2018-06-25 13:47:04,194 Saving dict for global step 840: acc/accuracy = 0.6796875, acc/mean_per_class_accuracy = 0.6720088, confusion/false_negatives = 90.0, confusion/false_positives = 33.0, confusion/true_negatives = 168.0, confusion/true_positives = 93.0, global_step = 840, loss = 0.5826749, pr/auc = 0.6720088, pr/precision = 0.7380952, pr/recall = 0.5081967, sanity/predictions_above_95% = 0.104166664, sanity/predictions_below_5% = 0.0052083335
+2018-06-25 13:47:04,194 Current sadness: 1.8133081581873896
+2018-06-25 13:47:04,194 End epoch 27
+2018-06-25 13:47:04,504 Calling model_fn.
+2018-06-25 13:47:04,744 Done calling model_fn.
+2018-06-25 13:47:04,745 Create CheckpointSaverHook.
+2018-06-25 13:47:04,905 Graph was finalized.
+2018-06-25 13:47:04,905 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-840
+2018-06-25 13:47:04,961 Running local_init_op.
+2018-06-25 13:47:04,969 Done running local_init_op.
+2018-06-25 13:47:06,093 Saving checkpoints for 841 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:06,191 loss = 0.5756316, step = 841
+2018-06-25 13:47:17,433 Saving checkpoints for 870 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:17,620 Loss for final step: 0.51515555.
+2018-06-25 13:47:18,008 Calling model_fn.
+2018-06-25 13:47:18,300 Done calling model_fn.
+2018-06-25 13:47:18,313 Starting evaluation at 2018-06-25-12:47:18
+2018-06-25 13:47:18,380 Graph was finalized.
+2018-06-25 13:47:18,380 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-870
+2018-06-25 13:47:18,421 Running local_init_op.
+2018-06-25 13:47:18,447 Done running local_init_op.
+2018-06-25 13:47:18,940 Evaluation [1/3]
+2018-06-25 13:47:19,105 Evaluation [2/3]
+2018-06-25 13:47:19,260 Evaluation [3/3]
+2018-06-25 13:47:19,327 Finished evaluation at 2018-06-25-12:47:19
+2018-06-25 13:47:19,327 Saving dict for global step 870: acc/accuracy = 0.7057292, acc/mean_per_class_accuracy = 0.69155157, confusion/false_negatives = 82.0, confusion/false_positives = 31.0, confusion/true_negatives = 178.0, confusion/true_positives = 93.0, global_step = 870, loss = 0.57390547, pr/auc = 0.6915516, pr/precision = 0.75, pr/recall = 0.5314286, sanity/predictions_above_95% = 0.080729164, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:47:19,328 Current sadness: 1.4714838675153328
+2018-06-25 13:47:19,328 End epoch 28
+2018-06-25 13:47:19,708 Calling model_fn.
+2018-06-25 13:47:19,934 Done calling model_fn.
+2018-06-25 13:47:19,935 Create CheckpointSaverHook.
+2018-06-25 13:47:20,022 Graph was finalized.
+2018-06-25 13:47:20,023 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-870
+2018-06-25 13:47:20,078 Running local_init_op.
+2018-06-25 13:47:20,086 Done running local_init_op.
+2018-06-25 13:47:21,373 Saving checkpoints for 871 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:21,481 loss = 0.6238365, step = 871
+2018-06-25 13:47:31,465 Saving checkpoints for 900 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:31,647 Loss for final step: 0.54587626.
+2018-06-25 13:47:32,064 Calling model_fn.
+2018-06-25 13:47:32,341 Done calling model_fn.
+2018-06-25 13:47:32,353 Starting evaluation at 2018-06-25-12:47:32
+2018-06-25 13:47:32,420 Graph was finalized.
+2018-06-25 13:47:32,420 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-900
+2018-06-25 13:47:32,465 Running local_init_op.
+2018-06-25 13:47:32,488 Done running local_init_op.
+2018-06-25 13:47:32,932 Evaluation [1/3]
+2018-06-25 13:47:33,089 Evaluation [2/3]
+2018-06-25 13:47:33,275 Evaluation [3/3]
+2018-06-25 13:47:33,367 Finished evaluation at 2018-06-25-12:47:33
+2018-06-25 13:47:33,367 Saving dict for global step 900: acc/accuracy = 0.6770833, acc/mean_per_class_accuracy = 0.6575283, confusion/false_negatives = 113.0, confusion/false_positives = 11.0, confusion/true_negatives = 194.0, confusion/true_positives = 66.0, global_step = 900, loss = 0.66260403, pr/auc = 0.6575282, pr/precision = 0.85714287, pr/recall = 0.36871508, sanity/predictions_above_95% = 0.125, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:47:33,368 Current sadness: 2.9157838495567288
+2018-06-25 13:47:33,368 End epoch 29
+2018-06-25 13:47:33,698 Calling model_fn.
+2018-06-25 13:47:34,015 Done calling model_fn.
+2018-06-25 13:47:34,016 Create CheckpointSaverHook.
+2018-06-25 13:47:34,110 Graph was finalized.
+2018-06-25 13:47:34,111 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-900
+2018-06-25 13:47:34,164 Running local_init_op.
+2018-06-25 13:47:34,172 Done running local_init_op.
+2018-06-25 13:47:35,379 Saving checkpoints for 901 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:35,492 loss = 0.65834147, step = 901
+2018-06-25 13:47:45,672 Saving checkpoints for 930 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:45,806 Loss for final step: 0.5074582.
+2018-06-25 13:47:46,112 Calling model_fn.
+2018-06-25 13:47:46,379 Done calling model_fn.
+2018-06-25 13:47:46,390 Starting evaluation at 2018-06-25-12:47:46
+2018-06-25 13:47:46,517 Graph was finalized.
+2018-06-25 13:47:46,517 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-930
+2018-06-25 13:47:46,557 Running local_init_op.
+2018-06-25 13:47:46,579 Done running local_init_op.
+2018-06-25 13:47:47,024 Evaluation [1/3]
+2018-06-25 13:47:47,178 Evaluation [2/3]
+2018-06-25 13:47:47,328 Evaluation [3/3]
+2018-06-25 13:47:47,412 Finished evaluation at 2018-06-25-12:47:47
+2018-06-25 13:47:47,413 Saving dict for global step 930: acc/accuracy = 0.71875, acc/mean_per_class_accuracy = 0.71790564, confusion/false_negatives = 39.0, confusion/false_positives = 69.0, confusion/true_negatives = 121.0, confusion/true_positives = 155.0, global_step = 930, loss = 0.54592276, pr/auc = 0.71790564, pr/precision = 0.69196427, pr/recall = 0.7989691, sanity/predictions_above_95% = 0.010416667, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:47:47,413 Saving model at epoch 30
+2018-06-25 13:47:47,577 Calling model_fn.
+2018-06-25 13:47:47,643 Done calling model_fn.
+2018-06-25 13:47:47,644 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:47:47,644 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:47:47,644 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:47:47,656 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-930
+2018-06-25 13:47:47,669 Assets added to graph.
+2018-06-25 13:47:47,669 No assets to write.
+2018-06-25 13:47:47,752 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529930867'/saved_model.pb"
+2018-06-25 13:47:47,758 Current sadness: 0.6267777335853089
+2018-06-25 13:47:47,758 End epoch 30
+2018-06-25 13:47:48,152 Calling model_fn.
+2018-06-25 13:47:48,416 Done calling model_fn.
+2018-06-25 13:47:48,416 Create CheckpointSaverHook.
+2018-06-25 13:47:48,506 Graph was finalized.
+2018-06-25 13:47:48,506 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-930
+2018-06-25 13:47:48,568 Running local_init_op.
+2018-06-25 13:47:48,577 Done running local_init_op.
+2018-06-25 13:47:50,322 Saving checkpoints for 931 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:47:50,443 loss = 0.5185471, step = 931
+2018-06-25 13:48:02,079 Saving checkpoints for 960 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:02,256 Loss for final step: 0.5704499.
+2018-06-25 13:48:02,570 Calling model_fn.
+2018-06-25 13:48:02,841 Done calling model_fn.
+2018-06-25 13:48:02,852 Starting evaluation at 2018-06-25-12:48:02
+2018-06-25 13:48:02,915 Graph was finalized.
+2018-06-25 13:48:02,915 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-960
+2018-06-25 13:48:02,954 Running local_init_op.
+2018-06-25 13:48:02,976 Done running local_init_op.
+2018-06-25 13:48:03,439 Evaluation [1/3]
+2018-06-25 13:48:03,595 Evaluation [2/3]
+2018-06-25 13:48:03,749 Evaluation [3/3]
+2018-06-25 13:48:03,838 Finished evaluation at 2018-06-25-12:48:03
+2018-06-25 13:48:03,838 Saving dict for global step 960: acc/accuracy = 0.703125, acc/mean_per_class_accuracy = 0.7032132, confusion/false_negatives = 59.0, confusion/false_positives = 55.0, confusion/true_negatives = 133.0, confusion/true_positives = 137.0, global_step = 960, loss = 0.55069035, pr/auc = 0.7032132, pr/precision = 0.7135417, pr/recall = 0.6989796, sanity/predictions_above_95% = 0.018229166, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:48:03,838 Current sadness: 0.6968094697894817
+2018-06-25 13:48:03,839 End epoch 31
+2018-06-25 13:48:04,268 Calling model_fn.
+2018-06-25 13:48:04,518 Done calling model_fn.
+2018-06-25 13:48:04,519 Create CheckpointSaverHook.
+2018-06-25 13:48:04,615 Graph was finalized.
+2018-06-25 13:48:04,616 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-960
+2018-06-25 13:48:04,675 Running local_init_op.
+2018-06-25 13:48:04,683 Done running local_init_op.
+2018-06-25 13:48:05,904 Saving checkpoints for 961 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:06,017 loss = 0.61694103, step = 961
+2018-06-25 13:48:16,899 Saving checkpoints for 990 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:17,072 Loss for final step: 0.5802794.
+2018-06-25 13:48:17,500 Calling model_fn.
+2018-06-25 13:48:17,829 Done calling model_fn.
+2018-06-25 13:48:17,842 Starting evaluation at 2018-06-25-12:48:17
+2018-06-25 13:48:17,909 Graph was finalized.
+2018-06-25 13:48:17,909 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-990
+2018-06-25 13:48:17,950 Running local_init_op.
+2018-06-25 13:48:17,974 Done running local_init_op.
+2018-06-25 13:48:18,441 Evaluation [1/3]
+2018-06-25 13:48:18,609 Evaluation [2/3]
+2018-06-25 13:48:18,875 Evaluation [3/3]
+2018-06-25 13:48:18,983 Finished evaluation at 2018-06-25-12:48:18
+2018-06-25 13:48:18,984 Saving dict for global step 990: acc/accuracy = 0.7526042, acc/mean_per_class_accuracy = 0.75325555, confusion/false_negatives = 35.0, confusion/false_positives = 60.0, confusion/true_negatives = 134.0, confusion/true_positives = 155.0, global_step = 990, loss = 0.51674604, pr/auc = 0.75325555, pr/precision = 0.7209302, pr/recall = 0.81578946, sanity/predictions_above_95% = 0.033854168, sanity/predictions_below_5% = 0.03125
+2018-06-25 13:48:18,984 Current sadness: 0.06664113275130325
+2018-06-25 13:48:18,984 End epoch 32
+2018-06-25 13:48:19,335 Calling model_fn.
+2018-06-25 13:48:19,584 Done calling model_fn.
+2018-06-25 13:48:19,585 Create CheckpointSaverHook.
+2018-06-25 13:48:19,752 Graph was finalized.
+2018-06-25 13:48:19,753 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-990
+2018-06-25 13:48:19,809 Running local_init_op.
+2018-06-25 13:48:19,817 Done running local_init_op.
+2018-06-25 13:48:21,302 Saving checkpoints for 991 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:21,430 loss = 0.61558926, step = 991
+2018-06-25 13:48:32,542 Saving checkpoints for 1020 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:32,723 Loss for final step: 0.5786015.
+2018-06-25 13:48:33,078 Calling model_fn.
+2018-06-25 13:48:33,473 Done calling model_fn.
+2018-06-25 13:48:33,485 Starting evaluation at 2018-06-25-12:48:33
+2018-06-25 13:48:33,552 Graph was finalized.
+2018-06-25 13:48:33,552 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1020
+2018-06-25 13:48:33,593 Running local_init_op.
+2018-06-25 13:48:33,615 Done running local_init_op.
+2018-06-25 13:48:35,167 Evaluation [1/3]
+2018-06-25 13:48:35,351 Evaluation [2/3]
+2018-06-25 13:48:35,518 Evaluation [3/3]
+2018-06-25 13:48:35,606 Finished evaluation at 2018-06-25-12:48:35
+2018-06-25 13:48:35,606 Saving dict for global step 1020: acc/accuracy = 0.7395833, acc/mean_per_class_accuracy = 0.7386956, confusion/false_negatives = 52.0, confusion/false_positives = 48.0, confusion/true_negatives = 152.0, confusion/true_positives = 132.0, global_step = 1020, loss = 0.52135235, pr/auc = 0.7386956, pr/precision = 0.73333335, pr/recall = 0.7173913, sanity/predictions_above_95% = 0.028645834, sanity/predictions_below_5% = 0.026041666
+2018-06-25 13:48:35,606 Current sadness: 0.16596232633549382
+2018-06-25 13:48:35,607 End epoch 33
+2018-06-25 13:48:35,992 Calling model_fn.
+2018-06-25 13:48:36,230 Done calling model_fn.
+2018-06-25 13:48:36,230 Create CheckpointSaverHook.
+2018-06-25 13:48:36,323 Graph was finalized.
+2018-06-25 13:48:36,324 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1020
+2018-06-25 13:48:36,381 Running local_init_op.
+2018-06-25 13:48:36,390 Done running local_init_op.
+2018-06-25 13:48:37,875 Saving checkpoints for 1021 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:38,035 loss = 0.4756775, step = 1021
+2018-06-25 13:48:49,960 Saving checkpoints for 1050 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:50,134 Loss for final step: 0.4457956.
+2018-06-25 13:48:50,542 Calling model_fn.
+2018-06-25 13:48:50,856 Done calling model_fn.
+2018-06-25 13:48:50,870 Starting evaluation at 2018-06-25-12:48:50
+2018-06-25 13:48:50,946 Graph was finalized.
+2018-06-25 13:48:50,946 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1050
+2018-06-25 13:48:50,992 Running local_init_op.
+2018-06-25 13:48:51,017 Done running local_init_op.
+2018-06-25 13:48:51,572 Evaluation [1/3]
+2018-06-25 13:48:51,738 Evaluation [2/3]
+2018-06-25 13:48:51,894 Evaluation [3/3]
+2018-06-25 13:48:51,965 Finished evaluation at 2018-06-25-12:48:51
+2018-06-25 13:48:51,965 Saving dict for global step 1050: acc/accuracy = 0.6953125, acc/mean_per_class_accuracy = 0.6966626, confusion/false_negatives = 76.0, confusion/false_positives = 41.0, confusion/true_negatives = 148.0, confusion/true_positives = 119.0, global_step = 1050, loss = 0.5693567, pr/auc = 0.6966626, pr/precision = 0.74375, pr/recall = 0.61025643, sanity/predictions_above_95% = 0.028645834, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:48:51,966 Current sadness: 1.17405069377926
+2018-06-25 13:48:51,966 End epoch 34
+2018-06-25 13:48:52,320 Calling model_fn.
+2018-06-25 13:48:52,549 Done calling model_fn.
+2018-06-25 13:48:52,550 Create CheckpointSaverHook.
+2018-06-25 13:48:52,721 Graph was finalized.
+2018-06-25 13:48:52,721 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1050
+2018-06-25 13:48:52,790 Running local_init_op.
+2018-06-25 13:48:52,798 Done running local_init_op.
+2018-06-25 13:48:54,121 Saving checkpoints for 1051 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:48:54,241 loss = 0.5156305, step = 1051
+2018-06-25 13:49:06,458 Saving checkpoints for 1080 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:06,614 Loss for final step: 0.46613055.
+2018-06-25 13:49:06,922 Calling model_fn.
+2018-06-25 13:49:07,187 Done calling model_fn.
+2018-06-25 13:49:07,198 Starting evaluation at 2018-06-25-12:49:07
+2018-06-25 13:49:07,259 Graph was finalized.
+2018-06-25 13:49:07,260 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1080
+2018-06-25 13:49:07,299 Running local_init_op.
+2018-06-25 13:49:07,322 Done running local_init_op.
+2018-06-25 13:49:08,760 Evaluation [1/3]
+2018-06-25 13:49:08,933 Evaluation [2/3]
+2018-06-25 13:49:09,107 Evaluation [3/3]
+2018-06-25 13:49:09,192 Finished evaluation at 2018-06-25-12:49:09
+2018-06-25 13:49:09,193 Saving dict for global step 1080: acc/accuracy = 0.7265625, acc/mean_per_class_accuracy = 0.73097825, confusion/false_negatives = 30.0, confusion/false_positives = 75.0, confusion/true_negatives = 125.0, confusion/true_positives = 154.0, global_step = 1080, loss = 0.5479493, pr/auc = 0.73097825, pr/precision = 0.6724891, pr/recall = 0.8369565, sanity/predictions_above_95% = 0.0052083335, sanity/predictions_below_5% = 0.010416667
+2018-06-25 13:49:09,193 Current sadness: 0.7450537294563844
+2018-06-25 13:49:09,193 End epoch 35
+2018-06-25 13:49:09,586 Calling model_fn.
+2018-06-25 13:49:09,802 Done calling model_fn.
+2018-06-25 13:49:09,803 Create CheckpointSaverHook.
+2018-06-25 13:49:09,890 Graph was finalized.
+2018-06-25 13:49:09,890 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1080
+2018-06-25 13:49:09,945 Running local_init_op.
+2018-06-25 13:49:09,953 Done running local_init_op.
+2018-06-25 13:49:11,071 Saving checkpoints for 1081 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:11,180 loss = 0.4952068, step = 1081
+2018-06-25 13:49:21,267 Saving checkpoints for 1110 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:21,432 Loss for final step: 0.48094228.
+2018-06-25 13:49:21,808 Calling model_fn.
+2018-06-25 13:49:22,077 Done calling model_fn.
+2018-06-25 13:49:22,089 Starting evaluation at 2018-06-25-12:49:22
+2018-06-25 13:49:22,151 Graph was finalized.
+2018-06-25 13:49:22,152 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1110
+2018-06-25 13:49:22,193 Running local_init_op.
+2018-06-25 13:49:22,216 Done running local_init_op.
+2018-06-25 13:49:22,649 Evaluation [1/3]
+2018-06-25 13:49:22,802 Evaluation [2/3]
+2018-06-25 13:49:22,960 Evaluation [3/3]
+2018-06-25 13:49:23,025 Finished evaluation at 2018-06-25-12:49:23
+2018-06-25 13:49:23,025 Saving dict for global step 1110: acc/accuracy = 0.7265625, acc/mean_per_class_accuracy = 0.7299609, confusion/false_negatives = 75.0, confusion/false_positives = 30.0, confusion/true_negatives = 156.0, confusion/true_positives = 123.0, global_step = 1110, loss = 0.5580893, pr/auc = 0.7299609, pr/precision = 0.8039216, pr/recall = 0.6212121, sanity/predictions_above_95% = 0.059895832, sanity/predictions_below_5% = 0.0026041667
+2018-06-25 13:49:23,026 Current sadness: 0.9756627193836583
+2018-06-25 13:49:23,026 End epoch 36
+2018-06-25 13:49:23,330 Calling model_fn.
+2018-06-25 13:49:23,609 Done calling model_fn.
+2018-06-25 13:49:23,610 Create CheckpointSaverHook.
+2018-06-25 13:49:23,691 Graph was finalized.
+2018-06-25 13:49:23,691 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1110
+2018-06-25 13:49:23,744 Running local_init_op.
+2018-06-25 13:49:23,752 Done running local_init_op.
+2018-06-25 13:49:24,968 Saving checkpoints for 1111 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:25,080 loss = 0.48288548, step = 1111
+2018-06-25 13:49:36,177 Saving checkpoints for 1140 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:36,324 Loss for final step: 0.5364932.
+2018-06-25 13:49:36,626 Calling model_fn.
+2018-06-25 13:49:36,891 Done calling model_fn.
+2018-06-25 13:49:36,903 Starting evaluation at 2018-06-25-12:49:36
+2018-06-25 13:49:37,042 Graph was finalized.
+2018-06-25 13:49:37,042 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1140
+2018-06-25 13:49:37,086 Running local_init_op.
+2018-06-25 13:49:37,110 Done running local_init_op.
+2018-06-25 13:49:37,598 Evaluation [1/3]
+2018-06-25 13:49:37,853 Evaluation [2/3]
+2018-06-25 13:49:38,075 Evaluation [3/3]
+2018-06-25 13:49:38,178 Finished evaluation at 2018-06-25-12:49:38
+2018-06-25 13:49:38,178 Saving dict for global step 1140: acc/accuracy = 0.7161458, acc/mean_per_class_accuracy = 0.7143516, confusion/false_negatives = 87.0, confusion/false_positives = 22.0, confusion/true_negatives = 172.0, confusion/true_positives = 103.0, global_step = 1140, loss = 0.5546112, pr/auc = 0.7143516, pr/precision = 0.824, pr/recall = 0.54210526, sanity/predictions_above_95% = 0.083333336, sanity/predictions_below_5% = 0.036458332
+2018-06-25 13:49:38,179 Current sadness: 0.9580675900402893
+2018-06-25 13:49:38,179 End epoch 37
+2018-06-25 13:49:38,609 Calling model_fn.
+2018-06-25 13:49:38,852 Done calling model_fn.
+2018-06-25 13:49:38,853 Create CheckpointSaverHook.
+2018-06-25 13:49:38,942 Graph was finalized.
+2018-06-25 13:49:38,942 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1140
+2018-06-25 13:49:38,995 Running local_init_op.
+2018-06-25 13:49:39,003 Done running local_init_op.
+2018-06-25 13:49:40,163 Saving checkpoints for 1141 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:40,261 loss = 0.5137941, step = 1141
+2018-06-25 13:49:50,663 Saving checkpoints for 1170 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:50,830 Loss for final step: 0.49441385.
+2018-06-25 13:49:51,213 Calling model_fn.
+2018-06-25 13:49:51,483 Done calling model_fn.
+2018-06-25 13:49:51,494 Starting evaluation at 2018-06-25-12:49:51
+2018-06-25 13:49:51,556 Graph was finalized.
+2018-06-25 13:49:51,556 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1170
+2018-06-25 13:49:51,596 Running local_init_op.
+2018-06-25 13:49:51,619 Done running local_init_op.
+2018-06-25 13:49:52,065 Evaluation [1/3]
+2018-06-25 13:49:52,217 Evaluation [2/3]
+2018-06-25 13:49:52,372 Evaluation [3/3]
+2018-06-25 13:49:52,458 Finished evaluation at 2018-06-25-12:49:52
+2018-06-25 13:49:52,458 Saving dict for global step 1170: acc/accuracy = 0.7239583, acc/mean_per_class_accuracy = 0.7239583, confusion/false_negatives = 56.0, confusion/false_positives = 50.0, confusion/true_negatives = 142.0, confusion/true_positives = 136.0, global_step = 1170, loss = 0.51448053, pr/auc = 0.7239584, pr/precision = 0.7311828, pr/recall = 0.7083333, sanity/predictions_above_95% = 0.026041666, sanity/predictions_below_5% = 0.010416667
+2018-06-25 13:49:52,459 Current sadness: 0.02908988666839692
+2018-06-25 13:49:52,459 End epoch 38
+2018-06-25 13:49:52,759 Calling model_fn.
+2018-06-25 13:49:52,993 Done calling model_fn.
+2018-06-25 13:49:52,994 Create CheckpointSaverHook.
+2018-06-25 13:49:53,153 Graph was finalized.
+2018-06-25 13:49:53,154 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1170
+2018-06-25 13:49:53,206 Running local_init_op.
+2018-06-25 13:49:53,214 Done running local_init_op.
+2018-06-25 13:49:54,403 Saving checkpoints for 1171 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:49:54,514 loss = 0.46689326, step = 1171
+2018-06-25 13:50:05,424 Saving checkpoints for 1200 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:05,589 Loss for final step: 0.524672.
+2018-06-25 13:50:05,915 Calling model_fn.
+2018-06-25 13:50:06,186 Done calling model_fn.
+2018-06-25 13:50:06,198 Starting evaluation at 2018-06-25-12:50:06
+2018-06-25 13:50:06,261 Graph was finalized.
+2018-06-25 13:50:06,261 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1200
+2018-06-25 13:50:06,300 Running local_init_op.
+2018-06-25 13:50:06,322 Done running local_init_op.
+2018-06-25 13:50:08,045 Evaluation [1/3]
+2018-06-25 13:50:08,243 Evaluation [2/3]
+2018-06-25 13:50:08,411 Evaluation [3/3]
+2018-06-25 13:50:08,483 Finished evaluation at 2018-06-25-12:50:08
+2018-06-25 13:50:08,483 Saving dict for global step 1200: acc/accuracy = 0.7552083, acc/mean_per_class_accuracy = 0.7552083, confusion/false_negatives = 50.0, confusion/false_positives = 44.0, confusion/true_negatives = 148.0, confusion/true_positives = 142.0, global_step = 1200, loss = 0.5072273, pr/auc = 0.75520825, pr/precision = 0.76344085, pr/recall = 0.7395833, sanity/predictions_above_95% = 0.026041666, sanity/predictions_below_5% = 0.0052083335
+2018-06-25 13:50:08,484 Current sadness: 0.0
+2018-06-25 13:50:08,484 End epoch 39
+2018-06-25 13:50:08,952 Calling model_fn.
+2018-06-25 13:50:09,201 Done calling model_fn.
+2018-06-25 13:50:09,202 Create CheckpointSaverHook.
+2018-06-25 13:50:09,289 Graph was finalized.
+2018-06-25 13:50:09,290 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1200
+2018-06-25 13:50:09,346 Running local_init_op.
+2018-06-25 13:50:09,356 Done running local_init_op.
+2018-06-25 13:50:10,725 Saving checkpoints for 1201 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:10,832 loss = 0.49411342, step = 1201
+2018-06-25 13:50:22,213 Saving checkpoints for 1230 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:22,395 Loss for final step: 0.4492535.
+2018-06-25 13:50:22,794 Calling model_fn.
+2018-06-25 13:50:23,117 Done calling model_fn.
+2018-06-25 13:50:23,131 Starting evaluation at 2018-06-25-12:50:23
+2018-06-25 13:50:23,204 Graph was finalized.
+2018-06-25 13:50:23,204 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1230
+2018-06-25 13:50:23,250 Running local_init_op.
+2018-06-25 13:50:23,277 Done running local_init_op.
+2018-06-25 13:50:23,868 Evaluation [1/3]
+2018-06-25 13:50:24,088 Evaluation [2/3]
+2018-06-25 13:50:24,282 Evaluation [3/3]
+2018-06-25 13:50:24,379 Finished evaluation at 2018-06-25-12:50:24
+2018-06-25 13:50:24,379 Saving dict for global step 1230: acc/accuracy = 0.7317708, acc/mean_per_class_accuracy = 0.740278, confusion/false_negatives = 79.0, confusion/false_positives = 24.0, confusion/true_negatives = 155.0, confusion/true_positives = 126.0, global_step = 1230, loss = 0.5600414, pr/auc = 0.74027795, pr/precision = 0.84, pr/recall = 0.61463416, sanity/predictions_above_95% = 0.078125, sanity/predictions_below_5% = 0.0234375
+2018-06-25 13:50:24,379 Saving model at epoch 40
+2018-06-25 13:50:24,577 Calling model_fn.
+2018-06-25 13:50:24,645 Done calling model_fn.
+2018-06-25 13:50:24,646 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:50:24,646 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:50:24,646 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:50:24,659 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1230
+2018-06-25 13:50:24,671 Assets added to graph.
+2018-06-25 13:50:24,671 No assets to write.
+2018-06-25 13:50:24,752 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529931024'/saved_model.pb"
+2018-06-25 13:50:24,759 Current sadness: 1.608855021449583
+2018-06-25 13:50:24,759 End epoch 40
+2018-06-25 13:50:25,223 Calling model_fn.
+2018-06-25 13:50:25,470 Done calling model_fn.
+2018-06-25 13:50:25,471 Create CheckpointSaverHook.
+2018-06-25 13:50:25,564 Graph was finalized.
+2018-06-25 13:50:25,565 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1230
+2018-06-25 13:50:25,623 Running local_init_op.
+2018-06-25 13:50:25,631 Done running local_init_op.
+2018-06-25 13:50:27,006 Saving checkpoints for 1231 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:27,152 loss = 0.5442177, step = 1231
+2018-06-25 13:50:39,698 Saving checkpoints for 1260 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:39,877 Loss for final step: 0.4668028.
+2018-06-25 13:50:40,258 Calling model_fn.
+2018-06-25 13:50:40,545 Done calling model_fn.
+2018-06-25 13:50:40,557 Starting evaluation at 2018-06-25-12:50:40
+2018-06-25 13:50:40,632 Graph was finalized.
+2018-06-25 13:50:40,632 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1260
+2018-06-25 13:50:40,683 Running local_init_op.
+2018-06-25 13:50:40,711 Done running local_init_op.
+2018-06-25 13:50:42,212 Evaluation [1/3]
+2018-06-25 13:50:42,402 Evaluation [2/3]
+2018-06-25 13:50:42,572 Evaluation [3/3]
+2018-06-25 13:50:42,656 Finished evaluation at 2018-06-25-12:50:42
+2018-06-25 13:50:42,657 Saving dict for global step 1260: acc/accuracy = 0.7135417, acc/mean_per_class_accuracy = 0.7132393, confusion/false_negatives = 50.0, confusion/false_positives = 60.0, confusion/true_negatives = 130.0, confusion/true_positives = 144.0, global_step = 1260, loss = 0.53005916, pr/auc = 0.7132393, pr/precision = 0.7058824, pr/recall = 0.742268, sanity/predictions_above_95% = 0.046875, sanity/predictions_below_5% = 0.010416667
+2018-06-25 13:50:42,657 Current sadness: 0.7421601828684641
+2018-06-25 13:50:42,657 End epoch 41
+2018-06-25 13:50:42,997 Calling model_fn.
+2018-06-25 13:50:43,230 Done calling model_fn.
+2018-06-25 13:50:43,231 Create CheckpointSaverHook.
+2018-06-25 13:50:43,325 Graph was finalized.
+2018-06-25 13:50:43,326 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1260
+2018-06-25 13:50:43,384 Running local_init_op.
+2018-06-25 13:50:43,393 Done running local_init_op.
+2018-06-25 13:50:44,818 Saving checkpoints for 1261 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:44,932 loss = 0.44526127, step = 1261
+2018-06-25 13:50:56,734 Saving checkpoints for 1290 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:50:56,953 Loss for final step: 0.47132903.
+2018-06-25 13:50:57,297 Calling model_fn.
+2018-06-25 13:50:57,584 Done calling model_fn.
+2018-06-25 13:50:57,596 Starting evaluation at 2018-06-25-12:50:57
+2018-06-25 13:50:57,658 Graph was finalized.
+2018-06-25 13:50:57,659 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1290
+2018-06-25 13:50:57,698 Running local_init_op.
+2018-06-25 13:50:57,720 Done running local_init_op.
+2018-06-25 13:50:58,265 Evaluation [1/3]
+2018-06-25 13:50:58,426 Evaluation [2/3]
+2018-06-25 13:50:58,584 Evaluation [3/3]
+2018-06-25 13:50:58,676 Finished evaluation at 2018-06-25-12:50:58
+2018-06-25 13:50:58,676 Saving dict for global step 1290: acc/accuracy = 0.7447917, acc/mean_per_class_accuracy = 0.7462472, confusion/false_negatives = 61.0, confusion/false_positives = 37.0, confusion/true_negatives = 150.0, confusion/true_positives = 136.0, global_step = 1290, loss = 0.52178806, pr/auc = 0.7462472, pr/precision = 0.78612715, pr/recall = 0.6903553, sanity/predictions_above_95% = 0.0546875, sanity/predictions_below_5% = 0.0234375
+2018-06-25 13:50:58,677 Current sadness: 0.4656723114022111
+2018-06-25 13:50:58,677 End epoch 42
+2018-06-25 13:50:59,078 Calling model_fn.
+2018-06-25 13:50:59,296 Done calling model_fn.
+2018-06-25 13:50:59,297 Create CheckpointSaverHook.
+2018-06-25 13:50:59,380 Graph was finalized.
+2018-06-25 13:50:59,381 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1290
+2018-06-25 13:50:59,433 Running local_init_op.
+2018-06-25 13:50:59,441 Done running local_init_op.
+2018-06-25 13:51:00,685 Saving checkpoints for 1291 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:00,826 loss = 0.52537704, step = 1291
+2018-06-25 13:51:12,441 Saving checkpoints for 1320 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:12,583 Loss for final step: 0.47808778.
+2018-06-25 13:51:13,006 Calling model_fn.
+2018-06-25 13:51:13,357 Done calling model_fn.
+2018-06-25 13:51:13,370 Starting evaluation at 2018-06-25-12:51:13
+2018-06-25 13:51:13,437 Graph was finalized.
+2018-06-25 13:51:13,438 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1320
+2018-06-25 13:51:13,480 Running local_init_op.
+2018-06-25 13:51:13,502 Done running local_init_op.
+2018-06-25 13:51:14,878 Evaluation [1/3]
+2018-06-25 13:51:15,030 Evaluation [2/3]
+2018-06-25 13:51:15,192 Evaluation [3/3]
+2018-06-25 13:51:15,262 Finished evaluation at 2018-06-25-12:51:15
+2018-06-25 13:51:15,262 Saving dict for global step 1320: acc/accuracy = 0.7239583, acc/mean_per_class_accuracy = 0.7251634, confusion/false_negatives = 46.0, confusion/false_positives = 60.0, confusion/true_negatives = 144.0, confusion/true_positives = 134.0, global_step = 1320, loss = 0.5338641, pr/auc = 0.72516334, pr/precision = 0.69072163, pr/recall = 0.74444443, sanity/predictions_above_95% = 0.041666668, sanity/predictions_below_5% = 0.015625
+2018-06-25 13:51:15,263 Current sadness: 0.8191037371864838
+2018-06-25 13:51:15,263 End epoch 43
+2018-06-25 13:51:15,587 Calling model_fn.
+2018-06-25 13:51:15,824 Done calling model_fn.
+2018-06-25 13:51:15,825 Create CheckpointSaverHook.
+2018-06-25 13:51:15,994 Graph was finalized.
+2018-06-25 13:51:15,995 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1320
+2018-06-25 13:51:16,056 Running local_init_op.
+2018-06-25 13:51:16,065 Done running local_init_op.
+2018-06-25 13:51:17,299 Saving checkpoints for 1321 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:17,421 loss = 0.5577497, step = 1321
+2018-06-25 13:51:28,643 Saving checkpoints for 1350 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:28,933 Loss for final step: 0.44257265.
+2018-06-25 13:51:29,299 Calling model_fn.
+2018-06-25 13:51:29,593 Done calling model_fn.
+2018-06-25 13:51:29,606 Starting evaluation at 2018-06-25-12:51:29
+2018-06-25 13:51:29,675 Graph was finalized.
+2018-06-25 13:51:29,675 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1350
+2018-06-25 13:51:29,716 Running local_init_op.
+2018-06-25 13:51:29,739 Done running local_init_op.
+2018-06-25 13:51:30,184 Evaluation [1/3]
+2018-06-25 13:51:30,335 Evaluation [2/3]
+2018-06-25 13:51:30,494 Evaluation [3/3]
+2018-06-25 13:51:30,563 Finished evaluation at 2018-06-25-12:51:30
+2018-06-25 13:51:30,563 Saving dict for global step 1350: acc/accuracy = 0.7291667, acc/mean_per_class_accuracy = 0.7273122, confusion/false_negatives = 68.0, confusion/false_positives = 36.0, confusion/true_negatives = 160.0, confusion/true_positives = 120.0, global_step = 1350, loss = 0.5341521, pr/auc = 0.72731215, pr/precision = 0.7692308, pr/recall = 0.63829786, sanity/predictions_above_95% = 0.049479168, sanity/predictions_below_5% = 0.013020833
+2018-06-25 13:51:30,564 Current sadness: 0.9284762577957376
+2018-06-25 13:51:30,564 End epoch 44
+2018-06-25 13:51:30,953 Calling model_fn.
+2018-06-25 13:51:31,181 Done calling model_fn.
+2018-06-25 13:51:31,182 Create CheckpointSaverHook.
+2018-06-25 13:51:31,268 Graph was finalized.
+2018-06-25 13:51:31,269 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1350
+2018-06-25 13:51:31,324 Running local_init_op.
+2018-06-25 13:51:31,333 Done running local_init_op.
+2018-06-25 13:51:32,789 Saving checkpoints for 1351 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:32,915 loss = 0.5060629, step = 1351
+2018-06-25 13:51:43,386 Saving checkpoints for 1380 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:43,529 Loss for final step: 0.4657539.
+2018-06-25 13:51:43,896 Calling model_fn.
+2018-06-25 13:51:44,162 Done calling model_fn.
+2018-06-25 13:51:44,174 Starting evaluation at 2018-06-25-12:51:44
+2018-06-25 13:51:44,236 Graph was finalized.
+2018-06-25 13:51:44,236 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1380
+2018-06-25 13:51:44,275 Running local_init_op.
+2018-06-25 13:51:44,297 Done running local_init_op.
+2018-06-25 13:51:44,747 Evaluation [1/3]
+2018-06-25 13:51:44,915 Evaluation [2/3]
+2018-06-25 13:51:45,083 Evaluation [3/3]
+2018-06-25 13:51:45,173 Finished evaluation at 2018-06-25-12:51:45
+2018-06-25 13:51:45,173 Saving dict for global step 1380: acc/accuracy = 0.7552083, acc/mean_per_class_accuracy = 0.7522876, confusion/false_negatives = 53.0, confusion/false_positives = 41.0, confusion/true_negatives = 163.0, confusion/true_positives = 127.0, global_step = 1380, loss = 0.48214814, pr/auc = 0.7522875, pr/precision = 0.75595236, pr/recall = 0.70555556, sanity/predictions_above_95% = 0.091145836, sanity/predictions_below_5% = 0.0078125
+2018-06-25 13:51:45,173 Current sadness: 0.0
+2018-06-25 13:51:45,173 End epoch 45
+2018-06-25 13:51:45,476 Calling model_fn.
+2018-06-25 13:51:45,706 Done calling model_fn.
+2018-06-25 13:51:45,707 Create CheckpointSaverHook.
+2018-06-25 13:51:45,881 Graph was finalized.
+2018-06-25 13:51:45,882 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1380
+2018-06-25 13:51:45,941 Running local_init_op.
+2018-06-25 13:51:45,950 Done running local_init_op.
+2018-06-25 13:51:47,362 Saving checkpoints for 1381 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:47,479 loss = 0.5993083, step = 1381
+2018-06-25 13:51:59,013 Saving checkpoints for 1410 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:51:59,148 Loss for final step: 0.50513643.
+2018-06-25 13:51:59,488 Calling model_fn.
+2018-06-25 13:51:59,811 Done calling model_fn.
+2018-06-25 13:51:59,824 Starting evaluation at 2018-06-25-12:51:59
+2018-06-25 13:51:59,890 Graph was finalized.
+2018-06-25 13:51:59,891 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1410
+2018-06-25 13:51:59,933 Running local_init_op.
+2018-06-25 13:51:59,957 Done running local_init_op.
+2018-06-25 13:52:01,812 Evaluation [1/3]
+2018-06-25 13:52:01,998 Evaluation [2/3]
+2018-06-25 13:52:02,171 Evaluation [3/3]
+2018-06-25 13:52:02,241 Finished evaluation at 2018-06-25-12:52:02
+2018-06-25 13:52:02,241 Saving dict for global step 1410: acc/accuracy = 0.7708333, acc/mean_per_class_accuracy = 0.7743528, confusion/false_negatives = 33.0, confusion/false_positives = 55.0, confusion/true_negatives = 157.0, confusion/true_positives = 139.0, global_step = 1410, loss = 0.49045742, pr/auc = 0.7743528, pr/precision = 0.71649486, pr/recall = 0.80813956, sanity/predictions_above_95% = 0.078125, sanity/predictions_below_5% = 0.075520836
+2018-06-25 13:52:02,241 Current sadness: 0.20398436055937386
+2018-06-25 13:52:02,241 End epoch 46
+2018-06-25 13:52:02,667 Calling model_fn.
+2018-06-25 13:52:02,918 Done calling model_fn.
+2018-06-25 13:52:02,918 Create CheckpointSaverHook.
+2018-06-25 13:52:03,005 Graph was finalized.
+2018-06-25 13:52:03,006 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1410
+2018-06-25 13:52:03,061 Running local_init_op.
+2018-06-25 13:52:03,069 Done running local_init_op.
+2018-06-25 13:52:04,296 Saving checkpoints for 1411 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:04,405 loss = 0.53118193, step = 1411
+2018-06-25 13:52:15,978 Saving checkpoints for 1440 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:16,112 Loss for final step: 0.4525587.
+2018-06-25 13:52:16,495 Calling model_fn.
+2018-06-25 13:52:16,808 Done calling model_fn.
+2018-06-25 13:52:16,820 Starting evaluation at 2018-06-25-12:52:16
+2018-06-25 13:52:16,887 Graph was finalized.
+2018-06-25 13:52:16,887 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1440
+2018-06-25 13:52:16,926 Running local_init_op.
+2018-06-25 13:52:16,948 Done running local_init_op.
+2018-06-25 13:52:17,410 Evaluation [1/3]
+2018-06-25 13:52:17,572 Evaluation [2/3]
+2018-06-25 13:52:17,728 Evaluation [3/3]
+2018-06-25 13:52:17,819 Finished evaluation at 2018-06-25-12:52:17
+2018-06-25 13:52:17,820 Saving dict for global step 1440: acc/accuracy = 0.7526042, acc/mean_per_class_accuracy = 0.752118, confusion/false_negatives = 46.0, confusion/false_positives = 49.0, confusion/true_negatives = 137.0, confusion/true_positives = 152.0, global_step = 1440, loss = 0.48596323, pr/auc = 0.75211793, pr/precision = 0.7562189, pr/recall = 0.7676768, sanity/predictions_above_95% = 0.078125, sanity/predictions_below_5% = 0.12760417
+2018-06-25 13:52:17,820 Current sadness: 0.11263838828137197
+2018-06-25 13:52:17,820 End epoch 47
+2018-06-25 13:52:18,144 Calling model_fn.
+2018-06-25 13:52:18,436 Done calling model_fn.
+2018-06-25 13:52:18,437 Create CheckpointSaverHook.
+2018-06-25 13:52:18,534 Graph was finalized.
+2018-06-25 13:52:18,534 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1440
+2018-06-25 13:52:18,589 Running local_init_op.
+2018-06-25 13:52:18,597 Done running local_init_op.
+2018-06-25 13:52:19,927 Saving checkpoints for 1441 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:20,045 loss = 0.5046475, step = 1441
+2018-06-25 13:52:30,428 Saving checkpoints for 1470 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:30,639 Loss for final step: 0.54090464.
+2018-06-25 13:52:30,958 Calling model_fn.
+2018-06-25 13:52:31,241 Done calling model_fn.
+2018-06-25 13:52:31,252 Starting evaluation at 2018-06-25-12:52:31
+2018-06-25 13:52:31,389 Graph was finalized.
+2018-06-25 13:52:31,389 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1470
+2018-06-25 13:52:31,431 Running local_init_op.
+2018-06-25 13:52:31,454 Done running local_init_op.
+2018-06-25 13:52:31,896 Evaluation [1/3]
+2018-06-25 13:52:32,054 Evaluation [2/3]
+2018-06-25 13:52:32,209 Evaluation [3/3]
+2018-06-25 13:52:32,276 Finished evaluation at 2018-06-25-12:52:32
+2018-06-25 13:52:32,276 Saving dict for global step 1470: acc/accuracy = 0.7109375, acc/mean_per_class_accuracy = 0.7085563, confusion/false_negatives = 45.0, confusion/false_positives = 66.0, confusion/true_negatives = 119.0, confusion/true_positives = 154.0, global_step = 1470, loss = 0.51464516, pr/auc = 0.7085563, pr/precision = 0.7, pr/recall = 0.77386934, sanity/predictions_above_95% = 0.03125, sanity/predictions_below_5% = 0.0625
+2018-06-25 13:52:32,276 Current sadness: 0.9589972352731652
+2018-06-25 13:52:32,276 End epoch 48
+2018-06-25 13:52:32,641 Calling model_fn.
+2018-06-25 13:52:32,858 Done calling model_fn.
+2018-06-25 13:52:32,859 Create CheckpointSaverHook.
+2018-06-25 13:52:32,941 Graph was finalized.
+2018-06-25 13:52:32,942 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1470
+2018-06-25 13:52:32,994 Running local_init_op.
+2018-06-25 13:52:33,002 Done running local_init_op.
+2018-06-25 13:52:34,197 Saving checkpoints for 1471 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:34,311 loss = 0.39487845, step = 1471
+2018-06-25 13:52:46,067 Saving checkpoints for 1500 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:46,236 Loss for final step: 0.48337853.
+2018-06-25 13:52:46,627 Calling model_fn.
+2018-06-25 13:52:46,894 Done calling model_fn.
+2018-06-25 13:52:46,906 Starting evaluation at 2018-06-25-12:52:46
+2018-06-25 13:52:46,976 Graph was finalized.
+2018-06-25 13:52:46,976 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1500
+2018-06-25 13:52:47,017 Running local_init_op.
+2018-06-25 13:52:47,039 Done running local_init_op.
+2018-06-25 13:52:48,614 Evaluation [1/3]
+2018-06-25 13:52:48,815 Evaluation [2/3]
+2018-06-25 13:52:49,000 Evaluation [3/3]
+2018-06-25 13:52:49,093 Finished evaluation at 2018-06-25-12:52:49
+2018-06-25 13:52:49,093 Saving dict for global step 1500: acc/accuracy = 0.765625, acc/mean_per_class_accuracy = 0.7619139, confusion/false_negatives = 49.0, confusion/false_positives = 41.0, confusion/true_negatives = 168.0, confusion/true_positives = 126.0, global_step = 1500, loss = 0.49676982, pr/auc = 0.7619139, pr/precision = 0.75449103, pr/recall = 0.72, sanity/predictions_above_95% = 0.104166664, sanity/predictions_below_5% = 0.106770836
+2018-06-25 13:52:49,093 Current sadness: 0.44523046120243065
+2018-06-25 13:52:49,093 End epoch 49
+2018-06-25 13:52:49,449 Calling model_fn.
+2018-06-25 13:52:49,675 Done calling model_fn.
+2018-06-25 13:52:49,675 Create CheckpointSaverHook.
+2018-06-25 13:52:49,830 Graph was finalized.
+2018-06-25 13:52:49,831 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1500
+2018-06-25 13:52:49,888 Running local_init_op.
+2018-06-25 13:52:49,897 Done running local_init_op.
+2018-06-25 13:52:51,104 Saving checkpoints for 1501 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:52:51,232 loss = 0.551517, step = 1501
+2018-06-25 13:53:03,422 Saving checkpoints for 1530 into runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt.
+2018-06-25 13:53:03,581 Loss for final step: 0.4770265.
+2018-06-25 13:53:03,943 Calling model_fn.
+2018-06-25 13:53:04,239 Done calling model_fn.
+2018-06-25 13:53:04,253 Starting evaluation at 2018-06-25-12:53:04
+2018-06-25 13:53:04,319 Graph was finalized.
+2018-06-25 13:53:04,319 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1530
+2018-06-25 13:53:04,360 Running local_init_op.
+2018-06-25 13:53:04,382 Done running local_init_op.
+2018-06-25 13:53:05,803 Evaluation [1/3]
+2018-06-25 13:53:05,961 Evaluation [2/3]
+2018-06-25 13:53:06,122 Evaluation [3/3]
+2018-06-25 13:53:06,194 Finished evaluation at 2018-06-25-12:53:06
+2018-06-25 13:53:06,194 Saving dict for global step 1530: acc/accuracy = 0.7552083, acc/mean_per_class_accuracy = 0.7542484, confusion/false_negatives = 47.0, confusion/false_positives = 47.0, confusion/true_negatives = 133.0, confusion/true_positives = 157.0, global_step = 1530, loss = 0.5289976, pr/auc = 0.7542483, pr/precision = 0.76960784, pr/recall = 0.76960784, sanity/predictions_above_95% = 0.03125, sanity/predictions_below_5% = 0.026041666
+2018-06-25 13:53:06,194 Saving model at epoch 50
+2018-06-25 13:53:06,472 Calling model_fn.
+2018-06-25 13:53:06,542 Done calling model_fn.
+2018-06-25 13:53:06,543 Signatures INCLUDED in export for Classify: None
+2018-06-25 13:53:06,543 Signatures INCLUDED in export for Regress: None
+2018-06-25 13:53:06,544 Signatures INCLUDED in export for Predict: ['serving_default']
+2018-06-25 13:53:06,556 Restoring parameters from runs/bayesian_panoptes_featured_s64_l0.5_augs/model.ckpt-1530
+2018-06-25 13:53:06,569 Assets added to graph.
+2018-06-25 13:53:06,569 No assets to write.
+2018-06-25 13:53:06,648 SavedModel written to: b"runs/bayesian_panoptes_featured_s64_l0.5_augs/temp-b'1529931186'/saved_model.pb"
+2018-06-25 13:53:06,654 Current sadness: 1.5754950566814532
+2018-06-25 13:53:06,654 End epoch 50
+2018-06-25 13:53:06,654 All epochs completed - finishing gracefully
