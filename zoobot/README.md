@@ -49,8 +49,21 @@ If you get the error "Permission denied (publickey)"
 From root...
 
 Get the Zoobot directory from git
+
+Ensure key is in s3 (locally)
+aws s3 cp ~/.ssh/github s3://galaxy-zoo/github
+aws s3 cp ~/.ssh/github.pub s3://galaxy-zoo/github.pub
+
+aws s3 cp s3://galaxy-zoo/github ~/.ssh/github
+aws s3 cp s3://galaxy-zoo/github.pub ~/.ssh/github.pub
+eval "$(ssh-agent -s)"
+chmod 400 ~/.ssh/github
+ssh-add ~/.ssh/github
+
+
+`eval "$(ssh-agent -s)"`
 <!-- `git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
-`git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression && cd`
+`git clone git@github.com:mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression && cd`
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
