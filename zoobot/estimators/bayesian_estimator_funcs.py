@@ -402,7 +402,7 @@ def binomial_loss(labels, predictions):
 def penalty_if_not_probability(predictions):
     above_one = tf.maximum(predictions, 1.) - 1  # distance above 1
     below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0
-    return 1000 * (above_one + below_zero)  # heavy penalty for deviation in either direction
+    return tf.reduce_sum(100 * (above_one + below_zero))  # heavy penalty for deviation in either direction
 
 
 def get_eval_metric_ops(self, labels, predictions):
