@@ -386,7 +386,7 @@ def binomial_loss(labels, predictions):
 
     total_votes = tf.constant(40., dtype=tf.float32)
     yes_votes = labels * total_votes
-    p_yes = predictions
+    p_yes = tf.clip_by_value(predictions, 0., 1.)
 
     # negative log likelihood
     loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
