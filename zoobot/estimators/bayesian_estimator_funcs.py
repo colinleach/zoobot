@@ -153,7 +153,7 @@ class BayesianModel():
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions, variance, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
+        predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -163,8 +163,13 @@ class BayesianModel():
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
             # Calculate loss using mean squared error + L2
 
-            mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
+            # mean_loss = binomial_loss(labels, predictions)
+            mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
             tf.losses.add_loss(mean_loss)
+            tf.summary.histogram('total_loss', mean_loss)
+
+            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
+            # tf.losses.add_loss(mean_loss)
 
             # OR with custom loss
             # error = tf.abs(labels - predictions)  # large to {0, 1}, hopefully
@@ -317,96 +322,6 @@ def input_to_dense(features, mode, model):
     return dense1
 
 
-
-
-# def input_to_dense_normed(features, mode, model):
-#     """
-#     # TODO refactor to avoid duplication with input_to_dense, or always norm
-#     Args:
-#         features ():
-#         mode():
-#         model (BayesianBinaryModel):
-
-#     Returns:
-
-#     """
-#     input_layer = features["x"]
-#     tf.summary.image('model_input', input_layer, 1)
-
-#     logging.info(mode)
-
-#     conv1 = tf.layers.conv2d(
-#         inputs=input_layer,
-#         filters=model.conv1_filters,
-#         kernel_size=[model.conv1_kernel, model.conv1_kernel],
-#         padding=model.padding,
-#         activation=None,
-#         name='model/layer1/conv1')
-#     norm1 = tf.layers.batch_normalization(
-#         conv1,
-#         training = mode == tf.estimator.ModeKeys.TRAIN)
-#     # TODO Does batch norm apply activation as well? I assume not, but model ran okay without any explicit activ...
-#     relu1 = model.conv1_activation(norm1)
-
-#     pool1 = tf.layers.max_pooling2d(
-#         inputs=relu1,
-#         pool_size=[model.pool1_size, model.pool1_size],
-#         strides=model.pool1_strides,
-#         name='model/layer1/pool1')
-
-#     conv2 = tf.layers.conv2d(
-#         inputs=pool1,
-#         filters=model.conv2_filters,
-#         kernel_size=[model.conv2_kernel, model.conv2_kernel],
-#         padding=model.padding,
-#         activation=None,
-#         name='model/layer2/conv2')
-#     norm2 = tf.layers.batch_normalization(
-#         conv2,
-#         training = mode == tf.estimator.ModeKeys.TRAIN)
-#     relu2 = model.conv2_activation(norm2)
-#     pool2 = tf.layers.max_pooling2d(
-#         inputs=relu2,
-#         pool_size=model.pool2_size,
-#         strides=model.pool2_strides,
-#         name='model/layer2/pool2')
-
-#     conv3 = tf.layers.conv2d(
-#         inputs=pool2,
-#         filters=model.conv3_filters,
-#         kernel_size=[model.conv3_kernel, model.conv3_kernel],
-#         padding=model.padding,
-#         activation=None,
-#         name='model/layer3/conv3')
-#     norm3 = tf.layers.batch_normalization(
-#         conv3,
-#         training = mode == tf.estimator.ModeKeys.TRAIN)
-#     relu3 = model.conv3_activation(norm3)
-#     pool3 = tf.layers.max_pooling2d(
-#         inputs=relu3,
-#         pool_size=[model.pool3_size, model.pool3_size],
-#         strides=model.pool3_strides,
-#         name='model/layer3/pool3')
-
-#     """
-#     Flatten tensor into a batch of vectors
-#     Start with image_dim shape, 1 channel
-#     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
-#     length ^ 2 to make shape 1D
-#     64 filters in final layer
-#     """
-#     pool3_flat = tf.reshape(pool3, [-1, int(model.image_dim / 8) ** 2 * model.conv3_filters], name='model/layer3/flat')
-
-#     # Dense Layer
-#     dense1 = tf.layers.dense(
-#         inputs=pool3_flat,
-#         units=model.dense1_units,
-#         activation=model.dense1_activation,
-#         name='model/layer4/dense1')
-
-#     return dense1
-
-
 def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
 
     # Add dropout operation
@@ -426,7 +341,7 @@ def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
     tf.summary.histogram('softmax_true_score', softmax_true_score)
 
     response = {
-        "probabilities": softmax,
+        "prediction": softmax,
         "predictions_for_true": softmax_true_score,  # keep only one softmax per subject. Softmax sums to 1
     }
     if labels is not None:
@@ -440,7 +355,6 @@ def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
 
 
 def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
-
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
     # Add dropout operation
     # TODO refactor out, duplication + SRP
@@ -452,29 +366,48 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout, 
-        units=2, 
-        # activation=tf.nn.relu, 
+        units=1
+        # activation=tf.nn.sigmoid, 
         name='layer_after_dropout')
-
-    linear_2 = tf.Print(linear, [linear], 'linear')
     tf.summary.histogram('layer_after_dropout', linear)
 
-    prediction = linear_2[:, 0]
-    # variance = tf.pow(linear_2[:, 1], tf.constant(2., dtype=tf.float32), name='variance')
-    variance = tf.abs(linear_2[:, 1])
+    # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
+
+    prediction = linear
+
     tf.summary.histogram('prediction', prediction)
-    tf.summary.histogram('variance', variance)
+
     response = {
         "prediction": prediction,
-        "variance": variance
     }
     if labels is not None:
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
 
-    return prediction, variance, response
+    return prediction, response
 
+
+def binomial_loss(labels, predictions):
+    # assume labels are vote fractions and 40 people voted
+    # assume predictions are softmaxed (i.e. sum to 1 in second dim)
+    # TODO will need to refactor and generalise, but should change tfrecord instead
+    one = tf.constant(1., dtype=tf.float32)
+    epsilon = tf.constant(1e-10, dtype=tf.float32)
+
+    total_votes = tf.constant(40., dtype=tf.float32)
+    yes_votes = labels * total_votes
+    p_yes = predictions
+
+    # negative log likelihood
+    loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
+
+    yes_votes_pr = tf.print('yes_votes', yes_votes)
+    p_yes_pr = tf.print('p_yes', p_yes)
+    loss_pr = tf.print('bin_loss', loss)
+
+    with tf.control_dependencies([yes_votes_pr, p_yes_pr, loss_pr]):
+        return tf.identity(loss)
 
 
 def get_eval_metric_ops(self, labels, predictions):
