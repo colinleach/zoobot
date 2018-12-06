@@ -161,14 +161,19 @@ class BayesianModel():
 
         else:  # Calculate Loss for TRAIN and EVAL modes)
             labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
-            # Calculate loss using mean squared error + L2
 
-            # mean_loss = binomial_loss(labels, predictions)
-            mean_loss = tf.losses.mean_squared_error(labels, predictions)
-            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
-            # tf.losses.add_loss(mean_loss)
+
+            # this works
+            # mean_loss = tf.losses.mean_squared_error(labels, predictions)
+
+            mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
+            tf.losses.add_loss(mean_loss)
             # tf.summary.histogram('total_loss', mean_loss)
 
+            # binomial loss - untested
+            # mean_loss = binomial_loss(labels, predictions)
+
+            # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
             # tf.losses.add_loss(mean_loss)
 

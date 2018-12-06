@@ -3,8 +3,8 @@ Latest definitely working commit (shown to yarin): a707679f84d749ffc5cf21a9f2e57
 (would tag this with regression-base, but now too late)
 Loss immediately drops to 0.1 after 250 steps and then continues slowly dropping.
 
-
-mean squared error with l2 regularisation (mse_loss_with_l2 tag) seems to work well (although not complete)
+My own implementation of mean squared error was WRONG - the commit above only started working when I reverted to the built-in loss function.
+The working commit with built-in loss function, at the start of al-binomial, is `binomial-base`.
 
 Currently, am trying to work out how to get a binomial loss function working okay
 (al-binomial).
