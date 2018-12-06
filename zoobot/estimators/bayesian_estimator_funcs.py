@@ -166,36 +166,19 @@ class BayesianModel():
             # this works
             # mean_loss = tf.losses.mean_squared_error(labels, predictions)
 
-            mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
-            tf.losses.add_loss(mean_loss)
-            # tf.summary.histogram('total_loss', mean_loss)
+            # linear error
+            # this seems to work: loss decreases from 4 to <0.2, which is similar to above
+            # Curiously, rmse is not identical to this loss!
+            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
 
             # binomial loss - untested
-            # mean_loss = binomial_loss(labels, predictions)
+            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions)
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
+    
             # tf.losses.add_loss(mean_loss)
-
-            # OR with custom loss
-            # error = tf.abs(labels - predictions)  # large to {0, 1}, hopefully
-            # sq_error = tf.pow(error, tf.constant(2., dtype=tf.float32))  # disabled
-            # var_weighted_error = tf.realdiv(error, variance)
-            # vector_loss = var_weighted_error + variance
-
-            # error_p = tf.print('error first val', error[0])
-            # sq_error_p = tf.print('sq_error first val', sq_error[0])
-            # variance_p = tf.print('variance first val', variance[0])
-            # var_weighted_error_p = tf.print('weighted first val', var_weighted_error[0])
-            # vector_loss_p = tf.print('vector loss first val', vector_loss[0])
-
-            # with tf.control_dependencies([error_p, sq_error_p, variance_p, var_weighted_error_p, vector_loss_p]):
-            #     mean_loss = tf.reduce_mean(vector_loss)  # loss needs to be a scalar
-            #     tf.losses.add_loss(mean_loss)
-
-            #     tf.summary.histogram('squared_error', sq_error)
-            #     tf.summary.histogram('var_weighted_error', var_weighted_error)
-            #     tf.summary.histogram('vector_loss', vector_loss)
+            # tf.summary.histogram('total_loss', mean_loss)
 
             return response, mean_loss
 
@@ -414,6 +397,12 @@ def binomial_loss(labels, predictions):
 
     with tf.control_dependencies([yes_votes_pr, p_yes_pr, loss_pr]):
         return tf.identity(loss)
+
+
+def penalty_if_not_probability(predictions):
+    above_one = tf.maximum(predictions, 1.) - 1  # distance above 1
+    below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0
+    return 1000 * (above_one + below_zero)  # heavy penalty for deviation in either direction
 
 
 def get_eval_metric_ops(self, labels, predictions):
