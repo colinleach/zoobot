@@ -382,27 +382,28 @@ def binomial_loss(labels, predictions):
     # assume predictions are softmaxed (i.e. sum to 1 in second dim)
     # TODO will need to refactor and generalise, but should change tfrecord instead
     one = tf.constant(1., dtype=tf.float32)
-    epsilon = tf.constant(1e-10, dtype=tf.float32)
+    # TODO may be able to use normal python types, not sure about speed
+    ep = 1e-8
+    epsilon = tf.constant(ep, dtype=tf.float32)
 
     total_votes = tf.constant(40., dtype=tf.float32)
     yes_votes = labels * total_votes
-    p_yes = tf.clip_by_value(predictions, 0., 1.)
+    p_yes = tf.clip_by_value(predictions, ep, 1 - ep)
 
     # negative log likelihood
-    loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
-
-    yes_votes_pr = tf.print('yes_votes', yes_votes)
-    p_yes_pr = tf.print('p_yes', p_yes)
-    loss_pr = tf.print('bin_loss', loss)
-
-    with tf.control_dependencies([yes_votes_pr, p_yes_pr, loss_pr]):
-        return tf.identity(loss)
-
+    bin_loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
+    tf.summary.histogram('bin_loss', bin_loss)
+    return bin_loss
 
 def penalty_if_not_probability(predictions):
     above_one = tf.maximum(predictions, 1.) - 1  # distance above 1
     below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0
-    return tf.reduce_sum(100 * (above_one + below_zero))  # heavy penalty for deviation in either direction
+    deviation_penalty = tf.reduce_sum(above_one + below_zero) # penalty for deviation in either direction
+    tf.summary.histogram('deviation_penalty', deviation_penalty)
+    return deviation_penalty
+    # print_op = tf.print('deviation_penalty', deviation_penalty)
+    # with tf.control_dependencies([print_op]):
+    #     return tf.identity(deviation_penalty)  
 
 
 def get_eval_metric_ops(self, labels, predictions):
