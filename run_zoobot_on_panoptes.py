@@ -29,8 +29,8 @@ if __name__ == '__main__':
     final_size = 64
 
     if ec2:
-        train_tfrecord_loc = '~/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '~/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        train_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
     else:
         train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
