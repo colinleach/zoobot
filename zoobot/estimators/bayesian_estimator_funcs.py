@@ -164,9 +164,10 @@ class BayesianModel():
             # Calculate loss using mean squared error + L2
 
             # mean_loss = binomial_loss(labels, predictions)
-            mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
-            tf.losses.add_loss(mean_loss)
-            tf.summary.histogram('total_loss', mean_loss)
+            mean_loss = tf.losses.mean_squared_error(labels, predictions)
+            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
+            # tf.losses.add_loss(mean_loss)
+            # tf.summary.histogram('total_loss', mean_loss)
 
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
             # tf.losses.add_loss(mean_loss)
@@ -372,6 +373,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
+    # prediction = tf.squeeze(linear, 1)
     prediction = linear
 
     tf.summary.histogram('prediction', prediction)
