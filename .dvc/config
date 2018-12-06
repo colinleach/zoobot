@@ -2,3 +2,5 @@
 url = /Volumes/alpha/dvc/repos/zoobot
 [core]
 remote = alpha
+['remote "s3"']
+url = s3://galaxy-zoo/dvc/zoobot

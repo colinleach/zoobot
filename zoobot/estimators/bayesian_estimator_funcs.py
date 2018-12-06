@@ -172,7 +172,7 @@ class BayesianModel():
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
 
             # binomial loss - untested
-            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions)
+            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + tf.losses.get_regularization_loss()
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
@@ -357,7 +357,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
         dropout, 
         units=1,
         name='layer_after_dropout')
-    tf.summary.histogram('layer_after_dropout', linear)
+    tf.summary.histogram('layer_after_dropout', tf.clip_by_value(linear, -4., 4.))
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
@@ -365,6 +365,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # prediction = linear
 
     tf.summary.histogram('prediction', prediction)
+    tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
 
     response = {
         "prediction": prediction,
@@ -400,6 +401,7 @@ def penalty_if_not_probability(predictions):
     below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0
     deviation_penalty = tf.reduce_sum(above_one + below_zero) # penalty for deviation in either direction
     tf.summary.histogram('deviation_penalty', deviation_penalty)
+    tf.summary.histogram('deviation_penalty_clipped', tf.clip_by_value(deviation_penalty, 0., 30.))
     return deviation_penalty
     # print_op = tf.print('deviation_penalty', deviation_penalty)
     # with tf.control_dependencies([print_op]):
