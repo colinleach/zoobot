@@ -373,8 +373,8 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
-    # prediction = tf.squeeze(linear, 1)
-    prediction = linear
+    prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_erro
+    # prediction = linear
 
     tf.summary.histogram('prediction', prediction)
 
