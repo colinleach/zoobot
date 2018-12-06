@@ -172,7 +172,9 @@ class BayesianModel():
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
 
             # binomial loss - untested
-            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + tf.losses.get_regularization_loss()
+            l2_loss = tf.losses.get_regularization_loss()  # doesn't add to loss_collection, happily
+            tf.summary.histogram('l2_loss', l2_loss)
+            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
