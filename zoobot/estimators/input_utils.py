@@ -148,7 +148,7 @@ def load_batches(config):
     # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
     # intead, sample a label based on the observed vote fraction.
     # the expectation will be the same, and we'll run this many times.
-    uniform_sample = tf.distributions.Uniform(low=1e-10, high=1.0 - 1e-10).sample(tf.shape(batch_labels)
+    uniform_sample = tf.distributions.Uniform(low=1e-10, high=1.0 - 1e-10).sample(tf.shape(batch_labels))
     # 0. if label < sample, or 1. if label > sample
     sampled_labels = tf.round(tf.constant(0.5) + batch_labels - uniform_sample)
     print_op = tf.print('sampled_labels', sampled_labels)
