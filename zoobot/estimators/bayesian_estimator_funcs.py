@@ -378,7 +378,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
 
     response = {
-        "prediction": prediction,
+        "prediction": prediction[:, 0],
     }
     if labels is not None:
         response.update({
@@ -425,7 +425,7 @@ def get_eval_metric_ops(self, labels, predictions):
     if self.regression:
         assert labels.dtype == tf.float32
         assert predictions['prediction'].dtype == tf.float32
-        return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'][:, 0])}
+        return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
     else:
         tf.summary.histogram('Probabilities', predictions['probabilities'])
         tf.summary.histogram('Classes', predictions['classes'])
