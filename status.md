@@ -11,5 +11,9 @@ Currently, am trying to work out how to get a binomial loss function working oka
 
 186e6a8add26cd4915e047ba0bdbfa7570c848e5:
 Using linear final layer, binomial loss + penalty term, trains for 4k to 0.23 RMSE while converging towards p0.5
-Then goes a bit crazy, and then settles at p = 0.527
+Then goes a bit crazy (spike in loss), and then settles at p = 0.527
+Repeat run (186e6a8add26cd4915e047ba0bdbfa7570c848e5_repeat) did not show the same convergence behaviour, but did show the same instability spikes.
 
+7fa9629c8be18d6859485e19d9ae8c3f9acdb604:
+Added L2 regularization term (to be consistent with the VI literature).
+The weights were successfully reduced, but loss remained quite unstable. Mean RMSE 0.21.

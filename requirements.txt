@@ -15,3 +15,5 @@ seaborn
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
 photutils
 pymc3
+boto3
+dvc

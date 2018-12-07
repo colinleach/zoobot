@@ -144,8 +144,19 @@ def load_batches(config):
             [-1, config.initial_size, config.initial_size, config.channels])  # may not get full batch at end of dataset
         tf.summary.image('a_original', batch_images)
 
+    # NEW - noisy labels
+    # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
+    # intead, sample a label based on the observed vote fraction.
+    # the expectation will be the same, and we'll run this many times.
+    uniform_sample = tf.distributions.Uniform(low=1e-10, high=1.0 - 1e-10).sample(batch_labels.shape)
+    # 0. if label < sample, or 1. if label > sample
+    sampled_labels = tf.round(tf.constant(0.5) + batch_labels - uniform_sample)
+    print_op = tf.print('sampled_labels', sampled_labels)
+    with tf.control_dependencies([print_op]):
+        sampled_labels = tf.identity(sampled_labels)
+
     assert len(batch_images.shape) == 4
-    return batch_images, batch_labels
+    return batch_images, sampled_labels
 
 
 def preprocess_batch(batch_images, config):

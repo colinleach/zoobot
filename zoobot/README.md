@@ -63,7 +63,7 @@ ssh-add ~/.ssh/github
 
 `eval "$(ssh-agent -s)"`
 <!-- `git clone https://github.com/mwalmsley/zoobot.git && cd zoobot && git checkout bayesian-cnn` -->
-`git clone git@github.com:mwalmsley/zoobot.git && cd zoobot && git checkout active-learning-regression && cd`
+`git clone git@github.com:mwalmsley/zoobot.git && cd zoobot && git checkout al-binomial && cd`
 
 Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
