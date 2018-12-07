@@ -69,17 +69,18 @@ Run the setup shell script. Downloads fits files and makes shards.
 Downloading the native fits takes a few minutes (30mb/s, 6GB total for 7000 images) but is free.
 `root=/home/ubuntu`
 `pip install -r zoobot/requirements.txt`
-`pip install -e $root/zoobot`
+`pip install -e zoobot`
 <!-- extra requirement not on pypi -->
 `git clone https://github.com/mwalmsley/shared-astro-utilities.git`
-`pip install -e $root/shared-astro-utilities`
+`pip install -e shared-astro-utilities`
 
 
 # Basic Split 
 
 Download the tfrecords:
 
-`aws s3 sync s3://galaxy-zoo/basic-split/float data`
+<!-- `aws s3 sync s3://galaxy-zoo/basic-split/float data` -->
+`cd zoobot && dvc pull && cd`
 
 Run the regressor:
 
