@@ -23,3 +23,15 @@ Use noisy labels: pick 0 or 1 in proportion with the vote fraction
 Then use tf.nn.softmax_with_cross_entropy_v2 to squish and get a loss
 (avoids worrying about binomial numerical instability problems)
 Seems to be training okay so far, although prediction output on tensorboard is wrong (is actually first linear unit)
+
+
+al-binomial-nonnoisy
+Identical to al-bimomial commit above, except using deterministic labels
+I think this reduces to the classification case that I've done before
+Will be an interesting comparison in the nature of the predictions
+
+al-binomial-4conv
+Identical to al-binomial commit above, except with the third conv/pool layer duplicated (i.e. four conv layers).
+Extra 2k epochs of training allowed, to allow for slower updates
+Let's see what happens when we push deeper!
+Don't get sucked into this - can always use NAS and then add dropout, if cross-entropy is enough

@@ -301,6 +301,21 @@ def input_to_dense(features, mode, model):
         strides=model.pool3_strides,
         name='model/layer3/pool3')
 
+    # identical to conv3
+    conv4 = tf.layers.conv2d(
+        inputs=pool3,
+        filters=model.conv3_filters,
+        kernel_size=[model.conv3_kernel, model.conv3_kernel],
+        padding=model.padding,
+        activation=model.conv3_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer4/conv4')
+    pool4 = tf.layers.max_pooling2d(
+        inputs=conv4,
+        pool_size=[model.pool3_size, model.pool3_size],
+        strides=model.pool3_strides,
+        name='model/layer4/pool4')
+
     """
     Flatten tensor into a batch of vectors
     Start with image_dim shape, 1 channel
@@ -308,11 +323,11 @@ def input_to_dense(features, mode, model):
     length ^ 2 to make shape 1D
     64 filters in final layer
     """
-    pool3_flat = tf.reshape(pool3, [-1, int(model.image_dim / 8) ** 2 * model.conv3_filters], name='model/layer3/flat')
+    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
 
     # Dense Layer
     dense1 = tf.layers.dense(
-        inputs=pool3_flat,
+        inputs=pool4_flat,
         units=model.dense1_units,
         activation=model.dense1_activation,
         kernel_regularizer=regularizer,
