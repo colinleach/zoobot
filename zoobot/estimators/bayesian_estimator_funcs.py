@@ -177,7 +177,7 @@ class BayesianModel():
             # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
 
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
-            mean_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=predictions)
+            mean_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=tf.onehot(labels), logits=predictions)
 
 
             # Calculate loss using mean squared error + L2 - untested
