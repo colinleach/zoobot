@@ -171,16 +171,20 @@ class BayesianModel():
             # Curiously, rmse is not identical to this loss!
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
 
-            # binomial loss - untested
-            l2_loss = tf.losses.get_regularization_loss()  # doesn't add to loss_collection, happily
-            tf.summary.histogram('l2_loss', l2_loss)
-            mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
+            # binomial loss - equal to sensible guessing, unstable, when used with non-noisy labels
+            # l2_loss = tf.losses.get_regularization_loss()  # doesn't add to loss_collection, happily
+            # tf.summary.histogram('l2_loss', l2_loss)
+            # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
+
+            # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
+            mean_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=predictions)
+
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
-            # tf.losses.add_loss(mean_loss)
-            # tf.summary.histogram('total_loss', mean_loss)
+            tf.losses.add_loss(mean_loss)
+            tf.summary.histogram('total_loss', mean_loss)
 
             return response, mean_loss
 
@@ -357,14 +361,14 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout, 
-        units=1,
+        units=2,
         name='layer_after_dropout')
     tf.summary.histogram('layer_after_dropout', tf.clip_by_value(linear, -4., 4.))
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
-    prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_erro
-    # prediction = linear
+    # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
+    prediction = linear  # now two units, as logits
 
     tf.summary.histogram('prediction', prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
