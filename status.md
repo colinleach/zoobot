@@ -17,3 +17,9 @@ Repeat run (186e6a8add26cd4915e047ba0bdbfa7570c848e5_repeat) did not show the sa
 7fa9629c8be18d6859485e19d9ae8c3f9acdb604:
 Added L2 regularization term (to be consistent with the VI literature).
 The weights were successfully reduced, but loss remained quite unstable. Mean RMSE 0.21.
+
+0af785a10634bd26b25509b9933c3092ae2bd02c:
+Use noisy labels: pick 0 or 1 in proportion with the vote fraction
+Then use tf.nn.softmax_with_cross_entropy_v2 to squish and get a loss
+(avoids worrying about binomial numerical instability problems)
+Seems to be training okay so far, although prediction output on tensorboard is wrong (is actually first linear unit)

@@ -378,7 +378,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
 
     response = {
-        "prediction": prediction[:, 0],
+        "prediction": tf.nn.softmax(prediction)[:, 1],  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     }
     if labels is not None:
         response.update({
