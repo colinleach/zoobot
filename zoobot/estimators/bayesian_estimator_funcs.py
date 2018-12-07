@@ -425,7 +425,7 @@ def get_eval_metric_ops(self, labels, predictions):
     if self.regression:
         assert labels.dtype == tf.float32
         assert predictions['prediction'].dtype == tf.float32
-        return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
+        return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'][:, 0])}
     else:
         tf.summary.histogram('Probabilities', predictions['probabilities'])
         tf.summary.histogram('Classes', predictions['classes'])
