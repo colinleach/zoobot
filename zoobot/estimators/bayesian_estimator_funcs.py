@@ -304,7 +304,7 @@ def input_to_dense(features, mode, model):
     # identical to conv3
     conv4 = tf.layers.conv2d(
         inputs=pool3,
-        filters=model.conv3_filters
+        filters=model.conv3_filters,
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
         padding=model.padding,
         activation=model.conv3_activation,
