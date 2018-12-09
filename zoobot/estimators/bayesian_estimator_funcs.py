@@ -304,7 +304,7 @@ def input_to_dense(features, mode, model):
     # identical to conv3
     conv4 = tf.layers.conv2d(
         inputs=pool3,
-        filters=model.conv3_filters,
+        filters=model.conv3_filters
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
         padding=model.padding,
         activation=model.conv3_activation,
@@ -388,14 +388,16 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
     prediction = linear  # now two units, as logits
+    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
-    tf.summary.histogram('prediction', prediction)
-    tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
+    tf.summary.histogram('prediction', scalar_prediction)
+    tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
 
     response = {
-        "prediction": tf.nn.softmax(prediction)[:, 1],  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
+        "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     }
     if labels is not None:
+        tf.summary.histogram('internal_labels', labels)
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
