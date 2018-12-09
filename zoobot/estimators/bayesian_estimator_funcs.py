@@ -267,11 +267,20 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
+    conv1b = tf.layers.conv2d(
         inputs=conv1,
+        filters=model.conv1_filters,
+        kernel_size=[model.conv1_kernel, model.conv1_kernel],
+        padding=model.padding,
+        activation=model.conv1_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer1/conv1')
+    pool1 = tf.layers.max_pooling2d(
+        inputs=conv1b,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
+    
 
     conv2 = tf.layers.conv2d(
         inputs=pool1,
@@ -281,8 +290,16 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
+    conv2b = tf.layers.conv2d(
         inputs=conv2,
+        filters=model.conv2_filters,
+        kernel_size=[model.conv2_kernel, model.conv2_kernel],
+        padding=model.padding,
+        activation=model.conv2_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer2/conv2')
+    pool2 = tf.layers.max_pooling2d(
+        inputs=conv2b,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
