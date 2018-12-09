@@ -181,7 +181,7 @@ class BayesianModel():
             # print_op = tf.print('onehot_labels', onehot_labels)
             # with tf.control_dependencies([print_op]):
             loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-            mean_loss = tf.reduce_mean(loss)
+            mean_loss = tf.reduce_mean(loss) + tf.losses.get_regularization_loss()
 
 
             # Calculate loss using mean squared error + L2 - untested
@@ -373,14 +373,16 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
     prediction = linear  # now two units, as logits
+    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
-    tf.summary.histogram('prediction', prediction)
-    tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
+    tf.summary.histogram('prediction', scalar_prediction)
+    tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
 
     response = {
-        "prediction": tf.nn.softmax(prediction)[:, 1],  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
+        "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     }
     if labels is not None:
+        tf.summary.histogram('internal_labels', labels)
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
