@@ -274,7 +274,7 @@ def input_to_dense(features, mode, model):
         padding=model.padding,
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
-        name='model/layer1/conv1')
+        name='model/layer1/conv1b')
     pool1 = tf.layers.max_pooling2d(
         inputs=conv1b,
         pool_size=[model.pool1_size, model.pool1_size],
@@ -297,7 +297,7 @@ def input_to_dense(features, mode, model):
         padding=model.padding,
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
-        name='model/layer2/conv2')
+        name='model/layer2/conv2b')
     pool2 = tf.layers.max_pooling2d(
         inputs=conv2b,
         pool_size=model.pool2_size,
