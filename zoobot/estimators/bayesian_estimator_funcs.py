@@ -148,9 +148,7 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             dropout_rate = self.predict_dropout
 
-        logging.info('Using dropout {}'.format(dropout_rate))
-
-        dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
+        dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
         predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
@@ -257,6 +255,8 @@ def input_to_dense(features, mode, model):
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
 
+    dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
+    dropout_rate = model.dense1_dropout  # TODO should rename
     regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
     conv1 = tf.layers.conv2d(
@@ -267,16 +267,24 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1')
-    conv1b = tf.layers.conv2d(
+    drop1 = tf.layers.dropout(
         inputs=conv1,
+        rate=dropout_rate,
+        training=dropout_on)
+    conv1b = tf.layers.conv2d(
+        inputs=drop1,
         filters=model.conv1_filters,
         kernel_size=[model.conv1_kernel, model.conv1_kernel],
         padding=model.padding,
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1b')
-    pool1 = tf.layers.max_pooling2d(
+    drop1b = tf.layers.dropout(
         inputs=conv1b,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool1 = tf.layers.max_pooling2d(
+        inputs=drop1b,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
@@ -290,16 +298,24 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2')
-    conv2b = tf.layers.conv2d(
+    drop2 = tf.layers.dropout(
         inputs=conv2,
+        rate=dropout_rate,
+        training=dropout_on)
+    conv2b = tf.layers.conv2d(
+        inputs=drop2,
         filters=model.conv2_filters,
         kernel_size=[model.conv2_kernel, model.conv2_kernel],
         padding=model.padding,
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2b')
-    pool2 = tf.layers.max_pooling2d(
+    drop2b = tf.layers.dropout(
         inputs=conv2b,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool2 = tf.layers.max_pooling2d(
+        inputs=drop2b,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
@@ -312,16 +328,12 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer3/conv3')
-    conv3b = tf.layers.conv2d(
+    drop3 = tf.layers.dropout(
         inputs=conv3,
-        filters=model.conv3_filters,
-        kernel_size=[model.conv3_kernel, model.conv3_kernel],
-        padding=model.padding,
-        activation=model.conv3_activation,
-        kernel_regularizer=regularizer,
-        name='model/layer3/conv3b')
+        rate=dropout_rate,
+        training=dropout_on)
     pool3 = tf.layers.max_pooling2d(
-        inputs=conv3b,
+        inputs=drop3,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer3/pool3')
@@ -335,16 +347,12 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer4/conv4')
-    conv4b = tf.layers.conv2d(
+    drop4 = tf.layers.dropout(
         inputs=conv4,
-        filters=model.conv3_filters,
-        kernel_size=[model.conv3_kernel, model.conv3_kernel],
-        padding=model.padding,
-        activation=model.conv3_activation,
-        kernel_regularizer=regularizer,
-        name='model/layer4/conv4b')
+        rate=dropout_rate,
+        training=dropout_on)
     pool4 = tf.layers.max_pooling2d(
-        inputs=conv4b,
+        inputs=drop4,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer4/pool4')
