@@ -36,7 +36,7 @@ if __name__ == '__main__':
         test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_binomial'.format(initial_size, final_size)
+    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -106,11 +106,11 @@ if __name__ == '__main__':
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,
         optimizer=tf.train.AdamOptimizer,
-        conv1_filters=128,
+        conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
         conv2_kernel=3,
-        conv3_filters=64,
+        conv3_filters=128,
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,

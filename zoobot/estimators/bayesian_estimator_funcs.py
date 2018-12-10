@@ -267,11 +267,20 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
+    conv1b = tf.layers.conv2d(
         inputs=conv1,
+        filters=model.conv1_filters,
+        kernel_size=[model.conv1_kernel, model.conv1_kernel],
+        padding=model.padding,
+        activation=model.conv1_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer1/conv1b')
+    pool1 = tf.layers.max_pooling2d(
+        inputs=conv1b,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
+    
 
     conv2 = tf.layers.conv2d(
         inputs=pool1,
@@ -281,8 +290,16 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
+    conv2b = tf.layers.conv2d(
         inputs=conv2,
+        filters=model.conv2_filters,
+        kernel_size=[model.conv2_kernel, model.conv2_kernel],
+        padding=model.padding,
+        activation=model.conv2_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer2/conv2b')
+    pool2 = tf.layers.max_pooling2d(
+        inputs=conv2b,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
@@ -295,8 +312,16 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer3/conv3')
-    pool3 = tf.layers.max_pooling2d(
+    conv3b = tf.layers.conv2d(
         inputs=conv3,
+        filters=model.conv3_filters,
+        kernel_size=[model.conv3_kernel, model.conv3_kernel],
+        padding=model.padding,
+        activation=model.conv3_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer3/conv3b')
+    pool3 = tf.layers.max_pooling2d(
+        inputs=conv3b,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer3/pool3')
@@ -310,8 +335,16 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer4/conv4')
-    pool4 = tf.layers.max_pooling2d(
+    conv4b = tf.layers.conv2d(
         inputs=conv4,
+        filters=model.conv3_filters,
+        kernel_size=[model.conv3_kernel, model.conv3_kernel],
+        padding=model.padding,
+        activation=model.conv3_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer4/conv4b')
+    pool4 = tf.layers.max_pooling2d(
+        inputs=conv4b,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer4/pool4')
@@ -388,14 +421,16 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
     prediction = linear  # now two units, as logits
+    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
-    tf.summary.histogram('prediction', prediction)
-    tf.summary.histogram('prediction_clipped', tf.clip_by_value(prediction, 0., 1.))
+    tf.summary.histogram('prediction', scalar_prediction)
+    tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
 
     response = {
-        "prediction": tf.nn.softmax(prediction)[:, 1],  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
+        "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     }
     if labels is not None:
+        tf.summary.histogram('internal_labels', labels)
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
