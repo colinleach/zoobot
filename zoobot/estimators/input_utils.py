@@ -30,7 +30,8 @@ class InputConfig():
             fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,
-            contrast_range=(0.95, 1.05)
+            contrast_range=(0.95, 1.05),
+            noisy_labels=True
     ):
 
         self.name = name
@@ -59,6 +60,8 @@ class InputConfig():
         self.photographic_augmentation = photographic_augmentation
         self.max_brightness_delta = max_brightness_delta
         self.contrast_range = contrast_range
+
+        self.noisy_labels = noisy_labels
 
 
     def set_stratify_probs_from_csv(self, csv_loc):
@@ -148,12 +151,16 @@ def load_batches(config):
     # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
     # intead, sample a label based on the observed vote fraction.
     # the expectation will be the same, and we'll run this many times.
-    uniform_sample = tf.distributions.Uniform(low=1e-6, high=1.0 - 1e-6).sample(tf.shape(batch_labels))
-    # 0. if label < sample, or 1. if label > sample
-    sampled_labels = tf.round(tf.constant(0.5) + batch_labels - uniform_sample)
-    # print_op = tf.print('sampled_labels', sampled_labels)
-    # with tf.control_dependencies([print_op]):
-    #     sampled_labels = tf.identity(sampled_labels)
+
+    if config.noisy_labels:
+        uniform_sample = tf.distributions.Uniform(low=1e-6, high=1.0 - 1e-6).sample(tf.shape(batch_labels))
+        # 0. if label < sample, or 1. if label > sample
+        sampled_labels = tf.round(tf.constant(0.5) + batch_labels - uniform_sample)
+        # print_op = tf.print('sampled_labels', sampled_labels)
+        # with tf.control_dependencies([print_op]):
+        #     sampled_labels = tf.identity(sampled_labels)
+    else:
+        sampled_labels = batch_labels
 
     assert len(batch_images.shape) == 4
     return batch_images, sampled_labels

@@ -10,18 +10,19 @@ import seaborn as sns
 from sklearn import metrics
 import tensorflow as tf
 
-from zoobot.estimators import make_predictions
+from zoobot.estimators import make_predictions, bayesian_estimator_funcs
 from zoobot.tfrecord import read_tfrecord
 from zoobot.uncertainty import dropout_calibration
 from zoobot.estimators import input_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
 
-def predict_input_func(n_galaxies=128):
+def predict_input_func(tfrecord_loc, n_galaxies=128):
     """Wrapper to mimic the run_estimator.py input procedure.
     Get subjects and labels from tfrecord, just like during training
 
     Args:
+        tfrecord_loc (str): tfrecord to read subjects from. Should be test data.
         n_galaxies (int, optional): Defaults to 128. Num of galaxies to predict on, as single batch.
     
     Returns:
@@ -32,7 +33,7 @@ def predict_input_func(n_galaxies=128):
     with tf.Session() as sess:
         config = input_utils.InputConfig(
             name='predict',
-            tfrecord_loc='/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s128_lfloat_test.tfrecord',
+            tfrecord_loc=tfrecord_loc,
             label_col='label',
             stratify=False,
             shuffle=False,
@@ -47,6 +48,7 @@ def predict_input_func(n_galaxies=128):
             initial_size=128,
             final_size=64,
             channels=3,
+            noisy_labels=False  # important - we want the actual vote fractions
         )
         subjects, labels = input_utils.load_batches(config)
         subjects, labels = sess.run([subjects, labels])
@@ -96,14 +98,68 @@ def save_metrics(results, subjects, labels, save_dir):
     dropout_calibration.visualise_calibration(alpha_eval, coverage_at_alpha, save_loc)
     plt.close()
 
+
+    # tf graph for binomial loss via my custom func
+    # labels_p = tf.placeholder()
+    # predictions_p = tf.placeholder()
+    # binomial_loss = bayesian_estimator_funcs.binomial_loss(labels_p, predictions_p)
+
+    # with tf.Session() as sess:
+    #     bin_loss = sess.run([binomial_loss], feeddict={'labels_p': labels, 'predictions_p': })
+
+    abs_error = np.abs(results.mean(axis=1) - labels)
+    # TODO refactor into function
+    p_yes = np.mean(results, axis=1)  # typical prediction for typical loss: mean over samples
+    # could alternatively do loss for each sample, averaged?
+    total_votes = 40
+    yes_votes = p_yes * total_votes
+    epsilon = 1e-6
+    bin_loss = - (yes_votes * np.log(p_yes + epsilon) + (total_votes - yes_votes) * np.log(1 - p_yes + epsilon))
+
+    entropy = make_predictions.entropy(results)
+    expected_entropy = make_predictions.mean_binomial_entropy(results)
+    mutual_info = entropy - expected_entropy
+
+
     # save correlation between entropy and error. Entropy is more often used for classification.
     plt.figure()
-    g = sns.jointplot(make_predictions.entropy(results), np.abs(results.mean(axis=1) - labels), kind='reg')
-    plt.xlabel('Entropy')
+    g = sns.jointplot(bin_loss, abs_error, kind='reg')
+    plt.xlabel('Binomial Loss')
     plt.ylabel('Abs. Error')
     plt.ylim([0., 0.5])
     fig.tight_layout()
-    g.savefig(os.path.join(save_dir, 'entropy_correlation.png'))
+    g.savefig(os.path.join(save_dir, 'bin_loss_vs_abs_error.png'))
+    plt.close()
+
+
+    # save correlation between entropy and error. Entropy is more often used for classification.
+    plt.figure()
+    g = sns.jointplot(entropy, bin_loss, kind='reg')
+    plt.xlabel('Predictive Entropy')
+    plt.ylabel('Binomial Loss')
+    # plt.ylim([0., 0.5])
+    fig.tight_layout()
+    g.savefig(os.path.join(save_dir, 'pred_entropy_vs_bin_loss.png'))
+    plt.close()
+
+    # save correlation between entropy and error. Entropy is more often used for classification.
+    plt.figure()
+    g = sns.jointplot(mutual_info, bin_loss, kind='reg')
+    plt.xlabel('Mutual Information')
+    plt.ylabel('Binomial Loss')
+    # plt.ylim([0., 0.5])
+    fig.tight_layout()
+    g.savefig(os.path.join(save_dir, 'mutual_info_vs_bin_loss.png'))
+    plt.close()
+
+    # save correlation between entropy and error. Entropy is more often used for classification.
+    plt.figure()
+    g = sns.jointplot(mutual_info, abs_error, kind='reg')
+    plt.xlabel('Mutual Information')
+    plt.ylabel('Absolute Error')
+    plt.ylim([0., 0.5])
+    fig.tight_layout()
+    g.savefig(os.path.join(save_dir, 'mutual_info_vs_abs_error.png'))
     plt.close()
 
     # save correlation between sample variance and error. Variance is often used for regression.
@@ -113,7 +169,7 @@ def save_metrics(results, subjects, labels, save_dir):
     g = sns.jointplot(variance, np.abs(results.mean(axis=1) - labels), kind='reg')
     plt.xlabel('Log Sample Variance')
     plt.ylabel('Abs. Error')
-    plt.xlim([-3.5, -2.])
+    # plt.xlim([-3.5, -2.])
     plt.ylim([0., 0.5])
     fig.tight_layout()
     g.savefig(os.path.join(save_dir, 'variance_correlation.png'))
@@ -174,22 +230,29 @@ def save_metrics(results, subjects, labels, save_dir):
 if __name__ == '__main__':
 
     # dropouts = ['00', '02', '05', '10', '50', '90', '95']
-    dropouts=['05']
+    # dropouts=['05']
 
-    for dropout in dropouts:
+    # for dropout in dropouts:
 
-        predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_no_pred_dropout/final_d{}'.format(dropout)
+    predictor_names = ['five_conv_noisy']
+
+
+    for predictor_name in predictor_names:
+
+        predictor_loc = os.path.join('/data/repos/zoobot/results', predictor_name)
+
+        # predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_no_pred_dropout/final_d{}'.format(dropout)
         model = make_predictions.load_predictor(predictor_loc)
 
         size = 128
         channels = 3
         feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
-        tfrecord_locs = ['/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s128_lfloat_test.tfrecord']
-        # tfrecord_locs = ['/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s128_lfloat_train.tfrecord']
-        subjects, labels = predict_input_func(batch_size=1024)
+        tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s128_lfloat_test.tfrecord'
+        subjects, labels = predict_input_func(tfrecord_loc, n_galaxies=1024)
 
-        save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
+        # save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
+        save_dir = 'analysis_WIP/uncertainty/al-binomial/{}'.format(predictor_name)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
 
@@ -200,7 +263,7 @@ if __name__ == '__main__':
             results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
             np.savetxt(results_loc, results)
         else:
+            assert os.path.exists(results_loc)
             results = np.loadtxt(results_loc)
 
         save_metrics(results, subjects, labels, save_dir)
-

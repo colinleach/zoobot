@@ -464,6 +464,7 @@ def binomial_loss(labels, predictions):
     tf.summary.histogram('bin_loss', bin_loss)
     return bin_loss
 
+
 def penalty_if_not_probability(predictions):
     above_one = tf.maximum(predictions, 1.) - 1  # distance above 1
     below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0

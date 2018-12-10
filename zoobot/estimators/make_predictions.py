@@ -63,7 +63,7 @@ def get_samples_of_subjects(model, subjects, n_samples):
 #     return np.array(samples)
 
 
-def entropy(probabilites):
+def entropy(probabilities):
     """Find the total entropy in a sampled probability distribution
 
     Args:
@@ -73,8 +73,12 @@ def entropy(probabilites):
         float: total entropy in distribution
     """
     # do p * log p for every sample, sum for each subject
-    probabilites = np.clip(probabilites, 0., 1.)
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
+    probabilities = np.clip(probabilities, 0., 1.)
+    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=1)
+
+
+def mean_binomial_entropy(probabilities):
+    return -np.mean(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)), axis=1)
 
 
 def sample_variance(samples):
