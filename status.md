@@ -84,7 +84,10 @@ Add dropout between every conv layer, to be consistent with literature (although
 Important: change dropout_on switch to also put dropout on at predict time. Amazingly, this was not already set. Could have major implications.
 Training ground to a halt at dropout = 0.5.
 
-
+c2548d0:
+Dropout on early layers prevented, or massively slowed, learning. Possibly the flag change may have been involved.
+I've reduced the dropout rate on early layers to the dense layer / 10. Here, rate = 0.05.
+Running now.
 
 
 
