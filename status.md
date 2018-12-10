@@ -75,16 +75,14 @@ https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/9eef344
 
 6a5f999ae18f8a1ef5f5099166fcd292112ba644:
 Following success with doubling up the first two conv layers, also double up the third and fourth conv layers
-Running now, not yet uploaded
+Did not improve loss vs. 9eef34
 
-
-TODO
-
-Running three conv layers, cross-entropy loss (no L2) and either deterministic or noisy labels.
-
-Noisy labels (higher lines) has a worse loss and rmse, but this is expected – when the classes keep changing, it’s a much more difficult task. The ultimate success is against the vote fraction labels, which I currently only compare after-the-fact. Models stays regularized, suggesting more layers may help.
-
-I’m now running three layers with L2, and four layers without L2.
+65898b9: 
+Revert the extra third and fourth doubled layers
+Add dropout between every conv layer, to be consistent with literature (although outside Bayesian realm, this is unusual)
+(final consistency step will be to add L2 loss back in)
+Important: change dropout_on switch to also put dropout on at predict time. Amazingly, this was not already set. Could have major implications.
+Training ground to a halt at dropout = 0.5.
 
 
 

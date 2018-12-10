@@ -256,7 +256,7 @@ def input_to_dense(features, mode, model):
     tf.summary.image('model_input', input_layer, 1)
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
-    dropout_rate = model.dense1_dropout  # TODO should rename
+    dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
     regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
     conv1 = tf.layers.conv2d(
