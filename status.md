@@ -3,11 +3,17 @@ Latest definitely working commit (shown to yarin): a707679f84d749ffc5cf21a9f2e57
 (would tag this with regression-base, but now too late)
 Loss immediately drops to 0.1 after 250 steps and then continues slowly dropping.
 
+
+
 My own implementation of mean squared error was WRONG - the commit above only started working when I reverted to the built-in loss function.
 The working commit with built-in loss function, at the start of al-binomial, is `binomial-base`.
 
 Currently, am trying to work out how to get a binomial loss function working okay
 (al-binomial).
+
+2b61a9fdc1af01c10dfb1172b0bdf2e69fff10b2:
+My poor intermediate attempts at getting the binomial loss to work
+https://github.com/mwalmsley/zoobot/commit/2b61a9fdc1af01c10dfb1172b0bdf2e69fff10b2
 
 186e6a8add26cd4915e047ba0bdbfa7570c848e5:
 Using linear final layer, binomial loss + penalty term, trains for 4k to 0.23 RMSE while converging towards p0.5
@@ -23,15 +29,64 @@ Use noisy labels: pick 0 or 1 in proportion with the vote fraction
 Then use tf.nn.softmax_with_cross_entropy_v2 to squish and get a loss
 (avoids worrying about binomial numerical instability problems)
 Seems to be training okay so far, although prediction output on tensorboard is wrong (is actually first linear unit)
+Need to double-check if output predictions are correct
+Reference datetime: 1544206935
+https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/0af785a10634bd26b25509b9933c3092ae2bd02c/1544206935/?region=us-east-1&tab=overview
 
 
-al-binomial-nonnoisy
+c26de59ddf92389a3e692632a86fdbcf86035013:
+As above (three layers), but with an additional L2 loss added. 
+Results are missing??
+
+
+## al-binomial-nonnoisy ##
+
+Single commit: 923b347a982541f0962e69627968e47abe171500
 Identical to al-bimomial commit above, except using deterministic labels
 I think this reduces to the classification case that I've done before
-Will be an interesting comparison in the nature of the predictions
+Will be an interesting comparison in the nature of the predictions.
+I'm happy with this baseline - no further work needed for now.
+Ends up slightly overfitting
+Reference datetime version: 1544202382
+https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/923b347a982541f0962e69627968e47abe171500/1544202382/?region=us-east-1&tab=overview
 
-al-binomial-4conv
-Identical to al-binomial commit above, except with the third conv/pool layer duplicated (i.e. four conv layers).
+
+## al-binomial-4conv ##
+Initially identical to al-binomial commit above, except with the third conv/pool layer duplicated (i.e. four conv layers).
 Extra 2k epochs of training allowed, to allow for slower updates
-Let's see what happens when we push deeper!
-Don't get sucked into this - can always use NAS and then add dropout, if cross-entropy is enough
+
+f56cd3ae80a4a5d4b78bdf9a5615359ae98e3503:
+Was supposed to be four layers, but I actually forgot to pull.
+Is actually three layers (no L2) from 0af785a10634bd26b25509b9933c3092ae2bd02c, but with predictions fixed. Will rename.
+
+16e16919db722588b2b66d48e014ff0ff6fd0cc5:
+Third conv/pool layer duplicated (as above)
+Results are similar to al-binomial.
+
+b87b062a40f0ac01c5543cf0b1f1b32f44501b13:
+Change filters from 128, 64, 64 64 to 32, 64, 128, 128 following traditional design of increasing filters with depth
+Results are similar still, but speed is slightly improved
+
+9eef344784b313cff4f848cf85dd65394ca24365:
+Double up the first two conv layers (conv1, pool1, conv2, pool2 to conv1, conv1b, pool1, conv2, conv2b, pool2), following VGG16 pattern of several convs per pool
+Excellent results - significant loss reduction!
+Reference datetime: 1544381343
+https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/9eef344784b313cff4f848cf85dd65394ca24365/1544381343/?region=us-east-1&tab=overview
+
+6a5f999ae18f8a1ef5f5099166fcd292112ba644:
+Following success with doubling up the first two conv layers, also double up the third and fourth conv layers
+Running now, not yet uploaded
+
+
+TODO
+
+Running three conv layers, cross-entropy loss (no L2) and either deterministic or noisy labels.
+
+Noisy labels (higher lines) has a worse loss and rmse, but this is expected – when the classes keep changing, it’s a much more difficult task. The ultimate success is against the vote fraction labels, which I currently only compare after-the-fact. Models stays regularized, suggesting more layers may help.
+
+I’m now running three layers with L2, and four layers without L2.
+
+
+
+
+
