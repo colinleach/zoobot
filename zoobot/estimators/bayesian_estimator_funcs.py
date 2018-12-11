@@ -182,8 +182,8 @@ class BayesianModel():
             # mean_loss = tf.reduce_mean(loss)
 
             # Calculate loss using mean squared error - untested
-            mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
-
+            scaled_predictions = tf.nn.softmax(predictions)
+            mean_loss = tf.reduce_mean(tf.abs(scaled_predictions[:, 1] - labels))
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
