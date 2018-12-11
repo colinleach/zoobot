@@ -62,7 +62,7 @@ if __name__ == '__main__':
         early_stopping_window=10,
         max_sadness=4.,
         log_dir='runs/{}'.format(run_name),
-        save_freq=10
+        save_freq=25
     )
 
     train_config = input_utils.InputConfig(

@@ -13,6 +13,6 @@ git clone https://github.com/mwalmsley/shared-astro-utilities.git && \
 pip install -e shared-astro-utilities  && \
 cd zoobot && dvc pull -r s3 && cd && \
 source deactivate && \
-screen -r run && \
+screen -R run && \
 source activate tensorflow_p36 && \
 echo "Environment ready, data fetched"

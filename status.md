@@ -1,5 +1,6 @@
 active-learning-regression works okay - current main branch for uncertainty feature
 Latest definitely working commit (shown to yarin): a707679f84d749ffc5cf21a9f2e5760c81604351
+https://github.com/mwalmsley/zoobot/commit/a707679f84d749ffc5cf21a9f2e5760c81604351
 (would tag this with regression-base, but now too late)
 Loss immediately drops to 0.1 after 250 steps and then continues slowly dropping.
 
@@ -87,7 +88,15 @@ Training ground to a halt at dropout = 0.5.
 c2548d0:
 Dropout on early layers prevented, or massively slowed, learning. Possibly the flag change may have been involved.
 I've reduced the dropout rate on early layers to the dense layer / 10. Here, rate = 0.05.
-Running now.
+Trains about as well as without dropout (possibly slightly less - to review)
+
+0f0e9ff:
+Create a comparison 'baseline' of a model trained with deterministic vote fraction labels, single-unit linear final layer, and mean square error loss function.
+Reference epoch: 1544536218
+https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/0f0e9ff/1544536218/?region=us-east-1&tab=overview
+Metrics (abs, square, and bin. loss) show performance is similar or better to binomial version.
+Let's see if the uncertanties are any different...
+
 
 
 
