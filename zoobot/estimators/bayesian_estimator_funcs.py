@@ -182,14 +182,13 @@ class BayesianModel():
             # mean_loss = tf.reduce_mean(loss)
 
             # Calculate loss using mean squared error - untested
-            scaled_predictions = tf.nn.softmax(predictions)
-            mean_loss = tf.reduce_mean(tf.abs(scaled_predictions[:, 1] - labels))
+            mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
-            tf.losses.add_loss(mean_loss)
-            tf.summary.histogram('total_loss', mean_loss)
+            # tf.losses.add_loss(mean_loss)
+            # tf.summary.histogram('total_loss', mean_loss)
 
             return response, mean_loss
 
@@ -424,15 +423,16 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout, 
-        units=2,
+        units=1,
         name='layer_after_dropout')
-    tf.summary.histogram('layer_after_dropout', tf.clip_by_value(linear, -4., 4.))
+    tf.summary.histogram('layer_after_dropout', linear)
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
-    # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
-    prediction = linear  # now two units, as logits
-    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
+    prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
+    scalar_prediction = prediction
+    # prediction = linear  # now two units, as logits
+    # scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
     tf.summary.histogram('prediction', scalar_prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
