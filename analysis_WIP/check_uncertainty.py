@@ -82,7 +82,6 @@ def save_metrics(results, subjects, labels, save_dir):
     """
     mean_prediction, abs_error, square_error, mean_abs_error, mean_square_error, bin_likelihood, bin_loss_per_subject, mean_bin_loss = default_metrics(results, labels)
 
-    print(bin_loss_per_subject)
     # repeat for baseline
     # baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
     baseline_results = np.loadtxt('/Data/repos/zoobot/analysis_WIP/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
@@ -97,19 +96,18 @@ def save_metrics(results, subjects, labels, save_dir):
 
     distribution_entropy = make_predictions.distribution_entropy(results)
 
-    predictive_entropy = make_predictions.predictive_binary_entropy(results)
-    expected_entropy = make_predictions.mean_binomial_entropy(results)  # mean over samples
+    predictive_entropy = make_predictions.binomial_entropy(np.mean(results, axis=1))
+    expected_entropy = np.mean(make_predictions.binomial_entropy(results), axis=1)
     mutual_info = predictive_entropy - expected_entropy
 
-    
     sns.set(context='paper', font_scale=1.5)
 
     # save histograms of samples, for first 20 galaxies 
-    # fig, axes = make_predictions.view_samples(results[:20], labels[:20])
-    # fig.tight_layout()
-    # axes[-1].set_xlabel('Vote Fraction')
-    # fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
-    # plt.close(fig)
+    fig, axes = make_predictions.view_samples(results[:20], labels[:20])
+    fig.tight_layout()
+    axes[-1].set_xlabel('Vote Fraction')
+    fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
+    plt.close(fig)
 
 
     # save distribution of binomial
@@ -156,7 +154,7 @@ def save_metrics(results, subjects, labels, save_dir):
     # How does being smooth or featured affect each entropy measuremement?
     # Expect expected entropy to be only func. of mean prediction
     # And currently, similarly for predictive entropy (although queried with Lewis)
-    fig, (row0, row1) = plt.subplots(nrows=2, ncols=3, sharex=True, figsize=(12, 8))
+    fig, (row0, row1, row2) = plt.subplots(nrows=3, ncols=3, sharex=True, figsize=(12, 8))
 
     ax00, ax01, ax02 = row0
     ax00.scatter(labels, predictive_entropy)
@@ -168,11 +166,26 @@ def save_metrics(results, subjects, labels, save_dir):
 
     ax10, ax11, ax12 = row1
     ax10.scatter(mean_prediction, predictive_entropy)
+    mean_pred_range = np.linspace(0.02, 0.98)
+    ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
     ax10.set_ylabel('Predictive Entropy')
     ax11.scatter(mean_prediction, expected_entropy)
+    ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
     ax11.set_ylabel('Expected Entropy')
     ax12.scatter(mean_prediction, mutual_info)
     ax12.set_ylabel('Mutual Information')
+
+
+    ax20, ax21, ax22 = row2
+    # ax10.scatter(mean_prediction, predictive_entropy)
+    # mean_pred_range = np.linspace(0.02, 0.98)
+    # ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+    # ax10.set_ylabel('Delta Predictive Entropy')
+    ax21.scatter(mean_prediction, expected_entropy - make_predictions.binomial_entropy(mean_prediction))
+    # ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+    ax21.set_ylabel('Delta Expected Entropy')
+    # ax12.scatter(mean_prediction, mutual_info)
+    # ax12.set_ylabel('Mutual Information')
 
     ax00.set_xlabel('Vote Fraction')
     ax01.set_xlabel('Vote Fraction')
@@ -180,11 +193,20 @@ def save_metrics(results, subjects, labels, save_dir):
     ax10.set_xlabel('Mean Prediction')
     ax11.set_xlabel('Mean Prediction')
     ax12.set_xlabel('Mean Prediction')
+    # ax00.set_xlim([0.02, 0.98])
+    # ax01.set_xlim([0.02, 0.98])
+    # ax02.set_xlim([0.02, 0.98])
+    # ax10.set_xlim([0.02, 0.98])
+    # ax11.set_xlim([0.02, 0.98])
+    # ax12.set_xlim([0.02, 0.98])
+    
 
     fig.tight_layout()
     fig.savefig(os.path.join(save_dir, 'entropy_by_label.png'))
     plt.close()
 
+
+    # save_acquisition_examples(mutual_info, 'mutual_info')
     
     # plt.figure()
     # g = sns.jointplot(predictive_entropy, bin_loss, kind='reg')
@@ -228,56 +250,59 @@ def save_metrics(results, subjects, labels, save_dir):
     # g.savefig(os.path.join(save_dir, 'variance_correlation.png'))
     # plt.close()
 
-    # show galaxies with max/min variance, or top/bottom 20% of variance (more representative)
-    # min_var_gals = subjects[variance.argsort()]
-    # max_var_gals = subjects[variance.argsort()[-1::-1]]
-    # low_var_galaxies = subjects[variance.argsort()[:int(len(subjects)/5.)]]
-    # high_var_galaxies = subjects[variance.argsort()[int(len(subjects)*4./5.):]]
-    # np.random.shuffle(low_var_galaxies)   # inplace
-    # np.random.shuffle(high_var_galaxies)  # inplace
 
-    # galaxies_to_show = [
-    #     {
-    #         'galaxies': min_var_gals, 
-    #         'save_loc': os.path.join(save_dir, 'min_variance.png')
-    #     },
-    #     {
-    #         'galaxies': max_var_gals,
-    #         'save_loc': os.path.join(save_dir, 'max_variance.png')
-    #     },
-    #     {
-    #         'galaxies': high_var_galaxies,
-    #         'save_loc': os.path.join(save_dir, 'high_variance.png')
-    #     },
-    #     {
-    #         'galaxies': low_var_galaxies,
-    #         'save_loc': os.path.join(save_dir, 'low_variance.png')
-    #     },
-    # ]
+def save_acquisition_examples(acq_values, acq_string):
+
+    # show galaxies with max/min variance, or top/bottom 20% of variance (more representative)
+    min_gals = subjects[acq_values.argsort()]
+    max_gals = subjects[acq_values.argsort()[-1::-1]]
+    low_galaxies = subjects[acq_values.argsort()[:int(len(subjects)/5.)]]
+    high_galaxies = subjects[acq_values.argsort()[int(len(subjects)*4./5.):]]
+    np.random.shuffle(low_galaxies)   # inplace
+    np.random.shuffle(high_galaxies)  # inplace
+
+    galaxies_to_show = [
+        {
+            'galaxies': min_gals, 
+            'save_loc': os.path.join(save_dir, 'min_{}.png'.format(acq_string))
+        },
+        {
+            'galaxies': max_gals,
+            'save_loc': os.path.join(save_dir, 'max_{}.png'.format(acq_string))
+        },
+        {
+            'galaxies': high_galaxies,
+            'save_loc': os.path.join(save_dir, 'high_{}.png'.format(acq_string))
+        },
+        {
+            'galaxies': low_galaxies,
+            'save_loc': os.path.join(save_dir, 'low_{}.png'.format(acq_string))
+        },
+    ]
 
     # save images
     # TODO refactor into astro_utils
-    # for galaxy_set in galaxies_to_show:
-    #     assert len(galaxy_set['galaxies']) != 0
-    #     grid_height = 9
-    #     grid_width = 3
-    #     fig = plt.figure(figsize=(grid_width * 4, grid_height * 4))  # x, y order
-    #     gs1 = gridspec.GridSpec(grid_height, grid_width, fig)  # rows (y), cols (x) order
-    #     gs1.update(wspace=0.025, hspace=0.025)
-    #     for n in range(grid_height * grid_width):
-    #         ax = plt.subplot(gs1[n])
-    #         galaxy = galaxy_set['galaxies'][n, :, :, :]  # n, x, y, channel, in ML style
-    #         data = galaxy.squeeze()
-    #         ax.imshow(data.astype(np.uint8))
-    #         ax.grid(False)
-    #         ax.get_xaxis().set_visible(False)
-    #         ax.get_yaxis().set_visible(False)
-    #         # TODO add labels
-    #         # label_str = '{:.2}'.format(label)
-    #         # ax.text(60, 110, label_str, fontsize=16, color='r')
-    #     # plt.tight_layout()
-    #     plt.savefig(galaxy_set['save_loc'], bbox_inches='tight')
-    #     plt.close()
+    for galaxy_set in galaxies_to_show:
+        assert len(galaxy_set['galaxies']) != 0
+        grid_height = 9
+        grid_width = 3
+        fig = plt.figure(figsize=(grid_width * 4, grid_height * 4))  # x, y order
+        gs1 = gridspec.GridSpec(grid_height, grid_width, fig)  # rows (y), cols (x) order
+        gs1.update(wspace=0.025, hspace=0.025)
+        for n in range(grid_height * grid_width):
+            ax = plt.subplot(gs1[n])
+            galaxy = galaxy_set['galaxies'][n, :, :, :]  # n, x, y, channel, in ML style
+            data = galaxy.squeeze()
+            ax.imshow(data.astype(np.uint8))
+            ax.grid(False)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            # TODO add labels
+            # label_str = '{:.2}'.format(label)
+            # ax.text(60, 110, label_str, fontsize=16, color='r')
+        # plt.tight_layout()
+        plt.savefig(galaxy_set['save_loc'], bbox_inches='tight')
+        plt.close()
 
 
 if __name__ == '__main__':

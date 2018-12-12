@@ -110,8 +110,8 @@ def predictive_binary_entropy(probabilities):
     return -1 * (mean_prob * np.log(mean_prob + ep) + (1 - mean_prob) * np.log(1 - mean_prob + ep))
 
 
-def mean_binomial_entropy(probabilities):
-    return np.mean(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)), axis=1)
+def binomial_entropy(probabilities):
+    return np.array(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)))
 
 
 def sample_variance(samples):
