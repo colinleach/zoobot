@@ -84,7 +84,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False
+        noisy_labels=True
     )
 
     eval_config = input_utils.InputConfig(
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False
+        noisy_labels=True
     )
 
     model = bayesian_estimator_funcs.BayesianModel(

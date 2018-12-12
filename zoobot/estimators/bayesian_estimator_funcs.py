@@ -175,20 +175,20 @@ class BayesianModel():
             # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
 
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
-            # onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
+            onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
             # print_op = tf.print('onehot_labels', onehot_labels)
             # with tf.control_dependencies([print_op]):
-            # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-            # mean_loss = tf.reduce_mean(loss)
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
+            mean_loss = tf.reduce_mean(loss)
 
             # Calculate loss using mean squared error - untested
-            mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
+            # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
-            # tf.losses.add_loss(mean_loss)
-            # tf.summary.histogram('total_loss', mean_loss)
+            tf.losses.add_loss(mean_loss)
+            tf.summary.histogram('total_loss', mean_loss)
 
             return response, mean_loss
 
@@ -423,16 +423,16 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout, 
-        units=1,
+        units=2,
         name='layer_after_dropout')
     tf.summary.histogram('layer_after_dropout', linear)
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
-    prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
-    scalar_prediction = prediction
-    # prediction = linear  # now two units, as logits
-    # scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
+    # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
+    # scalar_prediction = prediction
+    prediction = linear  # now two units, as logits
+    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
     tf.summary.histogram('prediction', scalar_prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
