@@ -64,4 +64,4 @@ def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):
 
 if __name__ == '__main__':
 
-    save_panoptes_to_tfrecord(settings.catalog_loc, settings.tfrecord_dir)
+    save_panoptes_to_tfrecord('data/panoptes_predictions_selected.csv', 'data/basic_split')
