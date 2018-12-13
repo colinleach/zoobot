@@ -118,6 +118,7 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
+    
         batch_data = batch['matrix']
         batch_images = tf.reshape(
             batch_data,
