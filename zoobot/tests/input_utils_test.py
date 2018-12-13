@@ -124,6 +124,14 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'all_augmentations_check.png'))
 
 
+def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
+    n_galaxies = 24
+    subjects = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size)
+    with tf.Session() as sess:
+        subjects = sess.run([subjects])
+    assert subjects is not None
+    assert subjects.shape[0] == 24
+
 """
 Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 """

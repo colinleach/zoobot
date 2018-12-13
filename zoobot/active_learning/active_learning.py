@@ -155,10 +155,12 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
         channels (int): channels of each image matrix to load from tfrecord
         acquisition_func (callable): expecting list of image matrices, returning list of scalars
     """
-    subjects = read_tfrecord.load_examples_from_tfrecord(
-        [tfrecord_loc],
-        read_tfrecord.matrix_id_feature_spec(size, channels)
-    )
+    # subjects = read_tfrecord.load_examples_from_tfrecord(
+    #     [tfrecord_loc],
+    #     read_tfrecord.matrix_id_feature_spec(size, channels)
+    # )
+    logging.warning('Assuming 4096 galaxies per chunk')
+    subjects, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=4096, initial_size=128, final_size=64, has_labels=False)
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
     # acq func expects a list of matrices
     subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]

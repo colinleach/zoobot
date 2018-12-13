@@ -222,6 +222,26 @@ def shard_locs(tfrecord_dir, size, channels):  # write shards dynamically when c
     return tfrecord_locs  # of form [train_loc, test_loc]
 
 
+
+
+@pytest.fixture()
+def tfrecord_matrix_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
+
+    tfrecord_loc = os.path.join(tfrecord_dir, 's28_matrix_0.tfrecord')
+    if os.path.exists(tfrecord_loc):
+        os.remove(tfrecord_loc)
+        
+    examples = [{'matrix': np.random.rand(size, size, channels)}]
+
+    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    for example in examples:  # depends on tfrecord.create_tfrecord
+        writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix']))
+    writer.close()
+
+    return tfrecord_loc
+
+
+
 @pytest.fixture()
 def predictor_model_loc():  # not yet on github
     return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530286779')

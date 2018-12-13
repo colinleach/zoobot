@@ -17,44 +17,6 @@ from zoobot.estimators import input_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
 
-def predict_input_func(tfrecord_loc, n_galaxies=128):
-    """Wrapper to mimic the run_estimator.py input procedure.
-    Get subjects and labels from tfrecord, just like during training
-
-    Args:
-        tfrecord_loc (str): tfrecord to read subjects from. Should be test data.
-        n_galaxies (int, optional): Defaults to 128. Num of galaxies to predict on, as single batch.
-    
-    Returns:
-        subjects: np.array of shape (batch, x, y, channel)
-        labels: np.array of shape (batch)
-    """
-
-    with tf.Session() as sess:
-        config = input_utils.InputConfig(
-            name='predict',
-            tfrecord_loc=tfrecord_loc,
-            label_col='label',
-            stratify=False,
-            shuffle=False,
-            repeat=False,
-            stratify_probs=None,
-            regression=True,
-            geometric_augmentation=False,
-            photographic_augmentation=False,
-            max_zoom=1.2,
-            fill_mode='wrap',
-            batch_size=n_galaxies,
-            initial_size=128,
-            final_size=64,
-            channels=3,
-            noisy_labels=False  # important - we want the actual vote fractions
-        )
-        subjects, labels = input_utils.load_batches(config)
-        subjects, labels = sess.run([subjects, labels])
-    return subjects, labels
-
-
 def default_metrics(results, labels):
     mean_prediction = results.mean(axis=1)
     
@@ -329,8 +291,10 @@ if __name__ == '__main__':
         channels = 3
         feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
-        tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s128_lfloat_test.tfrecord'
-        subjects, labels = predict_input_func(tfrecord_loc, n_galaxies=1024)
+        tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord'
+        subjects_g, labels_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=128, final_size=64, has_labels=True)  # tf graph
+        with tf.Session() as sess:
+            subjects, labels = sess.run([subjects_g, labels_g])
 
         # save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
         save_dir = 'analysis_WIP/uncertainty/al-binomial/{}'.format(predictor_name)
