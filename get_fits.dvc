@@ -1,0 +1,13 @@
+cmd: ' python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=data/fits_native
+  --old_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog.csv --new_catalog_loc=data/panoptes_predictions_selected.csv'
+deps:
+- md5: d027fda3489d33ea16baa073ec438384
+  path: data/2018-11-05_panoptes_predictions_with_catalog.csv
+md5: ba78f4573986a453dd4a484dc4a8f075
+outs:
+- cache: true
+  md5: 357b9f93afe1ae608f36c27401fba67a.dir
+  path: data/fits_native
+- cache: true
+  md5: e2bf30485bc6099fa14a9c58995535ff
+  path: data/panoptes_predictions_selected.csv
