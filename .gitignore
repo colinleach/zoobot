@@ -33,3 +33,4 @@ acquired_shard_*
 *.pb
 /data.xml
 /data
+*oracle.csv

@@ -4,12 +4,16 @@ This document details how to run active learning on an existing catalog. This is
 1. Write images without labels into many tfrecord chunks, called shards, plus an additional labelled tfrecord.
 2. Run a model to learn from the labelled tfrecord, and then (iterating through each shard) pick images for labelling.
 
-
 ## DVC Pipeline
+
+If you don't have a new catalog or new images, skip ahead with `dvc pull make_shards.dvc`. 
+This will download the 
+Otherwise, you can run `dvc repro make_shards.dvc` **locally** to. `dvc repro` will scan for file changes since the pipeline was last run 
+Below
 
 ### Data from Outside Repo
 
-We need a catalog and images.
+We need a catalog and images. 
 
 `latest_raw_catalog_loc` points to the latest Panoptes reduction export (including the NSA catalog details).
 Copy this locally, so we have the full record of labelled galaxies and their (original) locations on disk.
@@ -23,17 +27,27 @@ The native size images are 250GB (!), so (for now, running a historical simulati
 `catalog_loc=data/panoptes_predictions_selected.csv`
 `dvc run -d $latest_raw_catalog_loc -o data/fits_native -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py`
 
-Now we have the data to create shards. `make_shards.py` will 
-- Take the first 1024 images as training and test data (random 80/20), and save galaxy ids and labels for the remainder in `tests/test_examples/mock_panoptes.csv` to be used by `mock_panoptes.py` to simulate an oracle.
+From this point, we only care about files in the repo.
+
+### Shards
+
+Now we have the data to create shards. 
+
+`make_shards.py` will 
+- Take the first 1024 images as training and test data (random 80/20), and save galaxy ids and labels for the remainder in `zoobot/active_learning/oracle.csv` to be used by `mock_panoptes.py` to simulate an oracle.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
 `shard_dir=data/shards/si128_sf64_ss4096`
-`dvc run -d $catalog_loc -d data/fits_native -o zoobot/tests/test_examples/mock_panoptes.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
+`dvc run -d $catalog_loc -d data/fits_native -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
+
+### Execution
+
+**Already run the commands above?** `dvc pull make_shards.dvc` **will skip to here. Helpful!**
 
 Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
 `run_dir=data/runs/example_run`
-`dvc run -d $shard_dir -f execute_al.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -f Dvcfile.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.

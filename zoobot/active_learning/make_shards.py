@@ -152,7 +152,11 @@ if __name__ == '__main__':
 
     # temporary hacks for mocking panoptes
     # save catalog for mock_panoptes.py to return (now added to git)
-    catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
+    # TODO a bit hacky, as only coincidentally the same
+    dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
+    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
+    # catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
+
     # split catalog and pretend most is unlabelled
     labelled_catalog = catalog[:1024]  # for initial training data
     unlabelled_catalog = catalog[1024:]  # for new data
