@@ -160,15 +160,19 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
     #     read_tfrecord.matrix_id_feature_spec(size, channels)
     # )
     logging.warning('Assuming 4096 galaxies per chunk')
-    subjects, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=4096, initial_size=128, final_size=64, has_labels=False)
+    images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=4096, initial_size=128, final_size=64, mode='id_str')
+    with tf.Session as sess:
+        images, id_str_bytes = sess.run([images, id_str])
+    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]
+    
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
     # acq func expects a list of matrices
-    subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
-    acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
+    # subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
+    acquisitions = acquisition_func(subjects)  # returns list of acquisition values
 
     for subject, acquisition in zip(subjects, acquisitions):
-        subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
-        save_acquisition_to_db(subject_id, acquisition, db)
+        # subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
+        save_acquisition_to_db(subject['id_str'], acquisition, db)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 

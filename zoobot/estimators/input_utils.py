@@ -118,7 +118,7 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
-    
+
         batch_data = batch['matrix']
         batch_images = tf.reshape(
             batch_data,
@@ -169,6 +169,12 @@ def load_batches_without_labels(config):
     batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
 
+
+def load_batches_with_id_str(config):
+    # does not fetch id - unclear if this is important
+    feature_spec = matrix_id_feature_spec(config.initial_size, config.channels)
+    batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    return get_images_from_batch(batch, config.initial_size, config.channels, summary=True), batch['id_str']
 
 
 def preprocess_batch(batch_images, config):
@@ -364,7 +370,7 @@ def ensure_images_have_batch_dimension(images):
     return images
 
 
-def predict_input_func(tfrecord_loc, n_galaxies=128, initial_size=128, final_size=64, has_labels=True):
+def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode='labels'):
     """Wrapper to mimic the run_estimator.py input procedure.
     Get subjects and labels from tfrecord, just like during training
     Subjects must fit in memory, as they are loaded as a single batch
@@ -395,9 +401,14 @@ def predict_input_func(tfrecord_loc, n_galaxies=128, initial_size=128, final_siz
         channels=3,
         noisy_labels=False  # important - we want the actual vote fractions
     )
-    if has_labels:
+    if mode =='labels':
         batch_images, batch_labels = load_batches_with_labels(config)
+    if mode == 'id_str':
+        batch_images, id_strs = load_batches_with_id_str(config)
+        batch_labels = None
     else:
-        batch_images, batch_labels = load_batches_without_labels(config), None
-    preprocessed_batch_images = preprocess_batch(batch_images, config)
-    return preprocessed_batch_images, batch_labels
+        batch_images = load_batches_without_labels(config)
+        batch_labels = None
+        id_strs = None
+    preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
+    return preprocessed_batch_images, batch_labels, id_strs

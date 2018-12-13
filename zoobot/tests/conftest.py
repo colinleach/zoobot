@@ -231,7 +231,7 @@ def tfrecord_matrix_loc(tfrecord_dir, size, channels):  # write shards dynamical
     if os.path.exists(tfrecord_loc):
         os.remove(tfrecord_loc)
         
-    examples = [{'matrix': np.random.rand(size, size, channels)}]
+    examples = [{'matrix': np.random.rand(size, size, channels)} for n in range(128)]
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
     for example in examples:  # depends on tfrecord.create_tfrecord
