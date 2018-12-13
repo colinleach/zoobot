@@ -169,7 +169,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
     if baseline:
         def mock_acquisition_func(predictor):  # predictor does nothing
             def mock_acquisition_callable(matrix_list):
-                print('matrix list', matrix_list)
+                print('matrix list', type(matrix_list))
                 assert isinstance(matrix_list, list)
                 assert all([isinstance(x, np.ndarray) for x in matrix_list])
                 assert all([x.shape[0] == x.shape[1] for x in matrix_list])

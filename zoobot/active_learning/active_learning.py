@@ -167,8 +167,8 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
     
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
     # acq func expects a list of matrices
-    # subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
-    acquisitions = acquisition_func(subjects)  # returns list of acquisition values
+    subjects_data = [x['matrix'] for x in subjects]
+    acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
 
     for subject, acquisition in zip(subjects, acquisitions):
         # subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
