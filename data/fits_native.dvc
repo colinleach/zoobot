@@ -1,9 +1,0 @@
-cmd: ' python zoobot/active_learning/create_panoptes_only_files.py'
-deps:
-- md5: f5e8f140b4e2b053e8e7d1ec090e3917
-  path: data/panoptes_predictions_selected.csv
-md5: 8ace83acb9118e45728db3e8191942cb
-outs:
-- cache: true
-  md5: 803ecf451352efb7c5ea3269e22ab042.dir
-  path: data/fits_native

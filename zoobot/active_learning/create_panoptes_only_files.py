@@ -8,6 +8,7 @@ New catalog (i.e. with updated `fits_loc`, `fits_loc_relative`) optionally saved
 """
 import os
 from subprocess import call
+import argparse
 
 import pandas as pd
 from tqdm import tqdm
@@ -16,11 +17,19 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 if __name__ == '__main__':
 
-    desktop = True
-    laptop = False
+    parser = argparse.ArgumentParser(description='Copy labelled fits')
+    parser.add_argument('--old_catalog_loc', dest='old_catalog_loc', type=str,
+                    help='Path to csv catalog of Panoptes labels and fits_loc')
+    parser.add_argument('--new_catalog_loc', dest='new_catalog_loc', type=str,
+                    help='Path to csv catalog of Panoptes labels and fits_loc')
+    parser.add_argument('--new_fits_dir', dest='new_fits_dir', type=str,
+                    help='Directory into which to place shard directory')
+
+    args = parser.parse_args()
 
     # df_loc = os.path.join(TEST_EXAMPLE_DIR, 'panoptes_mock_predictions.csv')
-    df_loc = '/data/repos/zoobot/data/2018-11-05_panoptes_predictions_with_catalog.csv'
+    # df_loc = '/data/repos/zoobot/data/2018-11-05_panoptes_predictions_with_catalog.csv'
+    df_loc = args.old_catalog_loc
     assert os.path.exists(df_loc)
 
     df = pd.read_csv(
@@ -29,24 +38,14 @@ if __name__ == '__main__':
         # nrows=10
     )
 
-    current_fits_native_dir = '/Volumes/alpha/decals/fits_native'
-
-
-    if desktop:
-        assert not laptop
-        new_fits_native_dir = '/data/repos/zoobot/data/fits_native'  
-
-    if laptop:
-        assert not desktop
-        new_fits_native_dir = '/Users/mikewalmsley/aws/s3/galaxy-zoo/decals/fits_native'
-
+    current_fits_dir = '/Volumes/alpha/decals/fits_native'
+    new_fits_dir = args.new_fits_dir 
 
     df['fits_loc_old'] = df['fits_loc']
 
-
-    current_dir_chars = len(current_fits_native_dir)
+    current_dir_chars = len(current_fits_dir)
     df['fits_loc_relative'] = df['fits_loc_old'].apply(lambda x: x[current_dir_chars:])
-    df['fits_loc'] = new_fits_native_dir + df['fits_loc_relative']
+    df['fits_loc'] = new_fits_dir + df['fits_loc_relative']
 
     print(df.iloc[0]['fits_loc_old'])
     print(df.iloc[0]['fits_loc_relative'])
@@ -63,4 +62,5 @@ if __name__ == '__main__':
 
     del df['fits_loc_old']
 
-    df.to_csv('/data/repos/zoobot/data/panoptes_predictions_selected.csv', index=False)
+    # '/data/repos/zoobot/data/panoptes_predictions_selected.csv'
+    df.to_csv(args.new_catalog_loc, index=False)

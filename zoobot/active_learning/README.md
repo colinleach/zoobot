@@ -18,14 +18,16 @@ We need a catalog and images.
 `latest_raw_catalog_loc` points to the latest Panoptes reduction export (including the NSA catalog details).
 Copy this locally, so we have the full record of labelled galaxies and their (original) locations on disk.
 
-`latest_raw_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog`
-`dvc run -o $catalog_loc -f get_raw_catalog.dvc cp /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv $latest_raw_catalog_loc`
+
+`latest_raw_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog.csv`
+`dvc run -o $latest_raw_catalog_loc -f get_raw_catalog.dvc cp /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv $latest_raw_catalog_loc`
 
 The native size images are 250GB (!), so (for now, running a historical simulation) we prefer not to copy all of them.
 `create_panoptes_only_files.py` will pick out the images which already have labels, copy them to this repo, and write a new catalog `panoptes_predictions_selected.csv` with the updated fits locations.
 
 `catalog_loc=data/panoptes_predictions_selected.csv`
-`dvc run -d $latest_raw_catalog_loc -o data/fits_native -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py`
+`fits_dir=data/fits_native`
+`dvc run -d $latest_raw_catalog_loc -o $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=$fits_dir --old_catalog_loc=$latest_raw_catalog_loc --new_catalog_loc=$catalog_loc`
 
 From this point, we only care about files in the repo.
 
