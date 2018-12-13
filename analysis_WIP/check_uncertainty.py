@@ -314,7 +314,9 @@ if __name__ == '__main__':
 
     # for dropout in dropouts:
 
-    predictor_names = ['five_conv_mse', 'five_conv_noisy']
+    predictor_names = ['five_conv_noisy']
+    # predictor_names = ['five_conv_mse', 'five_conv_noisy']
+    # predictor_names = ['c2548d0_d90']
 
     for predictor_name in predictor_names:
 
