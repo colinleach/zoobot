@@ -1,15 +1,58 @@
-### Active Learning for Panoptes
+# Active Learning for Panoptes
 
-run_active_learning.py is the launch file. It configures everything.
-Part of that configuration is done via estimator_from_disk.py
+This document details how to run active learning on an existing catalog. This is a two-step process.
+1. Write images without labels into many tfrecord chunks, called shards, plus an additional labelled tfrecord.
+2. Run a model to learn from the labelled tfrecord, and then (iterating through each shard) pick images for labelling.
 
-estimator_from_disk.py has all the configuration required for training and evaluating an estimator. run_active_learning.py creates the RunConfig object by passing extra args to estimator_from_disk.py
 
-*I should have the sql database and training tfrecords on a network volume mount for docker, and active learning running on docker*
+## DVC Pipeline
 
-*for now, tests should pass on docker*
+### Data from Outside Repo
 
-*then, tests should pass with data directories on network mount*
+We need a catalog and images.
+
+`latest_raw_catalog_loc` points to the latest Panoptes reduction export (including the NSA catalog details).
+Copy this locally, so we have the full record of labelled galaxies and their (original) locations on disk.
+
+`latest_raw_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog`
+`dvc run -o $catalog_loc -f get_raw_catalog.dvc cp /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv $latest_raw_catalog_loc`
+
+The native size images are 250GB (!), so (for now, running a historical simulation) we prefer not to copy all of them.
+`create_panoptes_only_files.py` will pick out the images which already have labels, copy them to this repo, and write a new catalog `panoptes_predictions_selected.csv` with the updated fits locations.
+
+`catalog_loc=data/panoptes_predictions_selected.csv`
+`dvc run -d $latest_raw_catalog_loc -o data/fits_native -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py`
+
+Now we have the data to create shards. `make_shards.py` will 
+- Take the first 1024 images as training and test data (random 80/20), and save galaxy ids and labels for the remainder in `tests/test_examples/mock_panoptes.csv` to be used by `mock_panoptes.py` to simulate an oracle.
+- Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
+- Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
+
+`shard_dir=data/shards/si128_sf64_ss4096`
+`dvc run -d $catalog_loc -d data/fits_native -o zoobot/tests/test_examples/mock_panoptes.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
+
+Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
+`run_dir=data/runs/example_run`
+`dvc run -d $shard_dir -f execute_al.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
+
+shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
+Optionally, add --baseline=True to select samples for labelling randomly.
+**Check that logs are being recorded**. They should be in the directory the script was run from (i.e. root).
+
+## Optional: Run Tensorboard to Monitor
+
+On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
+`ssh -i $key -L 6006:127.0.0.1:6006 $user@$public_dns`
+
+Then, via that SSH connection (or another), run
+`source activate tensorflow_p36`
+`tensorboard --logdir=.`
+to run a Tensorboard server showing both baseline and real runs, if available
+
+
+## Optional: Save results to S3
+`aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/runs/$run_dir`
+
 
 Directory Structure
 - repo
@@ -18,7 +61,7 @@ Directory Structure
 - data (attached volume)
     - 
 
-AWS S3 (partially copied locally on laptop)
+AWS S3
 - galaxy_zoo (bucket, not folder)
     - decals
         - fits_native
@@ -37,14 +80,6 @@ AWS S3 (partially copied locally on laptop)
                     - model.ckpt-128
                 - labelled_shards
 
-S3 is designed as a data lake. S3 to EC2 transfers are around 10MB/s. S3 should **not** be used as a workspace for EC2 instances (and by extension, ECS containers)
-
-### AWS EFS
-
-Mirrors an active run within the S3 `active_learning_runs` folder. Also mirrors the unlabelled shards subfolder required for new images.
-Mirror following [this link](https://n2ws.com/blog/how-to-guides/how-to-copy-data-from-s3-to-ebs).
-
-EBS blocks are attached under /dev/sd{a, b...}
 
 **Setup**
 Makes the shards and the database, which are both then copied by snapshot
@@ -64,6 +99,9 @@ Makes the shards and the database, which are both then copied by snapshot
     - shard_1.tfrecord
     - static_shard_db.db
 
+
+
+## General AWS Storage Notes
 
 EFS can be shared between EC2 instances, and therefore between containers. Completed runs can be copied back to S3 after the job.
 

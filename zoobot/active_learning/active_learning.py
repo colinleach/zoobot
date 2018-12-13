@@ -44,7 +44,7 @@ def create_db(catalog, db_loc):
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT DEFAULT NULL,
+            label FLOAT DEFAULT NULL,
             fits_loc STRING)
         '''
     )
@@ -307,7 +307,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': int(subject[1]),
+            'label': float(subject[1]),
             'fits_loc': str(subject[2])
         })
 
@@ -330,21 +330,21 @@ def get_latest_checkpoint_dir(base_dir):
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
 
-    cursor.execute(
-        '''
-        SELECT * FROM catalog
-        LIMIT 50
-        '''
-    )
+    # cursor.execute(
+    #     '''
+    #     SELECT * FROM catalog
+    #     LIMIT 50
+    #     '''
+    # )
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        if isinstance(label, np.int64):
-            label = int(label)
-        assert isinstance(label, int)
+        if isinstance(label, np.float32):
+            label = float(label)
+        assert isinstance(label, float)
         assert isinstance(subject_id, str)
 
         cursor.execute(

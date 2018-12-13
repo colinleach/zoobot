@@ -145,12 +145,23 @@ class ActiveConfig():
 
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False):
+    """Use the shards described 
+    
+    Args:
+        shard_config_loc ([type]): path to shard config (json) describing existing shards to use
+        run_dir (str): output directory to save model and new shards
+        baseline (bool, optional): Defaults to False. If True, use random selection for acquisition.
+    
+    Returns:
+        None
+    """
+
     shard_config = make_shards.load_shard_config(shard_config_loc)
-    active_config = ActiveConfig(shard_config, run_dir)
+    active_config = ActiveConfig(shard_config, run_dir)  # instructions for the run (except model)
     active_config.prepare_run_folders()
 
     # define the estimator - load settings (rename 'setup' to 'settings'?)
-    run_config = default_estimator_params.get_run_config(active_config)
+    run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
     def train_callable(train_records):
         run_config.train_config.tfrecord_loc = train_records
         return run_estimator.run_estimator(run_config)
@@ -186,14 +197,20 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Execute active learning')
     parser.add_argument('--shard_config', dest='shard_config_loc', type=str,
-                    help='Directory into which to place shard directory')
+                    help='Details of shards to use')
     parser.add_argument('--run_dir', dest='run_dir', type=str,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+                    help='')
     parser.add_argument('--baseline', dest='baseline', type=bool, default=False,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+                    help='')
+    parser.add_argument('--ec2', dest='ec2', type=bool, default=False,
+                    help='')
     args = parser.parse_args()
 
-    log_loc = '/home/ubuntu/execute_{}.log'.format(time.time())
+    # not sure this is really sensible
+    if args.ec2:
+        log_loc = '/home/ubuntu/execute_{}.log'.format(time.time())
+    else:
+        log_loc = 'execute_{}.log'.format(time.time())
 
     logging.basicConfig(
         filename=log_loc,

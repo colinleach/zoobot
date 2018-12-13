@@ -124,9 +124,7 @@ if __name__ == '__main__':
         image_dim=run_config.final_size  # not initial size
     )
 
-    run_config.train_config = train_config
-    run_config.eval_config = eval_config
-    run_config.model = model
+    run_config.assemble(train_config, eval_config, model)
     assert run_config.is_ready_to_train()
 
     # logging.info('Parameters used: ')
