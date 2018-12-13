@@ -48,6 +48,7 @@ def get_samples_of_subjects(model, subjects, n_samples):
     """
     results = np.zeros((len(subjects), n_samples))
     for sample_n in range(n_samples):
+        print(model(subjects))
         results[:, sample_n] = model(subjects)
     return results
 
