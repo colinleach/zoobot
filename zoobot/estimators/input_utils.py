@@ -92,10 +92,8 @@ def get_input(config):
         batch_images, batch_labels = load_batches_with_labels(config)
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
-        if config.has_labels:
-            tf.summary.scalar('mean_label', tf.reduce_mean(batch_labels))
         return preprocessed_batch_images, batch_labels
+
 
 def make_labels_noisy(labels):
     # NEW - noisy labels
@@ -126,15 +124,18 @@ def get_images_from_batch(batch, size, channels, summary=False):
             [-1, size, size, channels])  # may not get full batch at end of dataset
         assert len(batch_images.shape) == 4
         tf.summary.image('a_original', batch_images)
+        # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
         return batch_images
 
 
 def get_labels_from_batch(batch, noisy_labels):
     labels = batch['label']
     if noisy_labels:
-        return make_labels_noisy(labels)
+        sampled_labels = make_labels_noisy(labels)
     else:
-        return labels
+        sampled_labels = labels
+    tf.summary.scalar('mean_label', tf.reduce_mean(labels))
+    return labels
 
 
 def load_batches_with_labels(config):
