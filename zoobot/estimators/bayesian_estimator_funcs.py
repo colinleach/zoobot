@@ -489,7 +489,7 @@ def get_eval_metric_ops(self, labels, predictions):
         assert predictions['prediction'].dtype == tf.float32
         return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
     else:
-        tf.summary.histogram('Probabilities', predictions['probabilities'])
+        tf.summary.histogram('Predictions', predictions['prediction'])
         tf.summary.histogram('Classes', predictions['classes'])
 
         # validation loss is added behind-the-scenes by TensorFlow
@@ -507,10 +507,10 @@ def get_eval_metric_ops(self, labels, predictions):
             'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
             'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes']),
             'sanity/predictions_below_5%': tf.metrics.percentage_below(
-                values=predictions['probabilities'][:, 0],
+                values=predictions['prediction'][:, 0],
                 threshold=0.05),
             'sanity/predictions_above_95%': tf.metrics.percentage_below(
-                values=1 - predictions['probabilities'][:, 0],
+                values=1 - predictions['prediction'][:, 0],
                 threshold=0.05)
         }
 

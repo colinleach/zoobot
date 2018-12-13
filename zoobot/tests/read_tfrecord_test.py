@@ -19,17 +19,12 @@ def test_matrix_label_feature_spec(size, channels, serialized_matrix_label_examp
 def test_matrix_label_id_feature_spec(size, channels, serialized_matrix_id_example):
     example = tf.parse_single_example(
         serialized_matrix_id_example, 
-        features=read_tfrecord.matrix_id_feature_spec(size, channels))
-
-
-def test_matrix_label_id_feature_spec(size, channels, serialized_matrix_label_id_example):
-    example = tf.parse_single_example(
-        serialized_matrix_label_id_example, 
-        features=read_tfrecord.matrix_label_id_feature_spec(size, channels))
+        features=read_tfrecord.matrix_id_feature_spec(size, channels)
+    )
 
 
 def test_load_examples_from_tfrecord(example_tfrecord_loc, size, channels):
-    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels)
+    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=False)
     tfrecord_locs = [example_tfrecord_loc]
     examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, 5)
     assert len(examples) == 5
@@ -42,7 +37,7 @@ def test_load_examples_from_tfrecord(example_tfrecord_loc, size, channels):
 
 
 def test_load_examples_from_tfrecord_all(example_tfrecord_loc, size, channels):
-    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels)
+    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=False)
     tfrecord_locs = [example_tfrecord_loc]
     examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, None)
     assert len(examples) > 5
