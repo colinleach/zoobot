@@ -1,0 +1,15 @@
+cmd: ' python zoobot/active_learning/make_shards.py --catalog_loc=data/panoptes_predictions_selected.csv
+  --shard_dir=data/shards/si128_sf64_ss4096'
+deps:
+- md5: e2bf30485bc6099fa14a9c58995535ff
+  path: data/panoptes_predictions_selected.csv
+- md5: fc4f73d29ffff9eb157d85b5016dff5c.dir
+  path: data/fits_native
+md5: cbd5a937483707a72e36562676102b87
+outs:
+- cache: true
+  md5: 02b84102e93637c4385a4bdfb087cc8e
+  path: zoobot/active_learning/oracle.csv
+- cache: true
+  md5: 97037b49472a50331d77280b1b5416a8.dir
+  path: data/shards/si128_sf64_ss4096
