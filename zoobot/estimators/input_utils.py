@@ -135,17 +135,15 @@ def get_images_from_batch(batch, size, channels, summary=False):
 
 
 def get_labels_from_batch(batch, noisy_labels):
-    print('getting labels from batch')
     labels = batch['label']
-    assert noisy_labels
     if noisy_labels:
         sampled_labels = make_labels_noisy(labels)
     else:
         sampled_labels = labels
-    tf.summary.histogram('raw_labels', labels)
-    tf.summary.histogram('loaded_labels', sampled_labels)
-    tf.summary.scalar('mean_label', tf.reduce_mean(labels))
-    return labels
+    # tf.summary.histogram('raw_labels', labels)
+    # tf.summary.histogram('loaded_labels', sampled_labels)
+    # tf.summary.scalar('mean_label', tf.reduce_mean(labels))
+    return sampled_labels
 
 
 def load_batches_with_labels(config):
@@ -168,7 +166,6 @@ def load_batches_with_labels(config):
 
         batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
         batch_labels = get_labels_from_batch(batch, config.noisy_labels)
-
         return batch_images, batch_labels
 
 
