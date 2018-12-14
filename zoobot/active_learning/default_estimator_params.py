@@ -18,11 +18,11 @@ def get_run_config(active_config):
         final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=1000,
+        epochs=2000,  # to tweak
         train_steps=30,
         eval_steps=3,
         batch_size=128,
-        min_epochs=300,  # to tweak
+        min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
         max_sadness=5.,  # to tweak
         log_dir=active_config.estimator_dir,
