@@ -81,7 +81,7 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=0.3)  # 30% train, 70% test
+            train_test_fraction=0.5)  # 50% train, 50% test
 
         assert self.ready()
 
