@@ -97,7 +97,7 @@ def get_input(config):
         assert preprocessed_batch_images['x'].shape[3] == 1
         print_op = tf.print('ex input', batch_labels)
         with tf.control_dependencies([print_op]):
-            return preprocessed_batch_images, batch_labels
+            return preprocessed_batch_images, tf.identity(batch_labels)
 
 
 def make_labels_noisy(labels):
