@@ -89,11 +89,15 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
+        assert config.noisy_labels
         batch_images, batch_labels = load_batches_with_labels(config)
+        
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
         assert preprocessed_batch_images['x'].shape[3] == 1
-        return preprocessed_batch_images, batch_labels
+        print_op = tf.print('ex input', batch_labels)
+        with tf.control_dependencies([print_op]):
+            return preprocessed_batch_images, batch_labels
 
 
 def make_labels_noisy(labels):
