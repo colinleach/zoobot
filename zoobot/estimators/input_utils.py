@@ -191,6 +191,8 @@ def preprocess_batch(batch_images, config):
         tf.summary.image('b_greyscale', greyscale_images)
 
         augmented_images = augment_images(greyscale_images, config)
+        print(augment_images.shape)
+        assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
 
@@ -390,12 +392,12 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode=
         tfrecord_loc=tfrecord_loc,
         label_col='label',
         stratify=False,
-        shuffle=False,
+        shuffle=False,  # important - preserve the order
         repeat=False,
         stratify_probs=None,
         regression=True,
-        geometric_augmentation=False,
-        photographic_augmentation=False,
+        geometric_augmentation=True,
+        photographic_augmentation=True,
         max_zoom=1.2,
         fill_mode='wrap',
         batch_size=n_galaxies,
