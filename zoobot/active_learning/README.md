@@ -56,7 +56,9 @@ Now we have the data to create shards.
 **Already run the commands above?** `dvc pull make_shards.dvc` **will skip to here. Helpful!**
 
 Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -f Dvcfile.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -o $run_dir -f execute_al.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
+OR
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $run_dir -f execute_al_baseline.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --baseline=True`
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.
