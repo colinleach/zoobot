@@ -139,6 +139,7 @@ def get_acquisition_func(model, n_samples):
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
+        # TODO update this with mutual information
         values_array = distribution_entropy(samples)  # calculate on ndarray for speed
         return [float(values_array[n]) for n in range(len(values_array))]  # return a list
     return acquisition_callable

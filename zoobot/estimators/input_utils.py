@@ -191,7 +191,7 @@ def preprocess_batch(batch_images, config):
         tf.summary.image('b_greyscale', greyscale_images)
 
         augmented_images = augment_images(greyscale_images, config)
-        print(augment_images.shape)
+        print(augmented_images.shape)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
