@@ -256,6 +256,7 @@ def input_to_dense(features, mode, model):
     """
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
+    assert input_layer.shape[3] == 1  # should be greyscale, for later science
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)

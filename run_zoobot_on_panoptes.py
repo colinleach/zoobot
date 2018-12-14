@@ -29,15 +29,15 @@ if __name__ == '__main__':
     final_size = 64
 
     if ec2:
-        train_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        train_tfrecord_loc = '/home/ubuntu/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/home/ubuntu/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
     else:
-        train_tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        train_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'c2548d0'
+    run_name = 'debug'
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -118,7 +118,7 @@ if __name__ == '__main__':
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=0.9,  # change this to calibrate
+        predict_dropout=0.5,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
 
     # start fresh?
-    run_config.warm_start = True
+    run_config.warm_start = False
 
     run_estimator.run_estimator(run_config)
     # warm_start.restart_estimator(run_config)

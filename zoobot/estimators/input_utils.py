@@ -416,5 +416,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode=
         batch_images = load_batches_without_labels(config)
         batch_labels = None
         id_strs = None
-    preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
-    return preprocessed_batch_images, batch_labels, id_strs
+
+    # don't do this! preprocessing is done at predict time, expects raw-ish images
+    # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
+    return batch_images, batch_labels, id_strs
