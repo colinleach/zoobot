@@ -239,6 +239,8 @@ def run_estimator(config):
     #     return tf.estimator.export.ServingInputReceiver(preprocessed_batch_features, receiver_tensors)
 
 
+    assert config.train_config.noisy_labels
+    assert config.eval_config.noisy_labels
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)
 
