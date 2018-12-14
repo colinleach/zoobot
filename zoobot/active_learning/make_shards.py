@@ -166,5 +166,5 @@ if __name__ == '__main__':
     shard_config = ShardConfig(shard_dir=args.shard_dir)  
     shard_config.prepare_shards(
         labelled_catalog,
-        unlabelled_catalog)
+        unlabelled_catalog[:4096])  # temp
     # must be able to end here, snapshot created and ready to go (hopefully)
