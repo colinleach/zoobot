@@ -85,7 +85,7 @@ def show_examples(examples, size, channels):
 
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
-    im = example['matrix'].reshape(size, size, channels).astype(int)
+    im = example['matrix'].reshape(size, size, channels)
     ax.imshow(im)
 
     label = example['label']
@@ -97,4 +97,4 @@ def show_example(example, size, channels, ax):  # modifies ax inplace
         label_str = name_mapping[label]
     else:
         label_str = '{:.2}'.format(label)
-    ax.text(60, 110, label_str, fontsize=16, color='r')
+    # ax.text(60, 110, label_str, fontsize=16, color='r')

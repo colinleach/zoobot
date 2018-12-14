@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_context('poster')
 sns.set()
+from zoobot.estimators import input_utils
 
 from zoobot.tfrecord import read_tfrecord
 from zoobot.tests import TEST_FIGURE_DIR
@@ -24,21 +25,31 @@ def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, s
         tfrecord_locs = json.load(f)
         assert isinstance(tfrecord_locs, list)
     
-    nrows = len(tfrecord_locs)
-    ncols = n_subjects
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows * 3, ncols * 3))
+    nrows = len(tfrecord_locs)  # 3
+    ncols = n_subjects  # 15
+    print(nrows, ncols)
+    scale = 2.
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
 
     for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
         subjects = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc], 
             read_tfrecord.matrix_label_feature_spec(size, channels),
             n_examples=n_subjects)
-        # read_tfrecord.show_examples(subjects, size, channels)
+
+        # subjects, _, _ = input_utils.predict_input_func(tfrecord_loc, n_subjects, size, size, mode='id_str')
+        # read_tfrecord.show_examples(subjects, size, channels)n_subjects
         for subject_n, subject in enumerate(subjects):
             read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
 
+    # for row in axes:
+        # for ax in row:
+            # ax.plot(np.linspace(0., 1), np.linspace(0., 1.))
+            # ax.imshow((np.random.rand(128, 128, 3) * 256).astype(np.uint8))
+
+
     fig.tight_layout()
-    plt.savefig(save_loc)
+    fig.savefig(save_loc)
 
 
 def get_metrics_from_log(log_loc):
@@ -188,6 +199,14 @@ if __name__ == '__main__':
     name = '{}init_{}per'.format(initial, per_iter)
 
     active_log_loc = os.path.join(args.active_dir, list(filter(lambda x: '.log' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+
+    n_subjects = 15
+    size = 128
+    channels = 3
+    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
+
+
     print(active_log_loc)
     # active_log_loc = os.path.join(args.active_dir, log_name)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
