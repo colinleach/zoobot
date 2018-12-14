@@ -31,13 +31,17 @@ The native size images are 250GB (!), so (for now, running a historical simulati
 `create_panoptes_only_files.py` will pick out the images which already have labels, copy them to this repo, and write a new catalog `panoptes_predictions_selected.csv` with the updated fits locations.
 
 
-`dvc run -d $latest_raw_catalog_loc -o $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=$fits_dir --old_catalog_loc=$latest_raw_catalog_loc --new_catalog_loc=$catalog_loc`
+`dvc run -d $latest_raw_catalog_loc -O $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=$fits_dir --old_catalog_loc=$latest_raw_catalog_loc --new_catalog_loc=$catalog_loc`
 
 From this point, we only care about files in the repo.
 
 ### Shards
 
 Now we have the data to create shards. 
+
+`update_catalog_fits_loc.py` will adjust the catalog `fits_loc` column to correctly point to the ec2 location.
+
+
 
 `make_shards.py` will 
 - Take the first 1024 images as training and test data (random 80/20), and save galaxy ids and labels for the remainder in `zoobot/active_learning/oracle.csv` to be used by `mock_panoptes.py` to simulate an oracle.
