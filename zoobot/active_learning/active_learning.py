@@ -384,6 +384,7 @@ def get_all_shard_locs(db):
     cursor.execute(
         '''
         SELECT DISTINCT tfrecord FROM shardindex
+        
         ORDER BY tfrecord ASC
         '''
     )

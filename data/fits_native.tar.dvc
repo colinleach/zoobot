@@ -1,0 +1,5 @@
+md5: 6de953d69424b6239e2738f8a8ab6b71
+outs:
+- cache: true
+  md5: cd3fc8bc8c85b622b696bccf34b236e4
+  path: fits_native.tar
