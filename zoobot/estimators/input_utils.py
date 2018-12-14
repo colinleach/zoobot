@@ -92,6 +92,7 @@ def get_input(config):
         batch_images, batch_labels = load_batches_with_labels(config)
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
+        assert preprocessed_batch_images['x'].shape[3] == 1
         return preprocessed_batch_images, batch_labels
 
 
