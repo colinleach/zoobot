@@ -131,7 +131,9 @@ def get_images_from_batch(batch, size, channels, summary=False):
 
 
 def get_labels_from_batch(batch, noisy_labels):
+    print('getting labels from batch')
     labels = batch['label']
+    assert noisy_labels
     if noisy_labels:
         sampled_labels = make_labels_noisy(labels)
     else:
