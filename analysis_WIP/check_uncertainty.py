@@ -56,11 +56,11 @@ def save_metrics(results, subjects, labels, save_dir):
     logging.info('Mean binomial loss: {}'.format(mean_bin_loss))
     logging.info('Baseline mean binomial loss: {}'.format(baseline_mean_bin_loss))
 
-    distribution_entropy = make_predictions.distribution_entropy(results)
+    # distribution_entropy = make_predictions.distribution_entropy(results)
 
     predictive_entropy = make_predictions.binomial_entropy(np.mean(results, axis=1))
     expected_entropy = np.mean(make_predictions.binomial_entropy(results), axis=1)
-    mutual_info = predictive_entropy - expected_entropy
+    mutual_info = make_predictions.mutual_information(results)  # actually just calls the above funcs, then subtracts them
 
     sns.set(context='paper', font_scale=1.5)
 

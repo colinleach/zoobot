@@ -10,6 +10,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import git
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
@@ -228,3 +229,8 @@ if __name__ == '__main__':
         baseline=args.baseline
     )
 
+    # finally, tidy up by moving the log into the run directory
+    # could not be create here because run directory did not exist at start of script
+    repo = git.Repo(search_parent_directories=True)
+    sha = repo.head.object.hexsha
+    shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
