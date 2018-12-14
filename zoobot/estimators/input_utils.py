@@ -136,6 +136,8 @@ def get_labels_from_batch(batch, noisy_labels):
         sampled_labels = make_labels_noisy(labels)
     else:
         sampled_labels = labels
+    tf.summary.histogram('raw_labels', labels)
+    tf.summary.histogram('loaded_labels', sampled_labels)
     tf.summary.scalar('mean_label', tf.reduce_mean(labels))
     return labels
 
