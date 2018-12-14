@@ -182,6 +182,7 @@ def preprocess_batch(batch_images, config):
     with tf.name_scope('preprocess'):
 
         assert len(batch_images.shape) == 4
+        assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
         greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
         assert greyscale_images.shape[1] == config.initial_size
@@ -190,6 +191,7 @@ def preprocess_batch(batch_images, config):
         tf.summary.image('b_greyscale', greyscale_images)
 
         augmented_images = augment_images(greyscale_images, config)
+        assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
 
         feature_cols = {'x': augmented_images}
@@ -398,12 +400,13 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode=
         fill_mode='wrap',
         batch_size=n_galaxies,
         initial_size=initial_size,
-        final_size=64,
+        final_size=final_size,
         channels=3,
         noisy_labels=False  # important - we want the actual vote fractions
     )
     if mode =='labels':
         batch_images, batch_labels = load_batches_with_labels(config)
+        id_strs = None
     if mode == 'id_str':
         batch_images, id_strs = load_batches_with_id_str(config)
         batch_labels = None
