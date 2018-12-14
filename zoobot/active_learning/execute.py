@@ -25,7 +25,7 @@ class ActiveConfig():
         self,
         shard_config,
         run_dir,
-        iterations=2, 
+        iterations=4, 
         subjects_per_iter=256,
         shards_per_iter=1,
         warm_start=False,  # warning

@@ -18,13 +18,13 @@ def get_run_config(active_config):
         final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=1,  # as temporary test
+        epochs=1000,
         train_steps=30,
         eval_steps=3,
         batch_size=128,
         min_epochs=100,  # to tweak
         early_stopping_window=10,  # to tweak
-        max_sadness=4.,  # to tweak
+        max_sadness=3.,  # to tweak
         log_dir=active_config.estimator_dir,
         save_freq=10,
         warm_start=False  # Will restore previous run from disk, if saved
