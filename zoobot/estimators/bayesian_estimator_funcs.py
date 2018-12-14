@@ -175,14 +175,15 @@ class BayesianModel():
             # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
 
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
-            label_print = tf.print('labels', labels)
-            with tf.control_dependencies([label_print]):
-                onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
+            # label_print = tf.print('labels', labels)
+            # with tf.control_dependencies([label_print]):
+            onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
             print_op = tf.print('onehot_labels', onehot_labels)
-            with tf.control_dependencies([print_op]):
-                loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-                tf.summary.histogram('loss', loss)
+            # with tf.control_dependencies([print_op]):
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
+            tf.summary.histogram('loss', loss)
             mean_loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(mean_loss)
 
             # Calculate loss using mean squared error - untested
             # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
@@ -190,7 +191,7 @@ class BayesianModel():
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
-            tf.losses.add_loss(mean_loss)
+
 
             return response, mean_loss
 
