@@ -14,7 +14,6 @@ Below
 `catalog_loc=data/panoptes_predictions_selected.csv`
 `fits_dir=data/fits_native`
 `shard_dir=data/shards/si128_sf64_ss4096`
-`run_dir=data/runs/example_run`
 
 ### Data from Outside Repo
 
@@ -55,10 +54,22 @@ Now we have the data to create shards.
 
 **Already run the commands above?** `dvc pull make_shards.dvc` **will skip to here. Helpful!**
 
+
+
 Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -o $run_dir -f execute_al.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
-OR
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $run_dir -f execute_al_baseline.dvc python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --baseline=True`
+
+If you still need to acquire the data:
+`dvc pull -r s3 make_shards.dvc`
+`aws sync s3://galaxy-zoo/decals/fits_native data/fits_native` (takes a few minutes)
+(eventually, can do dvc pull, but need to branch away from basic_split)
+
+
+
+`run_dir=data/runs/al_mutual`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
+OR baseline:
+`run_dir=data/runs/al_baseline`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --baseline=True`
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.

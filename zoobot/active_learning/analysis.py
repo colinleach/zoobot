@@ -68,7 +68,7 @@ def get_metrics_from_log(log_loc):
             eval_data.append(entry_data)
         
     metrics = pd.DataFrame(list(eval_data))
-    return metrics[metrics['rmse'] > 0]
+    return metrics[metrics['loss'] > 0]
 
 
 def is_iteration_split(line):
@@ -108,11 +108,11 @@ def smooth_metrics(metrics_list):
     for df in metrics_list:
         lowess = sm.nonparametric.lowess
         smoothed_metrics = lowess(
-            df['rmse'],
+            df['loss'],
             df['step'],
             is_sorted=True, 
             frac=0.25)
-        df['smoothed_acc'] = smoothed_metrics[:, 1]
+        df['smoothed_loss'] = smoothed_metrics[:, 1]
         smoothed_list.append(df)
     return smoothed_list
 
@@ -124,19 +124,19 @@ def plot_log_metrics(metrics_list, save_loc, title=None):
         iteration = df['iteration'].iloc[0]
         ax1.plot(
             df['step'],
-            df['smoothed_acc'],
+            df['smoothed_loss'],
             label='Iteration {}'.format(iteration)
         )
 
         ax2.plot(
             df['step'],
-            df['rmse'],
+            df['loss'],
             label='Iteration {}'.format(iteration)
         )
 
     ax2.set_xlabel('Step')
-    ax1.set_ylabel('Eval Accuracy')
-    ax2.set_ylabel('Eval Accuracy')
+    ax1.set_ylabel('Eval Loss')
+    ax2.set_ylabel('Eval Loss')
     ax1.legend()
     ax2.legend()
     if title is not None:
@@ -150,7 +150,7 @@ def compare_metrics(all_metrics, save_loc, title=None):
     best_rows = []
     for df in all_metrics:
         df = df.reset_index()
-        best_acc_idx = df['smoothed_acc'].idxmax()
+        best_acc_idx = df['smoothed_loss'].idxmax()
         best_row = df.iloc[best_acc_idx]
         best_rows.append(best_row)
 
@@ -161,13 +161,13 @@ def compare_metrics(all_metrics, save_loc, title=None):
     sns.barplot(
         data=metrics, 
         x='iteration', 
-        y='smoothed_acc', 
+        y='smoothed_loss', 
         hue='name', 
         ax=ax,
         ci=80
     )
     ax.set_ylim([0.75, 0.95])
-    ax.set_ylabel('Final eval accuracy')
+    ax.set_ylabel('Final eval Loss')
     if title is not None:
         ax.set_title(title)
     fig.tight_layout()
