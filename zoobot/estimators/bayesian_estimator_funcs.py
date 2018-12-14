@@ -176,9 +176,10 @@ class BayesianModel():
 
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
             onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
-            # print_op = tf.print('onehot_labels', onehot_labels)
-            # with tf.control_dependencies([print_op]):
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
+            print_op = tf.print('onehot_labels', onehot_labels)
+            with tf.control_dependencies([print_op]):
+                loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
+                tf.summary.histogram('loss', loss)
             mean_loss = tf.reduce_mean(loss)
 
             # Calculate loss using mean squared error - untested
@@ -188,7 +189,6 @@ class BayesianModel():
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
             tf.losses.add_loss(mean_loss)
-            tf.summary.histogram('total_loss', mean_loss)
 
             return response, mean_loss
 
@@ -433,11 +433,10 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
     # scalar_prediction = prediction
     prediction = linear  # now two units, as logits
-    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
+    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
     tf.summary.histogram('prediction', scalar_prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
-
     response = {
         "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     }
@@ -447,6 +446,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
 
+    # no softmax yet
     return prediction, response
 
 
