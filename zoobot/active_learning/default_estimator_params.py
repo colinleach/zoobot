@@ -48,7 +48,7 @@ def get_run_config(active_config):
         channels=run_config.channels,
         noisy_labels=True
     )
-    train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
+    # train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
@@ -68,7 +68,7 @@ def get_run_config(active_config):
         channels=run_config.channels,
         noisy_labels=True
     )
-    eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
+    # eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
 
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,
@@ -81,7 +81,7 @@ def get_run_config(active_config):
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=0.9,  # change this to calibrate
+        predict_dropout=0.5,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
