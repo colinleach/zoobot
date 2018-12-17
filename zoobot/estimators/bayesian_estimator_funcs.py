@@ -153,7 +153,8 @@ class BayesianModel():
             return response, None  # no loss, as labels not known (in general)
 
         if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for EVAL with binomial
-            loss = binomial_loss(labels, predictions)
+            scalar_predictions = get_scalar_prediction(predictions)
+            loss = binomial_loss(labels, scalar_predictions)
             mean_loss = tf.reduce_mean(loss)
             tf.losses.add_loss(mean_loss)
             return response, mean_loss
@@ -415,6 +416,9 @@ def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
     return logits, response
 
 
+def get_scalar_prediction(prediction):
+    return tf.nn.softmax(prediction)[:, 1]
+
 
 def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
@@ -438,11 +442,11 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # scalar_prediction = prediction
     prediction = linear  # now two units, as logits
 
-    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
+    scalar_prediction = get_scalar_prediction(prediction)  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     tf.summary.histogram('prediction', scalar_prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
     response = {
-        "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
+        "prediction": scalar_prediction, 
     }
     if labels is not None:
         tf.summary.histogram('internal_labels', labels)
