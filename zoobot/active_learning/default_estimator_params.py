@@ -66,7 +66,7 @@ def get_run_config(active_config):
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=False
     )
     # eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
 
