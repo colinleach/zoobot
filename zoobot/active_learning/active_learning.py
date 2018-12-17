@@ -165,8 +165,6 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
     images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=shard_size, initial_size=size, final_size=final_size, mode='id_str')
     with tf.Session() as sess:
         images, id_str_bytes = sess.run([images, id_str])
-    print(images.shape)
-    assert images.shape == (shard_size, size, size, channels)
     subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]
     
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
