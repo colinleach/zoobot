@@ -25,9 +25,9 @@ class ActiveConfig():
         self,
         shard_config,
         run_dir,
-        iterations=3, 
-        subjects_per_iter=256,
-        shards_per_iter=1,  # 4 mins per shard of 4096 images
+        iterations=5, 
+        subjects_per_iter=512,
+        shards_per_iter=3,  # 4 mins per shard of 4096 images
         warm_start=False,  # warning
         restart_each_iter=True):  # warning
 

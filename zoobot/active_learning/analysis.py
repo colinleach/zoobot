@@ -103,7 +103,15 @@ def is_eval_log_entry(line):
 
 
 def smooth_metrics(metrics_list):
-    # smooth (TODO refactor)
+    """[summary]
+    
+    Args:
+        metrics_list (list): of df, where each df is the metrics for an iteration (step=row)
+    
+    Returns:
+        [type]: [description]
+    """
+
     smoothed_list = []
     for df in metrics_list:
         lowess = sm.nonparametric.lowess
@@ -181,6 +189,16 @@ def split_by_iter(df):
     return [df[df['iteration'] == iteration] for iteration in df['iteration'].unique()]
 
 
+def get_smooth_metrics_from_log(log_loc, name=None):
+        metrics = get_metrics_from_log(log_loc)
+        metric_iters = split_by_iter(metrics)
+        metric_smooth = smooth_metrics(metric_iters)
+        if name is not None:
+            for df in metric_smooth:
+                df['name'] = name  # record baseline vs active, for example
+        return metric_smooth
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Analyse active learning')
@@ -196,6 +214,8 @@ if __name__ == '__main__':
                     help='')
 
     args = parser.parse_args()
+    if not os.path.isdir(args.output_dir):
+        os.mkdir(args.output_dir)
 
     initial = args.initial
     per_iter = args.per_iter
@@ -207,7 +227,7 @@ if __name__ == '__main__':
     n_subjects = 15
     size = 128
     channels = 3
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
+    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
 
 
     active_log_loc = find_log(args.active_dir)
@@ -224,12 +244,3 @@ if __name__ == '__main__':
 
         comparison_save_loc = os.path.join(args.output_dir, 'acc_comparison_' + name + '.png')
         compare_metrics(baseline_smooth_metrics + active_smooth_metrics, comparison_save_loc, title=title)
-
-
-def get_smooth_metrics_from_log(log_loc, name=None):
-        metrics = get_metrics_from_log(log_loc)
-        metric_iters = split_by_iter(metrics)
-        metric_smooth = smooth_metrics(metric_iters)
-        if name is not None:
-            metric_smooth['name'] = name  # record baseline vs active, for example
-        return metric_smooth

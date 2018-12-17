@@ -83,7 +83,7 @@ Optionally, add --baseline=True to select samples for labelling randomly.
 Finally, upload the results.
 
 `git add $run_dir.dvc` or `git add $baseline_dir.dvc`
-`dvc push -r s3`
+`dvc push $run_dir.dvc -r s3`
 
 ## Optional: Run Tensorboard to Monitor
 
@@ -102,7 +102,8 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull get_shards.dvc`
 `dvc pull $run_dir.dvc`
 `dvc pull $baseline_dir.dvc`
-`dvc run -d $shard_dir -d $run_dir zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=results/{descriptive_name}`
+`output_dir=results/{descriptive_name}`
+`dvc run -d $shard_dir -d $run_dir python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
 
 
 Directory Structure
