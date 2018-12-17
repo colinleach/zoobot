@@ -148,9 +148,7 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             dropout_rate = self.predict_dropout
 
-        logging.info('Using dropout {}'.format(dropout_rate))
-
-        dropout_on = (mode == tf.estimator.ModeKeys.TRAIN)
+        dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
         predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
@@ -183,6 +181,8 @@ class BayesianModel():
             loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
             mean_loss = tf.reduce_mean(loss) + tf.losses.get_regularization_loss()
 
+            # Calculate loss using mean squared error - untested
+            # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
@@ -257,6 +257,8 @@ def input_to_dense(features, mode, model):
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
 
+    dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
+    dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
     regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
     conv1 = tf.layers.conv2d(
@@ -267,11 +269,28 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
+    drop1 = tf.layers.dropout(
         inputs=conv1,
+        rate=dropout_rate,
+        training=dropout_on)
+    conv1b = tf.layers.conv2d(
+        inputs=drop1,
+        filters=model.conv1_filters,
+        kernel_size=[model.conv1_kernel, model.conv1_kernel],
+        padding=model.padding,
+        activation=model.conv1_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer1/conv1b')
+    drop1b = tf.layers.dropout(
+        inputs=conv1b,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool1 = tf.layers.max_pooling2d(
+        inputs=drop1b,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
+    
 
     conv2 = tf.layers.conv2d(
         inputs=pool1,
@@ -281,8 +300,24 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
+    drop2 = tf.layers.dropout(
         inputs=conv2,
+        rate=dropout_rate,
+        training=dropout_on)
+    conv2b = tf.layers.conv2d(
+        inputs=drop2,
+        filters=model.conv2_filters,
+        kernel_size=[model.conv2_kernel, model.conv2_kernel],
+        padding=model.padding,
+        activation=model.conv2_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer2/conv2b')
+    drop2b = tf.layers.dropout(
+        inputs=conv2b,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool2 = tf.layers.max_pooling2d(
+        inputs=drop2b,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
@@ -295,11 +330,34 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer3/conv3')
-    pool3 = tf.layers.max_pooling2d(
+    drop3 = tf.layers.dropout(
         inputs=conv3,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool3 = tf.layers.max_pooling2d(
+        inputs=drop3,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer3/pool3')
+
+    # identical to conv3
+    conv4 = tf.layers.conv2d(
+        inputs=pool3,
+        filters=model.conv3_filters,
+        kernel_size=[model.conv3_kernel, model.conv3_kernel],
+        padding=model.padding,
+        activation=model.conv3_activation,
+        kernel_regularizer=regularizer,
+        name='model/layer4/conv4')
+    drop4 = tf.layers.dropout(
+        inputs=conv4,
+        rate=dropout_rate,
+        training=dropout_on)
+    pool4 = tf.layers.max_pooling2d(
+        inputs=drop4,
+        pool_size=[model.pool3_size, model.pool3_size],
+        strides=model.pool3_strides,
+        name='model/layer4/pool4')
 
     """
     Flatten tensor into a batch of vectors
@@ -308,11 +366,11 @@ def input_to_dense(features, mode, model):
     length ^ 2 to make shape 1D
     64 filters in final layer
     """
-    pool3_flat = tf.reshape(pool3, [-1, int(model.image_dim / 8) ** 2 * model.conv3_filters], name='model/layer3/flat')
+    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
 
     # Dense Layer
     dense1 = tf.layers.dense(
-        inputs=pool3_flat,
+        inputs=pool4_flat,
         units=model.dense1_units,
         activation=model.dense1_activation,
         kernel_regularizer=regularizer,
@@ -367,11 +425,12 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
         dropout, 
         units=2,
         name='layer_after_dropout')
-    tf.summary.histogram('layer_after_dropout', tf.clip_by_value(linear, -4., 4.))
+    tf.summary.histogram('layer_after_dropout', linear)
 
     # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
 
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
+    # scalar_prediction = prediction
     prediction = linear  # now two units, as logits
     scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
@@ -407,6 +466,7 @@ def binomial_loss(labels, predictions):
     bin_loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
     tf.summary.histogram('bin_loss', bin_loss)
     return bin_loss
+
 
 def penalty_if_not_probability(predictions):
     above_one = tf.maximum(predictions, 1.) - 1  # distance above 1

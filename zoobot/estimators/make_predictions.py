@@ -63,8 +63,10 @@ def get_samples_of_subjects(model, subjects, n_samples):
 #     return np.array(samples)
 
 
-def entropy(probabilites):
+def distribution_entropy(probabilities):
     """Find the total entropy in a sampled probability distribution
+    Done accidentally - should really by summing over each class, according to Lewis
+    However, highly useful!
 
     Args:
         probabilites (np.array): observed probabilities e.g. calibrated class scores from ML model
@@ -73,8 +75,43 @@ def entropy(probabilites):
         float: total entropy in distribution
     """
     # do p * log p for every sample, sum for each subject
-    probabilites = np.clip(probabilites, 0., 1.)
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilites)), axis=1)
+    probabilities = np.clip(probabilities, 0., 1.)
+    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=1)
+
+
+def binomial_likelihood(labels, predictions, total_votes):
+    """
+    
+    In our formalism:
+    Labels are v, and labels * total votes are k.
+    Predictions are rho.
+    Likelihood is minimised (albeit negative) when rho is most likely given k  
+    
+    Args:
+        labels ([type]): [description]
+        predictions ([type]): [description]
+        total_votes ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    labels = np.expand_dims(labels, 1)
+    yes_votes = labels * total_votes
+    est_p_yes = np.clip(predictions, 0., 1.)
+    epsilon = 1e-8
+    return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
+
+
+def predictive_binary_entropy(probabilities):
+    ep = 1e-12
+    # eqn 5: mean prediction over MC samples
+    mean_prob = np.mean(probabilities, axis=1)
+    # eqn 6: usual entropy of that prob
+    return -1 * (mean_prob * np.log(mean_prob + ep) + (1 - mean_prob) * np.log(1 - mean_prob + ep))
+
+
+def binomial_entropy(probabilities):
+    return np.array(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)))
 
 
 def sample_variance(samples):
@@ -102,7 +139,7 @@ def get_acquisition_func(model, n_samples):
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        values_array = entropy(samples)  # calculate on ndarray for speed
+        values_array = distribution_entropy(samples)  # calculate on ndarray for speed
         return [float(values_array[n]) for n in range(len(values_array))]  # return a list
     return acquisition_callable
 
@@ -115,7 +152,7 @@ def view_samples(scores, labels, annotate=False):
         labels (np.array): class labels, of shape (n_subjects)
     """
     # correct = (np.mean(scores, axis=1) > 0.5) == labels
-    entropies = entropy(scores)  # fast array calculation on all results, look up as needed later
+    entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
 
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True)
     for galaxy_n, ax in enumerate(axes):

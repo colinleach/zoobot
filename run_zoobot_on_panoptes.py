@@ -32,11 +32,12 @@ if __name__ == '__main__':
         train_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = '/home/ubuntu/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
     else:
-        train_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        train_tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
-    run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_binomial'.format(initial_size, final_size)
+    # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
+    run_name = 'c2548d0'
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -54,15 +55,16 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=3000,  # for debugging, min is 1
+        epochs=1,  # for debugging, min is 1
         train_steps=30,
         eval_steps=3,
         batch_size=128,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
         max_sadness=4.,
-        log_dir='runs/{}'.format(run_name),
-        save_freq=10
+        # log_dir='runs/{}'.format(run_name),
+        log_dir = 'results/{}'.format(run_name),
+        save_freq=25
     )
 
     train_config = input_utils.InputConfig(
@@ -82,6 +84,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
+        noisy_labels=True
     )
 
     eval_config = input_utils.InputConfig(
@@ -101,20 +104,21 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
+        noisy_labels=True
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,
         optimizer=tf.train.AdamOptimizer,
-        conv1_filters=128,
+        conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
         conv2_kernel=3,
-        conv3_filters=64,
+        conv3_filters=128,
         conv3_kernel=3,
         dense1_units=128,
         dense1_dropout=0.5,
-        predict_dropout=0.5,  # change this to calibrate
+        predict_dropout=0.9,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size  # not initial size
@@ -132,8 +136,8 @@ if __name__ == '__main__':
         logging.info('Next object \n')
 
 
-    # start fresh? No!
-    run_config.warm_start = False
+    # start fresh?
+    run_config.warm_start = True
 
     run_estimator.run_estimator(run_config)
     # warm_start.restart_estimator(run_config)
