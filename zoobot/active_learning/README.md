@@ -70,7 +70,7 @@ If you still need to acquire the data:
 - Repeat, including the newly-acquired shard in the training pool
 - Stop after a specified number of iterations, moving the log into the run directory
 
-`run_dir=data/runs/al_mutual`
+`run_dir=data/runs/al_mutual_test_v2`
 `dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
 OR baseline:
 `baseline_dir=data/runs/al_baseline`
