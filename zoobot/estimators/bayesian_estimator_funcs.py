@@ -86,10 +86,9 @@ class BayesianModel():
         Returns:
 
         """
-        if self.regression:
-            if labels is not None:
-                logging.warning('Enforcing float labels for regression mode')
-                labels = tf.cast(labels, tf.float32)
+        if labels is not None:
+            logging.warning('Enforcing float labels for regression mode')
+            labels = tf.cast(labels, tf.float32)
         
         response, loss = self.bayesian_regressor(features, labels, mode)
         
@@ -157,6 +156,8 @@ class BayesianModel():
             loss = binomial_loss(labels, predictions)
             mean_loss = tf.reduce_mean(loss)
             tf.losses.add_loss(mean_loss)
+            return response, mean_loss
+
         else:  # Calculate Loss for TRAIN with softmax (proxy of binomial)
               # don't find the gradient of the labels (e.g. adversarial)
             labels = tf.stop_gradient(labels)
