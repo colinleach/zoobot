@@ -202,34 +202,34 @@ if __name__ == '__main__':
     title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)
     name = '{}init_{}per'.format(initial, per_iter)
 
-    # active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
 
-    # n_subjects = 15
-    # size = 128
-    # channels = 3
-    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
+    n_subjects = 15
+    size = 128
+    channels = 3
+    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
 
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
 
+    active_smooth_metrics = get_smooth_metrics_from_log(active_log_loc, name='active')
+    plot_log_metrics(active_smooth_metrics, active_save_loc, title=title)
 
-    active_metrics = get_metrics_from_log(active_log_loc)
-    active_metrics['name'] = 'active'
-    active_metric_iters = split_by_iter(active_metrics)
-    active_metric_smooth = smooth_metrics(active_metric_iters)
-    plot_log_metrics(active_metric_smooth, active_save_loc)
-    
     if args.baseline_dir != '':
-
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
-
-        baseline_metrics = get_metrics_from_log(baseline_log_loc)
-        baseline_metrics['name'] = 'baseline'
-        baseline_metric_iters = split_by_iter(baseline_metrics)
-        baseline_metric_smooth = smooth_metrics(baseline_metric_iters)
-        plot_log_metrics(baseline_metric_smooth, baseline_save_loc, title=title)
+        baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')
+        plot_log_metrics(baseline_smooth_metrics, baseline_save_loc, title=title)
 
         comparison_save_loc = os.path.join(args.output_dir, 'acc_comparison_' + name + '.png')
-        compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc, title=title)
+        compare_metrics(baseline_smooth_metrics + active_smooth_metrics, comparison_save_loc, title=title)
+
+
+def get_smooth_metrics_from_log(log_loc, name=None):
+        metrics = get_metrics_from_log(log_loc)
+        metric_iters = split_by_iter(metrics)
+        metric_smooth = smooth_metrics(metric_iters)
+        if name is not None:
+            metric_smooth['name'] = name  # record baseline vs active, for example
+        return metric_smooth

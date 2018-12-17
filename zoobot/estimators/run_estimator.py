@@ -189,12 +189,17 @@ def run_estimator(config):
 
     # logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
 
+    estimator_config = tf.estimator.RunConfig(
+        save_checkpoints_secs = 5*60,  # Save checkpoints every 5 minutes.
+        keep_checkpoint_max = 5       # Retain the 5 most recent checkpoints (25 mins)
+    )
+
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
-        params=config.model
+        params=config.model,
         # warm_start_from=warm_start_from,
-        # config=fast_checkpoint_config
+        config=estimator_config
     )
 
 

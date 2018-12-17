@@ -100,7 +100,7 @@ class ActiveConfig():
             logging.info('Training iteration {}'.format(iteration))
         
             # callable should expect list of tfrecord files to train on
-            train_callable(train_records)  # could be docker container to run, save model
+            train_callable(train_records, iteration)  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
             predictor_loc = active_learning.get_latest_checkpoint_dir(self.estimator_dir)
@@ -163,7 +163,10 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
 
     # define the estimator - load settings (rename 'setup' to 'settings'?)
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
-    def train_callable(train_records):
+    def train_callable(train_records, iter_n):
+        save_dir = os.path.join(active_config.estimator_dir, 'iteration_{}'.format(iter_n))
+        os.mkdir(save_dir)
+        run_config.log_dir = save_dir
         run_config.train_config.tfrecord_loc = train_records
         return run_estimator.run_estimator(run_config)
 
