@@ -145,6 +145,10 @@ def plot_log_metrics(metrics_list, save_loc, title=None):
     fig.savefig(save_loc)
 
 
+def find_log(directory):
+    return os.path.join(directory, list(filter(lambda x: '.log' in x, os.listdir(directory)))[0])  # returns as tuple of (dir, name)
+
+
 def compare_metrics(all_metrics, save_loc, title=None):
     
     best_rows = []
@@ -166,7 +170,7 @@ def compare_metrics(all_metrics, save_loc, title=None):
         ax=ax,
         ci=80
     )
-    ax.set_ylim([0.75, 0.95])
+    # ax.set_ylim([0.75, 0.95])
     ax.set_ylabel('Final eval Loss')
     if title is not None:
         ax.set_title(title)
@@ -198,32 +202,34 @@ if __name__ == '__main__':
     title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)
     name = '{}init_{}per'.format(initial, per_iter)
 
-    active_log_loc = os.path.join(args.active_dir, list(filter(lambda x: '.log' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+    # active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
 
-    n_subjects = 15
-    size = 128
-    channels = 3
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
+    # n_subjects = 15
+    # size = 128
+    # channels = 3
+    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
 
 
-    print(active_log_loc)
-    # active_log_loc = os.path.join(args.active_dir, log_name)
+    active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
+
+
     active_metrics = get_metrics_from_log(active_log_loc)
     active_metrics['name'] = 'active'
     active_metric_iters = split_by_iter(active_metrics)
     active_metric_smooth = smooth_metrics(active_metric_iters)
     plot_log_metrics(active_metric_smooth, active_save_loc)
     
-    # if args.baseline_dir != '':
-    #     baseline_log_loc = '/Users/mikewalmsley/repos/zoobot/zoobot/logs/baseline_' + name + '.log'
-    #     baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
-    #     baseline_metrics = get_metrics_from_log(baseline_log_loc)
-    #     baseline_metrics['name'] = 'baseline'
-    #     baseline_metric_iters = split_by_iter(baseline_metrics)
-    #     baseline_metric_smooth = smooth_metrics(baseline_metric_iters)
-    #     plot_log_metrics(baseline_metric_smooth, baseline_save_loc, title=title)
+    if args.baseline_dir != '':
 
-    #     comparison_save_loc = os.path.join(TEST_FIGURE_DIR, 'acc_comparison_' + name + '.png')
-    #     compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc, title=title)
+        baseline_log_loc = find_log(args.baseline_dir)
+        baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
+
+        baseline_metrics = get_metrics_from_log(baseline_log_loc)
+        baseline_metrics['name'] = 'baseline'
+        baseline_metric_iters = split_by_iter(baseline_metrics)
+        baseline_metric_smooth = smooth_metrics(baseline_metric_iters)
+        plot_log_metrics(baseline_metric_smooth, baseline_save_loc, title=title)
+
+        comparison_save_loc = os.path.join(args.output_dir, 'acc_comparison_' + name + '.png')
+        compare_metrics(baseline_metric_smooth + active_metric_smooth, comparison_save_loc, title=title)

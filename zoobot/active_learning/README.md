@@ -32,6 +32,9 @@ The native size images are 250GB (!), so (for now, running a historical simulati
 
 `dvc run -d $latest_raw_catalog_loc -O $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=$fits_dir --old_catalog_loc=$latest_raw_catalog_loc --new_catalog_loc=$catalog_loc`
 
+The -O option prevents fits_dir from being added to the cache. This is because dvc can't handle this many files. We can still call it as a -d later. Instead, sync to AWS manually:
+`dvc run -d $fits_dir -f $fits_to_s3.dvc aws s3 sync s3://galaxy-zoo/decals/fits_native`
+
 From this point, we only care about files in the repo.
 
 ### Shards

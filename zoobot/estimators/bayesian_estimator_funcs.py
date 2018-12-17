@@ -90,12 +90,8 @@ class BayesianModel():
             if labels is not None:
                 logging.warning('Enforcing float labels for regression mode')
                 labels = tf.cast(labels, tf.float32)
-            response, loss = self.bayesian_regressor(features, labels, mode)
-        if not self.regression:
-            if labels is not None:
-                logging.warning('Enforcing int labels for classification mode')
-                labels = tf.cast(labels, tf.int64)
-            response, loss = self.bayesian_classifier(features, labels, mode)
+        
+        response, loss = self.bayesian_regressor(features, labels, mode)
         
         if mode == tf.estimator.ModeKeys.PREDICT:
             with tf.variable_scope('predict'):
@@ -108,6 +104,7 @@ class BayesianModel():
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
+
                 optimizer = self.optimizer(learning_rate=self.learning_rate)  # TODO adaptive learning rate
 
                 # important to explicitly use within update_ops for batch norm to work
@@ -123,7 +120,6 @@ class BayesianModel():
 
         else:  # must be EVAL mode
             with tf.variable_scope('eval'):
-
                 # Add evaluation metrics (for EVAL mode)
                 eval_metric_ops = get_eval_metric_ops(self, labels, response)
                 return tf.estimator.EstimatorSpec(
@@ -157,9 +153,13 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             return response, None  # no loss, as labels not known (in general)
 
-        else:  # Calculate Loss for TRAIN and EVAL modes)
-            labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
-
+        if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for EVAL with binomial
+            loss = binomial_loss(labels, predictions)
+            mean_loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(mean_loss)
+        else:  # Calculate Loss for TRAIN with softmax (proxy of binomial)
+              # don't find the gradient of the labels (e.g. adversarial)
+            labels = tf.stop_gradient(labels)
 
             # this works
             # mean_loss = tf.losses.mean_squared_error(labels, predictions)
