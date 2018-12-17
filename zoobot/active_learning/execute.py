@@ -27,7 +27,7 @@ class ActiveConfig():
         run_dir,
         iterations=8, 
         subjects_per_iter=256,
-        shards_per_iter=3,
+        shards_per_iter=1,
         warm_start=False,  # warning
         restart_each_iter=True):  # warning
 
