@@ -1,0 +1,10 @@
+cmd: ' python zoobot/active_learning/analysis.py --active_dir=data/runs/al_mutual
+  --baseline_dir=data/runs/al_baseline --initial=512 --per_iter=256 --output_dir=results/latest_metrics'
+deps:
+- md5: 6b5946cd180e165a36798253fc190beb.dir
+  path: data/shards/si128_sf64_ss4096
+- md5: d751713988987e9331980363e24189ce.dir
+  path: data/runs/al_mutual
+- md5: d751713988987e9331980363e24189ce.dir
+  path: data/runs/al_baseline
+md5: null

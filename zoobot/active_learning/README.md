@@ -32,10 +32,10 @@ Copy this locally, so we have the full record of labelled galaxies and their (or
 The native size images are 250GB (!), so (for now, running a historical simulation) we prefer not to copy all of them.
 `create_panoptes_only_files.py` will pick out the images which already have labels, copy them to this repo, and write a new catalog `panoptes_predictions_selected.csv` with the updated fits locations.
 
-`dvc run -d $external_catalog_loc -d $external_fits_dir -O $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=$fits_dir --old_catalog_loc=$external_catalog_loc --new_catalog_loc=$catalog_loc`
+`dvc run -d $external_catalog_loc -d $external_fits_dir -O $fits_dir -o $catalog_loc -f get_fits.dvc python zoobot/active_learning/create_panoptes_only_files.py --old_fits_dir=$external_fits_dir --new_fits_dir=$fits_dir --old_catalog_loc=$external_catalog_loc --new_catalog_loc=$catalog_loc`
 
 The -O option prevents fits_dir from being added to the cache. This is because dvc can't handle this many files. We can still call it as a -d later. Instead, sync to AWS manually:
-`dvc run -d $fits_dir -f $fits_to_s3.dvc aws s3 sync s3://galaxy-zoo/decals/fits_native`
+`dvc run -d $fits_dir -f fits_to_s3.dvc aws s3 sync --size-only data/fits_native s3://galaxy-zoo/decals/fits_native`
 
 From this point, we only care about files in the repo, and we can proceed on AWS EC2.
 
@@ -48,7 +48,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d data/fits_native -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
+`dvc run -d $catalog_loc -d $fits_dir -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
 
 ### Execution
 
@@ -70,7 +70,7 @@ If you still need to acquire the data:
 - Repeat, including the newly-acquired shard in the training pool
 - Stop after a specified number of iterations, moving the log into the run directory
 
-`run_dir=data/runs/al_mutual_test_v2`
+`run_dir=data/runs/al_mutual`
 `dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir`
 OR baseline:
 `baseline_dir=data/runs/al_baseline`
@@ -85,6 +85,15 @@ Finally, upload the results.
 `git add $run_dir.dvc` or `git add $baseline_dir.dvc`
 `dvc push $run_dir.dvc -r s3`
 
+## Generate Metrics
+
+This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to be pulled.
+`dvc pull get_shards.dvc`
+`dvc pull $run_dir.dvc`
+`dvc pull $baseline_dir.dvc`
+`output_dir=results/{descriptive_name}`
+`dvc run -d $shard_dir -d $run_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
+
 ## Optional: Run Tensorboard to Monitor
 
 On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
@@ -94,17 +103,6 @@ Then, via that SSH connection (or another), run
 `source activate tensorflow_p36`
 `tensorboard --logdir=.`
 to run a Tensorboard server showing both baseline and real runs, if available
-
-
-## Optional: Generate Metrics
-
-This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to be pulled.
-`dvc pull get_shards.dvc`
-`dvc pull $run_dir.dvc`
-`dvc pull $baseline_dir.dvc`
-`output_dir=results/{descriptive_name}`
-`dvc run -d $shard_dir -d $run_dir python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
-
 
 Directory Structure
 - repo
