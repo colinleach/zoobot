@@ -7,6 +7,7 @@ import time
 import sqlite3
 import json
 import itertools
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -131,8 +132,9 @@ class ActiveConfig():
 
         if self.warm_start:
             shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
-            latest_model_dir = self.get_most_recent_model_loc()
-            shutil.copytree(latest_model_dir, self.estimator_dir)  # put model from latest complete iteration in estimator dir
+            subprocess.call(['mv {} {}'.format(self.get_most_recent_iteration_loc(), self.estimator_dir)])
+            # latest_model_dir = self.get_most_recent_model_loc()
+            # shutil.copytree(self.get_most_recent_iteration_loc(), self.estimator_dir)  # put model from latest complete iteration in estimator dir
 
         iteration = 0
         while iteration < self.iterations:
@@ -201,7 +203,7 @@ class ActiveConfig():
             json.dump(train_records, f)
 
 
-    def get_most_recent_model_loc(self):
+    def get_most_recent_iteration_loc(self):
         # latest estimator dir will be iteration_n for max(n)
         # anything in estimator_dir itself is not restored
         # warning - strongly coupled to self.run() last paragraphs
@@ -214,11 +216,16 @@ class ActiveConfig():
             else:
                 latest_estimator_dir = dir_to_test
                 iteration += 1
-        # get the latest checkpoint in that estimator dir
         logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
-        latest_model_loc = active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
-        logging.info('Found latest model: {}'.format(latest_model_loc))
-        return latest_model_loc
+        return latest_estimator_dir
+
+    # def get_most_recent_model_loc(self):
+
+    #     # get the latest checkpoint in that estimator dir
+
+    #     latest_model_loc = active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
+    #     logging.info('Found latest model: {}'.format(latest_model_loc))
+    #     return latest_model_loc
 
 
 
