@@ -12,7 +12,7 @@ Otherwise, you can run `dvc repro make_shards.dvc` **locally** to. `dvc repro` w
 Below
 
 
-`external_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog.csv`
+`external_catalog_loc=/data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv`
 `external_fits_dir=/Volumes/alpha/decals/fits_native` (hardcoded into create_panoptes_only_files.py, only used to track dependencies)
 
 `catalog_loc=data/panoptes_predictions_selected.csv`
@@ -24,11 +24,6 @@ Below
 We need a catalog and images. 
 
 `external_catalog_loc` points to the latest Panoptes reduction export (including the NSA catalog details).
-Copy this locally, so we have the full record of labelled galaxies and their (original) locations on disk.
-
-
-`dvc run -o $external_catalog_loc -f get_raw_catalog.dvc cp /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv $external_catalog_loc`
-
 The native size images are 250GB (!), so (for now, running a historical simulation) we prefer not to copy all of them.
 `create_panoptes_only_files.py` will pick out the images which already have labels, copy them to this repo, and write a new catalog `panoptes_predictions_selected.csv` with the updated fits locations.
 
@@ -91,8 +86,9 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull get_shards.dvc`
 `dvc pull $run_dir.dvc`
 `dvc pull $baseline_dir.dvc`
-`output_dir=results/{descriptive_name}`
-`dvc run -d $shard_dir -d $run_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
+
+`output_dir=results/latest_metrics`
+`dvc run -d $shard_dir -d $run_dir -o $output_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
 
 ## Optional: Run Tensorboard to Monitor
 

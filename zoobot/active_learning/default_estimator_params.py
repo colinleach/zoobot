@@ -20,14 +20,14 @@ def get_run_config(active_config):
         label_col='label',
         epochs=450,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         train_steps=30,
-        eval_steps=3,
+        eval_steps=5,
         batch_size=128,
         min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
         max_sadness=5.,  # to tweak
         log_dir=active_config.estimator_dir,
         save_freq=10,
-        warm_start=False  # Will restore previous run from disk, if saved
+        warm_start=False  # Cannot do this, move to new directory 
     )
 
     train_config = input_utils.InputConfig(
@@ -46,9 +46,8 @@ def get_run_config(active_config):
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=True  # train using softmax proxy for binomial loss
     )
-    # train_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')
 
     eval_config = input_utils.InputConfig(
         name='eval',
@@ -66,9 +65,8 @@ def get_run_config(active_config):
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False
+        noisy_labels=False  # eval using binomial loss
     )
-    # eval_config.set_stratify_probs_from_csv(train_config.tfrecord_loc + '.csv')  # eval not allowed
 
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,

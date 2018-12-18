@@ -81,7 +81,7 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=0.5)  # 50% train, 50% test
+            train_test_fraction=0.1)  # 10% train, 90% test
 
         assert self.ready()
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     # catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
 
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:1024]  # for initial training data
-    unlabelled_catalog = catalog[1024:]  # for new data
+    labelled_catalog = catalog[:4096]  # for initial training data
+    unlabelled_catalog = catalog[4096:]  # for new data
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
