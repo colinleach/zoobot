@@ -178,12 +178,12 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     """
 
     if test:  # do a brief run only
-        iterations = 3,
-        subjects_per_iter = 28,
+        iterations = 3
+        subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        iterations = 5, 
-        subjects_per_iter = 512,
+        iterations = 4  # 1.5h per iteration
+        subjects_per_iter = 512
         shards_per_iter = 3
 
     shard_config = make_shards.load_shard_config(shard_config_loc)

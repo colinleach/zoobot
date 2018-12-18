@@ -78,7 +78,7 @@ Optionally, add --baseline=True to select samples for labelling randomly.
 Finally, upload the results.
 
 `git add $run_dir.dvc` or `git add $baseline_dir.dvc`
-`dvc push $run_dir.dvc -r s3`
+`dvc push -r s3 $run_dir.dvc`  or `dvc push -r s3 $baseline_dir.dvc`
 
 ## Generate Metrics
 
