@@ -34,6 +34,7 @@ class ShardConfig():
         inital_size=128,
         final_size=64,  # TODO consider refactoring this into execute.py
         shard_size=4096,
+        **overflow_args  # TODO review removing this
         ):
         """
         Args:
