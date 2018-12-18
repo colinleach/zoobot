@@ -256,8 +256,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
 
     if active_config.warm_start:
-        run_config.epochs = 75  # for retraining
-        active_config.shards_per_iter = 1  # for speed
+        run_config.epochs = 150  # for retraining
+        active_config.shards_per_iter = 2  # for speed
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
 

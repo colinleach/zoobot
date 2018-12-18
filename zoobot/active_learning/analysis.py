@@ -216,7 +216,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Analyse active learning')
     parser.add_argument('--active_dir', dest='active_dir', type=str,
                     help='')
-    parser.add_argument('--baseline_dir', dest='baseline_dir', type=str,
+    parser.add_argument('--baseline_dir', dest='baseline_dir', type=str, default=None,
                     help='')
     parser.add_argument('--initial', dest='initial', type=int,
                     help='')
@@ -235,11 +235,11 @@ if __name__ == '__main__':
     name = '{}init_{}per'.format(initial, per_iter)
 
     # will be re-used for subject history of baseline, if provided
-    n_subjects = 15
-    size = 128
-    channels = 3
-    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
+    # n_subjects = 15
+    # size = 128
+    # channels = 3
+    # active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     active_smooth_metrics = get_smooth_metrics_from_log(active_log_loc, name='active')
     plot_log_metrics(active_smooth_metrics, active_save_loc, title=title)
 
-    if args.baseline_dir != '':
+    if args.baseline_dir is not None:
         baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)
         show_subjects_by_iteration(baseline_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         baseline_log_loc = find_log(args.baseline_dir)
