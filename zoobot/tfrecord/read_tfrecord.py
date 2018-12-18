@@ -87,7 +87,7 @@ def show_examples(examples, size, channels):
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
     im = example['matrix'].reshape(size, size, channels)
-    if im.max() > 1.:
+    if im.max() < 1.:
         ax.imshow(im)
     else:
         ax.imshow(im.astype(np.uint8))
