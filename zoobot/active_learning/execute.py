@@ -136,7 +136,7 @@ class ActiveConfig():
             top_acquisition_ids = []
             while shards_used < self.shards_per_iter:
                 shard_loc = next(shard_locs)
-                logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
+                logging.info('Using shard_loc {}, iteration {}, max {}'.format(shard_loc, iteration, self.shards_per_iter))
                 active_learning.record_acquisitions_on_tfrecord(db, shard_loc, self.shards.initial_size, self.shards.channels, acquisition_func)
                 shards_used += 1
 
@@ -191,9 +191,9 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     active_config = ActiveConfig(
         shard_config, 
         run_dir,
-        iterations, 
-        subjects_per_iter,
-        shards_per_iter
+        iterations=iterations, 
+        subjects_per_iter=subjects_per_iter,
+        shards_per_iter=shards_per_iter
     )  
     active_config.prepare_run_folders()
 
