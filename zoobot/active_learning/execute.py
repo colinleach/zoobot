@@ -202,11 +202,13 @@ class ActiveConfig():
         # anything in estimator_dir itself is not restored
         # warning - strongly coupled to self.run() last paragraphs
         iteration = 0
+        latest_estimator_dir = os.path.join(self.run_dir, 'iteration_0')
         while True:
-            latest_estimator_dir = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
-            if not os.path.isdir(latest_estimator_dir):
+            dir_to_test = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
+            if not os.path.isdir(dir_to_test):
                 break
             else:
+                latest_estimator_dir = dir_to_test
                 iteration += 1
         # get the latest checkpoint in that estimator dir
         logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
