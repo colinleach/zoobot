@@ -31,5 +31,10 @@ build/*
 acquired_shard_*
 .vscode/*
 *.pb
-/data.xml
-/data
+
+# note that .gitignore works wherever it gets placed, so there may be other ignored files
+zoobot/active_learning/*oracle.csv
+data/runs/example_run
+data/shards/si128_sf64_ss4096
+data/2018-11-05_panoptes_predictions_with_catalog
+data/fits_native

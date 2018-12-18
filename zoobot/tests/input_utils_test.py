@@ -11,6 +11,12 @@ from zoobot.estimators import input_utils
 from zoobot.tests import TEST_EXAMPLE_DIR, TEST_FIGURE_DIR
 
 
+
+@pytest.fixture()
+def batch_of_visual_check_image(visual_check_image):
+    return tf.stack([visual_check_image for n in range(16)], axis=0)  # dimensions batch, height, width, channels
+
+
 """
 Test augmentation applied to a single image (i.e. within map_fn)
 """
@@ -50,10 +56,6 @@ def test_photometric_augmentations_on_image(visual_check_image):
     fig.tight_layout()
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'photometric_augmentation_check_single_image.png'))
 
-
-@pytest.fixture()
-def batch_of_visual_check_image(visual_check_image):
-    return tf.stack([visual_check_image for n in range(16)], axis=0)  # dimensions batch, height, width, channels
 
 
 def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image):
@@ -122,6 +124,54 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'all_augmentations_check.png'))
 
 
+def test_predict_input_func_subbatch_with_labels(stratified_tfrecord_locs, size):
+    
+    # tfrecord_matrix_loc
+    n_galaxies = 24
+    subjects, labels, _ = input_utils.predict_input_func(stratified_tfrecord_locs[0], n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='labels')
+    with tf.Session() as sess:
+        subjects = sess.run(subjects)
+        assert subjects.shape == (n_galaxies, size, size, 1)
+
+
+
+    # with tf.Session() as sess:
+    #     batches = []
+    #     while True:
+    #         try:
+    #             batches.append(sess.run([subjects]))
+    #         except tf.errors.OutOfRangeError:
+    #             break
+    #     # subjects = [sess.run(subjects)[0] for n in range(n_galaxies)]
+    #     # subjects = sess.run(subjects)
+    # print(len(batches))
+    # print(batches[0][0].shape)
+    # assert False
+    #     subjects = np.stack
+    # assert subjects is not None
+    # assert subjects.shape == 24
+    # assert subjects[0].shape == (size, size, 1)
+
+
+def test_predict_input_func_with_id(shard_locs, size):
+    n_galaxies = 24
+    tfrecord_loc = shard_locs[0]
+    subjects, _, id_strs = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='id_str')
+    with tf.Session() as sess:
+        subjects, id_strs = sess.run([subjects, id_strs])
+    assert subjects.shape == (n_galaxies, size, size, 1)
+    assert len(id_strs) == 24
+
+
+def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
+    n_galaxies = 24
+    subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='')
+    with tf.Session() as sess:
+        subjects = sess.run(subjects)
+    assert subjects.shape == (n_galaxies, size, size, 1)
+
+
+
 """
 Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 """
@@ -132,162 +182,162 @@ Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 #     single_channel = np.array([[1., 2., 3., 4.] for n in range(4)])  # each channel has rows of 1 2 3 4
 #     return np.array([single_channel for n in range(3)])  # copied 3 times
 
-"""
-Functional test on fake data, saved to temporary tfrecords
-"""
-def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values, false_image_values):
-    # stratified_tfrecord_locs writes up the tfrecords to read
-    # needs to be an arg but is implicitly called by pytest
+# """
+# Functional test on fake data, saved to temporary tfrecords
+# """
+# def test_input_utils(stratified_tfrecord_locs, size, channels, true_image_values, false_image_values):
+#     # stratified_tfrecord_locs writes up the tfrecords to read
+#     # needs to be an arg but is implicitly called by pytest
 
-    train_batch = 64
-    test_batch = 128
+#     train_batch = 64
+#     test_batch = 128
 
-    train_loc, test_loc = stratified_tfrecord_locs
-    assert os.path.exists(train_loc)
-    assert os.path.exists(test_loc)
+#     train_loc, test_loc = stratified_tfrecord_locs
+#     assert os.path.exists(train_loc)
+#     assert os.path.exists(test_loc)
 
-    train_config = input_utils.InputConfig(
-        name='train',
-        tfrecord_loc=train_loc,
-        initial_size=size,
-        final_size=size,
-        channels=channels,
-        label_col=None,  # TODO not sure about this
-        batch_size=train_batch,
-        stratify=False,
-        regression=False,
-        repeat=False,
-        shuffle=False,
-        stratify_probs=None,
-        geometric_augmentation=False,
-        photographic_augmentation=False
-    )
-    train_features, train_labels = input_utils.get_input(train_config)
-    train_images = train_features['x']
+#     train_config = input_utils.InputConfig(
+#         name='train',
+#         tfrecord_loc=train_loc,
+#         initial_size=size,
+#         final_size=size,
+#         channels=channels,
+#         label_col=None,  # TODO not sure about this
+#         batch_size=train_batch,
+#         stratify=False,
+#         regression=False,
+#         repeat=False,
+#         shuffle=False,
+#         stratify_probs=None,
+#         geometric_augmentation=False,
+#         photographic_augmentation=False
+#     )
+#     train_features, train_labels = input_utils.get_input(train_config)
+#     train_images = train_features['x']
 
-    train_strat_config = input_utils.InputConfig(
-        name='train',
-        tfrecord_loc=train_loc,
-        initial_size=size,
-        final_size=size,
-        channels=3,
-        label_col=None,  # TODO not sure about this
-        batch_size=train_batch,
-        stratify=True,
-        regression=False,
-        repeat=False,
-        shuffle=False,
-        stratify_probs=np.array([0.8, 0.2]),
-        geometric_augmentation=False,
-        photographic_augmentation=False
-    )
-    train_features_strat, train_labels_strat = input_utils.get_input(train_strat_config)
-    train_images_strat = train_features_strat['x']
+#     train_strat_config = input_utils.InputConfig(
+#         name='train',
+#         tfrecord_loc=train_loc,
+#         initial_size=size,
+#         final_size=size,
+#         channels=3,
+#         label_col=None,  # TODO not sure about this
+#         batch_size=train_batch,
+#         stratify=True,
+#         regression=False,
+#         repeat=False,
+#         shuffle=False,
+#         stratify_probs=np.array([0.8, 0.2]),
+#         geometric_augmentation=False,
+#         photographic_augmentation=False
+#     )
+#     train_features_strat, train_labels_strat = input_utils.get_input(train_strat_config)
+#     train_images_strat = train_features_strat['x']
 
-    test_config = input_utils.InputConfig(
-        name='test',
-        tfrecord_loc=test_loc,
-        initial_size=size,
-        final_size=size,
-        channels=3,
-        label_col=None,  # TODO not sure about this
-        batch_size=test_batch,
-        stratify=False,
-        regression=False,
-        repeat=False,
-        shuffle=False,
-        stratify_probs=None,
-        geometric_augmentation=False,
-        photographic_augmentation=False
-    )
-    test_features, test_labels = input_utils.get_input(test_config)
-    test_images = test_features['x']
+#     test_config = input_utils.InputConfig(
+#         name='test',
+#         tfrecord_loc=test_loc,
+#         initial_size=size,
+#         final_size=size,
+#         channels=3,
+#         label_col=None,  # TODO not sure about this
+#         batch_size=test_batch,
+#         stratify=False,
+#         regression=False,
+#         repeat=False,
+#         shuffle=False,
+#         stratify_probs=None,
+#         geometric_augmentation=False,
+#         photographic_augmentation=False
+#     )
+#     test_features, test_labels = input_utils.get_input(test_config)
+#     test_images = test_features['x']
 
-    test_strat_config = input_utils.InputConfig(
-        name='test_strat',
-        tfrecord_loc=test_loc,
-        initial_size=size,
-        final_size=size,
-        channels=3,
-        label_col=None,  # TODO not sure about this
-        batch_size=test_batch,
-        stratify=True,
-        regression=False,
-        repeat=False,
-        shuffle=False,
-        stratify_probs=np.array([0.8, 0.2]),
-        geometric_augmentation=False,
-        photographic_augmentation=False
-    )
-    test_features_strat, test_labels_strat = input_utils.get_input(test_strat_config)
-    test_images_strat = test_features_strat['x']
+#     test_strat_config = input_utils.InputConfig(
+#         name='test_strat',
+#         tfrecord_loc=test_loc,
+#         initial_size=size,
+#         final_size=size,
+#         channels=3,
+#         label_col=None,  # TODO not sure about this
+#         batch_size=test_batch,
+#         stratify=True,
+#         regression=False,
+#         repeat=False,
+#         shuffle=False,
+#         stratify_probs=np.array([0.8, 0.2]),
+#         geometric_augmentation=False,
+#         photographic_augmentation=False
+#     )
+#     test_features_strat, test_labels_strat = input_utils.get_input(test_strat_config)
+#     test_images_strat = test_features_strat['x']
 
-    with tf.train.MonitoredSession() as sess:  # mimic Estimator environment
+#     with tf.train.MonitoredSession() as sess:  # mimic Estimator environment
 
-        train_images, train_labels = sess.run([train_images, train_labels])
-        assert len(train_labels) == train_batch
-        assert train_images.shape[0] == train_batch
-        assert train_labels.mean() < .6  # should not be stratified
-        assert train_images.shape == (train_batch, size, size, 1)
-        verify_images_match_labels(train_images, train_labels, true_image_values, false_image_values, size)
+#         train_images, train_labels = sess.run([train_images, train_labels])
+#         assert len(train_labels) == train_batch
+#         assert train_images.shape[0] == train_batch
+#         assert train_labels.mean() < .6  # should not be stratified
+#         assert train_images.shape == (train_batch, size, size, 1)
+#         verify_images_match_labels(train_images, train_labels, true_image_values, false_image_values, size)
 
-        train_images_strat, train_labels_strat = sess.run([train_images_strat, train_labels_strat])
-        assert len(train_labels_strat) == train_batch
-        assert train_images_strat.shape[0] == train_batch
-        assert train_labels_strat.mean() < 0.75 and train_labels_strat.mean() > 0.25  # stratify not very accurate...
-        assert train_images_strat.shape == (train_batch, size, size, 1)
-        verify_images_match_labels(train_images_strat, train_labels_strat, true_image_values, false_image_values, size)
+#         train_images_strat, train_labels_strat = sess.run([train_images_strat, train_labels_strat])
+#         assert len(train_labels_strat) == train_batch
+#         assert train_images_strat.shape[0] == train_batch
+#         assert train_labels_strat.mean() < 0.75 and train_labels_strat.mean() > 0.25  # stratify not very accurate...
+#         assert train_images_strat.shape == (train_batch, size, size, 1)
+#         verify_images_match_labels(train_images_strat, train_labels_strat, true_image_values, false_image_values, size)
 
-        test_images, test_labels = sess.run([test_images, test_labels])
-        assert len(test_labels) == test_batch
-        assert test_images.shape[0] == test_batch
-        assert test_labels.mean() < 0.6  # should not be stratified
-        assert test_images.shape == (test_batch, size, size, 1)
-        verify_images_match_labels(test_images, test_labels, true_image_values, false_image_values, size)
+#         test_images, test_labels = sess.run([test_images, test_labels])
+#         assert len(test_labels) == test_batch
+#         assert test_images.shape[0] == test_batch
+#         assert test_labels.mean() < 0.6  # should not be stratified
+#         assert test_images.shape == (test_batch, size, size, 1)
+#         verify_images_match_labels(test_images, test_labels, true_image_values, false_image_values, size)
 
-        test_images_strat, test_labels_strat = sess.run([test_images_strat, test_labels_strat])
-        assert len(test_labels_strat) == test_batch
-        assert test_images_strat.shape[0] == test_batch
-        assert test_labels_strat.mean() < 0.75 and test_labels_strat.mean() > 0.25  # stratify not very accurate...
-        assert test_images_strat.shape == (test_batch, size, size, 1)
-        verify_images_match_labels(test_images_strat, test_labels_strat, true_image_values, false_image_values, size)
-
-
-def verify_images_match_labels(images, labels, true_values, false_values, size):
-    for example_n in range(len(labels)):
-        if labels[example_n] == 1:
-            expected_values = true_values
-        else:
-            expected_values = false_values
-        expected_matrix = np.ones((size, size, 1), dtype=np.float32) * expected_values
-        assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
+#         test_images_strat, test_labels_strat = sess.run([test_images_strat, test_labels_strat])
+#         assert len(test_labels_strat) == test_batch
+#         assert test_images_strat.shape[0] == test_batch
+#         assert test_labels_strat.mean() < 0.75 and test_labels_strat.mean() > 0.25  # stratify not very accurate...
+#         assert test_images_strat.shape == (test_batch, size, size, 1)
+#         verify_images_match_labels(test_images_strat, test_labels_strat, true_image_values, false_image_values, size)
 
 
-def test_input_utils_visual(example_tfrecord_loc, size, channels):
-    # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
-    batch_size = 16
+# def verify_images_match_labels(images, labels, true_values, false_values, size):
+#     for example_n in range(len(labels)):
+#         if labels[example_n] == 1:
+#             expected_values = true_values
+#         else:
+#             expected_values = false_values
+#         expected_matrix = np.ones((size, size, 1), dtype=np.float32) * expected_values
+#         assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
 
-    config = input_utils.InputConfig(
-        name='train',
-        tfrecord_loc=example_tfrecord_loc,
-        initial_size=size,
-        final_size=size,
-        channels=channels,
-        label_col=None,  # TODO not sure about this
-        batch_size=batch_size,
-        stratify=False,
-        regression=False,
-        repeat=False,
-        shuffle=False,
-        stratify_probs=None,
-        geometric_augmentation=False,
-        photographic_augmentation=False)
 
-    batch_images, _ = input_utils.load_batches(config)
+# def test_input_utils_visual(example_tfrecord_loc, size, channels):
+#     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
+#     batch_size = 16
 
-    with tf.train.MonitoredSession() as sess:
-        batch_images = sess.run(batch_images)
+#     config = input_utils.InputConfig(
+#         name='train',
+#         tfrecord_loc=example_tfrecord_loc,
+#         initial_size=size,
+#         final_size=size,
+#         channels=channels,
+#         label_col=None,  # TODO not sure about this
+#         batch_size=batch_size,
+#         stratify=False,
+#         regression=False,
+#         repeat=False,
+#         shuffle=False,
+#         stratify_probs=None,
+#         geometric_augmentation=False,
+#         photographic_augmentation=False)
 
-    plt.clf()
-    plt.imshow(batch_images[0])
-    plt.savefig(os.path.join(TEST_FIGURE_DIR + 'original_loaded_image.png'))
+#     batch_images, _ = input_utils.load_batches(config)
+
+#     with tf.train.MonitoredSession() as sess:
+#         batch_images = sess.run(batch_images)
+
+#     plt.clf()
+#     plt.imshow(batch_images[0])
+#     plt.savefig(os.path.join(TEST_FIGURE_DIR + 'original_loaded_image.png'))

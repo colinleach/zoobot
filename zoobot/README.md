@@ -134,21 +134,3 @@ Once shards are ready:
 `run_dir = {run dir relative to root}`
 
 `python $root/zoobot/zoobot/active_learning/execute.py --shard_config=$root/$shard_dir/shard_config.json --run_dir=$root/$run_dir`
-
-shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
-Optionally, add --baseline=True to select samples for labelling randomly.
-**Check that logs are being recorded**. They should be in the directory the script was run from (i.e. root).
-
-## Optional: Run Tensorboard to Monitor
-
-On local machine, open an SSH tunnel to forward the ports using the `-L` flag:
-`ssh -i $key -L 6006:127.0.0.1:6006 $user@$public_dns`
-
-Then, via that SSH connection (or another), run
-`source activate tensorflow_p36`
-`tensorboard --logdir=.`
-to run a Tensorboard server showing both baseline and real runs, if available
-
-
-## Optional: Save results to S3
-`aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/runs/$run_dir`

@@ -17,58 +17,154 @@ from zoobot.estimators import input_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
 
-def predict_input_func(tfrecord_loc, n_galaxies=128):
-    """Wrapper to mimic the run_estimator.py input procedure.
-    Get subjects and labels from tfrecord, just like during training
+class Model():
 
-    Args:
-        tfrecord_loc (str): tfrecord to read subjects from. Should be test data.
-        n_galaxies (int, optional): Defaults to 128. Num of galaxies to predict on, as single batch.
-    
-    Returns:
-        subjects: np.array of shape (batch, x, y, channel)
-        labels: np.array of shape (batch)
-    """
-
-    with tf.Session() as sess:
-        config = input_utils.InputConfig(
-            name='predict',
-            tfrecord_loc=tfrecord_loc,
-            label_col='label',
-            stratify=False,
-            shuffle=False,
-            repeat=False,
-            stratify_probs=None,
-            regression=True,
-            geometric_augmentation=False,
-            photographic_augmentation=False,
-            max_zoom=1.2,
-            fill_mode='wrap',
-            batch_size=n_galaxies,
-            initial_size=128,
-            final_size=64,
-            channels=3,
-            noisy_labels=False  # important - we want the actual vote fractions
-        )
-        subjects, labels = input_utils.load_batches(config)
-        subjects, labels = sess.run([subjects, labels])
-    return subjects, labels
+    def __init__(self, predictions, labels, name):
+        self.predictions = predictions
+        self.labels = labels
+        self.calculate_default_metrics()
+        self.calculate_acquistion_funcs()
+        self.name = name
 
 
-def default_metrics(results, labels):
-    mean_prediction = results.mean(axis=1)
-    
-    abs_error = np.abs(results.mean(axis=1) - labels)
-    square_error = (labels - mean_prediction) ** 2.
-    mean_abs_error = np.mean(abs_error)
-    mean_square_error = np.mean(square_error)
+    def calculate_default_metrics(self):
+        """
+        Calculate common metrics for performance of sampled predictions vs. volunteer vote fractions
+        Store these in object state
+        
+        Args:
+            results (np.array): predictions of shape (galaxy_n, sample_n)
+            labels (np.array): true labels for galaxies on which predictions were made
+        
+        Returns:
+            None
+        """
+        self.mean_prediction = self.predictions.mean(axis=1)
+        
+        self.abs_error = np.abs(self.mean_prediction - self.labels)
+        self.square_error = (self.labels - self.mean_prediction) ** 2.
+        self.mean_abs_error = np.mean(self.abs_error)
+        self.mean_square_error = np.mean(self.square_error)
 
-    bin_likelihood = make_predictions.binomial_likelihood(labels, results, total_votes=40)
-    bin_loss_per_sample = - bin_likelihood  # we want to minimise the loss to maximise the likelihood
-    bin_loss_per_subject = np.mean(bin_loss_per_sample, axis=1)
-    mean_bin_loss = np.mean(bin_loss_per_subject)  # scalar, mean likelihood
+        self.bin_likelihood = make_predictions.binomial_likelihood(self.labels, self.predictions, total_votes=40)
+        self.bin_loss_per_sample = - self.bin_likelihood  # we want to minimise the loss to maximise the likelihood
+        self.bin_loss_per_subject = np.mean(self.bin_loss_per_sample, axis=1)
+        self.mean_bin_loss = np.mean(self.bin_loss_per_subject)  # scalar, mean likelihood
 
-    return mean_prediction, abs_error, square_error, mean_abs_error, mean_square_error, bin_likelihood, bin_loss_per_subject, mean_bin_loss
+    def calculate_acquistion_funcs(self):
+        # self.distribution_entropy = make_predictions.distribution_entropy(results)
+        self.predictive_entropy = make_predictions.binomial_entropy(np.mean(self.predictions, axis=1))
+        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.predictions), axis=1)
+        self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
+
+    def compare_binomial_and_abs_error(self, save_dir):
+        # Binomial loss should increase with absolute error, but not linearly
+        plt.figure()
+        g = sns.jointplot(self.abs_error, self.bin_loss_per_subject, kind='reg')
+        plt.xlabel('Abs. Error')
+        plt.ylabel('Binomial Loss')
+        plt.xlim([0., 0.5])
+        plt.tight_layout()
+        g.savefig(os.path.join(save_dir, 'bin_loss_vs_abs_error.png'))
+        plt.close()
+
+    def show_coverage(self):
+        raise NotImplementedError
+        # save coverage fraction of the model i.e. check calibration of posteriors
+        # plt.figure()
+        # alpha_eval, coverage_at_alpha = dropout_calibration.check_coverage_fractions(results, labels)
+        # save_loc = os.path.join(save_dir, 'model_coverage.png')
+        # dropout_calibration.visualise_calibration(alpha_eval, coverage_at_alpha, save_loc)
+        # plt.close()
+
+    def show_acquisition_vs_label(self, save_dir):
+        # How does being smooth or featured affect each entropy measuremement?
+        # Expect expected entropy to be only func. of mean prediction
+        # And currently, similarly for predictive entropy (although queried with Lewis)
+        fig, (row0, row1, row2) = plt.subplots(nrows=3, ncols=3, sharex=True, figsize=(12, 8))
+
+        ax00, ax01, ax02 = row0
+        ax00.scatter(self.labels, self.predictive_entropy)
+        ax00.set_ylabel('Predictive Entropy')
+        ax01.scatter(self.labels, self.expected_entropy)
+        ax01.set_ylabel('Expected Entropy')
+        ax02.scatter(self.labels, self.mutual_info)
+        ax02.set_ylabel('Mutual Information')
+
+        ax10, ax11, ax12 = row1
+        ax10.scatter(self.mean_prediction, self.predictive_entropy)
+        mean_pred_range = np.linspace(0.02, 0.98)
+        ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        ax10.set_ylabel('Predictive Entropy')
+        ax11.scatter(self.mean_prediction, self.expected_entropy)
+        ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        ax11.set_ylabel('Expected Entropy')
+        ax12.scatter(self.mean_prediction, self.mutual_info)
+        ax12.set_ylabel('Mutual Information')
+
+
+        ax20, ax21, ax22 = row2
+        # ax10.scatter(mean_prediction, predictive_entropy)
+        # mean_pred_range = np.linspace(0.02, 0.98)
+        # ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        # ax10.set_ylabel('Delta Predictive Entropy')
+        ax21.scatter(self.mean_prediction, self.expected_entropy - make_predictions.binomial_entropy(self.mean_prediction))
+        # ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        ax21.set_ylabel('Delta Expected Entropy')
+        # ax12.scatter(mean_prediction, mutual_info)
+        # ax12.set_ylabel('Mutual Information')
+
+        ax00.set_xlabel('Vote Fraction')
+        ax01.set_xlabel('Vote Fraction')
+        ax02.set_xlabel('Vote Fraction')
+        ax10.set_xlabel('Mean Prediction')
+        ax11.set_xlabel('Mean Prediction')
+        ax12.set_xlabel('Mean Prediction')
+        # ax00.set_xlim([0.02, 0.98])
+        # ax01.set_xlim([0.02, 0.98])
+        # ax02.set_xlim([0.02, 0.98])
+        # ax10.set_xlim([0.02, 0.98])
+        # ax11.set_xlim([0.02, 0.98])
+        # ax12.set_xlim([0.02, 0.98])
+        
+
+        fig.tight_layout()
+        fig.savefig(os.path.join(save_dir, 'entropy_by_label.png'))
+        plt.close()
+
+
+
+
+def compare_model_errors(model_a, model_b, save_dir):
+    # save distribution of various error, compared against baseline that predicts the mean
+    fig, (ax0, ax1, ax2) = plt.subplots(ncols=3, figsize=(12, 4))
+
+    ax0.hist(model_a.abs_error, label=model_a.name, density=True, alpha=0.5)
+    ax0.hist(model_b.abs_error, label=model_b.name, density=True, alpha=0.5)
+    ax0.set_xlabel('Absolute Error')
+
+    ax1.hist(model_a.square_error, label=model_a.name, density=True, alpha=0.5)
+    ax1.hist(model_b.square_error, label=model_b.name, density=True, alpha=0.5)
+    ax1.set_xlabel('Square Error')
+
+    ax2.hist(model_a.bin_loss_per_subject, label=model_a.name, density=True, alpha=0.5)
+    ax2.hist(model_b.bin_loss_per_subject, label=model_b.name, density=True, alpha=0.5)
+    ax2.set_xlabel('Binomial Error')
+
+    fig.legend()
+    fig.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'performance_metrics_vs_baseline.png'))
+    plt.close()
+
+
+def compare_models(model_a, model_b):
+    logging.info('{} mean square error: {}'.format(model_a.name, model_a.mean_square_error))
+    logging.info('{} mean square error: {}'.format(model_b.name, model_b.mean_square_error))
+    logging.info('{} mean absolute error: {}'.format(model_a.name, model_a.mean_abs_error))
+    logging.info('{} mean absolute error: {}'.format(model_b.name, model_b.mean_abs_error))
+    logging.info('{} binomial loss: {}'.format(model_a.name, model_a.mean_bin_loss))
+    logging.info('{} mean binomial loss: {}'.format(model_b.name, model_b.mean_bin_loss))
+
 
 
 def save_metrics(results, subjects, labels, save_dir):
@@ -80,25 +176,12 @@ def save_metrics(results, subjects, labels, save_dir):
         labels (np.array): true labels for galaxies on which predictions were made
         save_dir (str): directory into which to save figures of metrics
     """
-    mean_prediction, abs_error, square_error, mean_abs_error, mean_square_error, bin_likelihood, bin_loss_per_subject, mean_bin_loss = default_metrics(results, labels)
+    binomial_metrics = Model(results, labels, name='binomial')
 
     # repeat for baseline
     # baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
     baseline_results = np.loadtxt('/Data/repos/zoobot/analysis_WIP/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
-    _, baseline_abs_error, baseline_square_error, baseline_mean_abs_error, baseline_mean_square_error, baseline_bin_likelihood, baseline_bin_loss_per_subject, baseline_mean_bin_loss = default_metrics(baseline_results, labels)
-
-    logging.info('Mean square error: {}'.format(mean_square_error))
-    logging.info('Baseline mean square error: {}'.format(baseline_mean_square_error))
-    logging.info('Mean absolute error: {}'.format(mean_abs_error))
-    logging.info('Baseline mean absolute error: {}'.format(baseline_mean_abs_error))
-    logging.info('Mean binomial loss: {}'.format(mean_bin_loss))
-    logging.info('Baseline mean binomial loss: {}'.format(baseline_mean_bin_loss))
-
-    distribution_entropy = make_predictions.distribution_entropy(results)
-
-    predictive_entropy = make_predictions.binomial_entropy(np.mean(results, axis=1))
-    expected_entropy = np.mean(make_predictions.binomial_entropy(results), axis=1)
-    mutual_info = predictive_entropy - expected_entropy
+    baseline_metrics = Model(baseline_results, labels, name='mean_loss')
 
     sns.set(context='paper', font_scale=1.5)
 
@@ -109,105 +192,18 @@ def save_metrics(results, subjects, labels, save_dir):
     fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
     plt.close(fig)
 
+    compare_model_errors(binomial_metrics, baseline_metrics, save_dir)
+    binomial_metrics.compare_binomial_and_abs_error(save_dir)
+    binomial_metrics.show_acquisition_vs_label(save_dir)
 
-    # save distribution of binomial
+    save_acquisition_examples(subjects, binomial_metrics.mutual_info, 'mutual_info')
 
-    # save coverage fraction of the model i.e. check calibration of posteriors
-    # plt.figure()
-    # alpha_eval, coverage_at_alpha = dropout_calibration.check_coverage_fractions(results, labels)
-    # save_loc = os.path.join(save_dir, 'model_coverage.png')
-    # dropout_calibration.visualise_calibration(alpha_eval, coverage_at_alpha, save_loc)
-    # plt.close()
-
-    # save distribution of various error, compared against baseline that predicts the mean
-    fig, (ax0, ax1, ax2) = plt.subplots(ncols=3, figsize=(12, 4))
-
-    ax0.hist(abs_error, label='Model', density=True, alpha=0.5)
-    ax0.hist(baseline_abs_error, label='Baseline', density=True, alpha=0.5)
-    ax0.set_xlabel('Absolute Error')
-
-    ax1.hist(square_error, label='Model', density=True, alpha=0.5)
-    ax1.hist(baseline_square_error, label='Baseline', density=True, alpha=0.5)
-    ax1.set_xlabel('Square Error')
-
-    ax2.hist(bin_loss_per_subject, label='Model', density=True, alpha=0.5)
-    ax2.hist(baseline_bin_loss_per_subject, label='Baseline', density=True, alpha=0.5)
-    ax2.set_xlabel('Binomial Error')
-
-    fig.legend()
-    fig.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'performance_metrics_vs_baseline.png'))
-    plt.close()
-
-
-    # Binomial loss should increase with absolute error, but not linearly
-    plt.figure()
-    g = sns.jointplot(abs_error, bin_loss_per_subject, kind='reg')
-    plt.xlabel('Abs. Error')
-    plt.ylabel('Binomial Loss')
-    plt.xlim([0., 0.5])
-    plt.tight_layout()
-    g.savefig(os.path.join(save_dir, 'bin_loss_vs_abs_error.png'))
-    plt.close()
-
+    # TODO check entropies against radial extent of galaxy
     
-    # How does being smooth or featured affect each entropy measuremement?
-    # Expect expected entropy to be only func. of mean prediction
-    # And currently, similarly for predictive entropy (although queried with Lewis)
-    fig, (row0, row1, row2) = plt.subplots(nrows=3, ncols=3, sharex=True, figsize=(12, 8))
-
-    ax00, ax01, ax02 = row0
-    ax00.scatter(labels, predictive_entropy)
-    ax00.set_ylabel('Predictive Entropy')
-    ax01.scatter(labels, expected_entropy)
-    ax01.set_ylabel('Expected Entropy')
-    ax02.scatter(labels, mutual_info)
-    ax02.set_ylabel('Mutual Information')
-
-    ax10, ax11, ax12 = row1
-    ax10.scatter(mean_prediction, predictive_entropy)
-    mean_pred_range = np.linspace(0.02, 0.98)
-    ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
-    ax10.set_ylabel('Predictive Entropy')
-    ax11.scatter(mean_prediction, expected_entropy)
-    ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
-    ax11.set_ylabel('Expected Entropy')
-    ax12.scatter(mean_prediction, mutual_info)
-    ax12.set_ylabel('Mutual Information')
-
-
-    ax20, ax21, ax22 = row2
-    # ax10.scatter(mean_prediction, predictive_entropy)
-    # mean_pred_range = np.linspace(0.02, 0.98)
-    # ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
-    # ax10.set_ylabel('Delta Predictive Entropy')
-    ax21.scatter(mean_prediction, expected_entropy - make_predictions.binomial_entropy(mean_prediction))
-    # ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
-    ax21.set_ylabel('Delta Expected Entropy')
-    # ax12.scatter(mean_prediction, mutual_info)
-    # ax12.set_ylabel('Mutual Information')
-
-    ax00.set_xlabel('Vote Fraction')
-    ax01.set_xlabel('Vote Fraction')
-    ax02.set_xlabel('Vote Fraction')
-    ax10.set_xlabel('Mean Prediction')
-    ax11.set_xlabel('Mean Prediction')
-    ax12.set_xlabel('Mean Prediction')
-    # ax00.set_xlim([0.02, 0.98])
-    # ax01.set_xlim([0.02, 0.98])
-    # ax02.set_xlim([0.02, 0.98])
-    # ax10.set_xlim([0.02, 0.98])
-    # ax11.set_xlim([0.02, 0.98])
-    # ax12.set_xlim([0.02, 0.98])
+    # TODO add metrics for each active learning run, cross-matching to catalog for NSA params via id
     
+    # the following are partially implemented - I should consider if they're useful
 
-    fig.tight_layout()
-    fig.savefig(os.path.join(save_dir, 'entropy_by_label.png'))
-    plt.close()
-
-
-    # save_acquisition_examples(mutual_info, 'mutual_info')
-    
     # plt.figure()
     # g = sns.jointplot(predictive_entropy, bin_loss, kind='reg')
     # plt.xlabel('Predictive Entropy')
@@ -251,7 +247,7 @@ def save_metrics(results, subjects, labels, save_dir):
     # plt.close()
 
 
-def save_acquisition_examples(acq_values, acq_string):
+def save_acquisition_examples(subjects, acq_values, acq_string):
 
     # show galaxies with max/min variance, or top/bottom 20% of variance (more representative)
     min_gals = subjects[acq_values.argsort()]
@@ -329,8 +325,10 @@ if __name__ == '__main__':
         channels = 3
         feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
-        tfrecord_loc = '/data/repos/zoobot/data/panoptes_featured_s128_lfloat_test.tfrecord'
-        subjects, labels = predict_input_func(tfrecord_loc, n_galaxies=1024)
+        tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord'
+        subjects_g, labels_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=128, final_size=64, has_labels=True)  # tf graph
+        with tf.Session() as sess:
+            subjects, labels = sess.run([subjects_g, labels_g])
 
         # save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
         save_dir = 'analysis_WIP/uncertainty/al-binomial/{}'.format(predictor_name)

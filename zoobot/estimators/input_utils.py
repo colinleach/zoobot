@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
-from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_label_feature_spec
+from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec
 
 
 class InputConfig():
@@ -89,19 +89,68 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
-        batch_images, batch_labels = load_batches(config)
+        batch_images, batch_labels = load_batches_with_labels(config)
+        
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
-        tf.summary.scalar('mean_label', tf.reduce_mean(batch_labels))
-        return preprocessed_batch_images, batch_labels
+        assert preprocessed_batch_images['x'].shape[3] == 1
+        # print_op = tf.print('ex input', batch_labels)
+        # with tf.control_dependencies([print_op]):
+        return preprocessed_batch_images, tf.identity(batch_labels)
 
 
-def load_batches(config):
+def make_labels_noisy(labels):
+    # NEW - noisy labels
+    # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
+    # intead, sample a label based on the observed vote fraction.
+    # the expectation will be the same, and we'll run this many times.
+    uniform_sample = tf.distributions.Uniform(low=1e-6, high=1.0 - 1e-6).sample(tf.shape(labels))
+    # 0. if label < sample, or 1. if label > sample
+    return tf.round(tf.constant(0.5) + labels - uniform_sample)
+
+
+def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
+        dataset = load_dataset(tfrecord_loc, feature_spec)
+        if shuffle:
+            dataset = dataset.shuffle(batch_size * 5)
+        if repeat:
+            dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
+        dataset = dataset.batch(batch_size)
+        dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
+        iterator = dataset.make_one_shot_iterator()
+        return iterator.get_next()
+
+
+def get_images_from_batch(batch, size, channels, summary=False):
+
+        batch_data = batch['matrix']
+        batch_images = tf.reshape(
+            batch_data,
+            [-1, size, size, channels])  # may not get full batch at end of dataset
+        assert len(batch_images.shape) == 4
+        tf.summary.image('a_original', batch_images)
+        # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
+        return batch_images
+
+
+def get_labels_from_batch(batch, noisy_labels):
+    labels = batch['label']
+    if noisy_labels:
+        sampled_labels = make_labels_noisy(labels)
+    else:
+        sampled_labels = labels
+    # tf.summary.histogram('raw_labels', labels)
+    # tf.summary.histogram('loaded_labels', sampled_labels)
+    # tf.summary.scalar('mean_label', tf.reduce_mean(labels))
+    return sampled_labels
+
+
+def load_batches_with_labels(config):
     """
     Get batches of images and labels from tfrecord according to instructions in config
     # TODO make a single stratify parameter that expects list of floats - required to run properly anyway
     # use e.g. dataset.map(func, num_parallel_calls=n) rather than map_fn - but stratify??
+    Does NOT apply augmentations or further brightness tweaks
 
     Args:
         config (InputConfig): instructions to load and preprocess the image and label data
@@ -112,64 +161,32 @@ def load_batches(config):
     with tf.name_scope('load_batches_{}'.format(config.name)):
         feature_spec = matrix_label_feature_spec(config.initial_size, config.channels, float_label=config.regression)
 
-        dataset = load_dataset(config.tfrecord_loc, feature_spec)
+        batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
 
-        if config.shuffle:
-            dataset = dataset.shuffle(config.batch_size * 5)
+        batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
+        batch_labels = get_labels_from_batch(batch, config.noisy_labels)
+        return batch_images, batch_labels
 
-        if config.repeat:
-            dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
 
-        dataset = dataset.batch(config.batch_size)
-        dataset = dataset.prefetch(1)  # ensure that 1 batch is always ready to go
-        iterator = dataset.make_one_shot_iterator()
-        batch = iterator.get_next()
-        batch_data, batch_labels = batch['matrix'], batch['label']
+def load_batches_without_labels(config):
+    # does not fetch id - unclear if this is important
+    feature_spec = matrix_feature_spec(config.initial_size, config.channels)
+    batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    return get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
 
-        # if not config.regression:
-        #     batch_labels = tf.cast(batch_labels, tf.int64)
 
-        # if config.stratify:
-        #     #  warning - stratify only works if initial probabilities are specified
-        #     batch_images_stratified, batch_labels_stratified = stratify_images(
-        #         batch_data,
-        #         batch_labels,
-        #         config.batch_size,
-        #         config.stratify_probs
-        #     )
-        #     batch_data = batch_images_stratified
-        #     batch_labels = batch_labels_stratified
-        # else:
-        #     assert config.stratify_probs is None  # check in case user has accidentally forgotten to activate stratify
-
-        batch_images = tf.reshape(
-            batch_data,
-            [-1, config.initial_size, config.initial_size, config.channels])  # may not get full batch at end of dataset
-        tf.summary.image('a_original', batch_images)
-
-    # NEW - noisy labels
-    # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
-    # intead, sample a label based on the observed vote fraction.
-    # the expectation will be the same, and we'll run this many times.
-
-    if config.noisy_labels:
-        uniform_sample = tf.distributions.Uniform(low=1e-6, high=1.0 - 1e-6).sample(tf.shape(batch_labels))
-        # 0. if label < sample, or 1. if label > sample
-        sampled_labels = tf.round(tf.constant(0.5) + batch_labels - uniform_sample)
-        # print_op = tf.print('sampled_labels', sampled_labels)
-        # with tf.control_dependencies([print_op]):
-        #     sampled_labels = tf.identity(sampled_labels)
-    else:
-        sampled_labels = batch_labels
-
-    assert len(batch_images.shape) == 4
-    return batch_images, sampled_labels
+def load_batches_with_id_str(config):
+    # does not fetch id - unclear if this is important
+    feature_spec = matrix_id_feature_spec(config.initial_size, config.channels)
+    batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    return get_images_from_batch(batch, config.initial_size, config.channels, summary=True), batch['id_str']
 
 
 def preprocess_batch(batch_images, config):
     with tf.name_scope('preprocess'):
 
         assert len(batch_images.shape) == 4
+        assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
         greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
         assert greyscale_images.shape[1] == config.initial_size
@@ -178,6 +195,9 @@ def preprocess_batch(batch_images, config):
         tf.summary.image('b_greyscale', greyscale_images)
 
         augmented_images = augment_images(greyscale_images, config)
+        print(augmented_images.shape)
+        assert augmented_images.shape[1] == config.final_size
+        assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
 
         feature_cols = {'x': augmented_images}
@@ -357,3 +377,50 @@ def ensure_images_have_batch_dimension(images):
     if len(images.shape) == 3:
         images = tf.expand_dims(images, axis=0)  # add a batch dimension
     return images
+
+
+def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode='labels'):
+    """Wrapper to mimic the run_estimator.py input procedure.
+    Get subjects and labels from tfrecord, just like during training
+    Subjects must fit in memory, as they are loaded as a single batch
+    Args:
+        tfrecord_loc (str): tfrecord to read subjects from. Should be test data.
+        n_galaxies (int, optional): Defaults to 128. Num of galaxies to predict on, as single batch.
+
+    Returns:
+        subjects: np.array of shape (batch, x, y, channel)
+        labels: np.array of shape (batch)
+    """
+    config = InputConfig(
+        name='predict',
+        tfrecord_loc=tfrecord_loc,
+        label_col='label',
+        stratify=False,
+        shuffle=False,  # important - preserve the order
+        repeat=False,
+        stratify_probs=None,
+        regression=True,
+        geometric_augmentation=True,
+        photographic_augmentation=True,
+        max_zoom=1.2,
+        fill_mode='wrap',
+        batch_size=n_galaxies,
+        initial_size=initial_size,
+        final_size=final_size,
+        channels=3,
+        noisy_labels=False  # important - we want the actual vote fractions
+    )
+    if mode =='labels':
+        batch_images, batch_labels = load_batches_with_labels(config)
+        id_strs = None
+    if mode == 'id_str':
+        batch_images, id_strs = load_batches_with_id_str(config)
+        batch_labels = None
+    else:
+        batch_images = load_batches_without_labels(config)
+        batch_labels = None
+        id_strs = None
+
+    # don't do this! preprocessing is done at predict time, expects raw-ish images
+    # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
+    return batch_images, batch_labels, id_strs

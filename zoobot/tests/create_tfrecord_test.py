@@ -13,7 +13,7 @@ from zoobot.tfrecord.tfrecord_io import load_dataset
 @pytest.fixture()
 def extra_data_feature_spec(size, channels):
     return {
-        'label': tf.FixedLenFeature([], tf.int64),
+        'label': tf.FixedLenFeature([], tf.float32),
         'matrix': tf.FixedLenFeature([size ** 2 * channels], tf.float32),
         'an_int': tf.FixedLenFeature([], tf.int64),
         'a_float': tf.FixedLenFeature([], tf.float32),
@@ -22,20 +22,20 @@ def extra_data_feature_spec(size, channels):
 
 
 def test_serialize_image_example(visual_check_image_data, size, channels):
-    serialized_example = create_tfrecord.serialize_image_example(visual_check_image_data, label=1)
+    serialized_example = create_tfrecord.serialize_image_example(visual_check_image_data, label=1.)
     # parse back and confirm it matches. Must be within session for tensors to be comparable to np
     with tf.Session() as sess:
         example = tf.parse_single_example(
             serialized_example, 
-            features=read_tfrecord.matrix_label_feature_spec(size, channels)
+            features=read_tfrecord.matrix_label_feature_spec(size, channels, float_label=True)
             )
         recovered_matrix = example['matrix'].eval()
         assert np.allclose(recovered_matrix, visual_check_image_data.flatten())
-        assert example['label'].eval() == 1
+        assert example['label'].eval() == 1.
 
 
 def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_feature_spec):
-    label = 1
+    label = 1.
     an_int = 1
     a_float = .5
     some_floats = np.array([1., 2., 3.])

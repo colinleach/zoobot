@@ -31,29 +31,18 @@ class ShardConfig():
 
     def __init__(
         self,
-        base_dir,  # to hold a new folder, named after the shard config 
+        shard_dir,  # to hold a new folder, named after the shard config 
         inital_size=128,
         final_size=64,
-        shard_size=1024,
-        label_split_value='0.4',
+        shard_size=4096,
         **overflow_args
         ):
 
-        self.base_dir = base_dir
-
-        self.label_split_value = label_split_value
         self.initial_size = inital_size
         self.final_size = final_size
         self.channels = 3
         self.shard_size = shard_size
-
-        self.run_name = 'shards_si{}_sf{}_l{}'.format(
-            self.initial_size, 
-            self.final_size, 
-            self.label_split_value
-        )
-
-        self.shard_dir = os.path.join(base_dir, self.run_name)
+        self.shard_dir = shard_dir
         self.db_loc = os.path.join(self.shard_dir, 'static_shard_db.db')  # assumed
 
         self.train_tfrecord_loc = os.path.join(self.shard_dir, 'initial_train.tfrecord')
@@ -92,7 +81,7 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=0.3)  # 30% train, 70% test
+            train_test_fraction=0.1)  # 10% train, 90% test
 
         assert self.ready()
 
@@ -137,18 +126,18 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     active_learning.write_catalog_to_tfrecord_shards(catalog, db, size, columns_to_save, shard_dir, shard_size=shard_size)
 
 
-
 if __name__ == '__main__':
 
+    # Write catalog to shards (tfrecords as catalog chunks) for use in active learning
     parser = argparse.ArgumentParser(description='Make shards')
-    parser.add_argument('--base_dir', dest='base_dir', type=str,
+    parser.add_argument('--shard_dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
     parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
                     help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
     logging.basicConfig(
-        filename='{}/make_shards_{}.log'.format(args.base_dir, time.time()),
+        filename='make_shards_{}.log'.format(time.time()),
         filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
@@ -158,19 +147,23 @@ if __name__ == '__main__':
     catalog = pd.read_csv(args.catalog_loc)
     # >36 votes required, gives low count uncertainty
     catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    catalog['label'] = (catalog['smooth-or-featured_smooth_fraction'] > float(shard_config.label_split_value)).astype(int)  # 0 for featured
+    catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
     catalog['id_str'] = catalog['subject_id'].astype(str) 
 
     # temporary hacks for mocking panoptes
     # save catalog for mock_panoptes.py to return (now added to git)
+    # TODO a bit hacky, as only coincidentally the same
+    dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
+    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
     # catalog[['id_str', 'label']].to_csv(os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv'), index=False)
+
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:1024]  # for initial training data
-    unlabelled_catalog = catalog[1024:]  # for new data
+    labelled_catalog = catalog[:4096]  # for initial training data
+    unlabelled_catalog = catalog[4096:]  # for new data
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
-    shard_config = ShardConfig(base_dir=args.base_dir)  
+    shard_config = ShardConfig(shard_dir=args.shard_dir)  
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog)

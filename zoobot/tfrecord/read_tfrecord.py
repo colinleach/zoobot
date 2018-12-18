@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -85,9 +86,13 @@ def show_examples(examples, size, channels):
 
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
-    im = example['matrix'].reshape(size, size, channels).astype(int)
-    ax.imshow(im)
+    im = example['matrix'].reshape(size, size, channels)
+    if im.max() < 1.:
+        ax.imshow(im)
+    else:
+        ax.imshow(im.astype(np.uint8))
 
+    ax.axis('off')
     label = example['label']
     if isinstance(label, int):
         name_mapping = {
@@ -97,4 +102,4 @@ def show_example(example, size, channels, ax):  # modifies ax inplace
         label_str = name_mapping[label]
     else:
         label_str = '{:.2}'.format(label)
-    ax.text(60, 110, label_str, fontsize=16, color='r')
+    # ax.text(60, 110, label_str, fontsize=16, color='r')

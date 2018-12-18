@@ -44,7 +44,7 @@ def create_db(catalog, db_loc):
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT DEFAULT NULL,
+            label FLOAT DEFAULT NULL,
             fits_loc STRING)
         '''
     )
@@ -155,18 +155,26 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
         channels (int): channels of each image matrix to load from tfrecord
         acquisition_func (callable): expecting list of image matrices, returning list of scalars
     """
-    subjects = read_tfrecord.load_examples_from_tfrecord(
-        [tfrecord_loc],
-        read_tfrecord.matrix_id_feature_spec(size, channels)
-    )
+    # subjects = read_tfrecord.load_examples_from_tfrecord(
+    #     [tfrecord_loc],
+    #     read_tfrecord.matrix_id_feature_spec(size, channels)
+    # )
+    logging.warning('Assuming 4096 galaxies per chunk')
+    shard_size = 4096 # TODO hacky
+    final_size = 64 # TODO hacky
+    images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=shard_size, initial_size=size, final_size=final_size, mode='id_str')
+    with tf.Session() as sess:
+        images, id_str_bytes = sess.run([images, id_str])
+    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]
+    
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
     # acq func expects a list of matrices
-    subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
+    subjects_data = [x['matrix'] for x in subjects]
     acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
 
     for subject, acquisition in zip(subjects, acquisitions):
-        subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
-        save_acquisition_to_db(subject_id, acquisition, db)
+        # subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
+        save_acquisition_to_db(subject['id_str'], acquisition, db)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 
@@ -307,7 +315,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': int(subject[1]),
+            'label': float(subject[1]),
             'fits_loc': str(subject[2])
         })
 
@@ -330,21 +338,21 @@ def get_latest_checkpoint_dir(base_dir):
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
 
-    cursor.execute(
-        '''
-        SELECT * FROM catalog
-        LIMIT 50
-        '''
-    )
+    # cursor.execute(
+    #     '''
+    #     SELECT * FROM catalog
+    #     LIMIT 50
+    #     '''
+    # )
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        if isinstance(label, np.int64):
-            label = int(label)
-        assert isinstance(label, int)
+        if isinstance(label, np.float32):
+            label = float(label)
+        assert isinstance(label, float)
         assert isinstance(subject_id, str)
 
         cursor.execute(
@@ -378,6 +386,7 @@ def get_all_shard_locs(db):
     cursor.execute(
         '''
         SELECT DISTINCT tfrecord FROM shardindex
+        
         ORDER BY tfrecord ASC
         '''
     )

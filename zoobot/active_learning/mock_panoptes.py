@@ -7,8 +7,10 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 def get_labels(subject_ids):
     # created by run_active_learning.py
-    catalog_loc = os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv')
-    known_catalog = pd.read_csv(catalog_loc, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': int})
+    # catalog_loc = os.path.join(TEST_EXAMPLE_DIR, 'mock_panoptes.csv')
+    dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
+    catalog_loc = os.path.join(dir_of_this_file, 'oracle.csv')
+    known_catalog = pd.read_csv(catalog_loc, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': float})
     # mimic GZ
     labels = []
     for id_str in subject_ids:

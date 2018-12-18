@@ -86,16 +86,11 @@ class BayesianModel():
         Returns:
 
         """
-        if self.regression:
-            if labels is not None:
-                logging.warning('Enforcing float labels for regression mode')
-                labels = tf.cast(labels, tf.float32)
-            response, loss = self.bayesian_regressor(features, labels, mode)
-        if not self.regression:
-            if labels is not None:
-                logging.warning('Enforcing int labels for classification mode')
-                labels = tf.cast(labels, tf.int64)
-            response, loss = self.bayesian_classifier(features, labels, mode)
+        if labels is not None:
+            logging.warning('Enforcing float labels for regression mode')
+            labels = tf.cast(labels, tf.float32)
+        
+        response, loss = self.bayesian_regressor(features, labels, mode)
         
         if mode == tf.estimator.ModeKeys.PREDICT:
             with tf.variable_scope('predict'):
@@ -108,6 +103,7 @@ class BayesianModel():
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
+
                 optimizer = self.optimizer(learning_rate=self.learning_rate)  # TODO adaptive learning rate
 
                 # important to explicitly use within update_ops for batch norm to work
@@ -123,7 +119,6 @@ class BayesianModel():
 
         else:  # must be EVAL mode
             with tf.variable_scope('eval'):
-
                 # Add evaluation metrics (for EVAL mode)
                 eval_metric_ops = get_eval_metric_ops(self, labels, response)
                 return tf.estimator.EstimatorSpec(
@@ -157,9 +152,16 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             return response, None  # no loss, as labels not known (in general)
 
-        else:  # Calculate Loss for TRAIN and EVAL modes)
-            labels = tf.stop_gradient(labels)  # don't find the gradient of the labels (e.g. adversarial)
+        if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for EVAL with binomial
+            scalar_predictions = get_scalar_prediction(predictions)
+            loss = binomial_loss(labels, scalar_predictions)
+            mean_loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(mean_loss)
+            return response, mean_loss
 
+        else:  # Calculate Loss for TRAIN with softmax (proxy of binomial)
+              # don't find the gradient of the labels (e.g. adversarial)
+            labels = tf.stop_gradient(labels)
 
             # this works
             # mean_loss = tf.losses.mean_squared_error(labels, predictions)
@@ -175,11 +177,15 @@ class BayesianModel():
             # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
 
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
+            # label_print = tf.print('labels', labels)
+            # with tf.control_dependencies([label_print]):
             onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
-            # print_op = tf.print('onehot_labels', onehot_labels)
+            print_op = tf.print('onehot_labels', onehot_labels)
             # with tf.control_dependencies([print_op]):
             loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-            mean_loss = tf.reduce_mean(loss) + tf.losses.get_regularization_loss()
+            tf.summary.histogram('loss', loss)
+            mean_loss = tf.reduce_mean(loss) # consider +tf.losses.get_regularization_loss()
+            tf.losses.add_loss(mean_loss)
 
             # Calculate loss using mean squared error - untested
             # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
@@ -187,8 +193,7 @@ class BayesianModel():
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
     
-            tf.losses.add_loss(mean_loss)
-            tf.summary.histogram('total_loss', mean_loss)
+
 
             return response, mean_loss
 
@@ -256,6 +261,7 @@ def input_to_dense(features, mode, model):
     """
     input_layer = features["x"]
     tf.summary.image('model_input', input_layer, 1)
+    assert input_layer.shape[3] == 1  # should be greyscale, for later science
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
@@ -410,6 +416,9 @@ def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
     return logits, response
 
 
+def get_scalar_prediction(prediction):
+    return tf.nn.softmax(prediction)[:, 1]
+
 
 def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
@@ -432,13 +441,12 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
     # scalar_prediction = prediction
     prediction = linear  # now two units, as logits
-    scalar_prediction =  tf.nn.softmax(prediction)[:, 1]
 
+    scalar_prediction = get_scalar_prediction(prediction)  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
     tf.summary.histogram('prediction', scalar_prediction)
     tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
-
     response = {
-        "prediction": scalar_prediction,  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
+        "prediction": scalar_prediction, 
     }
     if labels is not None:
         tf.summary.histogram('internal_labels', labels)
@@ -446,6 +454,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
 
+    # no softmax yet
     return prediction, response
 
 
@@ -489,7 +498,7 @@ def get_eval_metric_ops(self, labels, predictions):
         assert predictions['prediction'].dtype == tf.float32
         return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
     else:
-        tf.summary.histogram('Probabilities', predictions['probabilities'])
+        tf.summary.histogram('Predictions', predictions['prediction'])
         tf.summary.histogram('Classes', predictions['classes'])
 
         # validation loss is added behind-the-scenes by TensorFlow
@@ -507,10 +516,10 @@ def get_eval_metric_ops(self, labels, predictions):
             'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
             'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes']),
             'sanity/predictions_below_5%': tf.metrics.percentage_below(
-                values=predictions['probabilities'][:, 0],
+                values=predictions['prediction'][:, 0],
                 threshold=0.05),
             'sanity/predictions_above_95%': tf.metrics.percentage_below(
-                values=1 - predictions['probabilities'][:, 0],
+                values=1 - predictions['prediction'][:, 0],
                 threshold=0.05)
         }
 

@@ -10,6 +10,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import git
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
@@ -19,26 +20,37 @@ from zoobot.tests.active_learning import active_learning_test
 
 
 class ActiveConfig():
+    """
+    Define and run active learning using a tensorflow estimator on pre-made shards
+    (see make_shards.py for shard creation)
+    """
+
 
     def __init__(
         self,
         shard_config,
         run_dir,
-        iterations=7, 
-        subjects_per_iter=256,
-        shards_per_iter=4,
-        warm_start=False,  # warning
-        restart_each_iter=True):  # warning
-
+        iterations, 
+        shards_per_iter,  # 4 mins per shard of 4096 images
+        subjects_per_iter,
+        warm_start=False):
+        """[summary]
+        
+        Args:
+            shard_config (ShardConfig): metadata of shards, e.g. location on disk, image size, etc.
+            run_dir (str): path to save run outputs e.g. trained models, new shards
+            iterations (int): how many iterations to train the model (via train_callable)
+            shards_per_iter (int): how many shards to find acquisition values for
+            subjects_per_iter (int): how many subjects to acquire per training iteration
+        """
         self.shards = shard_config
         self.run_dir = run_dir
 
-        self.iterations = iterations
+        self.iterations = iterations  
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
 
         self.warm_start = warm_start
-        self.restart_each_iter = restart_each_iter
 
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
         self.estimator_dir = os.path.join(self.run_dir, 'estimator')
@@ -52,8 +64,9 @@ class ActiveConfig():
 
 
     def prepare_run_folders(self):
-        # new predictors (apart from initial disk load) for now
-
+        """
+        TODO
+        """
         # order is important due to rmtree
         directories = [self.run_dir, self.estimator_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
 
@@ -86,9 +99,19 @@ class ActiveConfig():
         return True
 
 
-    def run(self, catalog, train_callable, get_acquisition_func):
-        assert 'label' not in catalog.columns.values
-
+    def run(self, train_callable, get_acquisition_func):
+        """Main active learning training loop. 
+        Learn with train_callable
+        Calculate acquisition functions for each subject in the shards
+        Load .fits of top subjects and save to a new shard
+        Repeat for self.iterations
+        After each iteration, copy the model history to new directory and start again
+        Designed to work with tensorflow estimators
+        
+        Args:
+            train_callable (func): train a tf model. Arg: list of tfrecord locations
+            get_acquisition_func (func): Make callable for acq. func. Arg: trained & loaded tf model
+        """
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
@@ -113,7 +136,7 @@ class ActiveConfig():
             top_acquisition_ids = []
             while shards_used < self.shards_per_iter:
                 shard_loc = next(shard_locs)
-                logging.info('Using shard_loc {}, iteration {}'.format(shard_loc, iteration))
+                logging.info('Using shard_loc {}, iteration {}, max {}'.format(shard_loc, iteration, self.shards_per_iter))
                 active_learning.record_acquisitions_on_tfrecord(db, shard_loc, self.shards.initial_size, self.shards.channels, acquisition_func)
                 shards_used += 1
 
@@ -134,7 +157,7 @@ class ActiveConfig():
             with open(self.train_records_index_loc, 'w') as f:
                 json.dump(train_records, f)
 
-            if self.restart_each_iter:
+            if not self.warm_start:
                 # copy estimator directory to run_dir, and make a new empty estimator_dir
                 shutil.move(self.estimator_dir, os.path.join(self.run_dir, 'iteration_{}'.format(iteration)))
                 os.mkdir(self.estimator_dir)
@@ -142,17 +165,45 @@ class ActiveConfig():
             iteration += 1
 
 
+def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False):
+    """Use the shards described 
+    
+    Args:
+        shard_config_loc ([type]): path to shard config (json) describing existing shards to use
+        run_dir (str): output directory to save model and new shards
+        baseline (bool, optional): Defaults to False. If True, use random selection for acquisition.
+    
+    Returns:
+        None
+    """
 
+    if test:  # do a brief run only
+        iterations = 3
+        subjects_per_iter = 28
+        shards_per_iter = 1
+    else:
+        iterations = 4  # 1.5h per iteration
+        subjects_per_iter = 512
+        shards_per_iter = 3
 
-def execute_active_learning(shard_config_loc, run_dir, baseline=False):
     shard_config = make_shards.load_shard_config(shard_config_loc)
-    active_config = ActiveConfig(shard_config, run_dir)
+    # instructions for the run (except model)
+    active_config = ActiveConfig(
+        shard_config, 
+        run_dir,
+        iterations=iterations, 
+        subjects_per_iter=subjects_per_iter,
+        shards_per_iter=shards_per_iter
+    )  
     active_config.prepare_run_folders()
 
-    # define the estimator - load settings (rename 'setup' to 'settings'?)
-    run_config = default_estimator_params.get_run_config(active_config)
+    run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
+    if test:
+        run_config.epochs = 5  # minimal training, for speed
+
     def train_callable(train_records):
         run_config.train_config.tfrecord_loc = train_records
+        # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
 
     if baseline:
@@ -166,7 +217,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
         logging.warning('Using mock acquisition function, baseline test mode')
         get_acquisition_func = lambda predictor: mock_acquisition_func(predictor)  # random
     else:  # callable expecting predictor, returning a callable expecting matrix list
-        get_acquisition_func = lambda predictor: make_predictions.get_acquisition_func(predictor, n_samples=20)
+        get_acquisition_func = lambda predictor: make_predictions.get_acquisition_func(predictor, n_samples=20)  # predictor should be directory of saved_model.pb
 
     unlabelled_catalog = pd.read_csv(
         active_config.shards.unlabelled_catalog_loc, 
@@ -174,7 +225,6 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False):
     )
 
     active_config.run(
-        unlabelled_catalog, 
         train_callable,
         get_acquisition_func
     )
@@ -186,14 +236,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Execute active learning')
     parser.add_argument('--shard_config', dest='shard_config_loc', type=str,
-                    help='Directory into which to place shard directory')
+                    help='Details of shards to use')
     parser.add_argument('--run_dir', dest='run_dir', type=str,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+                    help='Path to save run outputs: models, new shards, log')
     parser.add_argument('--baseline', dest='baseline', type=bool, default=False,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+                    help='Use random subject selection only')
+    parser.add_argument('--test', dest='test', type=bool, default=False,
+                    help='Only do a minimal run to verify that everything works')
     args = parser.parse_args()
 
-    log_loc = '/home/ubuntu/execute_{}.log'.format(time.time())
+    log_loc = 'execute_{}.log'.format(time.time())
 
     logging.basicConfig(
         filename=log_loc,
@@ -202,11 +254,15 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    logging.warning('Saving logs to: ' + log_loc)
-
     execute_active_learning(
         shard_config_loc=args.shard_config_loc,
         run_dir=args.run_dir,  # warning, may overwrite if not careful
-        baseline=args.baseline
+        baseline=args.baseline,
+        test=args.test
     )
 
+    # finally, tidy up by moving the log into the run directory
+    # could not be create here because run directory did not exist at start of script
+    repo = git.Repo(search_parent_directories=True)
+    sha = repo.head.object.hexsha
+    shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))

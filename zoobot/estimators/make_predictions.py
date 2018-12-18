@@ -110,6 +110,12 @@ def predictive_binary_entropy(probabilities):
     return -1 * (mean_prob * np.log(mean_prob + ep) + (1 - mean_prob) * np.log(1 - mean_prob + ep))
 
 
+def mutual_information(probabilities):
+    predictive_entropy = binomial_entropy(np.mean(probabilities, axis=1))
+    expected_entropy = np.mean(binomial_entropy(probabilities), axis=1)
+    return predictive_entropy - expected_entropy
+
+
 def binomial_entropy(probabilities):
     return np.array(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)))
 
@@ -139,8 +145,8 @@ def get_acquisition_func(model, n_samples):
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        values_array = distribution_entropy(samples)  # calculate on ndarray for speed
-        return [float(values_array[n]) for n in range(len(values_array))]  # return a list
+        mutual_info = mutual_information(samples) # calculate on ndarray for speed
+        return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
     return acquisition_callable
 
 
