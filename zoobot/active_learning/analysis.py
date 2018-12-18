@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     if args.baseline_dir != '':
         baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)
-        show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
+        show_subjects_by_iteration(baseline_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
         baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')
