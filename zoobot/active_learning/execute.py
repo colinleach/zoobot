@@ -133,8 +133,6 @@ class ActiveConfig():
         if self.warm_start:
             shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
             subprocess.call(['cp', '-r', self.get_most_recent_iteration_loc(), self.estimator_dir])
-            # latest_model_dir = self.get_most_recent_model_loc()
-            # shutil.copytree(self.get_most_recent_iteration_loc(), self.estimator_dir)  # put model from latest complete iteration in estimator dir
 
         iteration = 0
         while iteration < self.iterations:
@@ -219,15 +217,6 @@ class ActiveConfig():
         logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
         return latest_estimator_dir
 
-    # def get_most_recent_model_loc(self):
-
-    #     # get the latest checkpoint in that estimator dir
-
-    #     latest_model_loc = active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
-    #     logging.info('Found latest model: {}'.format(latest_model_loc))
-    #     return latest_model_loc
-
-
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):
     """
@@ -250,7 +239,6 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     else:
         iterations = 4  # 1.5h per iteration
         subjects_per_iter = 512
-
         shards_per_iter = 3
 
     shard_config = make_shards.load_shard_config(shard_config_loc)
