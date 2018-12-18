@@ -92,6 +92,7 @@ def show_example(example, size, channels, ax):  # modifies ax inplace
     else:
         ax.imshow(im.astype(np.uint8))
 
+    ax.axis('off')
     label = example['label']
     if isinstance(label, int):
         name_mapping = {
