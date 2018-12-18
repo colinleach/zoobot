@@ -182,6 +182,7 @@ class ActiveConfig():
 
 
     def get_train_records(self):
+        logging.info('Attempting to load {}'.format(self.train_records_index_loc))
         with open(self.train_records_index_loc, 'w') as f:  # must exist, see __init__
             train_records = json.load(f)  # restore from disk all previous train records
         logging.info('Loaded train records: {}'.format(train_records))
