@@ -135,6 +135,7 @@ class ActiveConfig():
             subprocess.call(['cp', self.get_most_recent_iteration_loc(), self.estimator_dir])
             # latest_model_dir = self.get_most_recent_model_loc()
             # shutil.copytree(self.get_most_recent_iteration_loc(), self.estimator_dir)  # put model from latest complete iteration in estimator dir
+            exit(0)
 
         iteration = 0
         while iteration < self.iterations:
