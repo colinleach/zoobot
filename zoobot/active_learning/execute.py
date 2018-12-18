@@ -70,24 +70,35 @@ class ActiveConfig():
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-
+        self.train_records = [self.shards.train_tfrecord_loc]  # will append new shards
+        self.write_train_records_index()  # make initial index write, with only the first record
 
 
     def prepare_run_folders(self):
         """
-        Create the folders needed to run active learning. If any already exist, wipe them.
+        Create the folders needed to run active learning. 
+        If self.warm_start is False, if any already exist, then wipe them.
         """
         # order is important due to rmtree
         directories = [self.run_dir, self.estimator_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
 
-        for directory in directories:
-            if os.path.isdir(directory):
-                shutil.rmtree(directory)
-        for directory in directories:
-            os.mkdir(directory)
+        # if warm start, check all directories exist and, if not, make them.
+        if self.warm_start:
+            for directory in directories:
+                if not os.path.isdir(directory):
+                    os.mkdir(directory)
 
+        # if not warm start, delete root and remake all
+        if not self.warm_start:
+            for directory in directories:
+                if os.path.isdir(directory):
+                    shutil.rmtree(directory)
+            for directory in directories:
+                os.mkdir(directory)
+
+        # copy initial shard db to run directory, to modify, if not already copied (warm start)
         if not os.path.isfile(self.db_loc):
-            shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
+            shutil.copyfile(self.shards.db_loc, self.db_loc)  
 
 
     def ready(self):
@@ -115,14 +126,16 @@ class ActiveConfig():
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
-        train_records = [self.shards.train_tfrecord_loc]  # will append new train records (save to db?)
+        with open(self.train_records_index_loc, 'w') as f:  # must exist, see __init__
+            self.train_records = json.load(f)  # restore from disk all previous train records
+
         iteration = 0
         while iteration < self.iterations:
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration))
         
             # callable should expect list of tfrecord files to train on
-            train_callable(train_records)  # could be docker container to run, save model
+            train_callable(self.train_records)  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
             predictor_loc = active_learning.get_latest_checkpoint_dir(self.estimator_dir)
@@ -152,10 +165,7 @@ class ActiveConfig():
             # Can do this when switching to production, not necessary to demonstrate the system
             # fits_loc_s3 column?
             active_learning.add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, self.shards.initial_size)
-            train_records.append(new_train_tfrecord)
-
-            with open(self.train_records_index_loc, 'w') as f:
-                json.dump(train_records, f)
+            self.add_train_record(new_train_tfrecord)
 
             if not self.warm_start:
                 # copy estimator directory to run_dir, and make a new empty estimator_dir
@@ -165,8 +175,19 @@ class ActiveConfig():
 
             iteration += 1
 
+    def add_train_record(self, new_record_loc):
+        # must always be kept in sync
+        self.train_records.append(new_record_loc)
+        self.write_train_records_index()
 
-def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False):
+
+    def write_train_records_index(self):
+        with open(self.train_records_index_loc, 'w') as f:
+            json.dump(self.train_records, f)
+
+
+
+def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):
     """
     Train a model using active learning, on the data (shards) described in shard_config_loc
     Run parameters (except shards) are defined here and in default_estimator_params.get_run_config
@@ -175,6 +196,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         shard_config_loc ([type]): path to shard config (json) describing existing shards to use
         run_dir (str): output directory to save model and new shards
         baseline (bool, optional): Defaults to False. If True, use random selection for acquisition.
+        warm_start(bool, optional): Defaults to False. If True, preserve model between iterations
     
     Returns:
         None
@@ -196,7 +218,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         run_dir,
         iterations=iterations, 
         subjects_per_iter=subjects_per_iter,
-        shards_per_iter=shards_per_iter
+        shards_per_iter=shards_per_iter,
+        warm_start=warm_start
     )  
     active_config.prepare_run_folders()
 
@@ -246,6 +269,8 @@ if __name__ == '__main__':
                     help='Use random subject selection only')
     parser.add_argument('--test', dest='test', type=bool, default=False,
                     help='Only do a minimal run to verify that everything works')
+    parser.add_argument('--warm-start', dest='warm_start', type=bool, default=False,
+                    help='After each iteration, continue training the same model')
     args = parser.parse_args()
 
     log_loc = 'execute_{}.log'.format(time.time())
@@ -261,7 +286,8 @@ if __name__ == '__main__':
         shard_config_loc=args.shard_config_loc,
         run_dir=args.run_dir,  # warning, may overwrite if not careful
         baseline=args.baseline,
-        test=args.test
+        test=args.test,
+        warm_start=args.warm_start
     )
 
     # finally, tidy up by moving the log into the run directory

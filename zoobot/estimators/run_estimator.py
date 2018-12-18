@@ -10,36 +10,6 @@ import tensorflow as tf
 from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
 
-
-def predict_input_func():
-    # with tf.Session() as sess:
-    config = input_utils.InputConfig(
-        name='predict',
-        tfrecord_loc='/data/galaxy_zoo/decals/tfrecords/panoptes_featured_s128_lfloat_test.tfrecord',
-        label_col='label',
-        stratify=False,
-        shuffle=False,
-        repeat=False,
-        stratify_probs=None,
-        regression=True,
-        geometric_augmentation=True,
-        photographic_augmentation=True,
-        max_zoom=1.2,
-        fill_mode='wrap',
-        batch_size=128,
-        initial_size=128,
-        final_size=64,
-        channels=3,
-    )
-    batch_images, batch_labels = input_utils.load_batches(config)
-    # not going through servinginputreciever, so need to preprocess 'manually'
-    preprocessed_batch_images = input_utils.preprocess_batch(batch_images, config)
-    return preprocessed_batch_images, batch_labels
-    # features, labels = sess.run([preprocessed_batch_images, batch_labels])
-    # return features, labels
-
-
-
 class RunEstimatorConfig():
 
     def __init__(
