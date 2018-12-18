@@ -69,9 +69,10 @@ class ActiveConfig():
         self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
+
+        # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-        self.train_records = [self.shards.train_tfrecord_loc]  # will append new shards
-        self.write_train_records_index()  # make initial index write, with only the first record
+        self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
     def prepare_run_folders(self):
@@ -112,6 +113,7 @@ class ActiveConfig():
 
     def run(self, train_callable, get_acquisition_func):
         """Main active learning training loop. 
+        
         Learn with train_callable
         Calculate acquisition functions for each subject in the shards
         Load .fits of top subjects and save to a new shard
@@ -126,8 +128,10 @@ class ActiveConfig():
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
-        with open(self.train_records_index_loc, 'w') as f:  # must exist, see __init__
-            self.train_records = json.load(f)  # restore from disk all previous train records
+        if self.warm_start:
+            shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
+            latest_model_dir = self.get_most_recent_model_loc()
+            shutil.copy(latest_model_dir, self.estimator_dir)  # put model from latest complete iteration in estimator dir
 
         iteration = 0
         while iteration < self.iterations:
@@ -135,7 +139,7 @@ class ActiveConfig():
             logging.info('Training iteration {}'.format(iteration))
         
             # callable should expect list of tfrecord files to train on
-            train_callable(self.train_records)  # could be docker container to run, save model
+            train_callable(self.get_train_records())  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
             predictor_loc = active_learning.get_latest_checkpoint_dir(self.estimator_dir)
@@ -175,15 +179,37 @@ class ActiveConfig():
 
             iteration += 1
 
+
+    def get_train_records(self):
+        with open(self.train_records_index_loc, 'w') as f:  # must exist, see __init__
+            return json.load(f)  # restore from disk all previous train records
+
+
     def add_train_record(self, new_record_loc):
         # must always be kept in sync
-        self.train_records.append(new_record_loc)
-        self.write_train_records_index()
+        current_records = self.get_train_records()
+        current_records.append(new_record_loc)
+        self.write_train_records_index(current_records)
 
 
-    def write_train_records_index(self):
+    def write_train_records_index(self, train_records):
         with open(self.train_records_index_loc, 'w') as f:
-            json.dump(self.train_records, f)
+            json.dump(train_records, f)
+
+
+    def get_most_recent_model_loc(self):
+        # latest estimator dir will be iteration_n for max(n)
+        # anything in estimator_dir itself is not restored
+        # warning - strongly coupled to self.run() last paragraphs
+        iteration = 0
+        while True:
+            latest_estimator_dir = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
+            if not os.path.isdir(latest_estimator_dir):
+                break
+            else:
+                iteration += 1
+        # get the latest checkpoint in that estimator dir
+        return active_learning.get_latest_checkpoint_dir(self.run_dir)
 
 
 
@@ -226,6 +252,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
     if test:
         run_config.epochs = 5  # minimal training, for speed
+    if self.warm_start:
+        run_config.epochs = 75  # for retraining
 
     def train_callable(train_records):
         run_config.train_config.tfrecord_loc = train_records
