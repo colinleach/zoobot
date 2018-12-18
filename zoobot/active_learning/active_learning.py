@@ -328,7 +328,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
 def get_latest_checkpoint_dir(base_dir):
         saved_models = os.listdir(base_dir)  # subfolders
         saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
-        return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
+        return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
 def add_labels_to_db(subject_ids, labels, db):
