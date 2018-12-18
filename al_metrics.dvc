@@ -5,4 +5,8 @@ deps:
   path: data/shards/si128_sf64_ss4096
 - md5: 0307358a2612937e46148845a64ee35f.dir
   path: data/runs/al_mutual_v2
-md5: d9883f0a4d353d9ebcc7eb8a03a692b3
+md5: ae6eea231e5183fcaa43af645b193e97
+outs:
+- cache: true
+  md5: 9a3aedf8daa1a48af57ad5487ed798f5.dir
+  path: results/latest_metrics
