@@ -184,7 +184,7 @@ class BayesianModel():
             # with tf.control_dependencies([print_op]):
             loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
             tf.summary.histogram('loss', loss)
-            mean_loss = tf.reduce_mean(loss)
+            mean_loss = tf.reduce_mean(loss) # consider +tf.losses.get_regularization_loss()
             tf.losses.add_loss(mean_loss)
 
             # Calculate loss using mean squared error - untested
