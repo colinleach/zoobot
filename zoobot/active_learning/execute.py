@@ -203,6 +203,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
 
     def train_callable(train_records):
         run_config.train_config.tfrecord_loc = train_records
+        # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
 
     if baseline:

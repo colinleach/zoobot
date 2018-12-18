@@ -197,10 +197,13 @@ def save_metrics(results, subjects, labels, save_dir):
     binomial_metrics.show_acquisition_vs_label(save_dir)
 
     save_acquisition_examples(subjects, binomial_metrics.mutual_info, 'mutual_info')
+
+    # TODO check entropies against radial extent of galaxy
+    
+    # TODO add metrics for each active learning run, cross-matching to catalog for NSA params via id
     
     # the following are partially implemented - I should consider if they're useful
 
-    
     # plt.figure()
     # g = sns.jointplot(predictive_entropy, bin_loss, kind='reg')
     # plt.xlabel('Predictive Entropy')
