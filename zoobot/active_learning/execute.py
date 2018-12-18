@@ -244,12 +244,13 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         None
     """
     if test:  # do a brief run only
-        iterations = 3
+        iterations = 2
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
         iterations = 4  # 1.5h per iteration
         subjects_per_iter = 512
+
         shards_per_iter = 3
 
     shard_config = make_shards.load_shard_config(shard_config_loc)
@@ -261,13 +262,14 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         subjects_per_iter=subjects_per_iter,
         shards_per_iter=shards_per_iter,
         warm_start=warm_start
-    )  
+    )
     active_config.prepare_run_folders()
 
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
 
     if active_config.warm_start:
         run_config.epochs = 75  # for retraining
+        active_config.shards_per_iter = 1  # for speed
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
 
