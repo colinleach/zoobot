@@ -227,7 +227,7 @@ if __name__ == '__main__':
     n_subjects = 15
     size = 128
     channels = 3
-    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.active_dir, 'subject_history.png'))
+    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history.png'))
 
 
     active_log_loc = find_log(args.active_dir)
