@@ -132,7 +132,7 @@ class ActiveConfig():
 
         if self.warm_start:
             shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
-            subprocess.call(['mv {} {}'.format(self.get_most_recent_iteration_loc(), self.estimator_dir)])
+            subprocess.call(['mv', self.get_most_recent_iteration_loc(), self.estimator_dir])
             # latest_model_dir = self.get_most_recent_model_loc()
             # shutil.copytree(self.get_most_recent_iteration_loc(), self.estimator_dir)  # put model from latest complete iteration in estimator dir
 
