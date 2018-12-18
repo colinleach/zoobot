@@ -166,7 +166,7 @@ class ActiveConfig():
 
             active_learning.add_labels_to_db(top_acquisition_ids, labels, db)
 
-            new_train_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard_{}.tfrecord'.format(iteration))
+            new_train_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard_{}.tfrecord'.format(time.time()))
             logging.info('Saving top acquisition subjects to {}, labels: {}...'.format(new_train_tfrecord, labels[:5]))
             # TODO download the top acquisitions from S3 if not on local system, for EC2
             # Can do this when switching to production, not necessary to demonstrate the system
