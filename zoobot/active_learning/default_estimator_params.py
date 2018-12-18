@@ -27,7 +27,7 @@ def get_run_config(active_config):
         max_sadness=5.,  # to tweak
         log_dir=active_config.estimator_dir,
         save_freq=10,
-        warm_start=active_config.warm_start  # Cannot do this, move to new directory 
+        warm_start=active_config.warm_start
     )
 
     train_config = input_utils.InputConfig(
