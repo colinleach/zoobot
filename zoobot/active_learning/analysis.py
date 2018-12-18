@@ -25,9 +25,8 @@ def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, s
         tfrecord_locs = json.load(f)
         assert isinstance(tfrecord_locs, list)
     
-    nrows = len(tfrecord_locs)  # 3
-    ncols = n_subjects  # 15
-    print(nrows, ncols)
+    nrows = len(tfrecord_locs)
+    ncols = n_subjects
     scale = 2.
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
 
@@ -37,15 +36,8 @@ def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, s
             read_tfrecord.matrix_label_feature_spec(size, channels),
             n_examples=n_subjects)
 
-        # subjects, _, _ = input_utils.predict_input_func(tfrecord_loc, n_subjects, size, size, mode='id_str')
-        # read_tfrecord.show_examples(subjects, size, channels)n_subjects
         for subject_n, subject in enumerate(subjects):
             read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
-
-    # for row in axes:
-        # for ax in row:
-            # ax.plot(np.linspace(0., 1), np.linspace(0., 1.))
-            # ax.imshow((np.random.rand(128, 128, 3) * 256).astype(np.uint8))
 
 
     fig.tight_layout()
@@ -162,8 +154,8 @@ def compare_metrics(all_metrics, save_loc, title=None):
     best_rows = []
     for df in all_metrics:
         df = df.reset_index()
-        best_acc_idx = df['smoothed_loss'].idxmax()
-        best_row = df.iloc[best_acc_idx]
+        best_loss_idx = df['smoothed_loss'].idxmin()
+        best_row = df.iloc[best_loss_idx]
         best_rows.append(best_row)
 
     metrics = pd.DataFrame(best_rows)
