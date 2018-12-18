@@ -209,7 +209,8 @@ class ActiveConfig():
             else:
                 iteration += 1
         # get the latest checkpoint in that estimator dir
-        return active_learning.get_latest_checkpoint_dir(self.run_dir)
+        logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
+        return active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
 
 
 
