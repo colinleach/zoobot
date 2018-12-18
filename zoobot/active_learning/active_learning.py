@@ -155,16 +155,13 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
         channels (int): channels of each image matrix to load from tfrecord
         acquisition_func (callable): expecting list of image matrices, returning list of scalars
     """
-    # subjects = read_tfrecord.load_examples_from_tfrecord(
-    #     [tfrecord_loc],
-    #     read_tfrecord.matrix_id_feature_spec(size, channels)
-    # )
     logging.warning('Assuming 4096 galaxies per chunk')
     shard_size = 4096 # TODO hacky
     final_size = 64 # TODO hacky
     images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=shard_size, initial_size=size, final_size=final_size, mode='id_str')
     with tf.Session() as sess:
         images, id_str_bytes = sess.run([images, id_str])
+    # tfrecord will have encoded to bytes, need to decode
     subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]
     
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
@@ -173,7 +170,6 @@ def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisitio
     acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
 
     for subject, acquisition in zip(subjects, acquisitions):
-        # subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
         save_acquisition_to_db(subject['id_str'], acquisition, db)
 
 
@@ -337,13 +333,6 @@ def get_latest_checkpoint_dir(base_dir):
 
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
-
-    # cursor.execute(
-    #     '''
-    #     SELECT * FROM catalog
-    #     LIMIT 50
-    #     '''
-    # )
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]

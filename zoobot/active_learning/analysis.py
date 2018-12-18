@@ -68,10 +68,15 @@ def is_iteration_split(line):
 
 
 def parse_eval_log_entry(line):
-    """[summary]
-    
+    """
+    Extract step and metrics from eval log entries
+    e.g. 'INFO:tensorflow:Saving dict for global step 1710: global_step = 1710, loss = 25.026402'
+
     Args:
-        line (str): [description]
+        line (str): log entry evaluating model, with current global step and metric(s) (see above)
+
+    Return:
+        (dict): of form {'step': global step, 'some_metric': metric value, etc.}
     """
     # strip everything left of the colon, and interpret the rest as a literal expression
     colon_index = line.find('global step')
@@ -91,17 +96,26 @@ def parse_eval_log_entry(line):
 
 
 def is_eval_log_entry(line):
+    """Decide if line is a log entry evaluating the model, or not
+    e.g. 'INFO:tensorflow:Saving dict for global step 1710: global_step = 1710, loss = 25.026402'
+    
+    Args:
+        line (str): log entry which may be evaluating model (see above), or may not
+    
+    Returns:
+        (bool): True if log entry is evaluating model, otherwise False
+    """
     return 'Saving dict for global step' in line
 
 
-def smooth_metrics(metrics_list):
-    """[summary]
+def smooth_loss(metrics_list):
+    """Smooth out the loss of a model to remove stochastic noise and find typical performance.
     
     Args:
-        metrics_list (list): of df, where each df is the metrics for an iteration (step=row)
+        metrics_list (list): of df, where each df is the metrics for an iteration (step = df row)
     
     Returns:
-        [type]: [description]
+        (list): as metrics_list, but where each df has 'smooth_loss' column added with smoothed loss
     """
 
     smoothed_list = []
@@ -111,14 +125,20 @@ def smooth_metrics(metrics_list):
             df['loss'],
             df['step'],
             is_sorted=True, 
-            frac=0.25)
+            frac=0.25)  # controls how much smoothing
         df['smoothed_loss'] = smoothed_metrics[:, 1]
         smoothed_list.append(df)
     return smoothed_list
 
 
 def plot_log_metrics(metrics_list, save_loc, title=None):
-
+    """Display the loss (smoothed and unsmoothed) of a model over many active learning iterations
+    
+    Args:
+        metrics_list (list): of df, where each df is the metrics for an iteration (step = df row)
+        save_loc (str): path to save figure
+        title (str, optional): Defaults to None. Title for figure (ideally descriptive)
+    """
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 6), sharex=True, sharey=True)
     for df in metrics_list:
         iteration = df['iteration'].iloc[0]
@@ -184,7 +204,7 @@ def split_by_iter(df):
 def get_smooth_metrics_from_log(log_loc, name=None):
         metrics = get_metrics_from_log(log_loc)
         metric_iters = split_by_iter(metrics)
-        metric_smooth = smooth_metrics(metric_iters)
+        metric_smooth = smooth_loss(metric_iters)
         if name is not None:
             for df in metric_smooth:
                 df['name'] = name  # record baseline vs active, for example
@@ -214,14 +234,12 @@ if __name__ == '__main__':
     title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)
     name = '{}init_{}per'.format(initial, per_iter)
 
-    # TODO refactor?
-    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-
+    # will be re-used for subject history of baseline, if provided
     n_subjects = 15
     size = 128
     channels = 3
+    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
     show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
-
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')

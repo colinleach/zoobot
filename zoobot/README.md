@@ -1,11 +1,15 @@
 # How to Run on EC2
 
+Follow these instructions to test a model on EC2 using a simple train/test split.
+
+The setup instructions are largely automated for active learning in `ec2_environment.sh`.
+
 ## Setup
 
-<!-- Make sure aws cli is installed: -->
-<!-- `pip install aws` -->
-<!-- `pip install awscli` -->
-<!-- `aws configure` (add ID, secret key, region=us-east-1, format=json) -->
+Make sure aws cli is installed:
+`pip install aws` 
+`pip install awscli` 
+`aws configure` (add ID, secret key, region=us-east-1, format=json)
 
 Make sure the instance has an IAM role with S3 read/write permissions attached.
 This can be done post-launch.
@@ -87,50 +91,3 @@ Run the regressor:
 `python zoobot/run_zoobot_on_panoptes.py --ec2=True`
 
 You can either make the shards directly, or download them from S3 (faster):
-
-
-# Active Learning
-
-## Get Fits (for new shards)
-TODO: Dynamically, for when a minority become labelled, and then delete. Free!
-`aws s3 sync s3://galaxy-zoo/decals/fits_native $root/fits_native`  For now only the 7k we need. About 6GB.
-
-
-## Get Shards
-
-### Option A: Make Shards Directly 
-
-Get catalog with latest labels
-
-`aws s3 cp s3://galaxy-zoo/decals/panoptes_predictions.csv $root/panoptes_predictions_original.csv`
-
-Update catalog to point fits_loc at local fits_native folder
-
-`python $root/zoobot/zoobot/update_catalog_fits_loc.py`
-
-Create shards using make_shards.py ShardConfig defaults and current catalog
-
-`python $root/zoobot/zoobot/active_learning/make_shards.py --base_dir=$root --catalog=$root/panoptes_predictions.csv`
-
-Where the first arg is the directory into which to place the shard directory, and the second arg is the location of the catalog to use.
-
-Update `shard_dir` shell variable
-
-`shard_dir={path FROM ROOT to newly_created_shard_dir, automatically named based on ShardConfig}`
-
-Re-upload to S3
-
-`aws s3 sync $root/$shard_dir s3://galaxy-zoo/active-learning/$shard_dir`
-
-### Option B: Download from S3
-`shard_dir={desired_shard_dir}`, matching an S3 shard dir e.g. `shards_si64_sf28_l0.4`
-`aws s3 sync s3://galaxy-zoo/active-learning/$shard_dir $root/$shard_dir`
-
-
-## Run Active Learning
-
-Once shards are ready:
-
-`run_dir = {run dir relative to root}`
-
-`python $root/zoobot/zoobot/active_learning/execute.py --shard_config=$root/$shard_dir/shard_config.json --run_dir=$root/$run_dir`

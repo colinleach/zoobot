@@ -84,22 +84,23 @@ def show_examples(examples, size, channels):
     return fig, axes
 
 
-def show_example(example, size, channels, ax):  # modifies ax inplace
+def show_example(example, size, channels, ax, show_label=False):  # modifies ax inplace
     # saved as floats but truly int, show as int
     im = example['matrix'].reshape(size, size, channels)
     if im.max() < 1.:
         ax.imshow(im)
     else:
         ax.imshow(im.astype(np.uint8))
-
     ax.axis('off')
-    label = example['label']
-    if isinstance(label, int):
-        name_mapping = {
-            0: 'Feat.',
-            1: 'Smooth'
-        }
-        label_str = name_mapping[label]
-    else:
-        label_str = '{:.2}'.format(label)
-    # ax.text(60, 110, label_str, fontsize=16, color='r')
+
+    if show_label:
+        label = example['label']
+        if isinstance(label, int):
+            name_mapping = {
+                0: 'Feat.',
+                1: 'Smooth'
+            }
+            label_str = name_mapping[label]
+        else:
+            label_str = '{:.2}'.format(label)
+        ax.text(60, 110, label_str, fontsize=16, color='r')

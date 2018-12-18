@@ -34,7 +34,17 @@ class ActiveConfig():
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
         warm_start=False):
-        """[summary]
+        """
+        Controller to define and run active learning on pre-made shards
+
+        To use:
+        active_config.prepare_run_folders()
+        assert active_config.ready()
+        active_config.run(
+            train_callable,
+            get_acquisition_func
+        )
+        For the form of train_callable and get_acquisition func, see active_config.run
         
         Args:
             shard_config (ShardConfig): metadata of shards, e.g. location on disk, image size, etc.
@@ -65,24 +75,16 @@ class ActiveConfig():
 
     def prepare_run_folders(self):
         """
-        TODO
+        Create the folders needed to run active learning. If any already exist, wipe them.
         """
         # order is important due to rmtree
         directories = [self.run_dir, self.estimator_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
 
-        # if warm start, check all exist and, if not, make.
-        if self.warm_start:
-            for directory in directories:
-                if not os.path.isdir(directory):
-                    os.mkdir(directory)
-
-        # if not warm start, delete root and remake all
-        if not self.warm_start:
-            for directory in directories:
-                if os.path.isdir(directory):
-                    shutil.rmtree(directory)
-            for directory in directories:
-                os.mkdir(directory)
+        for directory in directories:
+            if os.path.isdir(directory):
+                shutil.rmtree(directory)
+        for directory in directories:
+            os.mkdir(directory)
 
         if not os.path.isfile(self.db_loc):
             shutil.copyfile(self.shards.db_loc, self.db_loc)  # copy initial shard db to here, to modify
@@ -90,12 +92,10 @@ class ActiveConfig():
 
     def ready(self):
         assert self.shards.ready()
-        # TODO more validation checks for the run
         assert os.path.isdir(self.estimator_dir)
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
-
         return True
 
 
@@ -159,6 +159,7 @@ class ActiveConfig():
 
             if not self.warm_start:
                 # copy estimator directory to run_dir, and make a new empty estimator_dir
+                # otherwise, estimator will reload from the end of the previous iteration
                 shutil.move(self.estimator_dir, os.path.join(self.run_dir, 'iteration_{}'.format(iteration)))
                 os.mkdir(self.estimator_dir)
 
@@ -166,8 +167,10 @@ class ActiveConfig():
 
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False):
-    """Use the shards described 
-    
+    """
+    Train a model using active learning, on the data (shards) described in shard_config_loc
+    Run parameters (except shards) are defined here and in default_estimator_params.get_run_config
+
     Args:
         shard_config_loc ([type]): path to shard config (json) describing existing shards to use
         run_dir (str): output directory to save model and new shards
