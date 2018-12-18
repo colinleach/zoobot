@@ -214,12 +214,13 @@ if __name__ == '__main__':
     title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)
     name = '{}init_{}per'.format(initial, per_iter)
 
+    # TODO refactor?
     active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
 
     n_subjects = 15
     size = 128
     channels = 3
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history.png'))
+    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
 
 
     active_log_loc = find_log(args.active_dir)
@@ -229,6 +230,8 @@ if __name__ == '__main__':
     plot_log_metrics(active_smooth_metrics, active_save_loc, title=title)
 
     if args.baseline_dir != '':
+        baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)
+        show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
         baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')
