@@ -250,10 +250,11 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     active_config.prepare_run_folders()
 
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
-    if test:
-        run_config.epochs = 5  # minimal training, for speed
-    if self.warm_start:
+
+    if active_config.warm_start:
         run_config.epochs = 75  # for retraining
+    if test: # overrides warm_start
+        run_config.epochs = 5  # minimal training, for speed
 
     def train_callable(train_records):
         run_config.train_config.tfrecord_loc = train_records
