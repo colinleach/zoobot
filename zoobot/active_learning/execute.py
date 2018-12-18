@@ -72,7 +72,8 @@ class ActiveConfig():
 
         # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-        self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
+        if not self.warm_start or not os.path.isfile(self.train_records_index_loc):
+            self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
     def prepare_run_folders(self):
@@ -234,7 +235,6 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     Returns:
         None
     """
-
     if test:  # do a brief run only
         iterations = 3
         subjects_per_iter = 28
