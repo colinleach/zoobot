@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -86,7 +87,10 @@ def show_examples(examples, size, channels):
 def show_example(example, size, channels, ax):  # modifies ax inplace
     # saved as floats but truly int, show as int
     im = example['matrix'].reshape(size, size, channels)
-    ax.imshow(im)
+    if im.max() > 1.:
+        ax.imshow(im)
+    else:
+        ax.imshow(im.astype(np.uint8))
 
     label = example['label']
     if isinstance(label, int):
