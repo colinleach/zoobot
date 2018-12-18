@@ -182,8 +182,10 @@ class ActiveConfig():
 
     def get_train_records(self):
         with open(self.train_records_index_loc, 'w') as f:  # must exist, see __init__
-            return json.load(f)  # restore from disk all previous train records
-
+            train_records = json.load(f)  # restore from disk all previous train records
+        logging.info('Loaded train records: {}'.format(train_records))
+        assert isinstance(train_records, list)
+        return train_records
 
     def add_train_record(self, new_record_loc):
         # must always be kept in sync
@@ -212,7 +214,9 @@ class ActiveConfig():
                 iteration += 1
         # get the latest checkpoint in that estimator dir
         logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
-        return active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
+        latest_model_loc = active_learning.get_latest_checkpoint_dir(latest_estimator_dir)
+        logging.info('Found latest model: {}'.format(latest_model_loc))
+        return latest_model_loc
 
 
 
