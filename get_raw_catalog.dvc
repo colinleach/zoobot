@@ -1,7 +1,0 @@
-cmd: ' cp /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv
-  data/2018-11-05_panoptes_predictions_with_catalog.csv'
-md5: beca4fddffedf3ebe88a297a3093962e
-outs:
-- cache: true
-  md5: d027fda3489d33ea16baa073ec438384
-  path: data/2018-11-05_panoptes_predictions_with_catalog.csv

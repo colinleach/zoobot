@@ -1,11 +1,16 @@
-cmd: ' python zoobot/active_learning/create_panoptes_only_files.py --new_fits_dir=data/fits_native
-  --old_catalog_loc=data/2018-11-05_panoptes_predictions_with_catalog.csv --new_catalog_loc=data/panoptes_predictions_selected.csv'
+cmd: ' python zoobot/active_learning/create_panoptes_only_files.py --old_fits_dir=/Volumes/alpha/decals/fits_native
+  --new_fits_dir=data/fits_native --old_catalog_loc=/data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv
+  --new_catalog_loc=data/panoptes_predictions_selected.csv'
 deps:
-- path: data/2018-11-05_panoptes_predictions_with_catalog.csv
-- path: /Volumes/alpha/decals/fits_native
-md5: null
+- md5: d027fda3489d33ea16baa073ec438384
+  path: /data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv
+- md5: 57ee9b40e8ba53fe46281eae2461535b.dir
+  path: /Volumes/alpha/decals/fits_native
+md5: 09b0ad6af5c33078e7e05929e55e189e
 outs:
 - cache: true
+  md5: 88ee406ed1da864adb358f56f58321a5
   path: data/panoptes_predictions_selected.csv
 - cache: false
+  md5: 3240ac79a136172e93d40d748eb3265f.dir
   path: data/fits_native
