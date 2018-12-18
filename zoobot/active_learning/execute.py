@@ -131,7 +131,7 @@ class ActiveConfig():
         if self.warm_start:
             shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
             latest_model_dir = self.get_most_recent_model_loc()
-            shutil.copy(latest_model_dir, self.estimator_dir)  # put model from latest complete iteration in estimator dir
+            shutil.copytree(latest_model_dir, self.estimator_dir)  # put model from latest complete iteration in estimator dir
 
         iteration = 0
         while iteration < self.iterations:
