@@ -238,8 +238,8 @@ if __name__ == '__main__':
     # n_subjects = 15
     # size = 128
     # channels = 3
-    # active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-    # show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
+    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
+    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
