@@ -492,37 +492,9 @@ def penalty_if_not_probability(predictions):
 def get_eval_metric_ops(self, labels, predictions):
     # record distribution of predictions for tensorboard
     tf.summary.histogram('labels', labels)
-    
-    if self.regression:
-        assert labels.dtype == tf.float32
-        assert predictions['prediction'].dtype == tf.float32
-        return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
-    else:
-        tf.summary.histogram('Predictions', predictions['prediction'])
-        tf.summary.histogram('Classes', predictions['classes'])
-
-        # validation loss is added behind-the-scenes by TensorFlow
-        return {
-            "acc/accuracy": tf.metrics.accuracy(
-                labels=labels, predictions=predictions["classes"]),
-            "acc/mean_per_class_accuracy": tf.metrics.mean_per_class_accuracy(labels=labels,
-                                                                            predictions=predictions['classes'],
-                                                                            num_classes=2),
-            "pr/auc": tf.metrics.auc(labels=labels, predictions=predictions['classes']),
-            'pr/precision': tf.metrics.precision(labels=labels, predictions=predictions['classes']),
-            'pr/recall': tf.metrics.recall(labels=labels, predictions=predictions['classes']),
-            'confusion/true_positives': tf.metrics.true_positives(labels=labels, predictions=predictions['classes']),
-            'confusion/true_negatives': tf.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
-            'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
-            'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes']),
-            'sanity/predictions_below_5%': tf.metrics.percentage_below(
-                values=predictions['prediction'][:, 0],
-                threshold=0.05),
-            'sanity/predictions_above_95%': tf.metrics.percentage_below(
-                values=1 - predictions['prediction'][:, 0],
-                threshold=0.05)
-        }
-
+    assert labels.dtype == tf.float32
+    assert predictions['prediction'].dtype == tf.float32
+    return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
 
 def logging_hooks(model_config):
     train_tensors = {

@@ -331,7 +331,7 @@ if __name__ == '__main__':
             subjects, labels = sess.run([subjects_g, labels_g])
 
         # save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
-        save_dir = 'analysis_WIP/uncertainty/al-binomial/{}'.format(predictor_name)
+        save_dir = 'analysis/uncertainty/al-binomial/{}'.format(predictor_name)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
 

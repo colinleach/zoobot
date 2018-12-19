@@ -139,6 +139,7 @@ def labels(request, n_examples):
             shape=[n_examples],
             dtype=tf.float32)
 
+
 def test_run_experiment(
     run_config, 
     model, 

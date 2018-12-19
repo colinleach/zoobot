@@ -73,7 +73,7 @@ class ActiveConfig():
 
         # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-        if not self.warm_start or not os.path.isfile(self.train_records_index_loc):
+        if not os.path.isfile(self.train_records_index_loc):
             self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
@@ -92,6 +92,7 @@ class ActiveConfig():
                     os.mkdir(directory)
 
         # if not warm start, delete root and remake all
+        # TODO this is a terrible idea
         if not self.warm_start:
             for directory in directories:
                 if os.path.isdir(directory):
@@ -106,6 +107,7 @@ class ActiveConfig():
 
     def ready(self):
         assert self.shards.ready()
+        assert os.path.isfile(self.train_records_index_loc)
         assert os.path.isdir(self.estimator_dir)
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)

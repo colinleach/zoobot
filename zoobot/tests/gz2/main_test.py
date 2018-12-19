@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 
 from zoobot.get_catalogs.gz2.main import get_labels_and_images
-from zoobot.tests import get_classifications_test
+from zoobot.tests.gz2 import get_classifications_test  # TODO make a conftest
 
 
 @pytest.fixture()
@@ -13,14 +13,14 @@ def classifications():
         'ra': 12.0,
         'dec': -1.0
     }
-    zoo1.update(get_classifications_test.example_classification_data())
+    zoo1.update(get_classifications_test.example_classification_data())  # TODO make a conftest
 
     zoo2 = {
         'dr7objid': 'zoo2',
         'ra': 15.0,
         'dec': -1.0
     }
-    zoo2.update(get_classifications_test.example_classification_data())
+    zoo2.update(get_classifications_test.example_classification_data())  # TODO make a conftest
 
     return pd.DataFrame([zoo1, zoo2])
 
