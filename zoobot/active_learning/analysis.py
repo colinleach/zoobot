@@ -296,4 +296,4 @@ if __name__ == '__main__':
         compare_loss_over_time(active_smooth_metrics, baseline_smooth_metrics, comparison_save_loc, title=title)
 
         best_result_save_loc = os.path.join(args.output_dir, 'loss_best_results_' + name + '.png')
-        compare_metrics(baseline_smooth_metrics + active_smooth_metrics, comparison_save_loc, title=title)
+        compare_metrics(baseline_smooth_metrics + active_smooth_metrics, best_result_save_loc, title=title)
