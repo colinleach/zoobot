@@ -239,7 +239,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         subjects_per_iter = 28
         shards_per_iter = 1
     if warm_start:
-        iterations = 24  # total 3072 images
+        iterations = 12
         subjects_per_iter = 128  # warm start!
         shards_per_iter = 1  #
     else:
@@ -262,7 +262,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
 
     if active_config.warm_start:
-        run_config.epochs = 16  # for retraining
+        run_config.epochs = 20  # for retraining
         active_config.shards_per_iter = 1  # for speed
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
