@@ -73,7 +73,8 @@ class ActiveConfig():
 
         # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-        if not self.warm_start or not os.path.isfile(self.train_records_index_loc):
+        if not os.path.isfile(self.train_records_index_loc):
+            logging.info('creating new tfrecord index')
             self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
