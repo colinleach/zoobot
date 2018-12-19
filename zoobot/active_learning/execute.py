@@ -111,6 +111,7 @@ class ActiveConfig():
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
+        assert os.path.isfile(self.train_records_index_loc)
         return True
 
 
@@ -199,6 +200,7 @@ class ActiveConfig():
 
     def write_train_records_index(self, train_records):
         with open(self.train_records_index_loc, 'w') as f:
+            logging.info('Writing train records {} to {}'.format(train_records, self.train_records_index_loc))
             json.dump(train_records, f)
 
 
