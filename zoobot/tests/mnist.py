@@ -1,3 +1,6 @@
+"""
+Not actually a test - downloads MNIST in fits form. Maybe a useful benchmark.
+"""
 import os
 
 import tensorflow as tf

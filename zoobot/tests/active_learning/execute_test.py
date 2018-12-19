@@ -41,7 +41,7 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
         return acquisition_func
 
     # TODO add something else (time, string) in predictor dir and make sure the latest timestamp is loaded
-    active_config_ready.run(catalog, train_callable, get_acquistion_func)
+    active_config_ready.run(train_callable, get_acquistion_func)
     # TODO instead of blindly cycling through shards, record where the shards are and latest update
 
     # read back the training tfrecords and verify they are sorted by order of mean

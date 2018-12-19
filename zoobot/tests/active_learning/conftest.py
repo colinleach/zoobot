@@ -25,7 +25,7 @@ def unlabelled_catalog(catalog_random_images):
 @pytest.fixture()
 def shard_config(tmpdir, size, channels):
     config = make_shards.ShardConfig(
-        base_dir=tmpdir.mkdir('base_dir').strpath,
+        shard_dir=tmpdir.mkdir('base_dir').strpath,
         inital_size=size,
         final_size=size,
         channels=channels)
@@ -47,7 +47,8 @@ def active_config(shard_config_ready, tmpdir):
         run_dir=tmpdir.mkdir('run_dir').strpath,
         iterations=2,
         shards_per_iter=2,
-        subjects_per_iter=10
+        subjects_per_iter=10,
+        warm_start=True
         )
 
     return config

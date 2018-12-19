@@ -131,26 +131,7 @@ def test_predict_input_func_subbatch_with_labels(stratified_tfrecord_locs, size)
     subjects, labels, _ = input_utils.predict_input_func(stratified_tfrecord_locs[0], n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='labels')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
-        assert subjects.shape == (n_galaxies, size, size, 1)
-
-
-
-    # with tf.Session() as sess:
-    #     batches = []
-    #     while True:
-    #         try:
-    #             batches.append(sess.run([subjects]))
-    #         except tf.errors.OutOfRangeError:
-    #             break
-    #     # subjects = [sess.run(subjects)[0] for n in range(n_galaxies)]
-    #     # subjects = sess.run(subjects)
-    # print(len(batches))
-    # print(batches[0][0].shape)
-    # assert False
-    #     subjects = np.stack
-    # assert subjects is not None
-    # assert subjects.shape == 24
-    # assert subjects[0].shape == (size, size, 1)
+        assert subjects.shape == (n_galaxies, size, size, 3)
 
 
 def test_predict_input_func_with_id(shard_locs, size):
@@ -159,7 +140,7 @@ def test_predict_input_func_with_id(shard_locs, size):
     subjects, _, id_strs = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='id_str')
     with tf.Session() as sess:
         subjects, id_strs = sess.run([subjects, id_strs])
-    assert subjects.shape == (n_galaxies, size, size, 1)
+    assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
     assert len(id_strs) == 24
 
 
@@ -168,7 +149,7 @@ def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
-    assert subjects.shape == (n_galaxies, size, size, 1)
+    assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
 
 
 

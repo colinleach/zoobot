@@ -352,11 +352,11 @@ def test_add_labels_to_db(filled_shard_db):
     subjects = [
         {
             'id_str': 'some_hash',
-            'label': 0
+            'label': 0.
         },
         {
             'id_str': 'yet_another_hash',
-            'label': 1
+            'label': 1.
         }
     ]
     subject_ids = [x['id_str'] for x in subjects]

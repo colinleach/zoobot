@@ -12,10 +12,10 @@ from zoobot.active_learning import analysis
 
 
 @pytest.fixture()
-def tfrecord_index_loc(tfrecord_dir, example_tfrecord_loc):
+def tfrecord_index_loc(tfrecord_dir, tfrecord_matrix_float_loc):
     loc = os.path.join(tfrecord_dir, 'tfrecord_index.json')
     with open(loc, 'w') as f:
-        json.dump([example_tfrecord_loc, example_tfrecord_loc], f)
+        json.dump([tfrecord_matrix_float_loc, tfrecord_matrix_float_loc], f)
     return loc
 
 def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):
