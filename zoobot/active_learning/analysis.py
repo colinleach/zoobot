@@ -173,26 +173,25 @@ def compare_loss_over_time(active_metrics, baseline_metrics, save_loc, title=Non
     for run_n in range(len(runs)):
         metrics_list = runs[run_n]
         style = styles[run_n]
-        name = names[run_n]
 
         for df in metrics_list:
             ax1.plot(
                 df['step'],
                 df['smoothed_loss'],
-                style,
-                label='Run {}'.format(name),
-                
+                style         
             )
+            
 
             ax2.plot(
                 df['step'],
                 df['loss'],
-                style,
-                label='Run {}'.format(name)
+                style
             )
 
+    ax1.legend(names)
+    ax2.legend(names)
     ax2.set_xlabel('Step')
-    ax1.set_ylabel('Eval Loss')
+    ax1.set_ylabel('Smoothed Eval Loss')
     ax2.set_ylabel('Eval Loss')
     ax1.legend()
     ax2.legend()
