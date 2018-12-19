@@ -193,8 +193,6 @@ def compare_loss_over_time(active_metrics, baseline_metrics, save_loc, title=Non
     ax2.set_xlabel('Step')
     ax1.set_ylabel('Smoothed Eval Loss')
     ax2.set_ylabel('Eval Loss')
-    ax1.legend()
-    ax2.legend()
     if title is not None:
         ax1.set_title(title)
     fig.tight_layout()
