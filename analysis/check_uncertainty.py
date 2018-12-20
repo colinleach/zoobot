@@ -179,20 +179,27 @@ def save_metrics(results, subjects, labels, save_dir):
     binomial_metrics = Model(results, labels, name='binomial')
 
     # repeat for baseline
-    # baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
-    baseline_results = np.loadtxt('/Data/repos/zoobot/analysis_WIP/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
-    baseline_metrics = Model(baseline_results, labels, name='mean_loss')
+    baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
+    baseline_metrics = Model(baseline_results, labels, name='baseline')
+    # warning: fixed to disk location of this reference model
+    mse_results = np.loadtxt('/Data/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
+    mse_metrics = Model(mse_results, labels, name='mean_loss')
 
     sns.set(context='paper', font_scale=1.5)
 
     # save histograms of samples, for first 20 galaxies 
     fig, axes = make_predictions.view_samples(results[:20], labels[:20])
     fig.tight_layout()
-    axes[-1].set_xlabel('Vote Fraction')
+    axes[-1].set_xlabel(r'True Vote Fraction $\rho$')
+    fig.tight_layout()
     fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
     plt.close(fig)
 
-    compare_model_errors(binomial_metrics, baseline_metrics, save_dir)
+    compare_models(binomial_metrics, baseline_metrics)
+
+    compare_models(binomial_metrics, mse_metrics)
+
+    compare_model_errors(binomial_metrics, mse_metrics, save_dir)
     binomial_metrics.compare_binomial_and_abs_error(save_dir)
     binomial_metrics.show_acquisition_vs_label(save_dir)
 
@@ -310,8 +317,8 @@ if __name__ == '__main__':
 
     # for dropout in dropouts:
 
-    predictor_names = ['five_conv_noisy']
-    # predictor_names = ['five_conv_mse', 'five_conv_noisy']
+    # predictor_names = ['five_conv_noisy']
+    predictor_names = ['five_conv_mse', 'five_conv_noisy']
     # predictor_names = ['c2548d0_d90']
 
     for predictor_name in predictor_names:
@@ -326,18 +333,17 @@ if __name__ == '__main__':
         feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
         tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord'
-        subjects_g, labels_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=128, final_size=64, has_labels=True)  # tf graph
+        subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=size, final_size=64, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
 
-        # save_dir = 'analysis_WIP/uncertainty/dropout_{}'.format(dropout)
         save_dir = 'analysis/uncertainty/al-binomial/{}'.format(predictor_name)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
 
         results_loc = os.path.join(save_dir, 'results.txt')
 
-        new_predictions = False
+        new_predictions = True
         if new_predictions:
             results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
             np.savetxt(results_loc, results)

@@ -410,16 +410,18 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode=
         channels=3,
         noisy_labels=False  # important - we want the actual vote fractions
     )
-    if mode =='labels':
+    if mode == 'labels':
         batch_images, batch_labels = load_batches_with_labels(config)
         id_strs = None
-    if mode == 'id_str':
+    elif mode == 'id_str':
         batch_images, id_strs = load_batches_with_id_str(config)
         batch_labels = None
-    else:
+    elif mode == 'matrix':
         batch_images = load_batches_without_labels(config)
         batch_labels = None
         id_strs = None
+    else:
+        raise ValueError('Predict input func. mode not recognised: {}'.format(mode))
 
     # don't do this! preprocessing is done at predict time, expects raw-ish images
     # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
