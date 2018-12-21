@@ -167,11 +167,12 @@ def view_samples(scores, labels, annotate=False):
         x = np.arange(0, 41)
         for score_n, score in enumerate(scores[galaxy_n]):
             if score_n == 0: 
-                name = 'Model Samples'
+                name = 'Model Posteriors'
             else:
                 name = None
             ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=score, n=40), 'k', alpha=0.2, label=name)
-        ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=labels[galaxy_n], n=40), 'r', label='Volunteers')
+        # ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=labels[galaxy_n], n=40), 'r', label='Volunteers')
+        ax.axvline(labels[galaxy_n], c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
     axes[0].legend(

@@ -190,7 +190,7 @@ def save_metrics(results, subjects, labels, save_dir):
     # save histograms of samples, for first 20 galaxies 
     fig, axes = make_predictions.view_samples(results[:20], labels[:20])
     fig.tight_layout()
-    axes[-1].set_xlabel(r'True Vote Fraction $\rho$')
+    axes[-1].set_xlabel(r'Volunteer Vote Fraction $\frac{k}{N}$')
     fig.tight_layout()
     fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
     plt.close(fig)
@@ -317,8 +317,8 @@ if __name__ == '__main__':
 
     # for dropout in dropouts:
 
-    # predictor_names = ['five_conv_noisy']
-    predictor_names = ['five_conv_mse', 'five_conv_noisy']
+    predictor_names = ['five_conv_noisy']
+    # predictor_names = ['five_conv_mse', 'five_conv_noisy']
     # predictor_names = ['c2548d0_d90']
 
     for predictor_name in predictor_names:
@@ -343,7 +343,7 @@ if __name__ == '__main__':
 
         results_loc = os.path.join(save_dir, 'results.txt')
 
-        new_predictions = True
+        new_predictions = False
         if new_predictions:
             results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
             np.savetxt(results_loc, results)
