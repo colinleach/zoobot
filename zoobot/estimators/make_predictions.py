@@ -9,6 +9,7 @@ from tensorflow.contrib import predictor
 import sklearn
 from sklearn.dummy import DummyClassifier
 from sklearn import metrics
+import scipy
 
 import seaborn as sns
 
@@ -160,29 +161,50 @@ def view_samples(scores, labels, annotate=False):
     # correct = (np.mean(scores, axis=1) > 0.5) == labels
     entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
 
-    fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True)
+    fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True, sharey=True)
     for galaxy_n, ax in enumerate(axes):
-        hist_data = ax.hist(scores[galaxy_n])
 
-        lbound = 0
-        ubound = 0.5
-        if scores[galaxy_n].mean() > 0.5:
-            lbound = 0.5
-            ubound = 1
+        x = np.arange(0, 41)
+        for score_n, score in enumerate(scores[galaxy_n]):
+            if score_n == 0: 
+                name = 'Model Posteriors'
+            else:
+                name = None
+            ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=score, n=40), 'k', alpha=0.2, label=name)
+        # ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=labels[galaxy_n], n=40), 'r', label='Volunteers')
+        ax.axvline(labels[galaxy_n], c='r', label='Observed')
+        ax.yaxis.set_visible(False)
 
-        ax.axvline(labels[galaxy_n], c='k')
-        ax.axvline(labels[galaxy_n], c='r')
+    axes[0].legend(
+        loc='lower center', 
+        bbox_to_anchor=(0.5, 1.1),
+        ncol=2, 
+        fancybox=True, 
+        shadow=False
+    )
+    fig.tight_layout()
+
+        # hist_data = ax.hist(scores[galaxy_n])
+
+        # lbound = 0
+        # ubound = 0.5
+        # if scores[galaxy_n].mean() > 0.5:
+        #     lbound = 0.5
+        #     ubound = 1
+
+        # ax.axvline(labels[galaxy_n], c='k')
+        # ax.axvline(labels[galaxy_n], c='r')
         # c='r'
         # if correct[galaxy_n]:
         #     c='g'
         # ax.axvspan(lbound, ubound, alpha=0.1, color=c)
 
-        if annotate:
-            ax.text(
-                0.7, 
-                0.75 * np.max(hist_data[0]),
-                'H: {:.2}'.format(entropies[galaxy_n])
-            )
-            ax.set_xlim([0, 1])
+        # if annotate:
+        #     ax.text(
+        #         0.7, 
+        #         0.75 * np.max(hist_data[0]),
+        #         'H: {:.2}'.format(entropies[galaxy_n])
+        #     )
+        #     ax.set_xlim([0, 1])
 
     return fig, axes

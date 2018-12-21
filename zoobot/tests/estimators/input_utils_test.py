@@ -124,15 +124,18 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'all_augmentations_check.png'))
 
 
-def test_predict_input_func_subbatch_with_labels(stratified_tfrecord_locs, size):
+def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_float_loc, size):
     
     # tfrecord_matrix_loc
     n_galaxies = 24
-    subjects, labels, _ = input_utils.predict_input_func(stratified_tfrecord_locs[0], n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='labels')
+    subjects, labels, _ = input_utils.predict_input_func(tfrecord_matrix_float_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='labels')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
         assert subjects.shape == (n_galaxies, size, size, 3)
-
+        labels = sess.run(labels)
+        assert len(labels) == n_galaxies
+        # should not have shuffled
+        assert labels[0] < labels [1] < labels [2] < labels [10] < labels[23]
 
 def test_predict_input_func_with_id(shard_locs, size):
     n_galaxies = 24
@@ -146,7 +149,7 @@ def test_predict_input_func_with_id(shard_locs, size):
 
 def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     n_galaxies = 24
-    subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='')
+    subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='matrix')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time

@@ -248,7 +248,8 @@ def tfrecord_matrix_float_loc(tfrecord_dir, size, channels):  # write shards dyn
     if os.path.exists(tfrecord_loc):
         os.remove(tfrecord_loc)
         
-    examples = [{'matrix': np.random.rand(size, size, channels), 'label': np.random.rand()} for n in range(128)]
+    # monotonic labels, to check shuffling
+    examples = [{'matrix': np.random.rand(size, size, channels), 'label': (n / 128.)} for n in range(128)]
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
     for example in examples:  # depends on tfrecord.create_tfrecord
