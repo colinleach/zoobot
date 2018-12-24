@@ -55,7 +55,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1,  # for debugging, min is 1
+        epochs=1500,  # for debugging, min is 1
         train_steps=30,
         eval_steps=3,
         batch_size=128,
