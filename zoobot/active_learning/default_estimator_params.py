@@ -18,7 +18,7 @@ def get_run_config(active_config):
         final_size=active_config.shards.final_size,
         channels=channels,
         label_col='label',
-        epochs=450,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
+        epochs=600,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         train_steps=30,
         eval_steps=5,
         batch_size=128,
