@@ -100,7 +100,11 @@ Metrics (abs, square, and bin. loss) show performance is similar or better to bi
 al-binomial-4conv accepted as progress, pulled into al-binomial.
 
 ## al-nonnoisy-bin 
+
+4563180
 Are the noisy labels helping or hindering? Let's test this on a basic split.
 Turn dropout off for conv layers
 Use softmax before binomial loss
 Use binomial loss on non-noisy labels
+Reference epoch: 1545649528
+About 600 epochs to train to approx. convergence, at MSE 0.115 and loss 22.6 +/- 0.1
