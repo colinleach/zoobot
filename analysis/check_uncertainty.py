@@ -21,6 +21,8 @@ class Model():
 
     def __init__(self, predictions, labels, name):
         self.predictions = predictions
+        # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
+        self.bin_probs = make_predictions.bin_prob_of_samples(predictions, n_draws=40)
         self.labels = labels
         self.calculate_default_metrics()
         self.calculate_acquistion_funcs()
@@ -70,7 +72,8 @@ class Model():
         plt.close()
 
     def show_coverage(self):
-        raise NotImplementedError
+        bin_p_per_k = make_predictions.binomial_prob_per_k(self.predictions, n_draws=40)
+
         # save coverage fraction of the model i.e. check calibration of posteriors
         # plt.figure()
         # alpha_eval, coverage_at_alpha = dropout_calibration.check_coverage_fractions(results, labels)

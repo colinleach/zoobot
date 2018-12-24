@@ -103,7 +103,7 @@ def binomial_likelihood(labels, predictions, total_votes):
     return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
 
 
-def predictive_binomial_entropy(sampled_rhos, n_draws):
+def predictive_binomial_entropy(binomial_probs_per_sample):
     """[summary]
     
     Args:
@@ -113,19 +113,24 @@ def predictive_binomial_entropy(sampled_rhos, n_draws):
     Returns:
         (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
     """
-    # sampled_rhos is (n_subjects, n_samples)
-    assert isinstance(sampled_rhos, np.ndarray)
-    assert len(sampled_rhos) > 1
-    binomial_probs_per_sample = np.zeros(list(sampled_rhos.shape) + [n_draws + 1])  # add k dimension
-    for subject_n in range(sampled_rhos.shape[0]):
-        for sample_n in range(sampled_rhos.shape[1]):
-            rho = sampled_rhos[subject_n, sample_n]
+    # average over samples to get the mean prediction per k, per subject
+    bin_probs_per_k_per_subject = np.mean(binomial_probs_per_sample, axis=1)
+    return distribution_entropy(bin_probs_per_k_per_subject)
+
+
+def bin_prob_of_samples(samples, n_draws):
+    # designed to operate on (n_subjects, n_samples) standard response
+    assert isinstance(samples, np.ndarray)
+    assert len(samples) > 1
+    binomial_probs_per_sample = np.zeros(list(samples.shape) + [n_draws + 1])  # add k dimension
+    for subject_n in range(samples.shape[0]):
+        for sample_n in range(samples.shape[1]):
+            rho = samples[subject_n, sample_n]
             binomial_probs_per_sample[subject_n, sample_n, :] = binomial_prob_per_k(rho, n_draws)
-    expected_probs_per_k = np.mean(binomial_probs_per_sample, axis=1)
-    return distribution_entropy(expected_probs_per_k)
+    return binomial_probs_per_sample  # (n_subject, n_samples, k)
 
 
-def binomial_prob_per_k(sampled_rho, n_draws):
+def binomial_prob_per_k(rho, n_draws):
     """[summary]
     
     Args:
@@ -136,14 +141,20 @@ def binomial_prob_per_k(sampled_rho, n_draws):
         (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
     """
     k = np.arange(0, n_draws + 1)  # include k=n
-    return np.array(scipy.stats.binom.pmf(k=k, p=sampled_rho, n=n_draws))
-# binomial_prob_per_k = np.vectorize(binomial_prob_per_k)
+    return np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
 
 
-def binomial_entropy(rho, n_draws):
-    binomial_probs = binomial_prob_per_k(rho, n_draws)
-    return distribution_entropy(binomial_probs)
-binomial_entropy = np.vectorize(binomial_entropy)
+# def binomial_entropy(rho, n_draws):
+#     binomial_probs = binomial_prob_per_k(rho, n_draws)
+#     return distribution_entropy(binomial_probs)
+# binomial_entropy = np.vectorize(binomial_entropy)
+
+
+def expected_binomial_entropy(binomial_probs_per_sample):
+    # get the entropy over all k (reduce axis 2)
+    entropy_per_sample = np.apply_along_axis(distribution_entropy, axis=2, arr=binomial_probs_per_sample)
+    return np.mean(entropy_per_sample, axis=1)  # average over samples (reduce axis 1)
+
 
 
 def sample_variance(samples):
