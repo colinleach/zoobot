@@ -85,22 +85,22 @@ def test_predictive_and_expected_entropy_functional():
 
 
 
-# def test_binomial_entropy():
-#     n_draws = 10
-#     rho = 0.5
-#     entropy = make_predictions.binomial_entropy(rho, n_draws)
-#     assert entropy.shape == ()  # should be scalar
+def test_binomial_entropy():
+    n_draws = 10
+    rho = 0.5
+    entropy = make_predictions.binomial_entropy(rho, n_draws)
+    assert entropy.shape == ()  # should be scalar
 
 
-# def test_binomial_entropy_vectorized():
-#     n_draws = 10  # not yet tested with varying n
-#     rho = [0.1, 0.5, 0.9]
-#     entropy = make_predictions.binomial_entropy(rho, n_draws)
-#     assert entropy.min() > 0
-#     assert len(entropy) == 3  # should be scalar
-#     assert entropy[1] == entropy.max()
-#     assert np.allclose(entropy[0], entropy[-1])
+def test_binomial_entropy_vectorized():
+    n_draws = 10  # not yet tested with varying n
+    rho = [0.1, 0.5, 0.9]
+    entropy = make_predictions.binomial_entropy(rho, n_draws)
+    assert entropy.min() > 0
+    assert len(entropy) == 3  # should be scalar
+    assert entropy[1] == entropy.max()
+    assert np.allclose(entropy[0], entropy[-1])
 
 
 # def test_binomial_entropy_plotted():
-#     pass  # TODO
+#     pass  # TODO 
