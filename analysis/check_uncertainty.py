@@ -53,8 +53,8 @@ class Model():
 
     def calculate_acquistion_funcs(self):
         # self.distribution_entropy = make_predictions.distribution_entropy(results)
-        self.predictive_entropy = make_predictions.binomial_entropy(np.mean(self.predictions, axis=1))
-        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.predictions), axis=1)
+        self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.predictions, n_draws=40)
+        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.predictions, n_draws=40), axis=1)
         self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
 
     def compare_binomial_and_abs_error(self, save_dir):

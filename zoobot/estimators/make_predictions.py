@@ -77,7 +77,7 @@ def distribution_entropy(probabilities):
     """
     # do p * log p for every sample, sum for each subject
     probabilities = np.clip(probabilities, 0., 1.)
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=1)
+    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=-1)
 
 
 def binomial_likelihood(labels, predictions, total_votes):
@@ -103,12 +103,41 @@ def binomial_likelihood(labels, predictions, total_votes):
     return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
 
 
-def predictive_binary_entropy(probabilities):
-    ep = 1e-12
-    # eqn 5: mean prediction over MC samples
-    mean_prob = np.mean(probabilities, axis=1)
-    # eqn 6: usual entropy of that prob
-    return -1 * (mean_prob * np.log(mean_prob + ep) + (1 - mean_prob) * np.log(1 - mean_prob + ep))
+def predictive_binomial_entropy(sampled_rhos, n_draws):
+    """[summary]
+    
+    Args:
+        sampled_rho (float): MLEs of binomial probability, of any dimension
+        n_draws (int): N draws for those MLEs.
+    
+    Returns:
+        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+    """
+    # sampled_rhos is (n_subjects, n_samples)
+    assert isinstance(sampled_rhos, np.ndarray)
+    assert len(sampled_rhos) > 1
+    binomial_probs_per_sample = np.zeros(list(sampled_rhos.shape) + [n_draws + 1])  # add k dimension
+    for subject_n in range(sampled_rhos.shape[0]):
+        for sample_n in range(sampled_rhos.shape[1]):
+            rho = sampled_rhos[subject_n, sample_n]
+            binomial_probs_per_sample[subject_n, sample_n, :] = binomial_prob_per_k(rho, n_draws)
+    expected_probs_per_k = np.mean(binomial_probs_per_sample, axis=1)
+    return distribution_entropy(expected_probs_per_k)
+
+
+def binomial_prob_per_k(sampled_rho, n_draws):
+    """[summary]
+    
+    Args:
+        sampled_rho (float): MLEs of binomial probability, of any dimension
+        n_draws (int): N draws for those MLEs.
+
+    Returns:
+        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+    """
+    k = np.arange(0, n_draws + 1)  # include k=n
+    return np.array(scipy.stats.binom.pmf(k=k, p=sampled_rho, n=n_draws))
+# binomial_prob_per_k = np.vectorize(binomial_prob_per_k)
 
 
 def mutual_information(probabilities):
@@ -117,8 +146,10 @@ def mutual_information(probabilities):
     return predictive_entropy - expected_entropy
 
 
-def binomial_entropy(probabilities):
-    return np.array(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)))
+def binomial_entropy(rho, n_draws):
+    binomial_probs = binomial_prob_per_k(rho, n_draws)
+    return distribution_entropy(binomial_probs)
+binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def sample_variance(samples):
