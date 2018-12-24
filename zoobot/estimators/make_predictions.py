@@ -77,7 +77,7 @@ def distribution_entropy(probabilities):
     """
     # do p * log p for every sample, sum for each subject
     probabilities = np.clip(probabilities, 0., 1.)
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=1)
+    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=-1)
 
 
 def binomial_likelihood(labels, predictions, total_votes):
@@ -103,22 +103,47 @@ def binomial_likelihood(labels, predictions, total_votes):
     return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
 
 
-def predictive_binary_entropy(probabilities):
-    ep = 1e-12
-    # eqn 5: mean prediction over MC samples
-    mean_prob = np.mean(probabilities, axis=1)
-    # eqn 6: usual entropy of that prob
-    return -1 * (mean_prob * np.log(mean_prob + ep) + (1 - mean_prob) * np.log(1 - mean_prob + ep))
+def predictive_binomial_entropy(sampled_rhos, n_draws):
+    """[summary]
+    
+    Args:
+        sampled_rho (float): MLEs of binomial probability, of any dimension
+        n_draws (int): N draws for those MLEs.
+    
+    Returns:
+        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+    """
+    # sampled_rhos is (n_subjects, n_samples)
+    assert isinstance(sampled_rhos, np.ndarray)
+    assert len(sampled_rhos) > 1
+    binomial_probs_per_sample = np.zeros(list(sampled_rhos.shape) + [n_draws + 1])  # add k dimension
+    for subject_n in range(sampled_rhos.shape[0]):
+        for sample_n in range(sampled_rhos.shape[1]):
+            rho = sampled_rhos[subject_n, sample_n]
+            binomial_probs_per_sample[subject_n, sample_n, :] = binomial_prob_per_k(rho, n_draws)
+    expected_probs_per_k = np.mean(binomial_probs_per_sample, axis=1)
+    return distribution_entropy(expected_probs_per_k)
 
 
-def mutual_information(probabilities):
-    predictive_entropy = binomial_entropy(np.mean(probabilities, axis=1))
-    expected_entropy = np.mean(binomial_entropy(probabilities), axis=1)
-    return predictive_entropy - expected_entropy
+def binomial_prob_per_k(sampled_rho, n_draws):
+    """[summary]
+    
+    Args:
+        sampled_rho (float): MLEs of binomial probability, of any dimension
+        n_draws (int): N draws for those MLEs.
+
+    Returns:
+        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+    """
+    k = np.arange(0, n_draws + 1)  # include k=n
+    return np.array(scipy.stats.binom.pmf(k=k, p=sampled_rho, n=n_draws))
+# binomial_prob_per_k = np.vectorize(binomial_prob_per_k)
 
 
-def binomial_entropy(probabilities):
-    return np.array(list(map(lambda p:  np.log(p + 1e-12) + np.log(1 - p + 1e-12), probabilities)))
+def binomial_entropy(rho, n_draws):
+    binomial_probs = binomial_prob_per_k(rho, n_draws)
+    return distribution_entropy(binomial_probs)
+binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def sample_variance(samples):
@@ -145,8 +170,11 @@ def get_acquisition_func(model, n_samples):
         callable: expects model, returns callable for entropy list of matrix list (given that model)
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
+        # TODO refactor to call once - and test!
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        mutual_info = mutual_information(samples) # calculate on ndarray for speed
+        predictive_entropy = predictive_binomial_entropy(samples, n_draws=40)
+        expected_entropy = np.mean(binomial_entropy(samples, n_draws=40), axis=1)
+        mutual_info = predictive_entropy - expected_entropy
         return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
     return acquisition_callable
 
@@ -159,20 +187,26 @@ def view_samples(scores, labels, annotate=False):
         labels (np.array): class labels, of shape (n_subjects)
     """
     # correct = (np.mean(scores, axis=1) > 0.5) == labels
-    entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
+    # entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
+    x = np.arange(0, 41)
 
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True, sharey=True)
-    for galaxy_n, ax in enumerate(axes):
 
-        x = np.arange(0, 41)
+    for galaxy_n, ax in enumerate(axes):
+        probability_record = []
         for score_n, score in enumerate(scores[galaxy_n]):
             if score_n == 0: 
                 name = 'Model Posteriors'
             else:
                 name = None
-            ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=score, n=40), 'k', alpha=0.2, label=name)
-        # ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=labels[galaxy_n], n=40), 'r', label='Volunteers')
-        ax.axvline(labels[galaxy_n], c='r', label='Observed')
+            probs = binomial_prob_per_k(score, n_draws=40)
+            probability_record.append(probs)
+            ax.plot(x, probs, 'k', alpha=0.2, label=name)
+            print(probs.shape)
+        probability_record = np.array(probability_record)
+        print(probability_record.shape)
+        ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
+        ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
     axes[0].legend(
