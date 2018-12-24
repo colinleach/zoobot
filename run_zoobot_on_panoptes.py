@@ -29,15 +29,15 @@ if __name__ == '__main__':
     final_size = 64
 
     if ec2:
-        train_tfrecord_loc = '/home/ubuntu/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '/home/ubuntu/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        train_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
     else:
         train_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'debug'
+    run_name = 'nonnoisy_labels_bin_loss'
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         final_size=final_size,
         channels=channels,
         label_col='label',
-        epochs=1,  # for debugging, min is 1
+        epochs=1500,  # for debugging, min is 1
         train_steps=30,
         eval_steps=3,
         batch_size=128,
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=False
     )
 
     eval_config = input_utils.InputConfig(
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=False
     )
 
     model = bayesian_estimator_funcs.BayesianModel(

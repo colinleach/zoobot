@@ -40,7 +40,7 @@ As above (three layers), but with an additional L2 loss added.
 Results are missing??
 
 
-## al-binomial-nonnoisy ##
+## al-binomial-nonnoisy
 
 Single commit: 923b347a982541f0962e69627968e47abe171500
 Identical to al-bimomial commit above, except using deterministic labels
@@ -52,7 +52,7 @@ Reference datetime version: 1544202382
 https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/923b347a982541f0962e69627968e47abe171500/1544202382/?region=us-east-1&tab=overview
 
 
-## al-binomial-4conv ##
+## al-binomial-4conv
 Initially identical to al-binomial commit above, except with the third conv/pool layer duplicated (i.e. four conv layers).
 Extra 2k epochs of training allowed, to allow for slower updates
 
@@ -95,8 +95,16 @@ Create a comparison 'baseline' of a model trained with deterministic vote fracti
 Reference epoch: 1544536218
 https://s3.console.aws.amazon.com/s3/buckets/galaxy-zoo/basic-split/runs/0f0e9ff/1544536218/?region=us-east-1&tab=overview
 Metrics (abs, square, and bin. loss) show performance is similar or better to binomial version.
-Let's see if the uncertanties are any different...
+**Let's see if the uncertanties are any different...**
 
+al-binomial-4conv accepted as progress, pulled into al-binomial.
 
+## al-nonnoisy-bin 
 
-
+4563180
+Are the noisy labels helping or hindering? Let's test this on a basic split.
+Turn dropout off for conv layers
+Use softmax before binomial loss
+Use binomial loss on non-noisy labels
+Reference epoch: 1545649528
+About 600 epochs to train to approx. convergence, at MSE 0.115 and loss 22.6 +/- 0.1

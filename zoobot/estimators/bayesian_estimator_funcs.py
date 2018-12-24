@@ -179,21 +179,25 @@ class BayesianModel():
             # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
             # label_print = tf.print('labels', labels)
             # with tf.control_dependencies([label_print]):
-            onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
-            print_op = tf.print('onehot_labels', onehot_labels)
-            # with tf.control_dependencies([print_op]):
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-            tf.summary.histogram('loss', loss)
-            mean_loss = tf.reduce_mean(loss) # consider +tf.losses.get_regularization_loss()
-            tf.losses.add_loss(mean_loss)
+            # onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
+            # print_op = tf.print('onehot_labels', onehot_labels)
+            # # with tf.control_dependencies([print_op]):
+            # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
+            # tf.summary.histogram('loss', loss)
+            # mean_loss = tf.reduce_mean(loss) # consider +tf.losses.get_regularization_loss()
+            # tf.losses.add_loss(mean_loss)
 
             # Calculate loss using mean squared error - untested
             # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
 
             # Calculate loss using mean squared error + L2 - untested
             # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
-    
 
+            # binomial loss using softmax and custom bin loss, non-noisy labels
+            scalar_predictions = get_scalar_prediction(predictions)
+            loss = binomial_loss(labels, scalar_predictions)
+            mean_loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(mean_loss)
 
             return response, mean_loss
 
@@ -264,7 +268,8 @@ def input_to_dense(features, mode, model):
     assert input_layer.shape[3] == 1  # should be greyscale, for later science
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
-    dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
+    # dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
+    dropout_rate = 0  # no dropout on conv layers
     regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
 
     conv1 = tf.layers.conv2d(
