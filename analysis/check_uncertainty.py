@@ -177,6 +177,16 @@ def save_metrics(results, subjects, labels, save_dir):
         labels (np.array): true labels for galaxies on which predictions were made
         save_dir (str): directory into which to save figures of metrics
     """
+
+    sns.set(context='paper', font_scale=1.5)
+    # save histograms of samples, for first 20 galaxies 
+    fig, axes = make_predictions.view_samples(results[:20], labels[:20])
+    fig.tight_layout()
+    axes[-1].set_xlabel(r'Volunteer Vote Fraction $\frac{k}{N}$')
+    fig.tight_layout()
+    fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
+    plt.close(fig)
+
     binomial_metrics = Model(results, labels, name='binomial')
 
     # repeat for baseline
@@ -185,16 +195,6 @@ def save_metrics(results, subjects, labels, save_dir):
     # warning: fixed to disk location of this reference model
     mse_results = np.loadtxt('/Data/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
     mse_metrics = Model(mse_results, labels, name='mean_loss')
-
-    sns.set(context='paper', font_scale=1.5)
-
-    # save histograms of samples, for first 20 galaxies 
-    fig, axes = make_predictions.view_samples(results[:20], labels[:20])
-    fig.tight_layout()
-    axes[-1].set_xlabel(r'Volunteer Vote Fraction $\frac{k}{N}$')
-    fig.tight_layout()
-    fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
-    plt.close(fig)
 
     compare_models(binomial_metrics, baseline_metrics)
 

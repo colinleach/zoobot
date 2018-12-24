@@ -170,8 +170,11 @@ def get_acquisition_func(model, n_samples):
         callable: expects model, returns callable for entropy list of matrix list (given that model)
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
+        # TODO refactor to call once - and test!
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        mutual_info = mutual_information(samples) # calculate on ndarray for speed
+        predictive_entropy = predictive_binomial_entropy(samples, n_draws=40)
+        expected_entropy = np.mean(binomial_entropy(samples, n_draws=40), axis=1)
+        mutual_info = predictive_entropy - expected_entropy
         return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
     return acquisition_callable
 
@@ -188,14 +191,22 @@ def view_samples(scores, labels, annotate=False):
     x = np.arange(0, 41)
 
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True, sharey=True)
+
     for galaxy_n, ax in enumerate(axes):
+        probability_record = []
         for score_n, score in enumerate(scores[galaxy_n]):
             if score_n == 0: 
                 name = 'Model Posteriors'
             else:
                 name = None
-            ax.plot(x, binomial_prob_per_k(score, n_draws=40), 'k', alpha=0.2, label=name)
-        ax.axvline(labels[galaxy_n], c='r', label='Observed')
+            probs = binomial_prob_per_k(score, n_draws=40)
+            probability_record.append(probs)
+            ax.plot(x, probs, 'k', alpha=0.2, label=name)
+            print(probs.shape)
+        probability_record = np.array(probability_record)
+        print(probability_record.shape)
+        ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
+        ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
     axes[0].legend(
