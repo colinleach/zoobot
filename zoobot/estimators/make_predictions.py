@@ -140,12 +140,6 @@ def binomial_prob_per_k(sampled_rho, n_draws):
 # binomial_prob_per_k = np.vectorize(binomial_prob_per_k)
 
 
-def mutual_information(probabilities):
-    predictive_entropy = binomial_entropy(np.mean(probabilities, axis=1))
-    expected_entropy = np.mean(binomial_entropy(probabilities), axis=1)
-    return predictive_entropy - expected_entropy
-
-
 def binomial_entropy(rho, n_draws):
     binomial_probs = binomial_prob_per_k(rho, n_draws)
     return distribution_entropy(binomial_probs)
@@ -190,19 +184,17 @@ def view_samples(scores, labels, annotate=False):
         labels (np.array): class labels, of shape (n_subjects)
     """
     # correct = (np.mean(scores, axis=1) > 0.5) == labels
-    entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
+    # entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
+    x = np.arange(0, 41)
 
     fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True, sharey=True)
     for galaxy_n, ax in enumerate(axes):
-
-        x = np.arange(0, 41)
         for score_n, score in enumerate(scores[galaxy_n]):
             if score_n == 0: 
                 name = 'Model Posteriors'
             else:
                 name = None
-            ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=score, n=40), 'k', alpha=0.2, label=name)
-        # ax.plot(x/40., scipy.stats.binom.pmf(k=x, p=labels[galaxy_n], n=40), 'r', label='Volunteers')
+            ax.plot(x, binomial_prob_per_k(score, n_draws=40), 'k', alpha=0.2, label=name)
         ax.axvline(labels[galaxy_n], c='r', label='Observed')
         ax.yaxis.set_visible(False)
 

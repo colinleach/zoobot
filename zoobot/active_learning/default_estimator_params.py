@@ -46,7 +46,7 @@ def get_run_config(active_config):
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True  # train using softmax proxy for binomial loss
+        noisy_labels=False  # train using softmax proxy for binomial loss
     )
 
     eval_config = input_utils.InputConfig(

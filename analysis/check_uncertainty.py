@@ -55,7 +55,8 @@ class Model():
         # self.distribution_entropy = make_predictions.distribution_entropy(results)
         self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.predictions, n_draws=40)
         self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.predictions, n_draws=40), axis=1)
-        self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
+        # self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
+        self.mutual_info = self.predictive_entropy - self.expected_entropy
 
     def compare_binomial_and_abs_error(self, save_dir):
         # Binomial loss should increase with absolute error, but not linearly
@@ -94,10 +95,10 @@ class Model():
         ax10, ax11, ax12 = row1
         ax10.scatter(self.mean_prediction, self.predictive_entropy)
         mean_pred_range = np.linspace(0.02, 0.98)
-        ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range, n_draws=40))
         ax10.set_ylabel('Predictive Entropy')
         ax11.scatter(self.mean_prediction, self.expected_entropy)
-        ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
+        ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range, n_draws=40))
         ax11.set_ylabel('Expected Entropy')
         ax12.scatter(self.mean_prediction, self.mutual_info)
         ax12.set_ylabel('Mutual Information')
@@ -108,7 +109,7 @@ class Model():
         # mean_pred_range = np.linspace(0.02, 0.98)
         # ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
         # ax10.set_ylabel('Delta Predictive Entropy')
-        ax21.scatter(self.mean_prediction, self.expected_entropy - make_predictions.binomial_entropy(self.mean_prediction))
+        ax21.scatter(self.mean_prediction, self.expected_entropy - make_predictions.binomial_entropy(self.mean_prediction, n_draws=40))
         # ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
         ax21.set_ylabel('Delta Expected Entropy')
         # ax12.scatter(mean_prediction, mutual_info)

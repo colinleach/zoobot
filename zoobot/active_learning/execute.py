@@ -239,7 +239,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        iterations = 4  # 1.5h per iteration
+        iterations = 5  # 1.5h per iteration
         subjects_per_iter = 512
         shards_per_iter = 3
 
