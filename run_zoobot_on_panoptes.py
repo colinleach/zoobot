@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'debug'
+    run_name = 'nonnoisy_labels_bin_loss'
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=False
     )
 
     eval_config = input_utils.InputConfig(
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=True
+        noisy_labels=False
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
