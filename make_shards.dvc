@@ -5,13 +5,13 @@ deps:
   path: data/panoptes_predictions_selected.csv
 - md5: 3240ac79a136172e93d40d748eb3265f.dir
   path: data/fits_native
-- md5: c2cbf0b744468617f2869ebde9281da1
+- md5: 55cb7416e4104bf54a88c8076df423bd
   path: zoobot/active_learning/make_shards.py
-md5: 984a3893eeaf4a3365e7fa1eb9238654
+md5: 9baffec559450046a8ddcafff8ca4302
 outs:
 - cache: true
   md5: 02b84102e93637c4385a4bdfb087cc8e
   path: zoobot/active_learning/oracle.csv
 - cache: true
-  md5: 210cfb5dc787aa7a4d1d1944a411de49.dir
+  md5: 32e9afc5916d4c89c6b9f6c74165d65f.dir
   path: data/shards/si128_sf64_ss4096
