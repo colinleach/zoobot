@@ -55,8 +55,8 @@ class Model():
 
     def calculate_acquistion_funcs(self):
         # self.distribution_entropy = make_predictions.distribution_entropy(results)
-        self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.predictions, n_draws=40)
-        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.predictions, n_draws=40), axis=1)
+        self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.bin_probs)
+        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.bin_probs), axis=1)
         # self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
         self.mutual_info = self.predictive_entropy - self.expected_entropy
 
@@ -321,7 +321,8 @@ if __name__ == '__main__':
 
     # for dropout in dropouts:
 
-    predictor_names = ['five_conv_noisy']
+    # predictor_names = ['five_conv_noisy']
+    predictor_names = ['five_conv_fractions']
     # predictor_names = ['five_conv_mse', 'five_conv_noisy']
     # predictor_names = ['c2548d0_d90']
 
@@ -347,7 +348,7 @@ if __name__ == '__main__':
 
         results_loc = os.path.join(save_dir, 'results.txt')
 
-        new_predictions = False
+        new_predictions = True
         if new_predictions:
             results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
             np.savetxt(results_loc, results)
