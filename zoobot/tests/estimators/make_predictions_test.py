@@ -124,3 +124,6 @@ def test_get_acquisition_func(n_draws, monkeypatch):
     n_subjects = 5
     subjects = np.ones(n_subjects)
     mutual_info = acq_func(subjects)
+    assert len(mutual_info) == len(subjects)
+    # dummy functional test, don't actually have any expected answers
+    # rely on each component to work correctly
