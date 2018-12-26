@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
     # in memory for now, but will be saved to csv
     catalog = pd.read_csv(args.catalog_loc)
-    # >36 votes required, gives low count uncertainty
+    # 40 votes required, for accurate binomial statistics
     catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
     catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
     catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
@@ -172,16 +172,18 @@ if __name__ == '__main__':
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
     catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
 
+    # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:4096]  # for initial training data
-    unlabelled_catalog = catalog[4096:]  # for new data
+    labelled_catalog = catalog[:8960]  # for initial training data
+    unlabelled_catalog = catalog[8960:]  # for new data
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
     shard_config = ShardConfig(shard_dir=args.shard_dir)  
     shard_config.prepare_shards(
         labelled_catalog,
-        unlabelled_catalog)
+        unlabelled_catalog,
+        train_test_fraction=0.67)
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # finally, tidy up by moving the log into the shard directory
