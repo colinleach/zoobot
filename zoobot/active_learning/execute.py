@@ -74,6 +74,7 @@ class ActiveConfig():
         # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
         if not os.path.isfile(self.train_records_index_loc):
+            logging.info('creating new tfrecord index')
             self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
@@ -112,6 +113,7 @@ class ActiveConfig():
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
+        assert os.path.isfile(self.train_records_index_loc)
         return True
 
 
@@ -200,6 +202,7 @@ class ActiveConfig():
 
     def write_train_records_index(self, train_records):
         with open(self.train_records_index_loc, 'w') as f:
+            logging.info('Writing train records {} to {}'.format(train_records, self.train_records_index_loc))
             json.dump(train_records, f)
 
 
@@ -238,10 +241,14 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         iterations = 2
         subjects_per_iter = 28
         shards_per_iter = 1
+    if warm_start:
+        iterations = 12
+        subjects_per_iter = 128  # warm start!
+        shards_per_iter = 1  #
     else:
         iterations = 5  # 1.5h per iteration
         subjects_per_iter = 512
-        shards_per_iter = 3
+        shards_per_iter = 3  #
 
     shard_config = make_shards.load_shard_config(shard_config_loc)
     # instructions for the run (except model)
@@ -258,8 +265,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
 
     if active_config.warm_start:
-        run_config.epochs = 150  # for retraining
-        active_config.shards_per_iter = 2  # for speed
+        run_config.epochs = 20  # for retraining
+        active_config.shards_per_iter = 1  # for speed
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
 
