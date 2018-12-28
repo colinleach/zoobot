@@ -165,6 +165,40 @@ def plot_log_metrics(metrics_list, save_loc, title=None):
     fig.savefig(save_loc)
 
 
+def compare_loss_over_time(active_metrics, baseline_metrics, save_loc, title=None):
+    fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 6), sharex=True, sharey=True)
+    runs = [active_metrics, baseline_metrics]
+    styles = ['r', 'k--']
+    names = ['active', 'baseline']
+    for run_n in range(len(runs)):
+        metrics_list = runs[run_n]
+        style = styles[run_n]
+
+        for df in metrics_list:
+            ax1.plot(
+                df['step'],
+                df['smoothed_loss'],
+                style         
+            )
+            
+
+            ax2.plot(
+                df['step'],
+                df['loss'],
+                style
+            )
+
+    ax1.legend(names)
+    ax2.legend(names)
+    ax2.set_xlabel('Step')
+    ax1.set_ylabel('Smoothed Eval Loss')
+    ax2.set_ylabel('Eval Loss')
+    if title is not None:
+        ax1.set_title(title)
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
 def find_log(directory):
     return os.path.join(directory, list(filter(lambda x: '.log' in x, os.listdir(directory)))[0])  # returns as tuple of (dir, name)
 
@@ -255,5 +289,8 @@ if __name__ == '__main__':
         baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')
         plot_log_metrics(baseline_smooth_metrics, baseline_save_loc, title=title)
 
-        comparison_save_loc = os.path.join(args.output_dir, 'acc_comparison_' + name + '.png')
-        compare_metrics(baseline_smooth_metrics + active_smooth_metrics, comparison_save_loc, title=title)
+        comparison_save_loc = os.path.join(args.output_dir, 'loss_comparison_' + name + '.png')
+        compare_loss_over_time(active_smooth_metrics, baseline_smooth_metrics, comparison_save_loc, title=title)
+
+        best_result_save_loc = os.path.join(args.output_dir, 'loss_best_results_' + name + '.png')
+        compare_metrics(baseline_smooth_metrics + active_smooth_metrics, best_result_save_loc, title=title)

@@ -85,22 +85,45 @@ def test_predictive_and_expected_entropy_functional():
 
 
 
-# def test_binomial_entropy():
-#     n_draws = 10
-#     rho = 0.5
-#     entropy = make_predictions.binomial_entropy(rho, n_draws)
-#     assert entropy.shape == ()  # should be scalar
+def test_binomial_entropy():
+    n_draws = 10
+    rho = 0.5
+    entropy = make_predictions.binomial_entropy(rho, n_draws)
+    assert entropy.shape == ()  # should be scalar
 
 
-# def test_binomial_entropy_vectorized():
-#     n_draws = 10  # not yet tested with varying n
-#     rho = [0.1, 0.5, 0.9]
-#     entropy = make_predictions.binomial_entropy(rho, n_draws)
-#     assert entropy.min() > 0
-#     assert len(entropy) == 3  # should be scalar
-#     assert entropy[1] == entropy.max()
-#     assert np.allclose(entropy[0], entropy[-1])
+def test_binomial_entropy_vectorized():
+    n_draws = 10  # not yet tested with varying n
+    rho = [0.1, 0.5, 0.9]
+    entropy = make_predictions.binomial_entropy(rho, n_draws)
+    assert entropy.min() > 0
+    assert len(entropy) == 3  # should be scalar
+    assert entropy[1] == entropy.max()
+    assert np.allclose(entropy[0], entropy[-1])
 
 
 # def test_binomial_entropy_plotted():
-#     pass  # TODO
+#     pass  # TODO 
+
+
+def test_get_acquisition_func(n_draws, monkeypatch):
+    model = None
+    n_samples = n_draws
+
+    def mock_get_samples_of_subjects(model, subjects, n_samples):
+        return np.random.rand(len(subjects), n_samples)
+    monkeypatch.setattr(make_predictions, 'get_samples_of_subjects', mock_get_samples_of_subjects)
+
+    def mock_bin_prob_of_samples(samples, n_draws):
+        final_shape = list(samples.shape) + [n_samples]
+        return np.random.rand(*final_shape)
+    monkeypatch.setattr(make_predictions, 'bin_prob_of_samples', mock_bin_prob_of_samples)
+
+    acq_func = make_predictions.get_acquisition_func(model, n_samples)
+
+    n_subjects = 5
+    subjects = np.ones(n_subjects)
+    mutual_info = acq_func(subjects)
+    assert len(mutual_info) == len(subjects)
+    # dummy functional test, don't actually have any expected answers
+    # rely on each component to work correctly

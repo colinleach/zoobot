@@ -144,10 +144,10 @@ def binomial_prob_per_k(rho, n_draws):
     return np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
 
 
-# def binomial_entropy(rho, n_draws):
-#     binomial_probs = binomial_prob_per_k(rho, n_draws)
-#     return distribution_entropy(binomial_probs)
-# binomial_entropy = np.vectorize(binomial_entropy)
+def binomial_entropy(rho, n_draws):
+    binomial_probs = binomial_prob_per_k(rho, n_draws)
+    return distribution_entropy(binomial_probs)
+binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def expected_binomial_entropy(binomial_probs_per_sample):
@@ -181,10 +181,11 @@ def get_acquisition_func(model, n_samples):
         callable: expects model, returns callable for entropy list of matrix list (given that model)
     """
     def acquisition_callable(subjects):  # subjects must be a list of matrices
-        # TODO refactor to call once - and test!
+        # TODO careful tests!
         samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        predictive_entropy = predictive_binomial_entropy(samples, n_draws=40)
-        expected_entropy = np.mean(binomial_entropy(samples, n_draws=40), axis=1)
+        bin_probs = bin_prob_of_samples(samples, n_draws=40)
+        predictive_entropy = predictive_binomial_entropy(bin_probs)
+        expected_entropy = expected_binomial_entropy(bin_probs)
         mutual_info = predictive_entropy - expected_entropy
         return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
     return acquisition_callable
@@ -201,7 +202,7 @@ def view_samples(scores, labels, annotate=False):
     # entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
     x = np.arange(0, 41)
 
-    fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharex=True, sharey=True)
+    fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharey=True)
 
     for galaxy_n, ax in enumerate(axes):
         probability_record = []
@@ -213,9 +214,7 @@ def view_samples(scores, labels, annotate=False):
             probs = binomial_prob_per_k(score, n_draws=40)
             probability_record.append(probs)
             ax.plot(x, probs, 'k', alpha=0.2, label=name)
-            print(probs.shape)
         probability_record = np.array(probability_record)
-        print(probability_record.shape)
         ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)

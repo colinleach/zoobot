@@ -108,6 +108,7 @@ class ActiveConfig():
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
+        assert os.path.isfile(self.train_records_index_loc)
         return True
 
 
@@ -203,6 +204,7 @@ class ActiveConfig():
 
     def write_train_records_index(self, train_records):
         with open(self.train_records_index_loc, 'w') as f:
+            logging.info('Writing train records {} to {}'.format(train_records, self.train_records_index_loc))
             json.dump(train_records, f)
 
 
@@ -243,7 +245,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         shards_per_iter = 1
     else:
         iterations = 5  # 1.5h per iteration
-        subjects_per_iter = 512
+        subjects_per_iter = 1024
         shards_per_iter = 3
 
     shard_config = make_shards.load_shard_config(shard_config_loc)
@@ -264,7 +266,6 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
 
     if active_config.warm_start:
         run_config.epochs = 150  # for retraining
-        active_config.shards_per_iter = 2  # for speed
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
 
