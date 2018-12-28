@@ -171,24 +171,13 @@ def sample_variance(samples):
     return np.apply_along_axis(statistics.variance, arr=samples, axis=1)
 
 
-def get_acquisition_func(model, n_samples):
-    """Provide callable for active learning acquisition
-    Args:
-        model (function): callable mapping parsed subjects to class scores
-        n_samples (int): number of samples (i.e. model calls) to calculate per subject
-    
-    Returns:
-        callable: expects model, returns callable for entropy list of matrix list (given that model)
-    """
-    def acquisition_callable(subjects):  # subjects must be a list of matrices
-        # TODO careful tests!
-        samples = get_samples_of_subjects(model, subjects, n_samples)  # samples is ndarray
-        bin_probs = bin_prob_of_samples(samples, n_draws=40)
+
+def mutual_info_acquisition_func(samples):
+        bin_probs = bin_prob_of_samples(samples, n_draws=40)  # currently hardcoded
         predictive_entropy = predictive_binomial_entropy(bin_probs)
         expected_entropy = expected_binomial_entropy(bin_probs)
         mutual_info = predictive_entropy - expected_entropy
         return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
-    return acquisition_callable
 
 
 def view_samples(scores, labels, annotate=False):

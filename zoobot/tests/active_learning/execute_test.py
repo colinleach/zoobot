@@ -5,6 +5,7 @@ import copy
 
 import pytest
 import numpy as np
+from zoobot.tests.active_learning import conftest
 
 from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import active_learning, make_shards, execute
@@ -43,17 +44,19 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
         return None
     monkeypatch.setattr(active_learning.make_predictions, 'load_predictor', mock_load_predictor)
 
-    def mock_get_labels(subject_ids):  # don't actually read from saved catalog, just make up
+    monkeypatch.setattr(active_learning.make_predictions, 'get_samples_of_subjects', conftest.mock_get_samples_of_subjects)
+
+    def mock_get_labels(subject_ids):  
+        # don't actually read from saved catalog, just make up
+        # TODO check that these are correctly saved to db and preserved over iterations
         return [np.random.rand() for n in range(len(subject_ids))]
     monkeypatch.setattr(active_learning.mock_panoptes, 'get_labels', mock_get_labels)
 
-    def get_acquistion_func(predictor):
-        return acquisition_func  # sorts by mean of image
-
-    active_config_ready.run(train_callable, get_acquistion_func)
+    active_config_ready.run(train_callable, acquisition_func)
 
     # verify the folders appear as expected
     for iteration_n in range(active_config_ready.iterations):
+        # copied to iterations_test.py
         # separate dir for each iteration
         iteration_dir = os.path.join(active_config_ready.run_dir, 'iteration_{}'.format(iteration_n))
         assert os.path.isdir(iteration_dir)
@@ -67,8 +70,10 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
         else:
             if active_config_ready.warm_start:
                 # should have copied the latest estimator from the previous iteration
-                pass # TODO will do this once I refactor out iterations object
-
+                latest_previous_estimators_dir = os.path.join(active_config_ready.run_dir, 'iteration_{}'.format(iteration_n - 1), 'estimators')
+                latest_previous_estimator = active_learning.get_latest_checkpoint_dir(latest_previous_estimators_dir)  # TODO double-check this func!
+                assert os.path.isdir(os.path.join(estimators_dir, os.path.split(latest_previous_estimator)[-1]))
+    
     # read back the training tfrecords and verify they are sorted by order of mean
     with open(active_config_ready.train_records_index_loc, 'r') as f:
         training_shards = json.load(f)[1:]  # includes the initial shard, which is unsorted

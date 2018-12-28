@@ -142,35 +142,42 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     db.commit()
 
 
-def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisition_func):
+# probably better to move to make_predictions itself
+def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_shard_size=10000):
+    images, _, id_str = input_utils.predict_input_func(
+        tfrecord_locs,  # TODO verify this is happy with lists
+        n_galaxies=max_shard_size, 
+        initial_size=initial_size, 
+        mode='id_str'
+    )
+    with tf.Session() as sess:
+        images, id_str_bytes = sess.run([images, id_str])
+    # tfrecord will have encoded to bytes, need to decode
+    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
+    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
+    # make predictions
+    samples = make_predictions.get_samples_of_subjects(model, subjects, n_samples)
+    return subjects, samples
+
+
+def record_acquisitions_on_predictions(subjects, samples, db, acquisition_func):
     """For every subject in tfrecord, get the acq. func value and save to db
     Records acq. func. value on all examples, even labelled ones.
     Acquisition func 
     Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
     
     Args:
+        subjects (list): of form [{'matrix': np.array, 'id_str':'some_name}]
+        samples (np.array): of form [n_subjects, n_samples], where index must match subjects above
         db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
-        tfrecord_loc (str): disk path to tfrecord. Loaded tfrecord must fit in memory.
-        size (int): height/width dimension of each image matrix to load from tfrecord
-        channels (int): channels of each image matrix to load from tfrecord
         acquisition_func (callable): expecting list of image matrices, returning list of scalars
     """
-    logging.warning('Assuming 4096 galaxies per chunk')
-    shard_size = 4096 # TODO hacky
-    final_size = 64 # TODO hacky
-    images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=shard_size, initial_size=size, final_size=final_size, mode='id_str')
-    with tf.Session() as sess:
-        images, id_str_bytes = sess.run([images, id_str])
-    # tfrecord will have encoded to bytes, need to decode
-    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]
-    
-    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
-    # acq func expects a list of matrices
-    subjects_data = [x['matrix'] for x in subjects]
-    acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
+    # read those predictions to make acquisitions
+    acquisitions = acquisition_func(samples)  # returns list of acquisition values
 
+    # record acquisitions to db
     for subject, acquisition in zip(subjects, acquisitions):
-        save_acquisition_to_db(subject['id_str'], acquisition, db)
+        save_acquisition_to_db(subject['id_str'], float(acquisition), db)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 

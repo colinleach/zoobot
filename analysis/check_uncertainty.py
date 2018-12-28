@@ -337,7 +337,7 @@ if __name__ == '__main__':
         feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
         tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord'
-        subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=size, final_size=64, mode='labels')  # tf graph
+        subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=size, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
 

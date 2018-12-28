@@ -18,6 +18,7 @@ from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
 from zoobot.active_learning import active_learning
 from zoobot.estimators import make_predictions
+from zoobot.tests.active_learning import conftest
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -312,19 +313,45 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_record_acquisitions_on_tfrecord(filled_shard_db, acquisition_func, shard_locs, size, channels):
-    # TODO needs test for duplicate values/replace behaviour
-    shard_loc = shard_locs[0]
-    active_learning.record_acquisitions_on_tfrecord(filled_shard_db, shard_loc, size, channels, acquisition_func)
-    cursor = filled_shard_db.cursor()
-    cursor.execute(
-        '''
-        SELECT acquisition_value FROM acquisitions
-        '''
+def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size):
+    
+    monkeypatch.setattr(
+        active_learning.make_predictions,
+        'get_samples_of_subjects',
+        conftest.mock_get_samples_of_subjects
     )
-    saved_subjects = cursor.fetchall()
-    for subject in saved_subjects:
-        assert 0. < subject[0] < 1.  # doesn't actually verify value is consistent
+
+    n_samples = 10
+    subjects, samples = active_learning.make_predictions_on_tfrecord(
+        tfrecord_matrix_id_loc,
+        model=None,  # avoid this via mocking, above
+        n_samples=n_samples,
+        initial_size=size,
+        max_shard_size=10000
+    )
+    assert samples.shape == (len(subjects), n_samples)
+
+
+def test_record_acquisitions_on_predictions(subjects, samples, filled_shard_db, acquisition_func):
+    subjects[0]['id_str'] = 'some_hash'  # to match with filled_shard_db
+
+    active_learning.record_acquisitions_on_predictions(subjects, samples, filled_shard_db, acquisition_func)
+    cursor = filled_shard_db.cursor()
+    # here, 'some hash' is in db and other subjects are not yet added to db
+
+    # check that all subjects have been added, with correct acq. values
+    # includes 'some hash' subject, which must have been updated
+    for subject in subjects:
+        cursor.execute(
+            '''
+            SELECT id_str, acquisition_value FROM acquisitions
+            WHERE id_str = (:id_str)
+            ''',
+            (subject['id_str'],)
+        )
+        saved_subject = cursor.fetchone()
+        assert saved_subject[0] == subject['id_str']
+        assert np.allclose(saved_subject[1], subject['matrix'].mean())
 
 
 def test_get_top_acquisitions_any_shard(filled_shard_db):

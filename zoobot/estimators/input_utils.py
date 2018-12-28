@@ -379,7 +379,7 @@ def ensure_images_have_batch_dimension(images):
     return images
 
 
-def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode='labels'):
+def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
     """Wrapper to mimic the run_estimator.py input procedure.
     Get subjects and labels from tfrecord, just like during training
     Subjects must fit in memory, as they are loaded as a single batch
@@ -400,13 +400,13 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, final_size, mode=
         repeat=False,
         stratify_probs=None,
         regression=True,
-        geometric_augmentation=True,
-        photographic_augmentation=True,
-        max_zoom=1.2,
-        fill_mode='wrap',
+        geometric_augmentation=None,
+        photographic_augmentation=None,
+        max_zoom=None,
+        fill_mode=None,
         batch_size=n_galaxies,
         initial_size=initial_size,
-        final_size=final_size,
+        final_size=None,
         channels=3,
         noisy_labels=False  # important - we want the actual vote fractions
     )

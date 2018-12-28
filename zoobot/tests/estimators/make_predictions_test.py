@@ -106,24 +106,11 @@ def test_binomial_entropy_vectorized():
 #     pass  # TODO 
 
 
-def test_get_acquisition_func(n_draws, monkeypatch):
-    model = None
-    n_samples = n_draws
-
-    def mock_get_samples_of_subjects(model, subjects, n_samples):
-        return np.random.rand(len(subjects), n_samples)
-    monkeypatch.setattr(make_predictions, 'get_samples_of_subjects', mock_get_samples_of_subjects)
-
-    def mock_bin_prob_of_samples(samples, n_draws):
-        final_shape = list(samples.shape) + [n_samples]
-        return np.random.rand(*final_shape)
-    monkeypatch.setattr(make_predictions, 'bin_prob_of_samples', mock_bin_prob_of_samples)
-
-    acq_func = make_predictions.get_acquisition_func(model, n_samples)
-
-    n_subjects = 5
-    subjects = np.ones(n_subjects)
-    mutual_info = acq_func(subjects)
-    assert len(mutual_info) == len(subjects)
+def test_mutual_info_acquisition_func(monkeypatch):
     # dummy functional test, don't actually have any expected answers
     # rely on each component to work correctly
+    n_subjects = 10
+    n_samples = 20
+    samples = np.random.rand(n_subjects, n_samples)
+    mutual_info = make_predictions.mutual_info_acquisition_func(samples)
+    assert len(mutual_info) == n_subjects

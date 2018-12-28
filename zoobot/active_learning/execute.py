@@ -15,7 +15,7 @@ import git
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes
+from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes, iterations
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tests.active_learning import active_learning_test
 
@@ -112,7 +112,7 @@ class ActiveConfig():
         return True
 
 
-    def run(self, train_callable, get_acquisition_func):
+    def run(self, train_callable, acquisition_func):
         """Main active learning training loop. 
         
         Learn with train_callable
@@ -124,52 +124,51 @@ class ActiveConfig():
         
         Args:
             train_callable (func): train a tf model. Arg: list of tfrecord locations
-            get_acquisition_func (func): Make callable for acq. func. Arg: trained & loaded tf model
+            acquisition_func (func): expecting samples of shape [n_subject, n_sample]
         """
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
-        iteration = 0
-        while iteration < self.iterations:
-            iteration_dir = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
-            os.mkdir(iteration_dir)
-            # TODO check that this keeps the datetime, helpful
-            # if estimator_dir is blank, this should still work - TEST!
-            estimators_dir = os.path.join(iteration_dir, 'estimators')
-            os.mkdir(estimators_dir)
-            if self.initial_estimator_ckpt is not None:
-                # copy the initial estimator folder inside estimators_dir, keeping the same name
-                shutil.copytree(
-                    src=self.initial_estimator_ckpt, 
-                    dst=os.path.join(estimators_dir, os.path.split(self.initial_estimator_ckpt)[-1])
-                )
+        iteration_n = 0
+        initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
+        while iteration_n < self.iterations:
+            iteration = iterations.Iteration(self.run_dir, iteration_n, initial_estimator_ckpt)
 
             # train as usual, with saved_model being placed in estimator_dir
-            logging.info('Training iteration {}'.format(iteration))
+            logging.info('Training iteration {}'.format(iteration_n))
         
             # callable should expect 
             # - log dir to train models in
             # - list of tfrecord files to train on
-            train_callable(estimators_dir, self.get_train_records())  # could be docker container to run, save model
+            train_callable(iteration.estimators_dir, self.get_train_records())  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
-            predictor_loc = active_learning.get_latest_checkpoint_dir(estimators_dir)
+            predictor_loc = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
             logging.info('Loading model from {}'.format(predictor_loc))
             predictor = make_predictions.load_predictor(predictor_loc)
             # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
-            acquisition_func = get_acquisition_func(predictor)
 
+            # acq func -> make predictions, act on those results.txt
             logging.info('Making and recording predictions')
             shards_used = 0
-            top_acquisition_ids = []
+            prediction_shards = []
             while shards_used < self.shards_per_iter:
-                shard_loc = next(shard_locs)
-                logging.info('Using shard_loc {}, iteration {}, max {}'.format(shard_loc, iteration, self.shards_per_iter))
-                active_learning.record_acquisitions_on_tfrecord(db, shard_loc, self.shards.initial_size, self.shards.channels, acquisition_func)
+                prediction_shards.append(next(shard_locs))
                 shards_used += 1
 
+            logging.info('Using shard_loc {}, iteration {}, max {}'.format(prediction_shards, iteration_n, self.shards_per_iter))
+            subjects, samples = active_learning.make_predictions_on_tfrecord(prediction_shards, predictor, initial_size=self.shards.initial_size, n_samples=20) # may need more samples?
+            # TODO save samples for posterity
+            active_learning.record_acquisitions_on_predictions(subjects, samples, db, acquisition_func)
+
             top_acquisition_ids = active_learning.get_top_acquisitions(db, self.subjects_per_iter, shard_loc=None)
+            # TODO save acquisition ids for posterity
+            # TODO run check_uncertainty on samples, with acquisition ids as extra dimension?
+
+            # mock_panoptes.request_labels(top_acquisition_ids) TODO
+            # ...
+            # labels = mock_panoptes.get_labels() TODO
 
             labels = mock_panoptes.get_labels(top_acquisition_ids)
 
@@ -183,8 +182,8 @@ class ActiveConfig():
             active_learning.add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, self.shards.initial_size)
             self.add_train_record(new_train_tfrecord)
 
-            iteration += 1
-            initial_estimator_loc = active_learning.get_latest_checkpoint_dir(estimators_dir)
+            iteration_n += 1
+            initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
 
 
     def get_train_records(self):
@@ -212,15 +211,15 @@ class ActiveConfig():
         # latest estimator dir will be iteration_n for max(n)
         # anything in estimator_dir itself is not restored
         # warning - strongly coupled to self.run() last paragraphs
-        iteration = 0
+        iteration_n = 0
         latest_estimator_dir = os.path.join(self.run_dir, 'iteration_0')
         while True:
-            dir_to_test = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
+            dir_to_test = os.path.join(self.run_dir, 'iteration_{}'.format(iteration_n))
             if not os.path.isdir(dir_to_test):
                 break
             else:
                 latest_estimator_dir = dir_to_test
-                iteration += 1
+                iteration_n += 1
         logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
         return latest_estimator_dir
 
@@ -276,26 +275,16 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         return run_estimator.run_estimator(run_config)
 
     if baseline:
-        def mock_acquisition_func(predictor):  # predictor does nothing
-            def mock_acquisition_callable(matrix_list):
-                assert isinstance(matrix_list, list)
-                assert all([isinstance(x, np.ndarray) for x in matrix_list])
-                assert all([x.shape[0] == x.shape[1] for x in matrix_list])
-                return [float(np.random.rand()) for x in matrix_list]
-            return mock_acquisition_callable
+        def mock_acquisition_func(samples):
+            return samples.mean(axis=1)
         logging.warning('Using mock acquisition function, baseline test mode')
-        get_acquisition_func = lambda predictor: mock_acquisition_func(predictor)  # random
+        acquisition_func = mock_acquisition_func
     else:  # callable expecting predictor, returning a callable expecting matrix list
-        get_acquisition_func = lambda predictor: make_predictions.get_acquisition_func(predictor, n_samples=20)  # predictor should be directory of saved_model.pb
-
-    unlabelled_catalog = pd.read_csv(
-        active_config.shards.unlabelled_catalog_loc, 
-        dtype={'id_str': str, 'label': int}
-    )
+        acquisition_func = make_predictions.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
     active_config.run(
         train_callable,
-        get_acquisition_func
+        acquisition_func
     )
 
     analysis.show_subjects_by_iteration(active_config.train_records_index_loc, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

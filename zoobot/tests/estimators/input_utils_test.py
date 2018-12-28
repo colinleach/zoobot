@@ -128,7 +128,7 @@ def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_float_loc, size
     
     # tfrecord_matrix_loc
     n_galaxies = 24
-    subjects, labels, _ = input_utils.predict_input_func(tfrecord_matrix_float_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='labels')
+    subjects, labels, _ = input_utils.predict_input_func(tfrecord_matrix_float_loc, n_galaxies=n_galaxies, initial_size=size, mode='labels')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
         assert subjects.shape == (n_galaxies, size, size, 3)
@@ -140,7 +140,7 @@ def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_float_loc, size
 def test_predict_input_func_with_id(shard_locs, size):
     n_galaxies = 24
     tfrecord_loc = shard_locs[0]
-    subjects, _, id_strs = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='id_str')
+    subjects, _, id_strs = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='id_str')
     with tf.Session() as sess:
         subjects, id_strs = sess.run([subjects, id_strs])
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
@@ -149,7 +149,7 @@ def test_predict_input_func_with_id(shard_locs, size):
 
 def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     n_galaxies = 24
-    subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, final_size=size, mode='matrix')
+    subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, mode='matrix')
     with tf.Session() as sess:
         subjects = sess.run(subjects)
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time

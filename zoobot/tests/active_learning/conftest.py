@@ -110,14 +110,35 @@ def db_loc(tmpdir):
 def acquisition_func():
     # Converts loaded subjects to acquisition scores. Here, takes the mean.
     # Must return float, not np.float32, else db will be confused and write as bytes
-    def mock_acquisition_callable(matrix_list):
-        assert isinstance(matrix_list, list)
-        assert all([isinstance(x, np.ndarray) for x in matrix_list])
-        assert all([x.shape[0] == x.shape[1] for x in matrix_list])
-        return [float(x.mean()) for x in matrix_list]
-    return mock_acquisition_callable
+    def mock_acquisition_func(samples):
+        return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
+    return mock_acquisition_func
 
 
 @pytest.fixture()
 def acquisition():
     return np.random.rand()
+
+
+@pytest.fixture()
+def subjects(size):
+    return [{'matrix': np.random.rand(size, size, 3), 'id_str': 'id_' + str(n)} for n in range(128)]
+
+
+def mock_get_samples_of_subjects(model, subjects, n_samples):
+    # predict the mean of subject, 10 times
+    assert isinstance(subjects, list)
+    example_subject = subjects[0]
+    assert isinstance(example_subject, dict)
+    assert 'matrix' in example_subject.keys()
+    assert isinstance(n_samples, int)
+
+    response = []
+    for subject in subjects:
+        response.append([np.mean(subject['matrix'])] * n_samples)
+    return np.array(response)
+
+
+@pytest.fixture()
+def samples(subjects):
+    return mock_get_samples_of_subjects(model=None, subjects=subjects, n_samples=10)
