@@ -285,8 +285,8 @@ def verify_catalog_matches_shards(catalog, db, size, channels):
 
 
 
-def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog):  # bad loc
-    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog)
+def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog):  # bad loc
+    active_learning.add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -296,7 +296,7 @@ def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog):  # 
     saved_subjects = cursor.fetchall()
     for n, subject in enumerate(saved_subjects):
         assert str(subject[0]) == catalog.iloc[n]['id_str']  # strange string casting when read back
-        assert subject[1] == example_tfrecord_loc
+        assert subject[1] == tfrecord_matrix_float_loc
 
 
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):

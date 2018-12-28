@@ -297,13 +297,13 @@ Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 #         assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
 
 
-# def test_input_utils_visual(example_tfrecord_loc, size, channels):
+# def test_input_utils_visual(tfrecord_matrix_float_loc, size, channels):
 #     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 #     batch_size = 16
 
 #     config = input_utils.InputConfig(
 #         name='train',
-#         tfrecord_loc=example_tfrecord_loc,
+#         tfrecord_loc=tfrecord_matrix_float_loc,
 #         initial_size=size,
 #         final_size=size,
 #         channels=channels,
