@@ -20,6 +20,7 @@ build/*
 
 *shard_*.tfrecord
 acquired_shard_*
+
 .vscode/settings.json
 
 # tensorflow saved data
