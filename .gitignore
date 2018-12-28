@@ -2,36 +2,43 @@
 *cache/
 .DS_Store
 .idea
+*.ropeproject*
+build/*
+*.whl
+*.egg-info
+
+*.db
 *.log
 *.pyc
 *.tfrecord*
 *.csv
 *.tsv
-*model.ckpt*
-*variables.data*
-*variables.index*
-zoobot/illustris/runs
-zoobot/old_runs
-zoobot/runs
-*.pbtxt*
-*events.out*
-*checkpoint
 *.gz
 *.txt
 *.png
 *.ipynb_checkpoints*
-zoobot/tests/test_examples/mnist_fits/*.fits
-*.ropeproject*
-build/*
-*.whl
-*.egg-info
-*.db
+
 *shard_*.tfrecord
 acquired_shard_*
 .vscode/settings.json
-*.pb
 
-# note that .gitignore works wherever it gets placed, so there may be other ignored files
+# tensorflow saved data
+# *model.ckpt*
+# *variables.data*
+# *variables.index*
+# *.pbtxt*
+# *events.out*
+# *checkpoint
+# *.pb
+
+
+# old results, not to be tracked
+zoobot/illustris/runs
+zoobot/old_runs
+zoobot/runs
+
+
+zoobot/tests/test_examples/mnist_fits/*.fits
 zoobot/active_learning/*oracle.csv
 data/runs/example_run
 data/shards/si128_sf64_ss4096

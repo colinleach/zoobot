@@ -1,4 +1,5 @@
 import copy
+import os
 
 import pytest
 import numpy as np
@@ -11,7 +12,7 @@ from zoobot.active_learning import make_shards, execute
 def labelled_catalog(catalog_random_images):
     catalog = catalog_random_images.copy()
     catalog['id_str'] = catalog_random_images['id_str'] + '_from_labelled'  # must be unique
-    catalog['label'] = np.random.randint(0, 2, len(catalog))
+    catalog['label'] = np.random.rand(len(catalog))
     return catalog
 
 
@@ -50,7 +51,6 @@ def active_config(shard_config_ready, tmpdir):
         subjects_per_iter=10,
         warm_start=True
         )
-
     return config
 
 
@@ -59,4 +59,5 @@ def active_config_ready(active_config):
     config = copy.copy(active_config)
     config.prepare_run_folders()
     assert config.ready()
+    assert os.path.isdir(config.estimator_dir)
     return config

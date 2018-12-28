@@ -129,12 +129,14 @@ class ActiveConfig():
             train_callable (func): train a tf model. Arg: list of tfrecord locations
             get_acquisition_func (func): Make callable for acq. func. Arg: trained & loaded tf model
         """
+        assert self.ready()
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
-        if self.warm_start:
-            shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
-            subprocess.call(['cp', '-r', self.get_most_recent_iteration_loc(), self.estimator_dir])
+        # TODO urgently need to begin refactoring how folders work
+        # if self.warm_start:
+        #     shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
+        #     subprocess.call(['cp', '-r', self.get_most_recent_iteration_loc(), self.estimator_dir])
 
         iteration = 0
         while iteration < self.iterations:

@@ -25,13 +25,6 @@ def channels():
 
 
 @pytest.fixture()
-def example_tfrecord_loc():
-    loc = os.path.join(TEST_EXAMPLE_DIR, 'panoptes_featured_s28_l0.4_test.tfrecord')
-    assert os.path.exists(loc)
-    return loc
-
-
-@pytest.fixture()
 def visual_check_image_data(size):
     # actual image used for visual checks
     image = Image.open(os.path.join(TEST_EXAMPLE_DIR, 'example_b.png'))
