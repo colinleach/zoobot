@@ -18,3 +18,4 @@ pymc3
 boto3
 dvc
 gitpython
+statsmodels

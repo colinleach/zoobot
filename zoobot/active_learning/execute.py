@@ -34,6 +34,7 @@ class ActiveConfig():
         iterations, 
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
+        initial_estimator_ckpt,
         warm_start=False):
         """
         Controller to define and run active learning on pre-made shards
@@ -53,6 +54,8 @@ class ActiveConfig():
             iterations (int): how many iterations to train the model (via train_callable)
             shards_per_iter (int): how many shards to find acquisition values for
             subjects_per_iter (int): how many subjects to acquire per training iteration
+            initial_estimator_ckpt (str): path to checkpoint folder (datetime) of est. for initial iteration
+            warm_start (bool): if True, continue training the same estimator between iterations. Else, start from scratch.
         """
         self.shards = shard_config
         self.run_dir = run_dir
@@ -61,10 +64,10 @@ class ActiveConfig():
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
 
+        self.initial_estimator_ckpt = initial_estimator_ckpt
         self.warm_start = warm_start
 
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
-        self.estimator_dir = os.path.join(self.run_dir, 'estimator')
     
         # will download/copy fits of top acquisitions into here
         self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
@@ -73,43 +76,35 @@ class ActiveConfig():
 
         # state for train records is entirely on disk, to allow for warm starts
         self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-        if not os.path.isfile(self.train_records_index_loc):
-            logging.info('creating new tfrecord index')
-            self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
 
 
     def prepare_run_folders(self):
         """
         Create the folders needed to run active learning. 
-        If self.warm_start is False, if any already exist, then wipe them.
+        Copy the shard database, to be modified by the run
+        Wipes any existing folders in run_dir
         """
-        # order is important due to rmtree
-        directories = [self.run_dir, self.estimator_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
+        assert os.path.exists(self.run_dir)
+        shutil.rmtree(self.run_dir)
 
-        # if warm start, check all directories exist and, if not, make them.
-        if self.warm_start:
-            for directory in directories:
-                if not os.path.isdir(directory):
-                    os.mkdir(directory)
+        directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
+        for directory in directories:
+            os.mkdir(directory)
 
-        # if not warm start, delete root and remake all
-        # TODO this is a terrible idea
-        if not self.warm_start:
-            for directory in directories:
-                if os.path.isdir(directory):
-                    shutil.rmtree(directory)
-            for directory in directories:
-                os.mkdir(directory)
+        shutil.copyfile(self.shards.db_loc, self.db_loc)
 
-        # copy initial shard db to run directory, to modify, if not already copied (warm start)
-        if not os.path.isfile(self.db_loc):
-            shutil.copyfile(self.shards.db_loc, self.db_loc)  
+        if not os.path.isfile(self.train_records_index_loc):
+            self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
+
+
 
 
     def ready(self):
-        assert self.shards.ready()
+        assert self.shards.ready()  # delegate
         assert os.path.isfile(self.train_records_index_loc)
-        assert os.path.isdir(self.estimator_dir)
+        if self.initial_estimator_ckpt is not None:
+            assert os.path.isdir(self.initial_estimator_ckpt)
+            assert os.path.exists(os.path.join(self.initial_estimator_ckpt, 'saved_model.pb'))
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
@@ -131,23 +126,35 @@ class ActiveConfig():
             train_callable (func): train a tf model. Arg: list of tfrecord locations
             get_acquisition_func (func): Make callable for acq. func. Arg: trained & loaded tf model
         """
+        assert self.ready()
         db = sqlite3.connect(self.db_loc)
         shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
-        if self.warm_start:
-            shutil.rmtree(self.estimator_dir)  # do not restore from the estimator dir itself, only from complete iterations
-            subprocess.call(['cp', '-r', self.get_most_recent_iteration_loc(), self.estimator_dir])
-
         iteration = 0
         while iteration < self.iterations:
+            iteration_dir = os.path.join(self.run_dir, 'iteration_{}'.format(iteration))
+            os.mkdir(iteration_dir)
+            # TODO check that this keeps the datetime, helpful
+            # if estimator_dir is blank, this should still work - TEST!
+            estimators_dir = os.path.join(iteration_dir, 'estimators')
+            os.mkdir(estimators_dir)
+            if self.initial_estimator_ckpt is not None:
+                # copy the initial estimator folder inside estimators_dir, keeping the same name
+                shutil.copytree(
+                    src=self.initial_estimator_ckpt, 
+                    dst=os.path.join(estimators_dir, os.path.split(self.initial_estimator_ckpt)[-1])
+                )
+
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration))
         
-            # callable should expect list of tfrecord files to train on
-            train_callable(self.get_train_records())  # could be docker container to run, save model
+            # callable should expect 
+            # - log dir to train models in
+            # - list of tfrecord files to train on
+            train_callable(estimators_dir, self.get_train_records())  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
-            predictor_loc = active_learning.get_latest_checkpoint_dir(self.estimator_dir)
+            predictor_loc = active_learning.get_latest_checkpoint_dir(estimators_dir)
             logging.info('Loading model from {}'.format(predictor_loc))
             predictor = make_predictions.load_predictor(predictor_loc)
             # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
@@ -176,13 +183,8 @@ class ActiveConfig():
             active_learning.add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, self.shards.initial_size)
             self.add_train_record(new_train_tfrecord)
 
-            if not self.warm_start:
-                # copy estimator directory to run_dir, and make a new empty estimator_dir
-                # otherwise, estimator will reload from the end of the previous iteration
-                shutil.move(self.estimator_dir, os.path.join(self.run_dir, 'iteration_{}'.format(iteration)))
-                os.mkdir(self.estimator_dir)
-
             iteration += 1
+            initial_estimator_loc = active_learning.get_latest_checkpoint_dir(estimators_dir)
 
 
     def get_train_records(self):
@@ -254,10 +256,12 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         iterations=iterations, 
         subjects_per_iter=subjects_per_iter,
         shards_per_iter=shards_per_iter,
+        initial_estimator_ckpt=None,
         warm_start=warm_start
     )
     active_config.prepare_run_folders()
 
+    # WARNING run_config is not actually part of active_config, only interacts via callables
     run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
 
     if active_config.warm_start:
@@ -265,7 +269,8 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     if test: # overrides warm_start
         run_config.epochs = 5  # minimal training, for speed
 
-    def train_callable(train_records):
+    def train_callable(log_dir, train_records):
+        run_config.log_dir = log_dir
         run_config.train_config.tfrecord_loc = train_records
         # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)

@@ -58,7 +58,7 @@ def matrix_id_feature_spec(size, channels):
 def matrix_label_id_feature_spec(size, channels):
     return {
         "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
-        "label": tf.FixedLenFeature((), tf.int64),
+        "label": tf.FixedLenFeature((), tf.float32),
         "id_str": tf.FixedLenFeature((), tf.string)
         }
 

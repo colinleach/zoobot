@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import numpy as np
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 from zoobot.tfrecord import read_tfrecord
@@ -23,27 +24,29 @@ def test_matrix_label_id_feature_spec(size, channels, serialized_matrix_id_examp
     )
 
 
-def test_load_examples_from_tfrecord(example_tfrecord_loc, size, channels):
-    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=False)
-    tfrecord_locs = [example_tfrecord_loc]
+def test_load_examples_from_tfrecord(tfrecord_matrix_float_loc, size, channels):
+    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=True)
+    tfrecord_locs = [tfrecord_matrix_float_loc]
     examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, 5)
     assert len(examples) == 5
     example = examples[0]
     assert 0. < example['matrix'].mean() < 255.
-    assert example['label'] == 1 or example['label'] == 0
+    assert 0. <= example['label'] <= 1.
+    assert isinstance(example['label'], np.float32)
     plt.clf()
     plt.imshow(example['matrix'].reshape(size, size, channels))
     plt.savefig(os.path.join(TEST_EXAMPLE_DIR, 'loaded_image_from_example_tfrecord.png'))
 
 
-def test_load_examples_from_tfrecord_all(example_tfrecord_loc, size, channels):
-    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=False)
-    tfrecord_locs = [example_tfrecord_loc]
+def test_load_examples_from_tfrecord_all(tfrecord_matrix_float_loc, size, channels):
+    feature_spec = read_tfrecord.matrix_label_feature_spec(size, channels, float_label=True)
+    tfrecord_locs = [tfrecord_matrix_float_loc]
     examples = read_tfrecord.load_examples_from_tfrecord(tfrecord_locs, feature_spec, None)
     assert len(examples) > 5
     example = examples[0]
     assert 0. < example['matrix'].mean() < 255.
-    assert example['label'] == 1 or example['label'] == 0
+    assert 0. <= example['label'] <= 1.
+    assert isinstance(example['label'], np.float32)
     plt.clf()
     plt.imshow(example['matrix'].reshape(size, size, channels))
     plt.savefig(os.path.join(TEST_EXAMPLE_DIR, 'loaded_image_from_example_tfrecord.png'))
