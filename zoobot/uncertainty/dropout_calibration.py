@@ -60,3 +60,4 @@ def coverage_fraction(predictions, true_params, alpha):
         )
     within_interval = (true_params > intervals[:, 0]) & (true_params < intervals[:, 1])
     return float(np.sum(within_interval)) / float(len(predictions))  # coverage fraction
+
