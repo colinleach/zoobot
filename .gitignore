@@ -29,7 +29,7 @@ build/*
 *.db
 *shard_*.tfrecord
 acquired_shard_*
-.vscode/*
+.vscode/settings.json
 *.pb
 
 # note that .gitignore works wherever it gets placed, so there may be other ignored files
