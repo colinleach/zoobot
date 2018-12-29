@@ -2,10 +2,6 @@ import pytest
 
 import os
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
 import scipy
 import numpy as np
 
@@ -48,9 +44,5 @@ def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):
     # if I'm clever, I can get error bars
     # df of form: [max +/- n states, mean observed frequency, mean probability prediction]
     coverage_df = discrete_coverage.evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k)
-    sns.lineplot(data=coverage_df, x='max_state_error', y='probability', hue='observed')
-    plt.xlabel('Max error in states')
-    plt.ylabel('Probability or Frequency')
-    plt.tight_layout()
-    plt.savefig(os.path.join(TEST_FIGURE_DIR, 'discrete_coverage.png'))
-    # TODO axis formatter for ints only
+    save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage.png')
+    discrete_coverage.plot_coverage_df(coverage_df, save_loc)
