@@ -8,6 +8,21 @@ from zoobot.uncertainty import dropout_calibration
 from zoobot.tests import TEST_FIGURE_DIR
 
 
+@pytest.fixture()
+def typical_scatter():
+    return 0.1
+
+
+@pytest.fixture()
+def predictions(typical_vote_frac, typical_scatter, n_subjects, n_samples):
+    return np.random.normal(loc=typical_vote_frac, scale=typical_scatter, size=(n_subjects, n_samples))
+
+
+@pytest.fixture()
+def true_params(typical_vote_frac, typical_scatter, n_subjects):
+    return np.random.normal(loc=typical_vote_frac, scale=typical_scatter, size=n_subjects)
+
+
 def test_coverage_fraction(predictions, true_params):
     # here, the posterior is good, expect correct coverage
     alpha = 0.05
