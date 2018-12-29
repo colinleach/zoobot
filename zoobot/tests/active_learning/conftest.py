@@ -142,3 +142,16 @@ def mock_get_samples_of_subjects(model, subjects, n_samples):
 @pytest.fixture()
 def samples(subjects):
     return mock_get_samples_of_subjects(model=None, subjects=subjects, n_samples=10)
+
+
+@pytest.fixture()
+def estimators_dir(tmpdir):
+    base_dir = tmpdir.mkdir('estimators').strpath
+    checkpoint_dirs = ['157001', '157002', '157003']
+    for directory in checkpoint_dirs:
+        os.mkdir(os.path.join(base_dir, directory))
+    files = ['checkpoint', 'graph.pbtxt', 'events.out.tfevents.1545', 'model.ckpt.2505.index', 'model.ckpt.2505.meta']
+    for file_name in files:
+        with open(os.path.join(base_dir, file_name), 'w') as f:
+            f.write('Dummy file')
+    return base_dir

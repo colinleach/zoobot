@@ -144,10 +144,11 @@ def binomial_prob_per_k(rho, n_draws):
     return np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
 
 
-def binomial_entropy(rho, n_draws):
-    binomial_probs = binomial_prob_per_k(rho, n_draws)
-    return distribution_entropy(binomial_probs)
-binomial_entropy = np.vectorize(binomial_entropy)
+# to avoid! Calculate bin probs only once, for speed
+# def binomial_entropy(rho, n_draws):
+#     binomial_probs = binomial_prob_per_k(rho, n_draws)
+#     return distribution_entropy(binomial_probs)
+# binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def expected_binomial_entropy(binomial_probs_per_sample):

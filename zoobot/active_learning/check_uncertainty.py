@@ -24,7 +24,8 @@ class Model():
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
         self.bin_probs = make_predictions.bin_prob_of_samples(predictions, n_draws=40)
         self.labels = labels
-        self.calculate_default_metrics()
+        if self.labels is not None:
+            self.calculate_default_metrics()
         self.calculate_acquistion_funcs()
         self.name = name
 
@@ -53,12 +54,14 @@ class Model():
         self.bin_loss_per_subject = np.mean(self.bin_loss_per_sample, axis=1)
         self.mean_bin_loss = np.mean(self.bin_loss_per_subject)  # scalar, mean likelihood
 
-    def calculate_acquistion_funcs(self):
+
+    def calculate_acquistion_funcs(self, n_draws=40):
         # self.distribution_entropy = make_predictions.distribution_entropy(results)
         self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.bin_probs)
-        self.expected_entropy = np.mean(make_predictions.binomial_entropy(self.bin_probs), axis=1)
+        self.expected_entropy = np.mean(make_predictions.distribution_entropy(self.bin_probs), axis=1)
         # self.mutual_info = make_predictions.mutual_information(self.predictions)  # actually just calls the above funcs, then subtracts them
         self.mutual_info = self.predictive_entropy - self.expected_entropy
+
 
     def compare_binomial_and_abs_error(self, save_dir):
         # Binomial loss should increase with absolute error, but not linearly
@@ -71,23 +74,14 @@ class Model():
         g.savefig(os.path.join(save_dir, 'bin_loss_vs_abs_error.png'))
         plt.close()
 
+
     def show_coverage(self):
-        bin_p_per_k = make_predictions.binomial_prob_per_k(self.predictions, n_draws=40)
+        pass
 
-        # save coverage fraction of the model i.e. check calibration of posteriors
-        # plt.figure()
-        # alpha_eval, coverage_at_alpha = dropout_calibration.check_coverage_fractions(results, labels)
-        # save_loc = os.path.join(save_dir, 'model_coverage.png')
-        # dropout_calibration.visualise_calibration(alpha_eval, coverage_at_alpha, save_loc)
-        # plt.close()
 
-    def show_acquisition_vs_label(self, save_dir):
-        # How does being smooth or featured affect each entropy measuremement?
-        # Expect expected entropy to be only func. of mean prediction
-        # And currently, similarly for predictive entropy (although queried with Lewis)
-        fig, (row0, row1, row2) = plt.subplots(nrows=3, ncols=3, sharex=True, figsize=(12, 8))
-
-        ax00, ax01, ax02 = row0
+    def acquisition_vs_volunteer_votes(self, row):
+        assert self.labels is not None
+        ax00, ax01, ax02 = row
         ax00.scatter(self.labels, self.predictive_entropy)
         ax00.set_ylabel('Predictive Entropy')
         ax01.scatter(self.labels, self.expected_entropy)
@@ -95,7 +89,15 @@ class Model():
         ax02.scatter(self.labels, self.mutual_info)
         ax02.set_ylabel('Mutual Information')
 
-        ax10, ax11, ax12 = row1
+        ax00.set_xlabel('Vote Fraction')
+        ax01.set_xlabel('Vote Fraction')
+        ax02.set_xlabel('Vote Fraction')
+
+        return ax00, ax01, ax02
+
+
+    def acquisition_vs_mean_prediction(self, row):
+        ax10, ax11, ax12 = row
         ax10.scatter(self.mean_prediction, self.predictive_entropy)
         mean_pred_range = np.linspace(0.02, 0.98)
         ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range, n_draws=40))
@@ -106,37 +108,41 @@ class Model():
         ax12.scatter(self.mean_prediction, self.mutual_info)
         ax12.set_ylabel('Mutual Information')
 
+        ax10.set_xlabel('Mean Prediction')
+        ax11.set_xlabel('Mean Prediction')
+        ax12.set_xlabel('Mean Prediction')
 
-        ax20, ax21, ax22 = row2
+        return ax10, ax11, ax12
+
+
+    def delta_acquisition_vs_mean_prediction(self, row):
+        ax20, ax21, ax22 = row
+        ax21.scatter(self.mean_prediction, self.expected_entropy - make_predictions.binomial_entropy(self.mean_prediction, n_draws=40))
+        ax21.set_ylabel('Delta Expected Entropy')
+        return ax20, ax21, ax22
+
+
+    def show_acquisition_vs_label(self, save_dir):
+        # How does being smooth or featured affect each entropy measuremement?
+        # Expect expected entropy to be only func. of mean prediction
+        # And currently, similarly for predictive entropy (although queried with Lewis)
+        fig, (row0, row1, row2) = plt.subplots(nrows=3, ncols=3, sharex=True, figsize=(12, 8))
+
+        ax00, ax01, ax02 = self.acquisition_vs_volunteer_votes(row0)
+        ax10, ax11, ax12 = self.acquisition_vs_mean_prediction(row1)
+        ax20, ax21, ax22 = self.delta_acquisition_vs_mean_prediction(row2)
+        
         # ax10.scatter(mean_prediction, predictive_entropy)
         # mean_pred_range = np.linspace(0.02, 0.98)
         # ax10.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
         # ax10.set_ylabel('Delta Predictive Entropy')
-        ax21.scatter(self.mean_prediction, self.expected_entropy - make_predictions.binomial_entropy(self.mean_prediction, n_draws=40))
         # ax11.plot(mean_pred_range, make_predictions.binomial_entropy(mean_pred_range))
-        ax21.set_ylabel('Delta Expected Entropy')
         # ax12.scatter(mean_prediction, mutual_info)
         # ax12.set_ylabel('Mutual Information')
-
-        ax00.set_xlabel('Vote Fraction')
-        ax01.set_xlabel('Vote Fraction')
-        ax02.set_xlabel('Vote Fraction')
-        ax10.set_xlabel('Mean Prediction')
-        ax11.set_xlabel('Mean Prediction')
-        ax12.set_xlabel('Mean Prediction')
-        # ax00.set_xlim([0.02, 0.98])
-        # ax01.set_xlim([0.02, 0.98])
-        # ax02.set_xlim([0.02, 0.98])
-        # ax10.set_xlim([0.02, 0.98])
-        # ax11.set_xlim([0.02, 0.98])
-        # ax12.set_xlim([0.02, 0.98])
-        
 
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, 'entropy_by_label.png'))
         plt.close()
-
-
 
 
 def compare_model_errors(model_a, model_b, save_dir):

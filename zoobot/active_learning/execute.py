@@ -144,27 +144,20 @@ class ActiveConfig():
             train_callable(iteration.estimators_dir, self.get_train_records())  # could be docker container to run, save model
 
             # make predictions and save to db, could be docker container
-            predictor_loc = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
-            logging.info('Loading model from {}'.format(predictor_loc))
-            predictor = make_predictions.load_predictor(predictor_loc)
-            # inner acq. func is derived from make predictions acq func but with predictor and n_samples set
-
-            # acq func -> make predictions, act on those results.txt
-            logging.info('Making and recording predictions')
-            shards_used = 0
             prediction_shards = []
+            shards_used = 0
             while shards_used < self.shards_per_iter:
                 prediction_shards.append(next(shard_locs))
                 shards_used += 1
+            subjects, samples = iteration.make_predictions(prediction_shards, self.shards.initial_size)
+            acquisitions = acquisition_func(samples)  # returns list of acquisition values
+            active_learning.record_acquisitions_on_predictions(subjects, acquisitions, db, acquisition_func)
+            iterations.save_metrics(subjects, samples, acquisitions)
 
-            logging.info('Using shard_loc {}, iteration {}, max {}'.format(prediction_shards, iteration_n, self.shards_per_iter))
-            subjects, samples = active_learning.make_predictions_on_tfrecord(prediction_shards, predictor, initial_size=self.shards.initial_size, n_samples=20) # may need more samples?
-            # TODO save samples for posterity
-            active_learning.record_acquisitions_on_predictions(subjects, samples, db, acquisition_func)
-
-            top_acquisition_ids = active_learning.get_top_acquisitions(db, self.subjects_per_iter, shard_loc=None)
-            # TODO save acquisition ids for posterity
-            # TODO run check_uncertainty on samples, with acquisition ids as extra dimension?
+            top_acquisition_subjects = subjects[np.argsort(acquisitions)][:self.subjects_per_iter]
+            top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
+            # top_acquisition_ids = active_learning.get_top_acquisitions(db, self.subjects_per_iter, shard_loc=None)
+            # TODO save acquisition ids for posterity?
 
             # mock_panoptes.request_labels(top_acquisition_ids) TODO
             # ...

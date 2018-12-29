@@ -160,24 +160,22 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, 
     return subjects, samples
 
 
-def record_acquisitions_on_predictions(subjects, samples, db, acquisition_func):
-    """For every subject in tfrecord, get the acq. func value and save to db
-    Records acq. func. value on all examples, even labelled ones.
-    Acquisition func 
-    Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
+# def record_acquisitions_on_predictions(subjects, acquisitions, db, acquisition_func):
+#     """For every subject in tfrecord, get the acq. func value and save to db
+#     Records acq. func. value on all examples, even labelled ones.
+#     Acquisition func 
+#     Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
     
-    Args:
-        subjects (list): of form [{'matrix': np.array, 'id_str':'some_name}]
-        samples (np.array): of form [n_subjects, n_samples], where index must match subjects above
-        db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
-        acquisition_func (callable): expecting list of image matrices, returning list of scalars
-    """
-    # read those predictions to make acquisitions
-    acquisitions = acquisition_func(samples)  # returns list of acquisition values
+#     Args:
+#         subjects (list): of form [{'matrix': np.array, 'id_str':'some_name}]
+#         samples (np.array): of form [n_subjects, n_samples], where index must match subjects above
+#         db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
+#         acquisition_func (callable): expecting list of image matrices, returning list of scalars
+#     """
 
-    # record acquisitions to db
-    for subject, acquisition in zip(subjects, acquisitions):
-        save_acquisition_to_db(subject['id_str'], float(acquisition), db)
+#     # record acquisitions to db
+#     for subject, acquisition in zip(subjects, acquisitions):
+#         save_acquisition_to_db(subject['id_str'], float(acquisition), db)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 

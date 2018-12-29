@@ -406,3 +406,7 @@ def test_add_labels_to_db(filled_shard_db):
 
 def test_get_all_shard_locs(filled_shard_db):
     assert active_learning.get_all_shard_locs(filled_shard_db) == ['tfrecord_a', 'tfrecord_b']
+
+def test_get_latest_checkpoint_dir(estimators_dir):
+    latest_ckpt = active_learning.get_latest_checkpoint_dir(estimators_dir)
+    assert os.path.split(latest_ckpt)[-1] == '157003'
