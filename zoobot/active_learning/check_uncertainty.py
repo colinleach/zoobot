@@ -21,13 +21,15 @@ class Model():
 
     def __init__(self, predictions, labels, name):
         self.predictions = predictions
+        self.labels = labels
+        self.name = name
+
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
         self.bin_probs = make_predictions.bin_prob_of_samples(predictions, n_draws=40)
-        self.labels = labels
+
         if self.labels is not None:
             self.calculate_default_metrics()
         self.calculate_acquistion_funcs()
-        self.name = name
 
 
     def calculate_default_metrics(self):
