@@ -130,6 +130,13 @@ if __name__ == '__main__':
         help='Make new predictions?',
         default=False)
     args = parser.parse_args()
+    parser.add_argument(
+        '--n_galaxies',
+        dest='n_galaxies',
+        type=bool,
+        help='Make new predictions on n_galaxies',
+        default=1024)
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
@@ -148,12 +155,12 @@ if __name__ == '__main__':
     samples_loc = os.path.join(save_dir, 'samples.npy')
 
     if args.new_predictions:
-        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=128, initial_size=size, mode='labels')  # tf graph
+        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=args.n_galaxies, initial_size=size, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
         predictor_loc = os.path.join(results_dir, args.model_name)
         model = make_predictions.load_predictor(predictor_loc)
-        results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
+        results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=30)
         np.save(subjects_loc, subjects)
         np.save(labels_loc, labels)
         np.save(samples_loc, results)
