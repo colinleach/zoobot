@@ -148,7 +148,7 @@ if __name__ == '__main__':
     samples_loc = os.path.join(save_dir, 'samples.txt')
 
     if args.new_predictions:
-        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=1024, initial_size=size, mode='labels')  # tf graph
+        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=128, initial_size=size, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
         np.savetxt(subjects_loc, subjects)
