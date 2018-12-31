@@ -129,7 +129,6 @@ if __name__ == '__main__':
         type=bool,
         help='Make new predictions?',
         default=False)
-    args = parser.parse_args()
     parser.add_argument(
         '--n_galaxies',
         dest='n_galaxies',
