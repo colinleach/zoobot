@@ -104,7 +104,7 @@ def compare_with_baseline(model):
 
 def compare_with_mse(model):
     # warning: fixed to disk location of this reference model
-    mse_results = np.loadtxt('analysis/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
+    mse_results = np.loadtxt('analysis/uncertainty/al-binomial/five_conv_mse/samples.npy')  # baseline is the same model with deterministic labels and MSE loss
     mse_model = metrics.Model(mse_results, labels, name='mean_loss')
     compare_models(model, mse_model)
     compare_model_errors(model, mse_model, save_dir)
