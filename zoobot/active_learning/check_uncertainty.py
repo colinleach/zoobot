@@ -86,7 +86,7 @@ def save_metrics(subjects, labels, results, save_dir):
 
 def save_sample_distributions(samples, labels, save_dir):
     # save histograms of samples, for first 20 galaxies 
-    fig, axes = make_predictions.view_samples(results[:20], labels[:20])
+    fig, axes = make_predictions.view_samples(samples[:20], labels[:20])
     fig.tight_layout()
     axes[-1].set_xlabel(r'Volunteer Vote Fraction $\frac{k}{N}$')
     fig.tight_layout()
@@ -95,7 +95,7 @@ def save_sample_distributions(samples, labels, save_dir):
 
 
 def compare_with_baseline(model):
-    baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
+    baseline_results = np.ones_like(model.predictions) * labels.mean()  # sample always predicts the mean label
     baseline_model = metrics.Model(baseline_results, labels, name='baseline')
     compare_models(model, baseline_model)
 
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--n_galaxies',
         dest='n_galaxies',
-        type=bool,
+        type=int,
         help='Make new predictions on n_galaxies',
         default=1024)
     args = parser.parse_args()
@@ -172,6 +172,6 @@ if __name__ == '__main__':
 
     print(subjects.shape)
     print(labels.shape)
-    print(samplesTypo.shape)
+    print(samples.shape)
 
     save_metrics(subjects, labels, samples, save_dir)
