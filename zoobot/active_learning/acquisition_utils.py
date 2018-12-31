@@ -7,7 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import shared_astro_utils
+from shared_astro_utils import plotting_utils
 from zoobot.estimators import make_predictions
 
 
@@ -114,7 +114,7 @@ def save_acquisition_examples(subjects, acq_values, acq_string, save_dir):
     # save images
     for galaxy_set in galaxies_to_show:
         assert len(galaxy_set['galaxies']) != 0
-        shared_astro_utils.plotting_utils.plot_galaxy_grid(
+        plotting_utils.plot_galaxy_grid(
             galaxies=galaxy_set['galaxies'],
             rows=9,
             columns=3,
