@@ -173,4 +173,4 @@ if __name__ == '__main__':
         labels = np.load(labels_loc)
         samples = np.load(samples_loc)
 
-    save_metrics(subjects, labels, samples, save_dir, args.model_name, args.mse_comparison)
+    save_metrics(subjects, labels, samples, save_dir, args.model_name, mse_comparison=args.mse_comparison)

@@ -1,6 +1,7 @@
 
 import pandas as pd
 import numpy as np
+import sklearn
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -34,6 +35,40 @@ def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
     return df
 
 
+def reduce_coverage_df(df):
+    predicted_df = df[~df['observed']]
+    observed_df = df[df['observed']]
+    assert len(predicted_df) == len(observed_df)
+
+    predicted_grouped = predicted_df.groupby('max_state_error').agg({'probability': 'mean'}).reset_index().set_index('max_state_error')
+    observed_grouped = observed_df.groupby('max_state_error').agg({'probability': 'mean'}).reset_index().set_index('max_state_error')
+
+    # rename columns
+    predicted_grouped['prediction'] = predicted_grouped['probability']
+    del predicted_grouped['probability']
+    observed_grouped['frequency'] = observed_grouped['probability']
+    del observed_grouped['probability']
+
+    # horizontal concat on max_state_error index
+    return pd.concat([predicted_grouped, observed_grouped], axis=1).reset_index()
+
+
+def calibrate_predictions(df):
+    # TODO using reduced df
+    lr = sklearn.linear_model.LogisticRegression()
+    df = df.sample(frac=1).reset_index(drop=True)
+    train_df, test_df = df[:int(len(df)/4)], df[int(len(df)/4):]
+    X_train = np.array(train_df['prediction']).reshape(-1, 1)
+    X_test = np.array(test_df['prediction']).reshape(-1, 1)
+    y_train = np.array(train_df['frequency'])                
+    lr.fit(X_train, y_train)
+    test_df['prediction_calibrated'] = lr.predict_proba(X_test)[:,1]
+    # print('Calibrated tidal predictions: {}. Non-tidal: {}'.format(np.sum(test_df['prediction'] > 0.5), np.sum(test_df['prediction'] < 0.5)))
+    # print('Calibrated tidal truth: {}. Non-tidal: {}'.format(np.sum(test_df['true_label'] > 0.5), np.sum(test_df['true_label'] < 0.5)))
+    return test_df
+
+
+
 def plot_coverage_df(df, save_loc):
     sns.lineplot(data=df, x='max_state_error', y='probability', hue='observed')
     plt.xlabel('Max error in states')
@@ -41,12 +76,3 @@ def plot_coverage_df(df, save_loc):
     plt.tight_layout()
     plt.savefig(save_loc)
     # TODO axis formatter for ints only
-
-
-if __name__ == '__main__':
-    samples_loc = '/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/results.txt'
-    samples = np.loadtxt(samples_loc)
-    from zoobot.estimators import make_predictions
-    bin_probs = make_predictions.bin_prob_of_samples(samples, n_draws=40)
-    # TODO volunteer votes - labels are not actually saved!
-    coverage_df = evaluate_discrete_coverage(volunteer_votes, bin_probs)
