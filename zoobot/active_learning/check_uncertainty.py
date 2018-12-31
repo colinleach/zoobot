@@ -62,7 +62,7 @@ def calculate_predictions(tfrecord_loc, n_galaxies):
     return subjects, labels, results
 
 
-def save_metrics(subjects, labels, results, save_dir):
+def save_metrics(subjects, labels, results, save_dir, name, mse_comparison=False):
     """Describe the performance of prediction results with paper-quality figures.
     
     Args:
@@ -74,14 +74,16 @@ def save_metrics(subjects, labels, results, save_dir):
     sns.set(context='paper', font_scale=1.5)
     save_sample_distributions(results, labels, save_dir)
 
-    binomial_model = metrics.Model(results, labels, name='binomial')
+    model = metrics.Model(results, labels, name=name)
 
-    binomial_model.compare_binomial_and_abs_error(save_dir)
-    binomial_model.show_acquisition_vs_label(save_dir)
-    acquisition_utils.save_acquisition_examples(subjects, binomial_model.mutual_info, 'mutual_info', save_dir)
+    model.compare_binomial_and_abs_error(save_dir)
+    model.show_acquisition_vs_label(save_dir)
+    model.show_acquisitions_vs_predictions(save_dir)
+    acquisition_utils.save_acquisition_examples(subjects, model.mutual_info, 'mutual_info', save_dir)
 
-    compare_with_baseline(binomial_model)
-    # compare_with_mse(binomial_model)
+    compare_with_baseline(model)
+    if mse_comparison:
+        compare_with_mse(model)
 
 
 def save_sample_distributions(samples, labels, save_dir):
@@ -170,8 +172,4 @@ if __name__ == '__main__':
         labels = np.load(labels_loc)
         samples = np.load(samples_loc)
 
-    print(subjects.shape)
-    print(labels.shape)
-    print(samples.shape)
-
-    save_metrics(subjects, labels, samples, save_dir)
+    save_metrics(subjects, labels, samples, save_dir, args.model_name, args.mse_comparison)
