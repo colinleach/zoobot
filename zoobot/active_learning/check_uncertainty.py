@@ -50,6 +50,16 @@ def compare_models(model_a, model_b):
     logging.info('{} mean binomial loss: {}'.format(model_b.name, model_b.mean_bin_loss))
 
 
+def calculate_predictions(tfrecord_loc, n_galaxies):
+    size = 128
+    n_samples = 30
+    subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='labels')  # tf graph
+    with tf.Session() as sess:
+        subjects, labels = sess.run([subjects_g, labels_g])
+    predictor_loc = os.path.join(results_dir, args.model_name)
+    model = make_predictions.load_predictor(predictor_loc)
+    results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=n_samples)
+    return subjects, labels, results
 
 
 def save_metrics(results, subjects, labels, save_dir):
@@ -141,10 +151,6 @@ if __name__ == '__main__':
 
     results_dir = 'results'
 
-    size = 128
-    channels = 3
-    feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
-
     save_dir = 'analysis/uncertainty/al-binomial/{}'.format(args.model_name)
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
@@ -154,12 +160,7 @@ if __name__ == '__main__':
     samples_loc = os.path.join(save_dir, 'samples.npy')
 
     if args.new_predictions:
-        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=args.n_galaxies, initial_size=size, mode='labels')  # tf graph
-        with tf.Session() as sess:
-            subjects, labels = sess.run([subjects_g, labels_g])
-        predictor_loc = os.path.join(results_dir, args.model_name)
-        model = make_predictions.load_predictor(predictor_loc)
-        results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=30)
+        subjects, labels, samples = calculate_predictions(args.tfrecord_loc, args.n_galaxies)
         np.save(subjects_loc, subjects)
         np.save(labels_loc, labels)
         np.save(samples_loc, results)
@@ -168,5 +169,9 @@ if __name__ == '__main__':
         subjects = np.load(subjects_loc)
         labels = np.load(labels_loc)
         results = np.load(samples_loc)
+
+    print(subjects.shape)
+    print(labels.shape)
+    print(results.shape)
 
     save_metrics(results, subjects, labels, save_dir)
