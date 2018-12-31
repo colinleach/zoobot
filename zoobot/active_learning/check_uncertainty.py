@@ -76,6 +76,7 @@ def save_metrics(subjects, labels, results, save_dir, name, mse_comparison=False
 
     model = metrics.Model(results, labels, name=name)
 
+    model.show_coverage(save_dir)
     model.compare_binomial_and_abs_error(save_dir)
     model.show_acquisition_vs_label(save_dir)
     model.show_acquisitions_vs_predictions(save_dir)
