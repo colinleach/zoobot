@@ -172,6 +172,6 @@ if __name__ == '__main__':
 
     print(subjects.shape)
     print(labels.shape)
-    print(results.shape)
+    print(samplesTypo.shape)
 
     save_metrics(subjects, labels, samples, save_dir)
