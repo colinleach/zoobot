@@ -151,8 +151,7 @@ class ActiveConfig():
                 shards_used += 1
             subjects, samples = iteration.make_predictions(prediction_shards, self.shards.initial_size)
             acquisitions = acquisition_func(samples)  # returns list of acquisition values
-            active_learning.record_acquisitions_on_predictions(subjects, acquisitions, db, acquisition_func)
-            iterations.save_metrics(subjects, samples, acquisitions)
+            iteration.save_metrics(subjects, samples)
 
             top_acquisition_subjects = subjects[np.argsort(acquisitions)][:self.subjects_per_iter]
             top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
