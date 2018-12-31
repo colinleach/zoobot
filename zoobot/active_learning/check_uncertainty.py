@@ -143,25 +143,24 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
-    subjects_loc = os.path.join(save_dir, 'subjects.txt')
-    labels_loc = os.path.join(save_dir, 'labels.txt')
-    samples_loc = os.path.join(save_dir, 'samples.txt')
+    subjects_loc = os.path.join(save_dir, 'subjects.npy')
+    labels_loc = os.path.join(save_dir, 'labels.npy')
+    samples_loc = os.path.join(save_dir, 'samples.npy')
 
     if args.new_predictions:
         subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=128, initial_size=size, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
-        np.savetxt(subjects_loc, subjects)
-        np.savetxt(labels_loc, labels)
-
         predictor_loc = os.path.join(results_dir, args.model_name)
         model = make_predictions.load_predictor(predictor_loc)
         results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
-        np.savetxt(samples_loc, results)
+        np.save(subjects_loc, subjects)
+        np.save(labels_loc, labels)
+        np.save(samples_loc, results)
     else:
         assert all(os.path.exists(loc) for loc in [subjects_loc, labels_loc, samples_loc])
-        subjects = np.loadtxt(subjects_loc)
-        labels = np.loadtxt(labels_loc)
-        results = np.loadtxt(samples_loc)
+        subjects = np.load(subjects_loc)
+        labels = np.load(labels_loc)
+        results = np.load(samples_loc)
 
     save_metrics(results, subjects, labels, save_dir)
