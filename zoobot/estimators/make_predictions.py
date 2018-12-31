@@ -114,12 +114,10 @@ def view_samples(scores, labels, annotate=False):
         scores (np.array): class scores, of shape (n_subjects, n_samples)
         labels (np.array): class labels, of shape (n_subjects)
     """
-    # correct = (np.mean(scores, axis=1) > 0.5) == labels
-    # entropies = distribution_entropy(scores)  # fast array calculation on all results, look up as needed later
+    assert len(labels) == len(scores) > 1
+    fig, axes = plt.subplots(nrows=len(labels), figsize=(4, len(labels)), sharey=True)
+
     x = np.arange(0, 41)
-
-    fig, axes = plt.subplots(len(labels), figsize=(4, len(labels)), sharey=True)
-
     for galaxy_n, ax in enumerate(axes):
         probability_record = []
         for score_n, score in enumerate(scores[galaxy_n]):
