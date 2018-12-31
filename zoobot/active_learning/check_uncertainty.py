@@ -62,13 +62,13 @@ def calculate_predictions(tfrecord_loc, n_galaxies):
     return subjects, labels, results
 
 
-def save_metrics(results, subjects, labels, save_dir):
+def save_metrics(subjects, labels, results, save_dir):
     """Describe the performance of prediction results with paper-quality figures.
     
     Args:
-        results (np.array): predictions of shape (galaxy_n, sample_n)
         subjects (np.array): galaxies on which predictions were made, shape (batch, x, y, channel)
         labels (np.array): true labels for galaxies on which predictions were made
+                results (np.array): predictions of shape (galaxy_n, sample_n)
         save_dir (str): directory into which to save figures of metrics
     """
     sns.set(context='paper', font_scale=1.5)
@@ -163,15 +163,15 @@ if __name__ == '__main__':
         subjects, labels, samples = calculate_predictions(args.tfrecord_loc, args.n_galaxies)
         np.save(subjects_loc, subjects)
         np.save(labels_loc, labels)
-        np.save(samples_loc, results)
+        np.save(samples_loc, samples)
     else:
         assert all(os.path.exists(loc) for loc in [subjects_loc, labels_loc, samples_loc])
         subjects = np.load(subjects_loc)
         labels = np.load(labels_loc)
-        results = np.load(samples_loc)
+        samples = np.load(samples_loc)
 
     print(subjects.shape)
     print(labels.shape)
     print(results.shape)
 
-    save_metrics(results, subjects, labels, save_dir)
+    save_metrics(subjects, labels, samples, save_dir)
