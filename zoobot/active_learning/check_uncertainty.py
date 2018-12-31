@@ -1,5 +1,6 @@
 import os
 import logging
+import argparse
 
 import numpy as np
 import matplotlib
@@ -50,6 +51,7 @@ def compare_models(model_a, model_b):
 
 
 
+
 def save_metrics(results, subjects, labels, save_dir):
     """Describe the performance of prediction results with paper-quality figures.
     
@@ -59,8 +61,20 @@ def save_metrics(results, subjects, labels, save_dir):
         labels (np.array): true labels for galaxies on which predictions were made
         save_dir (str): directory into which to save figures of metrics
     """
-
     sns.set(context='paper', font_scale=1.5)
+    save_sample_distributions(results, labels, save_dir)
+
+    binomial_model = metrics.Model(results, labels, name='binomial')
+
+    binomial_model.compare_binomial_and_abs_error(save_dir)
+    binomial_model.show_acquisition_vs_label(save_dir)
+    acquisition_utils.save_acquisition_examples(subjects, binomial_model.mutual_info, 'mutual_info', save_dir)
+
+    compare_with_baseline(binomial_model)
+    # compare_with_mse(binomial_model)
+
+
+def save_sample_distributions(samples, labels, save_dir):
     # save histograms of samples, for first 20 galaxies 
     fig, axes = make_predictions.view_samples(results[:20], labels[:20])
     fig.tight_layout()
@@ -69,69 +83,85 @@ def save_metrics(results, subjects, labels, save_dir):
     fig.savefig(os.path.join(save_dir, 'sample_dist.png'))
     plt.close(fig)
 
-    binomial_metrics = metrics.Model(results, labels, name='binomial')
 
-    # repeat for baseline
+def compare_with_baseline(model):
     baseline_results = np.ones_like(results) * labels.mean()  # sample always predicts the mean label
-    baseline_metrics = metrics.Model(baseline_results, labels, name='baseline')
+    baseline_model = metrics.Model(baseline_results, labels, name='baseline')
+    compare_models(model, baseline_model)
+
+
+def compare_with_mse(model):
     # warning: fixed to disk location of this reference model
-    mse_results = np.loadtxt('/Data/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
-    mse_metrics = metrics.Model(mse_results, labels, name='mean_loss')
-
-    compare_models(binomial_metrics, baseline_metrics)
-
-    compare_models(binomial_metrics, mse_metrics)
-
-    compare_model_errors(binomial_metrics, mse_metrics, save_dir)
-    binomial_metrics.compare_binomial_and_abs_error(save_dir)
-    binomial_metrics.show_acquisition_vs_label(save_dir)
-
-    acquisition_utils.save_acquisition_examples(subjects, binomial_metrics.mutual_info, 'mutual_info', save_dir)
-
+    mse_results = np.loadtxt('analysis/uncertainty/al-binomial/five_conv_mse/results.txt')  # baseline is the same model with deterministic labels and MSE loss
+    mse_model = metrics.Model(mse_results, labels, name='mean_loss')
+    compare_models(model, mse_model)
+    compare_model_errors(model, mse_model, save_dir)
 
 
 if __name__ == '__main__':
+    """
+    tfrecord_loc=data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
+    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -o analysis/uncertainty/al-binomial/five_conv_mse -f mse_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=five_conv_mse --new_predictions=True
+    latest_model=five_conv_fractions
+    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -d analysis/uncertainty/al-binomial/five_conv_mse -o analysis/uncertainty/al-binomial/latest_model -f latest_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=$latest_model --mse_comparison=True --new_predictions=True
+    """
+    parser = argparse.ArgumentParser(description='Update Model Metrics for Basic Split')
+    parser.add_argument(
+        '--tfrecord_loc',
+        dest='tfrecord_loc',
+        type=str,
+        help='Basic split test tfrecord')
+    parser.add_argument(
+        '--model_name',
+        dest='model_name',
+        type=str,
+        help='Model to make predictions with, under results/[model_name]',
+        default='five_conv_fractions')
+    parser.add_argument(
+        '--mse_comparison',
+        dest='mse_comparison',
+        type=bool,
+        help='Compare with MSE model?',
+        default=False)
+    parser.add_argument(
+        '--new_predictions',
+        dest='new_predictions',
+        type=bool,
+        help='Make new predictions?',
+        default=False)
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
-    # dropouts = ['00', '02', '05', '10', '50', '90', '95']
-    # dropouts=['05']
+    results_dir = 'results'
 
-    # for dropout in dropouts:
+    size = 128
+    channels = 3
+    feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
 
-    # predictor_names = ['five_conv_noisy']
-    predictor_names = ['five_conv_fractions']
-    # predictor_names = ['five_conv_mse', 'five_conv_noisy']
-    # predictor_names = ['c2548d0_d90']
+    save_dir = 'analysis/uncertainty/al-binomial/{}'.format(args.model_name)
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
 
-    for predictor_name in predictor_names:
+    subjects_loc = os.path.join(save_dir, 'subjects.txt')
+    labels_loc = os.path.join(save_dir, 'labels.txt')
+    samples_loc = os.path.join(save_dir, 'samples.txt')
 
-        predictor_loc = os.path.join('/data/repos/zoobot/results', predictor_name)
-
-        # predictor_loc = '/Data/repos/zoobot/runs/bayesian_panoptes_featured_si128_sf64_lfloat_no_pred_dropout/final_d{}'.format(dropout)
-        model = make_predictions.load_predictor(predictor_loc)
-
-        size = 128
-        channels = 3
-        feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)
-
-        tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord'
-        subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=1024, initial_size=size, mode='labels')  # tf graph
+    if args.new_predictions:
+        subjects_g, labels_g, _ = input_utils.predict_input_func(args.tfrecord_loc, n_galaxies=1024, initial_size=size, mode='labels')  # tf graph
         with tf.Session() as sess:
             subjects, labels = sess.run([subjects_g, labels_g])
+        np.savetxt(subjects_loc, subjects)
+        np.savetxt(labels_loc, labels)
 
-        save_dir = 'analysis/uncertainty/al-binomial/{}'.format(predictor_name)
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
+        predictor_loc = os.path.join(results_dir, args.model_name)
+        model = make_predictions.load_predictor(predictor_loc)
+        results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
+        np.savetxt(samples_loc, results)
+    else:
+        assert all(os.path.exists(loc) for loc in [subjects_loc, labels_loc, samples_loc])
+        subjects = np.loadtxt(subjects_loc)
+        labels = np.loadtxt(labels_loc)
+        results = np.loadtxt(samples_loc)
 
-        results_loc = os.path.join(save_dir, 'results.txt')
-
-        new_predictions = False
-        if new_predictions:
-            results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)
-            np.savetxt(results_loc, results)
-        else:
-            assert os.path.exists(results_loc)
-            results = np.loadtxt(results_loc)
-
-        save_metrics(results, subjects, labels, save_dir)
+    save_metrics(results, subjects, labels, save_dir)

@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 
 import numpy as np
 import matplotlib
@@ -10,10 +11,10 @@ import seaborn as sns
 from sklearn import metrics
 import tensorflow as tf
 
-from zoobot.estimators import make_predictions, bayesian_estimator_funcs
+from zoobot.estimators import make_predictions, bayesian_estimator_funcs, input_utils
 from zoobot.tfrecord import read_tfrecord
 from zoobot.uncertainty import discrete_coverage
-from zoobot.estimators import input_utils
+from zoobot.active_learning import acquisition_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
 
@@ -34,8 +35,8 @@ class Model():
 
 
     def calculate_acquistion_funcs(self):
-        self.predictive_entropy = make_predictions.predictive_binomial_entropy(self.bin_probs)
-        self.expected_entropy = np.mean(make_predictions.distribution_entropy(self.bin_probs), axis=1)
+        self.predictive_entropy = acquisition_utils.predictive_binomial_entropy(self.bin_probs)
+        self.expected_entropy = np.mean(acquisition_utils.distribution_entropy(self.bin_probs), axis=1)
         self.mutual_info = self.predictive_entropy - self.expected_entropy
 
 
@@ -51,7 +52,7 @@ class Model():
 
     def acquisition_vs_mean_prediction(self, row):
         mean_pred_range = np.linspace(0.02, 0.98)
-        entropy_of_mean_pred_range = make_predictions.binomial_entropy(mean_pred_range, n_draws=40)
+        entropy_of_mean_pred_range = acquisition_utils.binomial_entropy(mean_pred_range, n_draws=40)
 
         row[0].scatter(self.mean_prediction, self.predictive_entropy)
         row[0].plot(mean_pred_range, entropy_of_mean_pred_range)
@@ -70,7 +71,7 @@ class Model():
 
 
     def delta_acquisition_vs_mean_prediction(self, row):
-        entropy_of_mean_prediction = make_predictions.binomial_entropy(self.mean_prediction, n_draws=40)
+        entropy_of_mean_prediction = acquisition_utils.binomial_entropy(self.mean_prediction, n_draws=40)
         row[0].scatter(self.mean_prediction, self.predictive_entropy - entropy_of_mean_prediction)
         row[0].set_ylabel('Delta Predictive Entropy')
         row[1].scatter(self.mean_prediction, self.expected_entropy - entropy_of_mean_prediction)
@@ -146,3 +147,13 @@ class Model():
     def show_coverage(self, save_dir):
         coverage_df = discrete_coverage.evaluate_discrete_coverage(self.labels, self.bin_probs)
         discrete_coverage.plot_coverage_df(coverage_df, os.path.join(save_dir, 'discrete_coverage.png'))
+
+
+    def export_performance_metrics(self, save_dir):
+        # requires labels. Might be better to extract from the log at execute.py level, via analysis.py.
+        data = {}
+        data['mean square error'] = self.mean_square_error
+        data['mean absolute error'] = self.mean_abs_error
+        data['binomial loss'] = self.mean_bin_loss
+        with open(os.path.join(save_dir, 'metrics.json'), 'w') as f:
+            json.dump(data, f) 
