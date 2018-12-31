@@ -10,6 +10,22 @@ from astropy.io import fits
 from zoobot.active_learning import make_shards, execute
 
 
+@pytest.fixture
+def catalog_random_images(size, channels, fits_native_dir):
+    assert os.path.exists(fits_native_dir)
+    n_subjects = 256
+    id_strings = [str(n) for n in range(n_subjects)]
+    matrices = np.random.rand(n_subjects, size, size, channels)
+    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
+    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
+    for matrix, loc in zip(matrices, fits_locs):  # write to fits
+        hdu = fits.PrimaryHDU(matrix)
+        hdu.writeto(loc, overwrite=True)
+        assert os.path.isfile(loc)
+    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+    return catalog
+
+
 # due to conftest.py, catalog fits_loc is absolute and points to fits_native_dir
 @pytest.fixture()
 def labelled_catalog(catalog_random_images):
@@ -30,6 +46,7 @@ def unlabelled_catalog(catalog_random_images):
 def shard_config(tmpdir, size, channels):
     config = make_shards.ShardConfig(
         shard_dir=tmpdir.mkdir('base_dir').strpath,
+        shard_size=128,
         inital_size=size,
         final_size=size,
         channels=channels)
@@ -68,7 +85,7 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
     config = execute.ActiveConfig(
         shard_config_ready, 
         run_dir=tmpdir.mkdir('run_dir').strpath,
-        iterations=2,
+        iterations=3,  # 1st is only the initial cycle
         shards_per_iter=2,
         subjects_per_iter=10,
         initial_estimator_ckpt=initial_estimator_ckpt,
@@ -83,22 +100,6 @@ def active_config_ready(active_config):
     config.prepare_run_folders()
     assert config.ready()
     return config
-
-
-@pytest.fixture
-def catalog_random_images(size, channels, fits_native_dir):
-    assert os.path.exists(fits_native_dir)
-    n_subjects = 64
-    id_strings = [str(n) for n in range(n_subjects)]
-    matrices = np.random.rand(n_subjects, size, size, channels)
-    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
-    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
-    for matrix, loc in zip(matrices, fits_locs):  # write to fits
-        hdu = fits.PrimaryHDU(matrix)
-        hdu.writeto(loc, overwrite=True)
-        assert os.path.isfile(loc)
-    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
-    return catalog
 
 
 @pytest.fixture()

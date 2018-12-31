@@ -39,12 +39,46 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
         assert os.path.isdir(estimators_dir)
         subdir_loc = os.path.join(estimators_dir, str(time.time()))
         os.mkdir(subdir_loc)
+        with open(os.path.join(subdir_loc, 'dummy_model.txt'), 'w') as f:
+            json.dump(train_tfrecord_locs, f)
 
     def mock_load_predictor(loc):
-        return None
+        # assumes run is configured for 3 iterations in total
+        with open(os.path.join(loc, 'dummy_model.txt'), 'r') as f:
+            training_records = json.load(f)
+        if len(training_records) == 1:
+            assert 'initial_train' in training_records[0]
+            return 'initial train only'
+        if len(training_records) == 2:
+            return 'one acquired record'
+        if len(training_records) == 3:
+            return 'two acquired records'
+        else:
+            raise ValueError('More training records than expected!')
     monkeypatch.setattr(active_learning.make_predictions, 'load_predictor', mock_load_predictor)
 
-    monkeypatch.setattr(active_learning.make_predictions, 'get_samples_of_subjects', conftest.mock_get_samples_of_subjects)
+    def mock_get_samples_of_subjects(model, subjects, n_samples):
+        # only give the correct samples if you've trained on two acquired records
+        assert isinstance(subjects, list)
+        example_subject = subjects[0]
+        assert isinstance(example_subject, dict)
+        assert 'matrix' in example_subject.keys()
+        assert isinstance(n_samples, int)
+
+        response = []
+        for subject in subjects:
+            
+            if model == 'two acquired records':
+                response.append([np.mean(subject['matrix'])] * n_samples)
+            else:
+                response.append(np.random.rand(n_samples))
+        return np.array(response)
+    monkeypatch.setattr(active_learning.make_predictions, 'get_samples_of_subjects', mock_get_samples_of_subjects)
+
+    def mock_save_metrics(self, subjects, samples):
+        with open(os.path.join(self.metrics_dir, 'some_metrics.txt'), 'w') as f:
+            f.write('some metrics from iteration {}'.format(self.name))
+    monkeypatch.setattr(execute.iterations.Iteration, 'save_metrics', mock_save_metrics)
 
     def mock_get_labels(subject_ids):  
         # don't actually read from saved catalog, just make up
@@ -76,14 +110,19 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
     
     # read back the training tfrecords and verify they are sorted by order of mean
     with open(active_config_ready.train_records_index_loc, 'r') as f:
-        training_shards = json.load(f)[1:]  # includes the initial shard, which is unsorted
+        acquired_shards = json.load(f)[1:]  # includes the initial shard, which is unsorted
     
-    for shard in training_shards:
+    matrix_means = []
+    for shard in acquired_shards:
         subjects = read_tfrecord.load_examples_from_tfrecord(
             [shard], 
             read_tfrecord.matrix_label_id_feature_spec(active_config_ready.shards.initial_size, active_config_ready.shards.channels)
         )
-        matrix_means = np.array([x['matrix'].mean() for x in subjects])
+        shard_matrix_means = np.array([x['matrix'].mean() for x in subjects])
 
-        # check that images have been sorted into monotonically decreasing order, even across shards
-        assert all(matrix_means[1:] < matrix_means[:-1])
+        # check that images have been saved to shards in monotonically decreasing order...
+        assert all(shard_matrix_means[1:] < shard_matrix_means[:-1])
+        matrix_means.append(shard_matrix_means)
+    # ...but not across all shards, since we only predict on some shards at a time
+    all_means = np.concatenate(matrix_means)
+    assert not all(all_means[1:] < all_means[:-1])

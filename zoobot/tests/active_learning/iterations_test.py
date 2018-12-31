@@ -40,6 +40,9 @@ def test_init(tmpdir, initial_estimator_ckpt):
         expected_estimators_dir = os.path.join(expected_iteration_dir, 'estimators')
         assert os.path.isdir(expected_estimators_dir)
 
+        expected_metrics_dir = os.path.join(expected_iteration_dir, 'metrics')
+        assert os.path.isdir(expected_metrics_dir)
+
         # if initial estimator was provided, it should have been copied into the of 0th iteration subdir
         if initial_estimator_ckpt is not None:
             expected_initial_estimator_copy = os.path.join(expected_estimators_dir, 'some_datetime_ckpt')
@@ -76,4 +79,5 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
     monkeypatch.setattr(iterations.active_learning, 'make_predictions_on_tfrecord', mock_make_predictions_on_tfrecord)
 
     subjects, samples = new_iteration.make_predictions(shard_locs, size)
-
+    assert len(subjects) == 256 * len(shard_locs)
+    assert samples.shape == (256 * len(shard_locs), new_iteration.n_samples)

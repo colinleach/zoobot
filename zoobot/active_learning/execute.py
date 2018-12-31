@@ -15,10 +15,8 @@ import git
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes, iterations
+from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes, iterations, acquisition_utils
 from zoobot.tests import TEST_EXAMPLE_DIR
-from zoobot.tests.active_learning import active_learning_test
-
 
 class ActiveConfig():
     """
@@ -149,13 +147,21 @@ class ActiveConfig():
             while shards_used < self.shards_per_iter:
                 prediction_shards.append(next(shard_locs))
                 shards_used += 1
+            # shards should be unique, or everything falls apart. Don't cycle all the way through!
+            assert len(prediction_shards) == len(set(prediction_shards))
             subjects, samples = iteration.make_predictions(prediction_shards, self.shards.initial_size)
+
+            # subjects should all be unique, otherwise there's a bug
+            id_strs = [subject['id_str'] for subject in subjects]
+            assert len(id_strs) == len(set(id_strs)) 
+
             acquisitions = acquisition_func(samples)  # returns list of acquisition values
             iteration.save_metrics(subjects, samples)
 
-            top_acquisition_subjects = subjects[np.argsort(acquisitions)][:self.subjects_per_iter]
+            args_to_sort = np.argsort(acquisitions)[::-1]  # reverse order, highest to lowest
+            top_acquisition_subjects = [subjects[i] for i in args_to_sort][:self.subjects_per_iter]
             top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
-            # top_acquisition_ids = active_learning.get_top_acquisitions(db, self.subjects_per_iter, shard_loc=None)
+            assert len(top_acquisition_ids) == len(set(top_acquisition_ids))  # no duplicates allowed
             # TODO save acquisition ids for posterity?
 
             # mock_panoptes.request_labels(top_acquisition_ids) TODO
@@ -272,7 +278,7 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
         logging.warning('Using mock acquisition function, baseline test mode')
         acquisition_func = mock_acquisition_func
     else:  # callable expecting predictor, returning a callable expecting matrix list
-        acquisition_func = make_predictions.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
+        acquisition_func = acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
     active_config.run(
         train_callable,

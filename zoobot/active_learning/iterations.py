@@ -14,16 +14,19 @@ class Iteration():
         self, 
         run_dir,
         iteration_n,
-        initial_estimator_ckpt=None
+        initial_estimator_ckpt=None,
+        n_samples=20  # may need more samples?
         ):
 
         self.name = 'iteration_{}'.format(iteration_n)
+        self.n_samples = n_samples
         self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
         os.mkdir(self.estimators_dir)
+        os.mkdir(self.metrics_dir)
 
         if initial_estimator_ckpt is not None:
             # copy the initial estimator folder inside estimators_dir, keeping the same name
@@ -37,7 +40,7 @@ class Iteration():
         predictor = self.get_latest_model()
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(shard_locs))
-        subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, initial_size=initial_size, n_samples=20) # may need more samples?
+        subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, initial_size=initial_size, n_samples=self.n_samples)
         return subjects, samples
 
 
