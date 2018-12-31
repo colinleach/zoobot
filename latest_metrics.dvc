@@ -1,14 +1,14 @@
 cmd: ' python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
-  --model_name=five_conv_fractions --mse_comparison=True --new_predictions=True'
+  --model_name=five_conv_fractions --new_predictions=False'
 deps:
-- md5: 2a78fddfec128fe37743d64e1179a190
+- md5: 35b56fa70df0951816d26fd14c6e4d52
   path: zoobot/active_learning/check_uncertainty.py
 - md5: 900d0448e45f6d465c8d6fa8aea23d85
   path: data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
 - md5: 0b8bd09f350f08bbee9cdf08a5df070e.dir
   path: analysis/uncertainty/al-binomial/five_conv_mse
-md5: 2c0c6a5f8f3da22364c59117e8d44fa1
+md5: 096937d24717513902d4dd7890d01f5b
 outs:
 - cache: true
-  md5: d8122b5fe3c46bfb3b840520796d0f2c.dir
+  md5: d0c64a46db9ca8200f51ac0c4c79311f.dir
   path: analysis/uncertainty/al-binomial/five_conv_fractions
