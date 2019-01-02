@@ -6,8 +6,8 @@ import json
 import time
 import sqlite3
 import json
-import itertools
 import subprocess
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ import git
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, mock_panoptes, iterations, acquisition_utils
+from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, iterations, acquisition_utils
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 class ActiveConfig():
@@ -91,11 +91,6 @@ class ActiveConfig():
 
         shutil.copyfile(self.shards.db_loc, self.db_loc)
 
-        if not os.path.isfile(self.train_records_index_loc):
-            self.write_train_records_index([self.shards.train_tfrecord_loc])  # will append new shards
-
-
-
 
     def ready(self):
         assert self.shards.ready()  # delegate
@@ -126,83 +121,38 @@ class ActiveConfig():
         """
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
-        shard_locs = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
+        shards_iterable = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
 
         iteration_n = 0
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
+        initial_db_loc = self.db_loc
+        initial_train_tfrecords=self.shards.initial_train_tfrecords
+        
         while iteration_n < self.iterations:
-            iteration = iterations.Iteration(self.run_dir, iteration_n, initial_estimator_ckpt)
+
+            prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
+
+            iteration = iterations.Iteration(
+                run_dir=self.run_dir, 
+                iteration_n=iteration_n, 
+                prediction_shards=prediction_shards,
+                initial_db_loc=initial_db_loc,
+                initial_train_tfrecords=initial_train_tfrecords,
+                train_callable=train_callable,
+                acquisition_func=acquisition_func,
+                n_samples=20,
+                n_subjects_to_acquire=self.subjects_per_iter,
+                initial_size=self.shards.initial_size,
+                initial_estimator_ckpt=initial_estimator_ckpt)
 
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration_n))
-        
-            # callable should expect 
-            # - log dir to train models in
-            # - list of tfrecord files to train on
-            train_callable(iteration.estimators_dir, self.get_train_records())  # could be docker container to run, save model
-
-            # make predictions and save to db, could be docker container
-            prediction_shards = []
-            shards_used = 0
-            while shards_used < self.shards_per_iter:
-                prediction_shards.append(next(shard_locs))
-                shards_used += 1
-            # shards should be unique, or everything falls apart. Don't cycle all the way through!
-            assert len(prediction_shards) == len(set(prediction_shards))
-            subjects, samples = iteration.make_predictions(prediction_shards, self.shards.initial_size)
-
-            # subjects should all be unique, otherwise there's a bug
-            id_strs = [subject['id_str'] for subject in subjects]
-            assert len(id_strs) == len(set(id_strs)) 
-
-            acquisitions = acquisition_func(samples)  # returns list of acquisition values
-            iteration.save_metrics(subjects, samples)
-
-            args_to_sort = np.argsort(acquisitions)[::-1]  # reverse order, highest to lowest
-            top_acquisition_subjects = [subjects[i] for i in args_to_sort][:self.subjects_per_iter]
-            top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
-            assert len(top_acquisition_ids) == len(set(top_acquisition_ids))  # no duplicates allowed
-            # TODO save acquisition ids for posterity?
-
-            # mock_panoptes.request_labels(top_acquisition_ids) TODO
-            # ...
-            # labels = mock_panoptes.get_labels() TODO
-
-            labels = mock_panoptes.get_labels(top_acquisition_ids)
-
-            active_learning.add_labels_to_db(top_acquisition_ids, labels, db)
-
-            new_train_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard_{}.tfrecord'.format(time.time()))
-            logging.info('Saving top acquisition subjects to {}, labels: {}...'.format(new_train_tfrecord, labels[:5]))
-            # TODO download the top acquisitions from S3 if not on local system, for EC2
-            # Can do this when switching to production, not necessary to demonstrate the system
-            # fits_loc_s3 column?
-            active_learning.add_labelled_subjects_to_tfrecord(db, top_acquisition_ids, new_train_tfrecord, self.shards.initial_size)
-            self.add_train_record(new_train_tfrecord)
+            iteration.run()
 
             iteration_n += 1
+            initial_db_loc = iteration.db_loc
+            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
             initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
-
-
-    def get_train_records(self):
-        logging.info('Attempting to load {}'.format(self.train_records_index_loc))
-        with open(self.train_records_index_loc, 'r') as f:  # must exist, see __init__
-            train_records = json.load(f)  # restore from disk all previous train records
-        logging.info('Loaded train records: {}'.format(train_records))
-        assert isinstance(train_records, list)
-        return train_records
-
-    def add_train_record(self, new_record_loc):
-        # must always be kept in sync
-        current_records = self.get_train_records()
-        current_records.append(new_record_loc)
-        self.write_train_records_index(current_records)
-
-
-    def write_train_records_index(self, train_records):
-        with open(self.train_records_index_loc, 'w') as f:
-            logging.info('Writing train records {} to {}'.format(train_records, self.train_records_index_loc))
-            json.dump(train_records, f)
 
 
     def get_most_recent_iteration_loc(self):
