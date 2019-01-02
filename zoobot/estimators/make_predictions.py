@@ -89,7 +89,7 @@ def bin_prob_of_samples(samples, n_draws):
     for subject_n in range(samples.shape[0]):
         for sample_n in range(samples.shape[1]):
             rho = samples[subject_n, sample_n]
-            binomial_probs_per_sample[subject_n, sample_n, :] = binomial_prob_per_k(rho, n_draws)
+            binomial_probs_per_sample[subject_n, sample_n] = binomial_prob_per_k(rho, n_draws)
     return binomial_probs_per_sample  # (n_subject, n_samples, k)
 
 
@@ -104,7 +104,9 @@ def binomial_prob_per_k(rho, n_draws):
         (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
     """
     k = np.arange(0, n_draws + 1)  # include k=n
-    return np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
+    bin_probs = np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
+    assert np.allclose(bin_probs.sum(), 1.)  # must be one k in (0, ..., n_draws)
+    return bin_probs
 
 
 def view_samples(scores, labels, annotate=False):
