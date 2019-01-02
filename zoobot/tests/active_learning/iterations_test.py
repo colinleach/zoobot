@@ -13,27 +13,49 @@ def initial_estimator_ckpt(tmpdir):
 
 
 @pytest.fixture()
-def new_iteration(tmpdir, initial_estimator_ckpt):
-    run_dir = tmpdir.mkdir('run_dir').strpath
-    iteration_n = 0
-
-    return iterations.Iteration(
-        run_dir,
-        iteration_n,
-        initial_estimator_ckpt
-    )
-
-
-def test_init(tmpdir, initial_estimator_ckpt):
-        run_dir = tmpdir.mkdir('run_dir').strpath
+def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
+        run_dir = active_config_ready.run_dir
         iteration_n = 0
+        prediction_shards = ['some', 'shards']
 
-        _ = iterations.Iteration(
+        iteration = iterations.Iteration(
             run_dir,
             iteration_n,
-            initial_estimator_ckpt
+            prediction_shards,
+            initial_db_loc=active_config_ready.db_loc,
+            initial_train_tfrecords=[active_config_ready.shards.train_tfrecord_loc],
+            train_callable=np.random.rand,
+            acquisition_func=np.random.rand,
+            n_samples=10,  # may need more samples?
+            n_subjects_to_acquire=50,
+            initial_size=64,
+            initial_estimator_ckpt=None
         )
 
+        return iteration
+
+
+def test_init(tmpdir, initial_estimator_ckpt, active_config_ready):
+        run_dir = active_config_ready.run_dir
+        iteration_n = 0
+        prediction_shards = ['some', 'shards']
+
+        iteration = iterations.Iteration(
+            run_dir,
+            iteration_n,
+            prediction_shards,
+            initial_db_loc=active_config_ready.db_loc,
+            initial_train_tfrecords=[active_config_ready.shards.train_tfrecord_loc],
+            train_callable=np.random.rand,
+            acquisition_func=np.random.rand,
+            n_samples=10,  # may need more samples?
+            n_subjects_to_acquire=50,
+            initial_size=64,
+            initial_estimator_ckpt=initial_estimator_ckpt
+        )
+
+        assert iteration.acquired_tfrecord is None
+ 
         expected_iteration_dir = os.path.join(run_dir, 'iteration_{}'.format(iteration_n))
         assert os.path.isdir(expected_iteration_dir)
 
@@ -42,6 +64,9 @@ def test_init(tmpdir, initial_estimator_ckpt):
 
         expected_metrics_dir = os.path.join(expected_iteration_dir, 'metrics')
         assert os.path.isdir(expected_metrics_dir)
+
+        expected_db_loc = os.path.join(expected_iteration_dir, 'iteration.db')
+        assert os.path.exists(expected_db_loc)
 
         # if initial estimator was provided, it should have been copied into the of 0th iteration subdir
         if initial_estimator_ckpt is not None:
@@ -75,9 +100,26 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
         assert isinstance(initial_size, int)
         assert isinstance(n_samples, int)
         n_subjects = 256 * len(shard_locs)
-        return np.random.rand(n_subjects, initial_size, initial_size, 3), np.random.rand(n_subjects, n_samples)
+        subjects = [{'matrix': np.random.rand(initial_size, initial_size, 3), 'id_str': str(n)} 
+        for n in range(n_subjects)]
+        samples = np.random.rand(n_subjects, n_samples)
+        return subjects, samples
     monkeypatch.setattr(iterations.active_learning, 'make_predictions_on_tfrecord', mock_make_predictions_on_tfrecord)
 
     subjects, samples = new_iteration.make_predictions(shard_locs, size)
     assert len(subjects) == 256 * len(shard_locs)
     assert samples.shape == (256 * len(shard_locs), new_iteration.n_samples)
+
+
+def test_save_metrics():
+    pass
+
+
+def test_get_train_records(new_iteration, active_config_ready):
+    assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords
+    new_iteration.acquired_tfrecord = 'acquired.tfrecord'
+    assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords + ['acquired.tfrecord']
+
+
+def test_run():
+    pass

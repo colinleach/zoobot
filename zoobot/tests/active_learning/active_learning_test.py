@@ -331,37 +331,14 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size)
     )
     assert samples.shape == (len(subjects), n_samples)
 
-
-def test_record_acquisitions_on_predictions(subjects, samples, filled_shard_db, acquisition_func):
-    subjects[0]['id_str'] = 'some_hash'  # to match with filled_shard_db
-
-    active_learning.record_acquisitions_on_predictions(subjects, samples, filled_shard_db, acquisition_func)
-    cursor = filled_shard_db.cursor()
-    # here, 'some hash' is in db and other subjects are not yet added to db
-
-    # check that all subjects have been added, with correct acq. values
-    # includes 'some hash' subject, which must have been updated
-    for subject in subjects:
-        cursor.execute(
-            '''
-            SELECT id_str, acquisition_value FROM acquisitions
-            WHERE id_str = (:id_str)
-            ''',
-            (subject['id_str'],)
-        )
-        saved_subject = cursor.fetchone()
-        assert saved_subject[0] == subject['id_str']
-        assert np.allclose(saved_subject[1], subject['matrix'].mean())
+# def test_get_top_acquisitions_any_shard(filled_shard_db):
+#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
+#     assert top_ids == ['some_hash', 'some_other_hash']
 
 
-def test_get_top_acquisitions_any_shard(filled_shard_db):
-    top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
-    assert top_ids == ['some_hash', 'some_other_hash']
-
-
-def test_get_top_acquisitions(filled_shard_db):
-    top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
-    assert top_ids == ['some_hash', 'yet_another_hash']
+# def test_get_top_acquisitions(filled_shard_db):
+#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
+#     assert top_ids == ['some_hash', 'yet_another_hash']
 
 
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):

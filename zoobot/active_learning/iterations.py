@@ -25,20 +25,23 @@ class Iteration():
         n_samples,  # may need more samples?
         n_subjects_to_acquire,
         initial_size,
-        initial_estimator_ckpt=None,
+        initial_estimator_ckpt=None
         ):
 
         self.name = 'iteration_{}'.format(iteration_n)
         # shards should be unique, or everything falls apart.
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
+        assert isinstance(initial_train_tfrecords, list)
         self.initial_train_tfrecords = initial_train_tfrecords  # acquired up to start of iteration
         self.acquired_tfrecord = None
+        assert callable(train_callable)
         self.train_callable = train_callable
+        assert callable(acquisition_func)
         self.acquisition_func = acquisition_func
-        self.n_samples = n_samples,
+        self.n_samples = n_samples
         self.n_subjects_to_acquire = n_subjects_to_acquire
-        self.initial_size = self.initial_size  # need to know what size to write new images to shards
+        self.initial_size = initial_size  # need to know what size to write new images to shards
 
         self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
@@ -62,7 +65,10 @@ class Iteration():
 
 
     def get_train_records(self):
-        return self.initial_train_tfrecords + [self.acquired_tfrecord]
+        if self.acquired_tfrecord is None:
+            return self.initial_train_tfrecords
+        else:
+            return self.initial_train_tfrecords + [self.acquired_tfrecord]
 
 
     def make_predictions(self, shard_locs, initial_size):
@@ -108,6 +114,7 @@ class Iteration():
         # callable should expect 
         # - log dir to train models in
         # - list of tfrecord files to train on
+        self.record_train_records()
         self.train_callable(self.estimators_dir, self.get_train_records())  # could be docker container to run, save model
 
         # make predictions and save to db, could be docker container
@@ -125,11 +132,10 @@ class Iteration():
         request_labels(top_acquisition_ids)
 
 
+    def record_train_records(self):
+        with open(os.path.join(self.iteration_dir, 'train_records_index.json'), 'w') as f:
+            json.dump(self.get_train_records(), f)
 
-
-def write_train_records_index(self):
-    with open(self.train_records_index_loc, 'w') as f:
-        json.dump(self.initial_train_tfrecords + self.acquired_tfrecord, f)
 
 def request_labels(top_acquisition_ids):
     mock_panoptes.request_labels(top_acquisition_ids)

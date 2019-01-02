@@ -72,9 +72,6 @@ class ActiveConfig():
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
 
-        # state for train records is entirely on disk, to allow for warm starts
-        self.train_records_index_loc = os.path.join(self.run_dir, 'requested_tfrecords_index.json')
-
 
     def prepare_run_folders(self):
         """
@@ -94,14 +91,12 @@ class ActiveConfig():
 
     def ready(self):
         assert self.shards.ready()  # delegate
-        assert os.path.isfile(self.train_records_index_loc)
         if self.initial_estimator_ckpt is not None:
             assert os.path.isdir(self.initial_estimator_ckpt)
             assert os.path.exists(os.path.join(self.initial_estimator_ckpt, 'saved_model.pb'))
         assert os.path.isdir(self.run_dir)
         assert os.path.isdir(self.requested_fits_dir)
         assert os.path.isdir(self.requested_tfrecords_dir)
-        assert os.path.isfile(self.train_records_index_loc)
         return True
 
 
@@ -126,7 +121,7 @@ class ActiveConfig():
         iteration_n = 0
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords=self.shards.initial_train_tfrecords
+        initial_train_tfrecords=[self.shards.train_tfrecord_loc]
         
         while iteration_n < self.iterations:
 
@@ -153,23 +148,6 @@ class ActiveConfig():
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
             initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
-
-
-    def get_most_recent_iteration_loc(self):
-        # latest estimator dir will be iteration_n for max(n)
-        # anything in estimator_dir itself is not restored
-        # warning - strongly coupled to self.run() last paragraphs
-        iteration_n = 0
-        latest_estimator_dir = os.path.join(self.run_dir, 'iteration_0')
-        while True:
-            dir_to_test = os.path.join(self.run_dir, 'iteration_{}'.format(iteration_n))
-            if not os.path.isdir(dir_to_test):
-                break
-            else:
-                latest_estimator_dir = dir_to_test
-                iteration_n += 1
-        logging.info('latest estimator dir is {}'.format(latest_estimator_dir))
-        return latest_estimator_dir
 
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):
