@@ -11,22 +11,28 @@ import seaborn as sns
 
 def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
     data = []
+    if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
+        raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
     n_subjects = sample_probs_by_k.shape[0]
-    n_samples = sample_probs_by_k.shape[1]
     max_possible_k = sample_probs_by_k.shape[2]
+    mean_posterior = sample_probs_by_k.mean(axis=1)
     for subject_n in range(n_subjects):
-        for sample_n in range(n_samples):
-            for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
-                most_likely_k = sample_probs_by_k[subject_n, sample_n, :].argmax()
-                max_k = np.min([most_likely_k + max_error_in_k, max_possible_k])
-                min_k = np.max([most_likely_k - max_error_in_k, 0])
-                prediction = sample_probs_by_k[subject_n, sample_n, min_k:max_k+1].sum()  # include max_k in slice
-                observed = float(min_k <= volunteer_votes[subject_n] <= max_k)
-                data.append({
-                        'max_state_error': max_error_in_k,
-                        'prediction': prediction,
-                        'observed': observed
-                    })
+        most_likely_k = mean_posterior[subject_n].argmax()
+        for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
+            max_k = np.min([most_likely_k + max_error_in_k, max_possible_k])
+            min_k = np.max([most_likely_k - max_error_in_k, 0])
+            prediction = mean_posterior[subject_n, min_k:max_k+1].sum()  # include max_k in slice
+            actual_k = volunteer_votes[subject_n]
+            observed = float(min_k <= actual_k <= max_k)
+            data.append({
+                    'max_state_error': max_error_in_k,
+                    'prediction': prediction,
+                    'observed': observed,
+                    'max_k': max_k,
+                    'min_k': min_k,
+                    'most_likely_k': most_likely_k,
+                    'actual_k': actual_k
+                })
     df = pd.DataFrame(data=data)
     return df
 
@@ -45,23 +51,38 @@ def calibrate_predictions(df):
     y_train = np.array(train_df['observed'])                
     lr.fit(X_train, y_train)
     test_df['prediction_calibrated'] = lr.predict_proba(X_test)[:,1]
-    # print('Calibrated tidal predictions: {}. Non-tidal: {}'.format(np.sum(test_df['prediction'] > 0.5), np.sum(test_df['prediction'] < 0.5)))
-    # print('Calibrated tidal truth: {}. Non-tidal: {}'.format(np.sum(test_df['true_label'] > 0.5), np.sum(test_df['true_label'] < 0.5)))
     return test_df
 
 
-
-def plot_coverage_df(df, save_loc):
-    fig, ax = plt.subplots()
+def plot_coverage_df(df, ax):
     cols_to_plot = ['prediction', 'observed']
     if 'prediction_calibrated' in df.columns:
         cols_to_plot.append('prediction_calibrated')
     for col in cols_to_plot:
         sns.lineplot(data=df, x='max_state_error', y=col, ax=ax)
-    ax.legend(cols_to_plot)
-    ax.set_xlabel('Max error in states')
-    ax.set_ylabel('Probability or Frequency')
+    legend_mapping = {
+        'prediction': 'Prediction',
+        'observed': 'Empirical',
+        'prediction_calibrated': 'Calibrated Prediction'
+    }
+    ax.legend([legend_mapping[col] for col in cols_to_plot])
+    ax.set_xlabel('Max Vote Error')
+    ax.set_ylabel('Probability Within Max Error')
     ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))  # must expect 'x' kw arg
-    fig.tight_layout()
-    fig.savefig(save_loc)
+
     # TODO axis formatter for ints only
+# print('Calibrated tidal predictions: {}. Non-tidal: {}'.format(np.sum(test_df['prediction'] > 0.5), np.sum(test_df['prediction'] < 0.5)))
+    # print('Calibrated tidal truth: {}. Non-tidal: {}'.format(np.sum(test_df['true_label'] > 0.5), np.sum(test_df['true_label'] < 0.5)))
+
+if __name__ == '__main__':
+    samples = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/samples.npy')
+    labels = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/labels.npy')
+    import os
+    from zoobot.active_learning import metrics
+    from zoobot.tests import TEST_FIGURE_DIR
+    model = metrics.Model(samples, labels, 'five_conv_fractions')
+    fig, ax = plt.subplots()
+    ax.hist(model.abs_error)
+    fig.savefig('temp.png')
+    exit(0)
+    model.show_coverage(save_dir=TEST_FIGURE_DIR)

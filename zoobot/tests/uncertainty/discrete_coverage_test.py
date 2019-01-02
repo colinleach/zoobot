@@ -5,6 +5,9 @@ import os
 import scipy
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from zoobot.estimators import make_predictions
 from zoobot.uncertainty import discrete_coverage
@@ -114,8 +117,11 @@ def reduced_df():
 
 
 def test_plot_coverage_df(coverage_df):
+    fig, ax = plt.subplots()
     save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_plot.png')
-    discrete_coverage.plot_coverage_df(coverage_df, save_loc)
+    discrete_coverage.plot_coverage_df(coverage_df, ax)
+    fig.tight_layout()
+    fig.savefig(save_loc)
 
 
 def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):
@@ -124,8 +130,16 @@ def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):
     coverage_df = discrete_coverage.evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k)
     # assert np.allclose(len(coverage_df), np.product(bin_prob_of_samples_by_k) * 10 * 2)  # 10 test errors, observed Y/N
     save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_evaluate.png')
-    discrete_coverage.plot_coverage_df(coverage_df, save_loc)
+    fig, ax = plt.subplots()
+    discrete_coverage.plot_coverage_df(coverage_df, ax)
+    fig.tight_layout()
+    fig.savefig(save_loc)
 
+def test_evaluate_discrete_coverage_bad_fractions(bin_prob_of_samples_by_k):
+    """Should raise an error if mistakenly called with vote fractions instead of labels"""
+    vote_fracs = np.random.rand(len(bin_prob_of_samples_by_k))
+    with pytest.raises(ValueError):
+        discrete_coverage.evaluate_discrete_coverage(vote_fracs, bin_prob_of_samples_by_k)
 
 
 def test_reduce_coverage_df(coverage_df):
@@ -145,6 +159,9 @@ def test_calibrate_predictions(coverage_df_large):
     calibrated_df = discrete_coverage.calibrate_predictions(coverage_df_large)
     assert len(calibrated_df) < len(coverage_df_large)  # only calibration test set['Prediction', 'Observed']
     save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_calibrated.png')
-    discrete_coverage.plot_coverage_df(calibrated_df, save_loc=save_loc)
+    fig, ax = plt.subplots()
+    discrete_coverage.plot_coverage_df(calibrated_df, ax=ax)
+    fig.tight_layout()
+    fig.savefig(save_loc)
     # should have increased predictions to compensate for offset
     assert calibrated_df['prediction_calibrated'].mean() > calibrated_df['prediction'].mean()

@@ -116,7 +116,7 @@ if __name__ == '__main__':
     tfrecord_loc=data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
     dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -o analysis/uncertainty/al-binomial/five_conv_mse -f mse_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=five_conv_mse --new_predictions=True
     latest_model=five_conv_fractions
-    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -d analysis/uncertainty/al-binomial/five_conv_mse -o analysis/uncertainty/al-binomial/$latest_model -f latest_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=$latest_model --mse_comparison=True --new_predictions=True
+    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -d analysis/uncertainty/al-binomial/five_conv_mse -o analysis/uncertainty/al-binomial/$latest_model -f latest_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=$latest_model
     """
     parser = argparse.ArgumentParser(description='Update Model Metrics for Basic Split')
     parser.add_argument(
