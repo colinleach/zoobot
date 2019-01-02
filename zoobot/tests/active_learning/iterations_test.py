@@ -112,7 +112,7 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
 
 
 def test_save_metrics():
-    pass
+    pass  # does nothing except call external individually-unit-tested functions
 
 
 def test_get_train_records(new_iteration, active_config_ready):

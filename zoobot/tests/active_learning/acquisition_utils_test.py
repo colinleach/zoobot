@@ -12,6 +12,13 @@ from zoobot.active_learning import acquisition_utils
 from zoobot.tests import TEST_FIGURE_DIR
 
 
+@pytest.fixture()
+def save_dir():
+    save_dir = os.path.join(TEST_FIGURE_DIR, 'metrics')
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
+    return save_dir
+
 
 @pytest.fixture
 def n_draws():
@@ -89,3 +96,10 @@ def test_mutual_info_acquisition_func(monkeypatch):
     samples = np.random.rand(n_subjects, n_samples)
     mutual_info = acquisition_utils.mutual_info_acquisition_func(samples)
     assert len(mutual_info) == n_subjects
+
+
+def test_save_acquisition_examples(subjects, save_dir):
+    subject_data = np.array([subject['matrix'] for subject in subjects * 5])
+    acq_values = np.random.rand(len(subjects))
+    acq_string = 'mock_acquisition'
+    acquisition_utils.save_acquisition_examples(subject_data, acq_values, acq_string, save_dir)

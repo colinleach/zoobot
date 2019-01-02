@@ -88,14 +88,22 @@ class Iteration():
         return make_predictions.load_predictor(predictor_loc)
 
 
-    def save_metrics(self, subjects, samples):
+    def save_metrics(self, subject_data, samples):
+        """[summary]
+        
+        Args:
+            subject_data (np.array): of form [n_subjects, height, width, channels]. NOT a list.
+            samples (np.array): model predictions for rho, of form [n_subjects, n_samples].
+        """
+
+        
         # TODO allow for direct acquisitions passing, for speed?
         # TODO check entropies against radial extent of galaxy
         # TODO add metrics for each active learning run, cross-matching to catalog for NSA params via id
         model = metrics.Model(samples, labels=None, name=self.name)
         model.show_acquisitions_vs_predictions(save_dir=self.metrics_dir)
         acquisition_utils.save_acquisition_examples(
-            subjects, 
+            subject_data, 
             model.mutual_info, 
             acq_string='mutual_info', 
             save_dir=self.metrics_dir

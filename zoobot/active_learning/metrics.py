@@ -146,12 +146,13 @@ class Model():
 
 
     def show_coverage(self, save_dir):
+        if self.labels is None:
+            raise ValueError('Calculating coverage requires volunteer votes to be known')
         fig, ax = plt.subplots()
         coverage_df = discrete_coverage.evaluate_discrete_coverage(self.votes, self.bin_probs)
-        discrete_coverage.plot_coverage_df(coverage_df, os.path.join(save_dir, 'discrete_coverage.png'), ax=ax)
-        # calibrated_df = discrete_coverage.calibrate_predictions(coverage_df)
-        # discrete_coverage.plot_coverage_df(calibrated_df, os.path.join(save_dir, 'discrete_coverage.png'))
+        discrete_coverage.plot_coverage_df(coverage_df, ax=ax)
         fig.tight_layout()
+        save_loc = os.path.join(save_dir, 'discrete_coverage.png')
         fig.savefig(save_loc)
 
 
