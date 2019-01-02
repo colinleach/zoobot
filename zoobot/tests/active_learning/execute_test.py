@@ -34,14 +34,6 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
     # TODO need to test we're using the estimators we expect, needs refactoring first
     # catalog_random_images is a required arg because the fits files must actually exist
 
-    def train_callable(estimators_dir, train_tfrecord_locs):
-        # pretend to save a model in subdirectory of estimator_dir
-        assert os.path.isdir(estimators_dir)
-        subdir_loc = os.path.join(estimators_dir, str(time.time()))
-        os.mkdir(subdir_loc)
-        with open(os.path.join(subdir_loc, 'dummy_model.txt'), 'w') as f:
-            json.dump(train_tfrecord_locs, f)
-
     def mock_load_predictor(loc):
         # assumes run is configured for 3 iterations in total
         with open(os.path.join(loc, 'dummy_model.txt'), 'r') as f:
@@ -59,6 +51,7 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
 
     def mock_get_samples_of_subjects(model, subjects, n_samples):
         # only give the correct samples if you've trained on two acquired records
+        # overrides conftest
         assert isinstance(subjects, list)
         example_subject = subjects[0]
         assert isinstance(example_subject, dict)
@@ -67,7 +60,6 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
 
         response = []
         for subject in subjects:
-            
             if model == 'two acquired records':
                 response.append([np.mean(subject['matrix'])] * n_samples)
             else:
@@ -75,17 +67,7 @@ def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tf
         return np.array(response)
     monkeypatch.setattr(active_learning.make_predictions, 'get_samples_of_subjects', mock_get_samples_of_subjects)
 
-    def mock_save_metrics(self, subjects, samples):
-        with open(os.path.join(self.metrics_dir, 'some_metrics.txt'), 'w') as f:
-            f.write('some metrics from iteration {}'.format(self.name))
-    monkeypatch.setattr(execute.iterations.Iteration, 'save_metrics', mock_save_metrics)
-
-    def mock_get_labels(subject_ids):  
-        # don't actually read from saved catalog, just make up
-        # TODO check that these are correctly saved to db and preserved over iterations
-        return [np.random.rand() for n in range(len(subject_ids))]
-    monkeypatch.setattr(active_learning.mock_panoptes, 'get_labels', mock_get_labels)
-
+    # TODO mock iterations as a whole, piecemeal moved to iterations
     active_config_ready.run(train_callable, acquisition_func)
 
     # verify the folders appear as expected

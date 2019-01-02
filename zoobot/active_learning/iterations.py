@@ -45,11 +45,12 @@ class Iteration():
 
         self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
-        self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
         self.requested_tfrecords_dir = os.path.join(self.iteration_dir, 'requested_tfrecords')
+        self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
         os.mkdir(self.estimators_dir)
+        os.mkdir(self.requested_tfrecords_dir)
         os.mkdir(self.metrics_dir)
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')

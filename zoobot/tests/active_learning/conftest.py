@@ -2,6 +2,8 @@ import pytest
 
 import copy
 import os
+import time
+import json
 
 import numpy as np
 import pandas as pd
@@ -107,13 +109,19 @@ def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
 
 
-@pytest.fixture()
-def acquisition_func():
-    # Converts loaded subjects to acquisition scores. Here, takes the mean.
-    # Must return float, not np.float32, else db will be confused and write as bytes
-    def mock_acquisition_func(samples):
-        return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
-    return mock_acquisition_func
+def mock_acquisition_func(samples):
+    assert isinstance(samples, np.ndarray)
+    assert len(samples.shape) == 2
+    return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
+
+
+def mock_train_callable(estimators_dir, train_tfrecord_locs):
+    # pretend to save a model in subdirectory of estimator_dir
+    assert os.path.isdir(estimators_dir)
+    subdir_loc = os.path.join(estimators_dir, str(time.time()))
+    os.mkdir(subdir_loc)
+    with open(os.path.join(subdir_loc, 'dummy_model.txt'), 'w') as f:
+        json.dump(train_tfrecord_locs, f)
 
 
 @pytest.fixture()

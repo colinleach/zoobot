@@ -2,10 +2,14 @@ import pytest
 
 import os
 import shutil
+import time
+import json
 
 import numpy as np
 
 from zoobot.active_learning import iterations
+from zoobot.tests.active_learning import conftest
+
 
 @pytest.fixture()
 def initial_estimator_ckpt(tmpdir):
@@ -16,7 +20,7 @@ def initial_estimator_ckpt(tmpdir):
 def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
         run_dir = active_config_ready.run_dir
         iteration_n = 0
-        prediction_shards = ['some', 'shards']
+        prediction_shards = ['first_shard.tfrecord', 'second_shard.tfrecord']
 
         iteration = iterations.Iteration(
             run_dir,
@@ -24,8 +28,8 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
             prediction_shards,
             initial_db_loc=active_config_ready.db_loc,
             initial_train_tfrecords=[active_config_ready.shards.train_tfrecord_loc],
-            train_callable=np.random.rand,
-            acquisition_func=np.random.rand,
+            train_callable=conftest.mock_train_callable,
+            acquisition_func=conftest.mock_acquisition_func,
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
@@ -121,5 +125,56 @@ def test_get_train_records(new_iteration, active_config_ready):
     assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords + ['acquired.tfrecord']
 
 
-def test_run():
-    pass
+def test_record_train_records(new_iteration):
+    new_iteration.record_train_records()
+    with open(os.path.join(new_iteration.iteration_dir, 'train_records_index.json'), 'r') as f:
+        train_records = json.load(f)
+    assert train_records == new_iteration.get_train_records()
+
+
+def test_run(monkeypatch, new_iteration):
+
+    SUBJECTS = [
+        {'matrix': np.random.rand(new_iteration.initial_size, new_iteration.initial_size, 3),
+        'id_str': str(n)}
+        for n in range(1024)]
+    SUBJECTS_REQUESTED = []  # in first cycle, will recieve no new subjects and only request at end
+
+    def mock_request_labels(subject_ids):
+        SUBJECTS_REQUESTED.extend(subject_ids)
+    monkeypatch.setattr(iterations, 'request_labels', mock_request_labels)
+    def mock_get_labels():
+        return [SUBJECTS[int(n)] for n in SUBJECTS_REQUESTED], SUBJECTS_REQUESTED
+    monkeypatch.setattr(iterations, 'get_labels', mock_get_labels)
+
+    def mock_add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+        assert isinstance(subject_ids, list)
+        assert os.path.exists(os.path.dirname(tfrecord_loc))
+        assert isinstance(size, int)
+        # save the subject ids here, pretending to be a tfrecord of those subjects
+        with open(tfrecord_loc, 'w') as f:
+            json.dump(subject_ids, f)
+    monkeypatch.setattr(iterations.active_learning, 'add_labelled_subjects_to_tfrecord', mock_add_labelled_subjects_to_tfrecord)
+
+    def mock_make_predictions(self, prediction_shards, initial_size):
+        subjects = SUBJECTS[:len(prediction_shards) * 256] # imagining there are 256 subjects per shard
+        samples = conftest.mock_get_samples_of_subjects(None, subjects, n_samples=self.n_samples)
+        return subjects, samples
+    monkeypatch.setattr(iterations.Iteration, 'make_predictions', mock_make_predictions)
+
+    def mock_save_metrics(self, subjects, samples):
+        assert os.path.isdir(self.metrics_dir)
+        with open(os.path.join(self.metrics_dir, 'some_metrics.txt'), 'w') as f:
+            f.write('some metrics from iteration {}'.format(self.name))
+    monkeypatch.setattr(iterations.Iteration, 'save_metrics', mock_save_metrics)
+
+    ####
+    new_iteration.run()
+    ####
+
+    assert new_iteration.acquired_tfrecord == os.path.join(new_iteration.requested_tfrecords_dir, 'acquired_shard.tfrecord')
+    assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
+    assert len(SUBJECTS_REQUESTED) == new_iteration.n_subjects_to_acquire
+    subjects_acquired, _ = mock_get_labels()
+    subjects_means = np.array([subject['matrix'].mean() for subject in subjects_acquired])
+    assert all(subjects_means[1:] < subjects_means[:-1])
