@@ -114,8 +114,7 @@ class Iteration():
 
     def run(self):
         subject_ids, labels = get_labels()
-        if subject_ids is not None:
-            # TODO can't decide if/how to test/break this up
+        if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, self.db)
             self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
             active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)

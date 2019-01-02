@@ -132,22 +132,34 @@ def test_record_train_records(new_iteration):
     assert train_records == new_iteration.get_train_records()
 
 
-def test_run(monkeypatch, new_iteration):
+@pytest.fixture(params=[False, True])
+def previously_requested_subjects(request, new_iteration):
+    if request.param:  # previous iteration has picked random subjects to be acquired
+        return [str(n) for n in range(new_iteration.n_subjects_to_acquire)]
+    else:
+        return []
 
+
+def test_run(monkeypatch, new_iteration, previously_requested_subjects):
     SUBJECTS = [
         {'matrix': np.random.rand(new_iteration.initial_size, new_iteration.initial_size, 3),
         'id_str': str(n)}
         for n in range(1024)]
-    SUBJECTS_REQUESTED = []  # in first cycle, will recieve no new subjects and only request at end
-
+    
+    SUBJECTS_REQUESTED = previously_requested_subjects.copy()  # may recieve random new subjects
+    def mock_get_labels():
+        selected_ids = SUBJECTS_REQUESTED.copy()
+        selected_labels = list(np.random.rand(len(selected_ids)))
+        SUBJECTS_REQUESTED.clear()
+        assert len(SUBJECTS_REQUESTED) == 0
+        return selected_ids, selected_labels
+    monkeypatch.setattr(iterations, 'get_labels', mock_get_labels)
     def mock_request_labels(subject_ids):
         SUBJECTS_REQUESTED.extend(subject_ids)
     monkeypatch.setattr(iterations, 'request_labels', mock_request_labels)
-    def mock_get_labels():
-        return [SUBJECTS[int(n)] for n in SUBJECTS_REQUESTED], SUBJECTS_REQUESTED
-    monkeypatch.setattr(iterations, 'get_labels', mock_get_labels)
 
     def mock_add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+        assert len(subject_ids) > 0
         assert isinstance(subject_ids, list)
         assert os.path.exists(os.path.dirname(tfrecord_loc))
         assert isinstance(size, int)
@@ -155,6 +167,15 @@ def test_run(monkeypatch, new_iteration):
         with open(tfrecord_loc, 'w') as f:
             json.dump(subject_ids, f)
     monkeypatch.setattr(iterations.active_learning, 'add_labelled_subjects_to_tfrecord', mock_add_labelled_subjects_to_tfrecord)
+
+
+    def mock_add_labels_to_db(subject_ids, labels, db):
+        assert isinstance(subject_ids, list)
+        assert isinstance(subject_ids[0], str)
+        assert isinstance(labels, list)
+        assert isinstance(labels[0], float)
+        pass  # don't actually bother adding the new labels to the db
+    monkeypatch.setattr(iterations.active_learning, 'add_labels_to_db', mock_add_labels_to_db)
 
     def mock_make_predictions(self, prediction_shards, initial_size):
         subjects = SUBJECTS[:len(prediction_shards) * 256] # imagining there are 256 subjects per shard
@@ -172,9 +193,19 @@ def test_run(monkeypatch, new_iteration):
     new_iteration.run()
     ####
 
-    assert new_iteration.acquired_tfrecord == os.path.join(new_iteration.requested_tfrecords_dir, 'acquired_shard.tfrecord')
+    # previous iteration may have asked for some subjects - check they were acquired and used
+    if len(previously_requested_subjects) > 0:
+        assert new_iteration.acquired_tfrecord == os.path.join(new_iteration.requested_tfrecords_dir, 'acquired_shard.tfrecord')
+        subjects_saved_from_earlier_request = json.load(open(new_iteration.acquired_tfrecord))
+        assert subjects_saved_from_earlier_request == previously_requested_subjects
+        assert new_iteration.acquired_tfrecord in new_iteration.get_train_records()
+    else:
+        assert new_iteration.acquired_tfrecord not in new_iteration.get_train_records()
+
     assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
+
+    assert SUBJECTS_REQUESTED != previously_requested_subjects
     assert len(SUBJECTS_REQUESTED) == new_iteration.n_subjects_to_acquire
-    subjects_acquired, _ = mock_get_labels()
+    subjects_acquired = [SUBJECTS[int(id_str)] for id_str in SUBJECTS_REQUESTED]
     subjects_means = np.array([subject['matrix'].mean() for subject in subjects_acquired])
     assert all(subjects_means[1:] < subjects_means[:-1])
