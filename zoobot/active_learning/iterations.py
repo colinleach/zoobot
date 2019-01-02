@@ -64,6 +64,9 @@ class Iteration():
                 dst=os.path.join(self.estimators_dir, os.path.split(initial_estimator_ckpt)[-1])
             )
 
+        # record which tfrecords were used, for later analysis
+        self.tfrecords_record = os.path.join(self.iteration_dir, 'train_records_index.json')
+
 
     def get_train_records(self):
         if self.acquired_tfrecord is None:
@@ -141,7 +144,7 @@ class Iteration():
 
 
     def record_train_records(self):
-        with open(os.path.join(self.iteration_dir, 'train_records_index.json'), 'w') as f:
+        with open(os.path.join(self.tfrecords_record), 'w') as f:
             json.dump(self.get_train_records(), f)
 
 

@@ -123,6 +123,7 @@ class ActiveConfig():
         initial_db_loc = self.db_loc
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
         
+        iterations_record = []
         while iteration_n < self.iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
@@ -148,6 +149,9 @@ class ActiveConfig():
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
             initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
+            iterations_record.append(iteration)
+
+        return iterations_record
 
 
 def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):
@@ -208,12 +212,13 @@ def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=Fals
     else:  # callable expecting predictor, returning a callable expecting matrix list
         acquisition_func = acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
-    active_config.run(
+    iterations_record = active_config.run(
         train_callable,
         acquisition_func
     )
 
-    analysis.show_subjects_by_iteration(active_config.train_records_index_loc, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    last_iteration = iterations_record[-1]
+    analysis.show_subjects_by_iteration(last_iteration.get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
 
 
 if __name__ == '__main__':
