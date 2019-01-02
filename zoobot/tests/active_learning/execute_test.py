@@ -20,16 +20,14 @@ def test_prepare_run_folders(active_config):
     ]
     assert not any([os.path.exists(subdir) for subdir in subdirs])
     assert not os.path.exists(active_config.db_loc)
-    assert not os.path.exists(active_config.train_records_index_loc)
 
     active_config.prepare_run_folders()
 
     assert all([os.path.exists(subdir) for subdir in subdirs])
     assert os.path.exists(active_config.db_loc)
-    assert os.path.exists(active_config.train_records_index_loc)
 
 
-
+@pytest.mark.xfail()
 def test_run(active_config_ready, tmpdir, monkeypatch, catalog_random_images, tfrecord_dir, acquisition_func):
     # TODO need to test we're using the estimators we expect, needs refactoring first
     # catalog_random_images is a required arg because the fits files must actually exist

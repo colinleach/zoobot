@@ -26,7 +26,7 @@ def get_labels():
     labels = []
     for id_str in subject_ids:
         matching_rows = known_catalog[known_catalog['id_str'] == id_str]
-        assert len(matching_rows) > 0
+        assert len(matching_rows) > 0  # throw error if id_str not recognised by oracle
         matching_row = matching_rows.iloc[0]
         labels.append(matching_row['label'])
     assert len(subject_ids) == len(labels)
