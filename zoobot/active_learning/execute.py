@@ -81,7 +81,6 @@ class ActiveConfig():
         """
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
-        os.mkdir(self.run_dir)
 
         directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
         for directory in directories:
