@@ -72,15 +72,16 @@ class ActiveConfig():
 
         self.prepare_run_folders()
 
-
+    # TODO test the case where run_dir does not yet exist
     def prepare_run_folders(self):
         """
         Create the folders needed to run active learning. 
         Copy the shard database, to be modified by the run
         Wipes any existing folders in run_dir
         """
-        assert os.path.exists(self.run_dir)
-        shutil.rmtree(self.run_dir)
+        if os.path.exists(self.run_dir):
+            shutil.rmtree(self.run_dir)
+        os.mkdir(self.run_dir)
 
         directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
         for directory in directories:
