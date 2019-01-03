@@ -244,7 +244,7 @@ def get_smooth_metrics_from_log(log_loc, name=None):
 
 def get_final_train_locs(run_dir):
     print(os.listdir(args.active_dir))
-    iter_dirs = [d for d in os.listdir(args.active_dir) if os.path.isdir(d)]
+    iter_dirs = [d for d in os.listdir(args.active_dir) if os.path.isdir(os.path.join(run_dir, d))]
     print(iter_dirs)
     latest_iter_dir = sorted(iter_dirs)[-1]  # assuming iteration_n convention
     latest_train_index = os.path.join(latest_iter_dir, 'train_records_index.json')
