@@ -33,13 +33,13 @@ def get_samples_of_images(model, images, n_samples):
 
     Args:
         model (function): callable mapping images (parsed subject matrices) to class scores
-        images (list): subject matrices on which to make a prediction
+        images (np.ndarray): batch of subject matrices on which to make a prediction
         n_samples (int): number of samples (i.e. model calls) to calculate per image
 
     Returns:
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
-    assert isinstance(images, list)
+    assert isinstance(images, np.ndarray)
     results = np.zeros((len(images), n_samples))
     for sample_n in range(n_samples):
         results[:, sample_n] = model(images)

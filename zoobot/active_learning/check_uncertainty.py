@@ -58,7 +58,7 @@ def calculate_predictions(tfrecord_loc, n_galaxies):
         subjects, labels = sess.run([subjects_g, labels_g])
     predictor_loc = os.path.join(results_dir, args.model_name)
     model = make_predictions.load_predictor(predictor_loc)
-    results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=n_samples)
+    results = make_predictions.get_samples_of_images(model, subjects, n_samples=n_samples)
     return subjects, labels, results
 
 
