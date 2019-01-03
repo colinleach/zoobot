@@ -58,6 +58,7 @@ class Iteration():
         self.db = sqlite3.connect(self.db_loc)
 
         if initial_estimator_ckpt is not None:
+            logging.info('Copying {} initial estimator ckpt'.format(initial_estimator_ckpt))
             # copy the initial estimator folder inside estimators_dir, keeping the same name
             shutil.copytree(
                 src=initial_estimator_ckpt, 

@@ -181,7 +181,7 @@ def mock_acquisition_func(samples):
 
 def get_acquisition_func(baseline):
     if baseline:
-        logging.warning('Using mock acquisition function, baseline test mode')
+        logging.critical('Using mock acquisition function, baseline test mode!')
         return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
         return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
