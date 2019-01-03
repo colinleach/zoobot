@@ -11,9 +11,12 @@ from zoobot.active_learning import iterations
 from zoobot.tests.active_learning import conftest
 
 
-@pytest.fixture()
-def initial_estimator_ckpt(tmpdir):
-    return tmpdir.mkdir('some_datetime_ckpt').strpath
+@pytest.fixture(params=[True, False])
+def initial_estimator_ckpt(tmpdir, request):
+    if request.param:
+        return tmpdir.mkdir('some_datetime_ckpt').strpath
+    else:
+        return None  # no initial ckpt
 
 
 @pytest.fixture()
@@ -33,7 +36,7 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
-            initial_estimator_ckpt=None
+            initial_estimator_ckpt=initial_estimator_ckpt
         )
 
         return iteration
@@ -194,6 +197,11 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
     new_iteration.run()
     ####
 
+    # check that the initial ckpt was copied successfully, if one was given
+    if new_iteration.initial_estimator_ckpt is not None:
+        expected_ckpt_copy = os.path.join(new_iteration.estimators_dir, new_iteration.initial_estimator_ckpt)
+        assert os.path.isdir(expected_ckpt_copy)
+
     # previous iteration may have asked for some subjects - check they were acquired and used
     if len(previously_requested_subjects) > 0:
         assert new_iteration.acquired_tfrecord == os.path.join(new_iteration.requested_tfrecords_dir, 'acquired_shard.tfrecord')
@@ -203,8 +211,10 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
     else:
         assert new_iteration.acquired_tfrecord not in new_iteration.get_train_records()
 
+    # check metrics were saved
     assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
 
+    # check the correct subjects were requested
     assert SUBJECTS_REQUESTED != previously_requested_subjects
     assert len(SUBJECTS_REQUESTED) == new_iteration.n_subjects_to_acquire
     subjects_acquired = [SUBJECTS[int(id_str)] for id_str in SUBJECTS_REQUESTED]
