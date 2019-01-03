@@ -1,11 +1,16 @@
 cmd: ' python zoobot/active_learning/execute.py --shard_config=data/shards/si128_sf64_ss4096/shard_config.json
-  --run_dir=data/runs/al_mutual'
+  --run_dir=data/runs/al_mutual --warm-start --test'
 deps:
-- path: data/shards/si128_sf64_ss4096
-- path: zoobot/active_learning/oracle.csv
-- path: data/fits_native
-- path: zoobot
-md5: null
+- md5: 32e9afc5916d4c89c6b9f6c74165d65f.dir
+  path: data/shards/si128_sf64_ss4096
+- md5: 02b84102e93637c4385a4bdfb087cc8e
+  path: zoobot/active_learning/oracle.csv
+- md5: fc4f73d29ffff9eb157d85b5016dff5c.dir
+  path: data/fits_native
+- md5: 51047ca5cafd9a6ff0dd9830e317ba39.dir
+  path: zoobot
+md5: e077cb0ec852867f08a69e47191c4922
 outs:
 - cache: true
+  md5: 50ec299aa32c44cbc8820d817f666147.dir
   path: data/runs/al_mutual
