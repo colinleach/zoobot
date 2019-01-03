@@ -154,7 +154,8 @@ class ActiveConfig():
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
             # TODO only if warm_start
-            initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
+            # initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
+            initial_estimator_ckpt = iteration.estimators_dir  # TODO rename
             iterations_record.append(iteration)
 
         return iterations_record

@@ -57,14 +57,22 @@ class Iteration():
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
 
+        # TODO have a test that verifies new folder structure
         self.initial_estimator_ckpt = initial_estimator_ckpt
+        
+        src = self.initial_estimator_ckpt
+        dest = self.estimators_dir
         if initial_estimator_ckpt is not None:
             logging.info('Copying {} initial estimator ckpt'.format(initial_estimator_ckpt))
             # copy the initial estimator folder inside estimators_dir, keeping the same name
-            shutil.copytree(
-                src=initial_estimator_ckpt, 
-                dst=os.path.join(self.estimators_dir, os.path.split(initial_estimator_ckpt)[-1])
-            )
+            # shutil.copytree(
+            #     src=initial_estimator_ckpt, 
+            #     dst=dest
+            # )
+            # copy the files only, subdirs are saved models
+            [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
+            # remove this log from the copy, to save space
+            [os.remove(f) for f in os.listdir(dest) if f.startswith('events.out.tfevents')]
 
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(self.iteration_dir, 'train_records_index.json')

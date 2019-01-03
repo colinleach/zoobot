@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 
-from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
+from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
 
 
 def get_run_config(params, log_dir, train_records):
