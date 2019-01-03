@@ -100,7 +100,7 @@ class ActiveConfig():
         return True
 
 
-    def run(self, train_callable, acquisition_func):
+    def run(self, train_callable, acquisition_func, n_samples=20):
         """Main active learning training loop. 
         
         Learn with train_callable
@@ -136,7 +136,7 @@ class ActiveConfig():
                 initial_train_tfrecords=initial_train_tfrecords,
                 train_callable=train_callable,
                 acquisition_func=acquisition_func,
-                n_samples=20,
+                n_samples=n_samples,
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 initial_estimator_ckpt=initial_estimator_ckpt)
@@ -244,9 +244,13 @@ if __name__ == '__main__':
 
     train_callable = get_train_callable(train_callable_params)
     acquisition_func = get_acquisition_func(baseline=args.baseline)
+    if args.test:
+        n_samples = 2
+    else:
+        n_samples = 20
 
     ###
-    iterations_record = active_config.run(train_callable, acquisition_func)
+    iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
     ###
 
     # finally, tidy up by moving the log into the run directory
