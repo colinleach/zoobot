@@ -169,16 +169,16 @@ def get_train_callable(params):
     return train_callable
 
 
+def mock_acquisition_func(samples):
+            return [np.random.rand() for n in range(len(samples))]
+
+
 def get_acquisition_func(baseline):
     if baseline:
-        def mock_acquisition_func(samples):
-            return [np.random.rand() for n in range(len(samples))]
         logging.warning('Using mock acquisition function, baseline test mode')
-        acquisition_func = mock_acquisition_func
+        return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
-        acquisition_func = acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
-    
-    return acquisition_func
+        return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
 
 TrainCallableParams = namedtuple(

@@ -93,8 +93,19 @@ def test_get_train_callable(mocker, train_callable_params):
     assert config.eval_config.tfrecord_loc == train_callable_params.eval_tfrecord_loc
     assert config.warm_start == train_callable_params.warm_start
 
-def test_get_acquisition_func():
-    pass
+
+
+@pytest.fixture(params=[True, False])
+def baseline(request):
+    return request.param
+
+def test_get_acquisition_func(baseline, samples):
+    acq_func = execute.get_acquisition_func(baseline)
+    if baseline:
+        assert acq_func == execute.mock_acquisition_func
+    else:
+        assert acq_func == execute.acquisition_utils.mutual_info_acquisition_func
+    
 
     # # verify the folders appear as expected
     # for iteration_n in range(active_config.iterations):
