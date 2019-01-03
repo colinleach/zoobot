@@ -94,7 +94,7 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull $baseline_dir.dvc`
 
 `output_dir=results/latest_metrics`
-`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
+`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=6000 --per_iter=1024 --output_dir=$output_dir`
 
 ## Optional: Run Tensorboard to Monitor
 
