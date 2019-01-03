@@ -193,11 +193,11 @@ if __name__ == '__main__':
                     help='Details of shards to use')
     parser.add_argument('--run_dir', dest='run_dir', type=str,
                     help='Path to save run outputs: models, new shards, log')
-    parser.add_argument('--baseline', dest='baseline', type=bool,
+    parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
                     help='Use random subject selection only')
-    parser.add_argument('--test', dest='test', type=bool,
+    parser.add_argument('--test', dest='test', action='store_true', default=False,
                     help='Only do a minimal run to verify that everything works')
-    parser.add_argument('--warm-start', dest='warm_start', type=bool,
+    parser.add_argument('--warm-start', dest='warm_start', action='store_true', default=False,
                     help='After each iteration, continue training the same model')
     args = parser.parse_args()
 
