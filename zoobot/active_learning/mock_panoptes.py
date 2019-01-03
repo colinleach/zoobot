@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 import pandas as pd
 
@@ -16,6 +17,10 @@ def request_labels(subject_ids):
 
 def get_labels():
     # oracle.csv is created by make_shards.py, contains label and id_str pairs of vote fractions
+    if not os.path.isfile(SUBJECTS_REQUESTED):
+        logging.warning('No previous subjects requested at {}'.format(SUBJECTS_REQUESTED))
+        return [], []
+
     with open(SUBJECTS_REQUESTED, 'r') as f:
         subject_ids = json.load(f)
     os.remove(SUBJECTS_REQUESTED)
