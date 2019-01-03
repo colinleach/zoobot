@@ -156,7 +156,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, 
     subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
     # make predictions
-    samples = make_predictions.get_samples_of_subjects(model, subjects, n_samples)
+    samples = make_predictions.get_samples_of_images(model, images, n_samples)
     return subjects, samples
 
 

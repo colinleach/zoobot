@@ -180,7 +180,7 @@ def run_estimator(config):
             dtype=tf.float32,
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
-        receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect
+        receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect. Images as above.
 
         predict_config = copy.copy(config.eval_config)
         predict_config.name = 'predict'

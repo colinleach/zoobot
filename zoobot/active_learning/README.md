@@ -73,7 +73,7 @@ If you still need to acquire the data:
 `dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start`
 OR baseline:
 `baseline_dir=data/runs/al_baseline`
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $baseline_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline --warm-start`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $baseline_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline`
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.

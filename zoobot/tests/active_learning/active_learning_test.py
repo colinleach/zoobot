@@ -317,8 +317,8 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size)
     
     monkeypatch.setattr(
         active_learning.make_predictions,
-        'get_samples_of_subjects',
-        conftest.mock_get_samples_of_subjects
+        'get_samples_of_images',
+        conftest.mock_get_samples_of_images
     )
 
     n_samples = 10

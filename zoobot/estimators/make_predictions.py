@@ -28,33 +28,22 @@ def load_predictor(predictor_loc):
     return lambda x: model_unwrapped({'examples': x})['prediction']
 
 
-def get_samples_of_subjects(model, subjects, n_samples):
+def get_samples_of_images(model, images, n_samples):
     """Get many model predictions on each subject
 
     Args:
-        model (function): callable mapping parsed subjects to class scores
-        subjects (list): subject matrices on which to make a prediction
-        n_samples (int): number of samples (i.e. model calls) to calculate per subject
+        model (function): callable mapping images (parsed subject matrices) to class scores
+        images (list): subject matrices on which to make a prediction
+        n_samples (int): number of samples (i.e. model calls) to calculate per image
 
     Returns:
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
-    assert isinstance(subjects, list)
-    results = np.zeros((len(subjects), n_samples))
+    assert isinstance(images, list)
+    results = np.zeros((len(images), n_samples))
     for sample_n in range(n_samples):
-        results[:, sample_n] = model(subjects)
+        results[:, sample_n] = model(images)
     return results
-
-    # for nth_run in range(n_samples):  # for each desired sample,
-    #     results[:, nth_run] = model(subjects)  # predict once on every example
-    # return results
-
-
-# def get_samples_of_tfrecord(model, tfrecord, n_samples):
-#     samples = []
-#     for n in range(n_samples):
-#         samples.append(model(tfrecord))
-#     return np.array(samples)
 
 
 def binomial_likelihood(labels, predictions, total_votes):

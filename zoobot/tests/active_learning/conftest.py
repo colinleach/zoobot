@@ -87,7 +87,7 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
     config = execute.ActiveConfig(
         shard_config_ready, 
         run_dir=tmpdir.mkdir('run_dir').strpath,
-        iterations=3,  # 1st is only the initial cycle
+        n_iterations=3,  # 1st is only the initial cycle
         shards_per_iter=2,
         subjects_per_iter=10,
         initial_estimator_ckpt=initial_estimator_ckpt
@@ -134,24 +134,22 @@ def acquisition():
 def subjects(size):
     return [{'matrix': np.random.rand(size, size, 3), 'id_str': 'id_' + str(n)} for n in range(128)]
 
+@pytest.fixture()
+def images(size):
+    return np.random.rand(128, size, size, 3)
 
-def mock_get_samples_of_subjects(model, subjects, n_samples):
-    # predict the mean of subject, 10 times
-    assert isinstance(subjects, list)
-    example_subject = subjects[0]
-    assert isinstance(example_subject, dict)
-    assert 'matrix' in example_subject.keys()
+def mock_get_samples_of_images(model, images, n_samples):
+    # predict the mean of image batch, 10 times
+    assert isinstance(images, np.ndarray)
+    assert len(images.shape) == 4
     assert isinstance(n_samples, int)
-
-    response = []
-    for subject in subjects:
-        response.append([np.mean(subject['matrix'])] * n_samples)
+    response = [[np.mean(images[n])] * 10 for n in range(len(images))]
     return np.array(response)
 
 
 @pytest.fixture()
-def samples(subjects):
-    return mock_get_samples_of_subjects(model=None, subjects=subjects, n_samples=10)
+def samples(images):
+    return mock_get_samples_of_images(model=None, images=images, n_samples=10)
 
 
 @pytest.fixture()

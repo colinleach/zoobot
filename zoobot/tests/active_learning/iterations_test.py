@@ -179,7 +179,8 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
 
     def mock_make_predictions(self, prediction_shards, initial_size):
         subjects = SUBJECTS[:len(prediction_shards) * 256] # imagining there are 256 subjects per shard
-        samples = conftest.mock_get_samples_of_subjects(None, subjects, n_samples=self.n_samples)
+        images = np.array([subject['matrix'] for subject in subjects])
+        samples = conftest.mock_get_samples_of_images(None, images, n_samples=self.n_samples)
         return subjects, samples
     monkeypatch.setattr(iterations.Iteration, 'make_predictions', mock_make_predictions)
 
