@@ -64,13 +64,16 @@ class Iteration():
         dest = self.estimators_dir
         if initial_estimator_ckpt is not None:
             logging.info('Copying {} initial estimator ckpt'.format(initial_estimator_ckpt))
+
             # copy the initial estimator folder inside estimators_dir, keeping the same name
-            # shutil.copytree(
-            #     src=initial_estimator_ckpt, 
-            #     dst=dest
-            # )
+            shutil.copytree(
+                src=src, 
+                dst=dest
+            )
+
             # copy the files only, subdirs are saved models
-            [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
+            # [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
+
             # remove this log from the copy, to save space
             [os.remove(f) for f in os.listdir(dest) if f.startswith('events.out.tfevents')]
 
