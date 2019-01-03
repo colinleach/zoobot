@@ -199,7 +199,7 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
 
     # check that the initial ckpt was copied successfully, if one was given
     if new_iteration.initial_estimator_ckpt is not None:
-        expected_ckpt_copy = os.path.join(new_iteration.estimator_dir, new_iteration.initial_estimator_ckpt)
+        expected_ckpt_copy = os.path.join(new_iteration.estimators_dir, new_iteration.initial_estimator_ckpt)
         assert os.path.isdir(expected_ckpt_copy)
 
     # previous iteration may have asked for some subjects - check they were acquired and used
