@@ -91,8 +91,8 @@ def save_acquisition_examples(subject_data, acq_values, acq_string, save_dir):
         acq_string ([type]): [description]
         save_dir ([type]): [description]
     """
-
-
+    assert isinstance(subject_data, np.ndarray)
+    assert isinstance(acq_values, np.ndarray)
     # show galaxies with max/min variance, or top/bottom 20% of variance (more representative)
     sorted_galaxies = subject_data[acq_values.argsort()]
     min_gals = sorted_galaxies

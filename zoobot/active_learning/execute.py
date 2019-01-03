@@ -201,6 +201,7 @@ if __name__ == '__main__':
                     help='After each iteration, continue training the same model')
     args = parser.parse_args()
 
+
     log_loc = 'execute_{}.log'.format(time.time())
 
     logging.basicConfig(
@@ -209,6 +210,7 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
     )
+    logging.getLogger().addHandler(logging.StreamHandler())
 
     # instructions for the run
     if args.test:  # do a brief run only
