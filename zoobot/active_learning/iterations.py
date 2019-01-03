@@ -49,7 +49,6 @@ class Iteration():
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
-        os.mkdir(self.estimators_dir)
         os.mkdir(self.requested_tfrecords_dir)
         os.mkdir(self.metrics_dir)
 
@@ -76,6 +75,8 @@ class Iteration():
 
             # remove this log from the copy, to save space
             [os.remove(f) for f in os.listdir(dest) if f.startswith('events.out.tfevents')]
+        else:
+            os.mkdir(self.estimators_dir)
 
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(self.iteration_dir, 'train_records_index.json')
