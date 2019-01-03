@@ -74,7 +74,7 @@ class Iteration():
             # [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
 
             # remove this log from the copy, to save space
-            [os.remove(f) for f in os.listdir(dest) if f.startswith('events.out.tfevents')]
+            [os.remove(os.path.join(f, dest)) for f in os.listdir(dest) if f.startswith('events.out.tfevents')]
         else:
             os.mkdir(self.estimators_dir)
 
