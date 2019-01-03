@@ -7,10 +7,10 @@ deps:
   path: zoobot/active_learning/oracle.csv
 - md5: fc4f73d29ffff9eb157d85b5016dff5c.dir
   path: data/fits_native
-- md5: f35ec23f0508d2a8ca957faf100e5a9f.dir
+- md5: c8ca9d94c2dd00ec419c576246d004ec.dir
   path: zoobot
-md5: 3c737f175d69a38e8373a417eecabd78
+md5: 1c24b264d9c8a9b5f89225c7693cf6b0
 outs:
 - cache: true
-  md5: cbe4c93b539a7a777a0b7b3c2686bc84.dir
+  md5: 99977839eaf80bacba41401ad0ff7977.dir
   path: data/runs/al_baseline
