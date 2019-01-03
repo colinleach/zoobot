@@ -30,7 +30,7 @@ class ActiveConfig():
         self,
         shard_config,
         run_dir,
-        iterations, 
+        n_iterations, 
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
         initial_estimator_ckpt):
@@ -58,7 +58,7 @@ class ActiveConfig():
         self.shards = shard_config
         self.run_dir = run_dir
 
-        self.iterations = iterations  
+        self.n_iterations = n_iterations  
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
 
@@ -124,7 +124,7 @@ class ActiveConfig():
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
         
         iterations_record = []
-        while iteration_n < self.iterations:
+        while iteration_n < self.n_iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -212,11 +212,11 @@ if __name__ == '__main__':
 
     # instructions for the run
     if args.test:  # do a brief run only
-        iterations = 2
+        n_iterations = 2
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        iterations = 5  # 1.5h per iteration
+        n_iterations = 5  # 1.5h per iteration
         subjects_per_iter = 1024
         shards_per_iter = 3
 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     active_config = ActiveConfig(
         shard_config, 
         args.run_dir,
-        iterations=iterations, 
+        n_iterations=n_iterations, 
         subjects_per_iter=subjects_per_iter,
         shards_per_iter=shards_per_iter,
         initial_estimator_ckpt=None
