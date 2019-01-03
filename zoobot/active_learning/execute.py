@@ -113,6 +113,12 @@ class ActiveConfig():
             train_callable (func): train a tf model. Arg: list of tfrecord locations
             acquisition_func (func): expecting samples of shape [n_subject, n_sample]
         """
+        # clear any leftover mocked labels awaiting collection
+        # won't do this in production
+        from zoobot.active_learning import mock_panoptes
+        if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
+            os.remove(mock_panoptes.SUBJECTS_REQUESTED)
+
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
         shards_iterable = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
@@ -259,6 +265,5 @@ if __name__ == '__main__':
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    last_iteration = iterations_record[-1]
-    last_acquisition = last_iteration.acquired_tfrecord
-    analysis.show_subjects_by_iteration(last_acquisition, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    acquistions = [iteration.acquired_tfrecord for iteration in iterations]
+    analysis.show_subjects_by_iteration(acquistions, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
