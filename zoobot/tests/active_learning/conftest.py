@@ -90,16 +90,17 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
         iterations=3,  # 1st is only the initial cycle
         shards_per_iter=2,
         subjects_per_iter=10,
-        initial_estimator_ckpt=initial_estimator_ckpt,
-        warm_start=warm_start
+        initial_estimator_ckpt=initial_estimator_ckpt
         )
-    return config
 
+    assert os.path.isdir(config.run_dir)  # permanent directory for dvc control
+    subdirs = [
+        config.requested_fits_dir, 
+        config.requested_tfrecords_dir
+    ]
+    assert all([os.path.exists(subdir) for subdir in subdirs])
+    assert os.path.exists(config.db_loc)
 
-@pytest.fixture()
-def active_config_ready(active_config):
-    config = copy.copy(active_config)
-    config.prepare_run_folders()
     assert config.ready()
     return config
 

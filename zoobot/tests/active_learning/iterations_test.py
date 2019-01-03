@@ -17,8 +17,8 @@ def initial_estimator_ckpt(tmpdir):
 
 
 @pytest.fixture()
-def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
-        run_dir = active_config_ready.run_dir
+def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
+        run_dir = active_config.run_dir
         iteration_n = 0
         prediction_shards = ['first_shard.tfrecord', 'second_shard.tfrecord']
 
@@ -26,8 +26,8 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
             run_dir,
             iteration_n,
             prediction_shards,
-            initial_db_loc=active_config_ready.db_loc,
-            initial_train_tfrecords=[active_config_ready.shards.train_tfrecord_loc],
+            initial_db_loc=active_config.db_loc,
+            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
             train_callable=conftest.mock_train_callable,
             acquisition_func=conftest.mock_acquisition_func,
             n_samples=10,  # may need more samples?
@@ -39,8 +39,8 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config_ready):
         return iteration
 
 
-def test_init(tmpdir, initial_estimator_ckpt, active_config_ready):
-        run_dir = active_config_ready.run_dir
+def test_init(tmpdir, initial_estimator_ckpt, active_config):
+        run_dir = active_config.run_dir
         iteration_n = 0
         prediction_shards = ['some', 'shards']
 
@@ -48,8 +48,8 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config_ready):
             run_dir,
             iteration_n,
             prediction_shards,
-            initial_db_loc=active_config_ready.db_loc,
-            initial_train_tfrecords=[active_config_ready.shards.train_tfrecord_loc],
+            initial_db_loc=active_config.db_loc,
+            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
             train_callable=np.random.rand,
             acquisition_func=np.random.rand,
             n_samples=10,  # may need more samples?
@@ -119,7 +119,7 @@ def test_save_metrics():
     pass  # does nothing except call external individually-unit-tested functions
 
 
-def test_get_train_records(new_iteration, active_config_ready):
+def test_get_train_records(new_iteration, active_config):
     assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords
     new_iteration.acquired_tfrecord = 'acquired.tfrecord'
     assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords + ['acquired.tfrecord']

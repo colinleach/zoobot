@@ -8,6 +8,7 @@ import sqlite3
 import json
 import subprocess
 import itertools
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -32,8 +33,7 @@ class ActiveConfig():
         iterations, 
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
-        initial_estimator_ckpt,
-        warm_start=False):
+        initial_estimator_ckpt):
         """
         Controller to define and run active learning on pre-made shards
 
@@ -63,14 +63,14 @@ class ActiveConfig():
         self.shards_per_iter = shards_per_iter
 
         self.initial_estimator_ckpt = initial_estimator_ckpt
-        self.warm_start = warm_start
-
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
     
         # will download/copy fits of top acquisitions into here
         self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
         # and then write them into tfrecords here
         self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
+
+        self.prepare_run_folders()
 
 
     def prepare_run_folders(self):
@@ -154,72 +154,37 @@ class ActiveConfig():
         return iterations_record
 
 
-def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):
-    """
-    Train a model using active learning, on the data (shards) described in shard_config_loc
-    Run parameters (except shards) are defined here and in default_estimator_params.get_run_config
-
-    Args:
-        shard_config_loc ([type]): path to shard config (json) describing existing shards to use
-        run_dir (str): output directory to save model and new shards
-        baseline (bool, optional): Defaults to False. If True, use random selection for acquisition.
-        warm_start(bool, optional): Defaults to False. If True, preserve model between iterations
-    
-    Returns:
-        None
-    """
-    if test:  # do a brief run only
-        iterations = 2
-        subjects_per_iter = 28
-        shards_per_iter = 1
-    else:
-        iterations = 5  # 1.5h per iteration
-        subjects_per_iter = 1024
-        shards_per_iter = 3
-
-    shard_config = make_shards.load_shard_config(shard_config_loc)
-    # instructions for the run (except model)
-    active_config = ActiveConfig(
-        shard_config, 
-        run_dir,
-        iterations=iterations, 
-        subjects_per_iter=subjects_per_iter,
-        shards_per_iter=shards_per_iter,
-        initial_estimator_ckpt=None,
-        warm_start=warm_start
-    )
-    active_config.prepare_run_folders()
-
-    # WARNING run_config is not actually part of active_config, only interacts via callables
-    run_config = default_estimator_params.get_run_config(active_config)  # instructions for model
-
-    if active_config.warm_start:
-        run_config.epochs = 150  # for retraining
-    if test: # overrides warm_start
-        run_config.epochs = 5  # minimal training, for speed
+def get_train_callable(params):
 
     def train_callable(log_dir, train_records):
-        run_config.log_dir = log_dir
-        run_config.train_config.tfrecord_loc = train_records
+        run_config = default_estimator_params.get_run_config(params, log_dir, train_records)
+        if params.warm_start:
+            run_config.epochs = 150  # for retraining
+        if params.test: # overrides warm_start
+            run_config.epochs = 5  # minimal training, for speed
+
         # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
 
+    return train_callable
+
+
+def get_acquisition_func(baseline):
     if baseline:
         def mock_acquisition_func(samples):
-            return samples.mean(axis=1)
+            return [np.random.rand() for n in range(len(samples))]
         logging.warning('Using mock acquisition function, baseline test mode')
         acquisition_func = mock_acquisition_func
-    else:  # callable expecting predictor, returning a callable expecting matrix list
+    else:  # callable expecting samples np.ndarray, returning list
         acquisition_func = acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
+    
+    return acquisition_func
 
-    iterations_record = active_config.run(
-        train_callable,
-        acquisition_func
-    )
 
-    last_iteration = iterations_record[-1]
-    analysis.show_subjects_by_iteration(last_iteration.get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
-
+TrainCallableParams = namedtuple(
+    'TrainCallableParams', 
+    ['initial_size', 'final_size', 'warm_start', 'eval_tfrecord_loc', 'test']
+)
 
 if __name__ == '__main__':
 
@@ -245,16 +210,49 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    execute_active_learning(
-        shard_config_loc=args.shard_config_loc,
-        run_dir=args.run_dir,  # warning, may overwrite if not careful
-        baseline=args.baseline,
-        test=args.test,
-        warm_start=args.warm_start
+    # instructions for the run
+    if args.test:  # do a brief run only
+        iterations = 2
+        subjects_per_iter = 28
+        shards_per_iter = 1
+    else:
+        iterations = 5  # 1.5h per iteration
+        subjects_per_iter = 1024
+        shards_per_iter = 3
+
+    # shards to use
+    shard_config = make_shards.load_shard_config(args.shard_config_loc)
+    
+    active_config = ActiveConfig(
+        shard_config, 
+        args.run_dir,
+        iterations=iterations, 
+        subjects_per_iter=subjects_per_iter,
+        shards_per_iter=shards_per_iter,
+        initial_estimator_ckpt=None
     )
+
+    train_callable_params = TrainCallableParams(
+        initial_size = active_config.shards.initial_size,
+        final_size = active_config.shards.final_size,
+        warm_start = args.warm_start,
+        eval_tfrecord_loc=active_config.shards.eval_tfrecord_loc,
+        test=args.test
+    )
+
+    train_callable = get_train_callable(train_callable_params)
+    acquisition_func = get_acquisition_func(baseline=args.baseline)
+
+    ###
+    iterations_record = active_config.run(train_callable, acquisition_func)
+    ###
 
     # finally, tidy up by moving the log into the run directory
     # could not be create here because run directory did not exist at start of script
     repo = git.Repo(search_parent_directories=True)
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
+
+    last_iteration = iterations_record[-1]
+    analysis.show_subjects_by_iteration(last_iteration.get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+

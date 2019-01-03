@@ -9,13 +9,13 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
 
 
-def get_run_config(active_config):
+def get_run_config(params, log_dir, train_records):
 
     channels = 3
 
     run_config = run_estimator.RunEstimatorConfig(
-        initial_size=active_config.shards.initial_size,
-        final_size=active_config.shards.final_size,
+        initial_size=params.initial_size,
+        final_size=params.final_size,
         channels=channels,
         label_col='label',
         epochs=600,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
@@ -25,14 +25,14 @@ def get_run_config(active_config):
         min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
         max_sadness=5.,  # to tweak
-        log_dir=active_config.estimator_dir,
+        log_dir=log_dir,
         save_freq=10,
-        warm_start=active_config.warm_start
+        warm_start=params.warm_start
     )
 
     train_config = input_utils.InputConfig(
         name='train',
-        tfrecord_loc=active_config.shards.train_tfrecord_loc,
+        tfrecord_loc=train_records,
         label_col=run_config.label_col,
         stratify=False,
         shuffle=True,
@@ -51,7 +51,7 @@ def get_run_config(active_config):
 
     eval_config = input_utils.InputConfig(
         name='eval',
-        tfrecord_loc=active_config.shards.eval_tfrecord_loc,
+        tfrecord_loc=params.eval_tfrecord_loc,
         label_col=run_config.label_col,
         stratify=False,
         shuffle=True,
