@@ -145,8 +145,8 @@ class BayesianModel():
 
         # eval mode will have a lower loss than train mode, because dropout is off
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
-        tf.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
-        tf.summary.scalar('dropout_rate', dropout_rate)
+        # tf.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
+        # tf.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
         predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
