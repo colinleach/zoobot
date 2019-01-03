@@ -265,5 +265,6 @@ if __name__ == '__main__':
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    acquistions = [iteration.acquired_tfrecord for iteration in iterations_record]
-    analysis.show_subjects_by_iteration(acquistions, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    # TODO refactor analysis to expect simple tfrecords list
+    # imagine we've closed this thread, but want to analyse later. Get the tfrecord record of last iter:
+    analysis.show_subjects_by_iteration(iterations_record[-1].tfrecords_record, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
