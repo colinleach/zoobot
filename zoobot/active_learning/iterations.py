@@ -77,6 +77,7 @@ class Iteration():
 
     def make_predictions(self, shard_locs, initial_size):
         predictor = self.get_latest_model()
+        logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(shard_locs))
         subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, initial_size=initial_size, n_samples=self.n_samples)

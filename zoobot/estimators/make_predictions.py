@@ -25,8 +25,6 @@ def load_predictor(predictor_loc):
     # wrap to avoid having to pass around dicts all the time
     # expects image matrix, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
-    # TODO stop flipping, regression problem
-
     return lambda x: model_unwrapped({'examples': x})['prediction']
 
 
@@ -41,6 +39,7 @@ def get_samples_of_subjects(model, subjects, n_samples):
     Returns:
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
+    assert isinstance(subjects, list)
     results = np.zeros((len(subjects), n_samples))
     for sample_n in range(n_samples):
         results[:, sample_n] = model(subjects)
