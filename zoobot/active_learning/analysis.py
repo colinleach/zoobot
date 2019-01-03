@@ -21,6 +21,7 @@ from zoobot.tests import TEST_FIGURE_DIR
 
 
 def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, save_loc):
+    assert isinstance(tfrecord_index_loc, str)  # easy to accidentally pass a list
     with open(tfrecord_index_loc, 'r') as f:
         tfrecord_locs = json.load(f)
         assert isinstance(tfrecord_locs, list)

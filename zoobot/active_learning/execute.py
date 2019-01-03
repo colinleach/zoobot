@@ -53,7 +53,6 @@ class ActiveConfig():
             shards_per_iter (int): how many shards to find acquisition values for
             subjects_per_iter (int): how many subjects to acquire per training iteration
             initial_estimator_ckpt (str): path to checkpoint folder (datetime) of est. for initial iteration
-            warm_start (bool): if True, continue training the same estimator between iterations. Else, start from scratch.
         """
         self.shards = shard_config
         self.run_dir = run_dir
@@ -148,6 +147,7 @@ class ActiveConfig():
             iteration_n += 1
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
+            # TODO only if warm_start
             initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
             iterations_record.append(iteration)
 
@@ -260,5 +260,5 @@ if __name__ == '__main__':
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
     last_iteration = iterations_record[-1]
-    analysis.show_subjects_by_iteration(last_iteration.get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
-
+    last_acquisition = last_iteration.acquired_tfrecord
+    analysis.show_subjects_by_iteration(last_acquisition, 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
