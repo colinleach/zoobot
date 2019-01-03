@@ -19,9 +19,6 @@ def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord
     mocker.patch('zoobot.active_learning.execute.active_learning.get_all_shard_locs')
     execute.active_learning.get_all_shard_locs.return_value = ['shard_loc_a', 'shard_loc_b', 'shard_loc_c', 'shard_loc_d']
 
-    mocker.patch('zoobot.active_learning.execute.active_learning.get_latest_checkpoint_dir', autospec=True)
-    execute.active_learning.get_latest_checkpoint_dir.side_effect = ['first_ckpt_dir', 'second_ckpt_dir', 'third_ckpt_dir']
-
     # no return value - we can now use execute.iterations.Iteration as a mocked object
     mocker.patch('zoobot.active_learning.execute.iterations.Iteration', autospec=True)
     mock_iteration = execute.iterations.Iteration.return_value  # shorthand reference for the instantiated class
@@ -53,13 +50,13 @@ def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord
 
     second_init_call_args = init_calls[1][2]
     assert second_init_call_args['prediction_shards'] == ['shard_loc_c', 'shard_loc_d']
-    assert second_init_call_args['initial_estimator_ckpt'] == 'first_ckpt_dir'
+    assert second_init_call_args['initial_estimator_ckpt'] == 'first_est_dir'
     assert second_init_call_args['initial_db_loc'] == 'first_db_loc'
     assert second_init_call_args['initial_train_tfrecords'] == 'first_records'
 
     third_init_call_args = init_calls[2][2]
     assert third_init_call_args['prediction_shards'] == ['shard_loc_a', 'shard_loc_b']
-    assert third_init_call_args['initial_estimator_ckpt'] == 'second_ckpt_dir'
+    assert third_init_call_args['initial_estimator_ckpt'] == 'second_est_dir'
     assert third_init_call_args['initial_db_loc'] == 'second_db_loc'
     assert third_init_call_args['initial_train_tfrecords'] == 'second_records'
 

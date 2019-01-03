@@ -20,12 +20,8 @@ from zoobot.tests import TEST_FIGURE_DIR
 
 
 
-def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, save_loc):
-    assert isinstance(tfrecord_index_loc, str)  # easy to accidentally pass a list
-    with open(tfrecord_index_loc, 'r') as f:
-        tfrecord_locs = json.load(f)
-        assert isinstance(tfrecord_locs, list)
-    
+def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_loc):
+    assert isinstance(tfrecord_locs, list)
     nrows = len(tfrecord_locs)
     ncols = n_subjects
     scale = 2.
@@ -246,6 +242,13 @@ def get_smooth_metrics_from_log(log_loc, name=None):
         return metric_smooth
 
 
+def get_final_train_locs(run_dir):
+    iter_dirs = [d for d in os.listdir(args.active_dir) if os.path.isdir(d)]
+    latest_iter_dir = sorted(iter_dirs)[-1]  # assuming iteration_n convention
+    latest_train_index = os.path.join(latest_iter_dir, 'train_records_index.json')
+    return json.load(open(latest_train_index, 'r'))
+    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Analyse active learning')
@@ -270,11 +273,12 @@ if __name__ == '__main__':
     name = '{}init_{}per'.format(initial, per_iter)
 
     # will be re-used for subject history of baseline, if provided
-    # n_subjects = 15
-    # size = 128
-    # channels = 3
-    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
+    n_subjects = 15
+    size = 128
+    channels = 3
+
+    active_train_locs = get_final_train_locs(args.active_dir)
+    show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
@@ -283,8 +287,8 @@ if __name__ == '__main__':
     plot_log_metrics(active_smooth_metrics, active_save_loc, title=title)
 
     if args.baseline_dir is not None:
-        baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)
-        show_subjects_by_iteration(baseline_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
+        baseline_train_locs = get_final_train_locs(args.baseline_dir)
+        show_subjects_by_iteration(baseline_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
         baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')

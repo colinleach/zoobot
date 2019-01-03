@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -41,8 +43,16 @@ def get_samples_of_images(model, images, n_samples):
     """
     assert isinstance(images, np.ndarray)
     results = np.zeros((len(images), n_samples))
-    for sample_n in range(n_samples):
-        results[:, sample_n] = model(images)
+    # make predictions batch-wise to avoid out-of-memory issues
+    min_image = 0
+    batch_size = 1000  # fits comfortably on K80
+    logging.info('Making predictions on {} images, {} samples'.format(len(images), n_samples))
+    while min_image < len(images):
+        for sample_n in range(n_samples):
+            image_slice = slice(min_image, min_image + batch_size)
+            results[image_slice, sample_n] = model(images[image_slice])
+        min_image += batch_size
+    logging.info('Predictions complete')
     return results
 
 

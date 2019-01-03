@@ -41,7 +41,17 @@ def test_get_samples_of_subjects(predictor, size, channels):
     samples = make_predictions.get_samples_of_images(predictor, images, n_samples)
     assert samples.shape == (n_subjects, n_samples)
     assert not np.allclose(samples[0, 0], samples [0, 1])
-    assert np.allclose(samples[0], samples[1])  # predictor is deterministic
+    assert not np.allclose(samples[0], samples[1])  # predictor is non-deterministic
+
+def test_get_samples_of_many_subjects(predictor, size, channels):
+    n_samples = 5
+    n_subjects = 20000
+    images = np.random.rand(n_subjects, size, size, channels)
+    samples = make_predictions.get_samples_of_images(predictor, images, n_samples)
+    assert predictor.call_count > n_samples
+    assert samples.shape == (n_subjects, n_samples)
+    assert not np.allclose(samples[0, 0], samples [0, 1])
+    assert not np.allclose(samples[0], samples[1])  # predictor is NOT deterministic
     # TODO replace with a non-deterministic predictor
 
 

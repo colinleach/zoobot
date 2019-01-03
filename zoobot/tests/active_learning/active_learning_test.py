@@ -327,7 +327,7 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size)
         model=None,  # avoid this via mocking, above
         n_samples=n_samples,
         initial_size=size,
-        max_shard_size=10000
+        max_images=20000
     )
     assert samples.shape == (len(subjects), n_samples)
 

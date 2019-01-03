@@ -141,21 +141,22 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     )
     db.commit()
 
-
+# should make each shard a comparable size to the available memory, but can iterate over several if needed
 # probably better to move to make_predictions itself
-def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_shard_size=10000):
+def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_images=20000):
     images, _, id_str = input_utils.predict_input_func(
-        tfrecord_locs,  # TODO verify this is happy with lists
-        n_galaxies=max_shard_size, 
+        tfrecord_locs,
+        n_galaxies=max_images, 
         initial_size=initial_size, 
         mode='id_str'
     )
     with tf.Session() as sess:
         images, id_str_bytes = sess.run([images, id_str])
+    if len(images) == max_images:
+        logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
     # tfrecord will have encoded to bytes, need to decode
     subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
-    # make predictions
     samples = make_predictions.get_samples_of_images(model, images, n_samples)
     return subjects, samples
 

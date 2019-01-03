@@ -12,15 +12,21 @@ from zoobot.active_learning import analysis
 
 
 @pytest.fixture()
-def tfrecord_index_loc(tfrecord_dir, tfrecord_matrix_float_loc):
+def tfrecord_locs(tfrecord_matrix_float_loc):
+    return [tfrecord_matrix_float_loc, tfrecord_matrix_float_loc]
+
+
+@pytest.fixture()
+def tfrecord_index_loc(tfrecord_dir, tfrecord_locs):
     loc = os.path.join(tfrecord_dir, 'tfrecord_index.json')
     with open(loc, 'w') as f:
-        json.dump([tfrecord_matrix_float_loc, tfrecord_matrix_float_loc], f)
+        json.dump(tfrecord_locs, f)
     return loc
 
-def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):
+
+def test_show_subjects_by_iteration(tfrecord_locs, size, channels):
     save_loc = os.path.join(TEST_FIGURE_DIR, 'subjects_in_shards.png')
-    analysis.show_subjects_by_iteration(tfrecord_index_loc, 5, size, channels, save_loc)
+    analysis.show_subjects_by_iteration(tfrecord_locs, 5, size, channels, save_loc)
 
 
 # TODO temporary, will need one in TEST_EXAMPLES

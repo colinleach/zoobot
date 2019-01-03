@@ -278,8 +278,11 @@ def predictor_model_loc():
 
 
 @pytest.fixture()
-def predictor():
-    return lambda x: np.random.rand()  # whatever is passed in, return a single random float score
+def predictor(mocker):
+    predictor = mocker.MagicMock()
+    # when called with image batch, return a random float score for each image (batch dim)
+    predictor.side_effect = lambda x: np.random.rand(len(x))
+    return predictor  
 
 
 @pytest.fixture()
