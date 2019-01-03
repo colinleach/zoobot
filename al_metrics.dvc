@@ -1,14 +1,14 @@
 cmd: ' python zoobot/active_learning/analysis.py --active_dir=data/runs/al_mutual
   --baseline_dir=data/runs/al_baseline --initial=6000 --per_iter=1024 --output_dir=results/latest_metrics'
 deps:
-- md5: b54915a8fc5d5b9d59dd50995e8b4309.dir
-  path: data/shards
-- md5: 241483e80c0d88a94340918ff5afb3c4.dir
+- md5: 32e9afc5916d4c89c6b9f6c74165d65f.dir
+  path: data/shards/si128_sf64_ss4096
+- md5: 7631526639be654bdef2d0c7f1a03768.dir
   path: data/runs/al_mutual
-- md5: 17af0b19d42ce62a4797b4712c790687.dir
+- md5: ba6f0bb84959319d85b118f5fda214f1.dir
   path: data/runs/al_baseline
-md5: c7f615883e1c24e048884589ea4901d9
+md5: d3f1e47aa6216133c05b0fd31f25e258
 outs:
 - cache: true
-  md5: 1bc1e42f265e1b221f769fa0ec0356df.dir
+  md5: 87ce4170312614560f9b1dabdbf3399c.dir
   path: results/latest_metrics
