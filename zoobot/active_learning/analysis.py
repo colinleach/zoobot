@@ -220,12 +220,13 @@ def get_smooth_metrics_from_log(log_loc, name=None):
         return metric_smooth
 
 
+# TODO improve tests
 def get_final_train_locs(run_dir):
-    print(os.listdir(args.active_dir))
-    iter_dirs = [os.path.join(run_dir, d) for d in os.listdir(args.active_dir) if os.path.isdir(os.path.join(run_dir, d))]
+    iter_dirs = [os.path.join(run_dir, d) for d in os.listdir(args.active_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
     print(iter_dirs)
-    latest_iter_dir = sorted(iter_dirs)[-3]  # assuming iteration_n convention
+    latest_iter_dir = sorted(iter_dirs)[-1]  # assuming iteration_n convention
     latest_train_index = os.path.join(latest_iter_dir, 'train_records_index.json')
+    print(latest_train_index)
     return json.load(open(latest_train_index, 'r'))
     
 
