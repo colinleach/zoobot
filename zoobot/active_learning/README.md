@@ -47,7 +47,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir --catalog-loc=$catalog_loc`
+`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
 
 ### Execution
 
@@ -94,7 +94,7 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull $baseline_dir.dvc`
 
 `output_dir=results/latest_metrics`
-`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=6000 --per_iter=1024 --output_dir=$output_dir`
+`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc -d zoobot/active_learning/analysis.py --ignore-build-cache python zoobot/active_learning/analysis.py --active-dir=$run_dir --baseline-dir=$baseline_dir --initial=6000 --per-iter=1024 --output-dir=$output_dir --catalog-loc=$catalog_loc && git pull && git add al_metrics.dvc && git commit -m 'new metrics' && git push && dvc push -r s3 al_metrics.dvc`
 
 ## Optional: Run Tensorboard to Monitor
 

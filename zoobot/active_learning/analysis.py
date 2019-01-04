@@ -267,7 +267,7 @@ def identify_catalog_subjects_history(tfrecord_locs, catalog):
 def show_catalog_col_by_iteration(catalog_history, catalog_col, save_loc):
     fig, axes = plt.subplots(nrows=len(catalog_history), sharex=True)
     for iteration_n, df in enumerate(catalog_history):
-        axes[iteration_n].hist(df[catalog_col], density=True, bins=60)
+        axes[iteration_n].hist(df[catalog_col], density=True)
     axes[-1].set_xlabel(catalog_col)
     fig.tight_layout()
     fig.savefig(save_loc)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     channels = 3
 
     catalog = pd.read_csv(args.catalog_loc)
-    catalog_cols = ['subject_id', 'smooth-or-featured_smooth_fraction']
+    catalog_cols = ['ra', 'dec', 'smooth-or-featured_smooth_fraction']
 
     active_train_locs = get_final_train_locs(args.active_dir)
     show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
@@ -328,9 +328,10 @@ if __name__ == '__main__':
         baseline_train_locs = get_final_train_locs(args.baseline_dir)
         show_subjects_by_iteration(baseline_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         
+        baseline_history = identify_catalog_subjects_history(baseline_train_locs, catalog)
         for col in catalog_cols:
             show_catalog_col_by_iteration(
-                active_history, 
+                baseline_history, 
                 col, 
                 os.path.join(args.output_dir, '{}_history_baseline.png'.format(col))
             )
