@@ -3,6 +3,7 @@ import ast
 import itertools
 import os
 import argparse
+import pickle
 
 import pandas as pd
 import numpy as np
@@ -14,6 +15,7 @@ import seaborn as sns
 sns.set_context('poster')
 sns.set()
 from zoobot.estimators import input_utils
+from zoobot.active_learning import metrics, simulation_timeline
 
 from zoobot.tfrecord import read_tfrecord
 from zoobot.tests import TEST_FIGURE_DIR
@@ -220,13 +222,14 @@ def get_smooth_metrics_from_log(log_loc, name=None):
         return metric_smooth
 
 
-# TODO improve tests
+def get_iteration_dirs(run_dir):
+    return [os.path.join(run_dir, d) for d in os.listdir(args.active_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
+
+
 def get_final_train_locs(run_dir):
-    iter_dirs = [os.path.join(run_dir, d) for d in os.listdir(args.active_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
-    print(iter_dirs)
+    iter_dirs = get_iteration_dirs(run_dir)
     latest_iter_dir = sorted(iter_dirs)[-1]  # assuming iteration_n convention
     latest_train_index = os.path.join(latest_iter_dir, 'train_records_index.json')
-    print(latest_train_index)
     return json.load(open(latest_train_index, 'r'))
     
 
@@ -251,29 +254,6 @@ def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_l
     fig.savefig(save_loc)
 
 
-def identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog, max_subjects=1024):
-    feature_spec = read_tfrecord.id_feature_spec()
-    subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec, max_examples=max_subjects)
-    id_strs = [subject['id_str'].decode('utf-8') for subject in subjects]
-    assert len(set(id_strs)) == len(id_strs)
-    return catalog[catalog['subject_id'].isin(set(id_strs))]
-
-
-def identify_catalog_subjects_history(tfrecord_locs, catalog):
-    # thin wrapper, may be overkill
-    assert isinstance(tfrecord_locs, list)
-    return [identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog) for tfrecord_loc in tfrecord_locs]
-
-
-def show_catalog_col_by_iteration(catalog_history, catalog_col, save_loc):
-    fig, axes = plt.subplots(nrows=len(catalog_history), sharex=True)
-    for iteration_n, df in enumerate(catalog_history):
-        axes[iteration_n].hist(df[catalog_col], density=True)
-    axes[-1].set_xlabel(catalog_col)
-    fig.tight_layout()
-    fig.savefig(save_loc)
-
-    
 
 if __name__ == '__main__':
 
@@ -310,13 +290,19 @@ if __name__ == '__main__':
 
     active_train_locs = get_final_train_locs(args.active_dir)
     show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
-    active_history = identify_catalog_subjects_history(active_train_locs, catalog)
-    for col in catalog_cols:
-        show_catalog_col_by_iteration(
-            active_history, 
-            col, 
-            os.path.join(args.output_dir, '{}_history_active.png'.format(col))
-        )
+    
+    
+    # active_history = identify_catalog_subjects_history(active_train_locs, catalog)
+    # for col in catalog_cols:
+    #     show_catalog_col_by_iteration(
+    #         active_history, 
+    #         col, 
+    #         os.path.join(args.output_dir, '{}_history_active.png'.format(col))
+    #     )
+
+    active_iteration_dirs = get_iteration_dirs(args.active_dir)
+    active_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in active_iteration_dirs]
+    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.output_dir)
     
 
     active_log_loc = find_log(args.active_dir)
@@ -329,13 +315,13 @@ if __name__ == '__main__':
         baseline_train_locs = get_final_train_locs(args.baseline_dir)
         show_subjects_by_iteration(baseline_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         
-        baseline_history = identify_catalog_subjects_history(baseline_train_locs, catalog)
-        for col in catalog_cols:
-            show_catalog_col_by_iteration(
-                baseline_history, 
-                col, 
-                os.path.join(args.output_dir, '{}_history_baseline.png'.format(col))
-            )
+        # baseline_history = identify_catalog_subjects_history(baseline_train_locs, catalog)
+        # for col in catalog_cols:
+        #     show_catalog_col_by_iteration(
+        #         baseline_history, 
+        #         col, 
+        #         os.path.join(args.output_dir, '{}_history_baseline.png'.format(col))
+        #     )
 
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')

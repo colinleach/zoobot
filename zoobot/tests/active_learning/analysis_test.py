@@ -66,18 +66,3 @@ def test_get_metrics_from_log(log_loc):
     metrics = metrics[metrics['acc/accuracy'] > 0]
     assert metrics['iteration'].min() == 0
     assert metrics['iteration'].max() > 0
-
-
-@pytest.fixture()
-def catalog(): 
-    # overrides conftest
-    return pd.DataFrame([
-        {'subject_id': '12'},
-        {'subject_id': '57'},
-        {'subject_id': '365'}
-    ])
-
-def test_identify_catalog_subjects_in_tfrecord(catalog, tfrecord_matrix_id_loc):
-    # tfrecord from conftest has id_str {'0', ..., '127'}
-    df = analysis.identify_catalog_subjects_in_tfrecord(tfrecord_matrix_id_loc, catalog)
-    assert sorted(list(df['subject_id'])) == ['12', '57']

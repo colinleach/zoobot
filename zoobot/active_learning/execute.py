@@ -164,6 +164,7 @@ class ActiveConfig():
 def get_train_callable(params):
 
     def train_callable(log_dir, train_records):
+        logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records)
         if params.warm_start:
             run_config.epochs = 150  # for retraining
@@ -177,7 +178,8 @@ def get_train_callable(params):
 
 
 def mock_acquisition_func(samples):
-            return [np.random.rand() for n in range(len(samples))]
+    logging.critical('Applying MOCK random acquisition function')
+    return [np.random.rand() for n in range(len(samples))]
 
 
 def get_acquisition_func(baseline):
@@ -185,6 +187,7 @@ def get_acquisition_func(baseline):
         logging.critical('Using mock acquisition function, baseline test mode!')
         return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
+        logging.critical('Using mutual information acquisition function')
         return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
 

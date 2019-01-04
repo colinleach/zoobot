@@ -1,6 +1,8 @@
 import os
 import logging
 import json
+import pickle
+from collections import namedtuple
 
 import numpy as np
 import matplotlib
@@ -17,41 +19,59 @@ from zoobot.uncertainty import discrete_coverage
 from zoobot.active_learning import acquisition_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
+IterationState = namedtuple('IterationState', ['samples', 'acquisitions', 'id_strs'])
+
+
+def save_iteration_state(iteration_dir, subjects, samples, acquisitions):
+    id_strs = [subject['id_str'] for subject in subjects]
+    iteration_state = IterationState(samples, acquisitions, id_strs)
+    with open(os.path.join(iteration_dir, 'state.pickle'), 'wb') as f:
+        pickle.dump(iteration_state, f)
+
+
+def load_iteration_state(iteration_dir):
+    with open(os.path.join(iteration_dir, 'state.pickle'), 'rb') as f:
+        return pickle.load(f)
+
+
 
 class Model():
+    """Get and plot basic model results, with no external info"""
 
-    def __init__(self, predictions, labels, name):
-        self.predictions = predictions
-        self.labels = labels
+    def __init__(self, state, name, bin_probs=None, acquisitions=None):
+        self.samples = state.samples
+        self.id_strs = state.id_strs
         self.name = name
 
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
-        self.bin_probs = make_predictions.bin_prob_of_samples(predictions, n_draws=40)
-        self.mean_prediction = self.predictions.mean(axis=1)
+        if bin_probs is None:
+            self.bin_probs = make_predictions.bin_prob_of_samples(self.samples, n_draws=40)
+        else:
+            self.bin_probs = bin_probs
+        
+        self.mean_prediction = self.samples.mean(axis=1)
+        self.calculate_mutual_info()
 
-        if self.labels is not None:
-            self.calculate_default_metrics()
-            self.votes = np.around(self.labels * 40)  # assume 40 votes for everything, for now
-        self.calculate_acquistion_funcs()
+        self.acquisitions = acquisitions
 
 
-    def calculate_acquistion_funcs(self):
+    def calculate_mutual_info(self):
         self.predictive_entropy = acquisition_utils.predictive_binomial_entropy(self.bin_probs)
         self.expected_entropy = np.mean(acquisition_utils.distribution_entropy(self.bin_probs), axis=1)
         self.mutual_info = self.predictive_entropy - self.expected_entropy
 
 
-    def show_acquisitions_vs_predictions(self, save_dir):
+    def show_mutual_info_vs_predictions(self, save_dir):
         # How does being smooth or featured affect each entropy measuremement?
         fig, (row0, row1) = plt.subplots(nrows=2, ncols=3, sharex=True, figsize=(12, 6))
-        self.acquisition_vs_mean_prediction(row0)
+        self.mutual_info_vs_mean_prediction(row0)
         self.delta_acquisition_vs_mean_prediction(row1)
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, 'entropy_by_prediction.png'))
         plt.close()
 
 
-    def acquisition_vs_mean_prediction(self, row):
+    def mutual_info_vs_mean_prediction(self, row):
         mean_pred_range = np.linspace(0.02, 0.98)
         entropy_of_mean_pred_range = acquisition_utils.binomial_entropy(mean_pred_range, n_draws=40)
 
@@ -78,89 +98,33 @@ class Model():
         row[1].scatter(self.mean_prediction, self.expected_entropy - entropy_of_mean_prediction)
         row[1].set_ylabel('Delta Expected Entropy')
 
-    """
-    Evaluating performance given known labels - requires self.labels is not None
-    """
+
+    def acquisitions_vs_mean_prediction(self, n_acquired, save_dir):
+        if self.acquisitions is None:
+            raise ValueError('Acquistions is required')
+
+        fig, axes = plt.subplots(nrows=3, sharex=True)
+
+        sorted_by_acq = self.mean_prediction[np.argsort(self.acquisitions)[::-1]]
+        acquired, not_acquired = sorted_by_acq[:n_acquired], sorted_by_acq[n_acquired:]
 
 
-    def calculate_default_metrics(self):
-        """
-        Calculate common metrics for performance of sampled predictions vs. volunteer vote fractions
-        Store these in object state
-        
-        Args:
-            results (np.array): predictions of shape (galaxy_n, sample_n)
-            labels (np.array): true labels for galaxies on which predictions were made
-        
-        Returns:
-            None
-        """
-        assert self.labels is not None
-        
-        self.abs_error = np.abs(self.mean_prediction - self.labels)
-        self.square_error = (self.labels - self.mean_prediction) ** 2.
-        self.mean_abs_error = np.mean(self.abs_error)
-        self.mean_square_error = np.mean(self.square_error)
+        sns.scatterplot(
+            x=self.mean_prediction, 
+            y=self.acquisitions, 
+            hue=self.acquisitions > sorted(self.acquisitions, reverse=True)[n_acquired],
+            ax=axes[0]
+            )
+        axes[0].set_ylabel('Acquisition')
+        axes[0].set_xlabel('Mean Prediction')
 
-        self.bin_likelihood = make_predictions.binomial_likelihood(self.labels, self.predictions, total_votes=40)
-        self.bin_loss_per_sample = - self.bin_likelihood  # we want to minimise the loss to maximise the likelihood
-        self.bin_loss_per_subject = np.mean(self.bin_loss_per_sample, axis=1)
-        self.mean_bin_loss = np.mean(self.bin_loss_per_subject)  # scalar, mean likelihood
+        axes[1].hist(acquired)
+        axes[1].set_xlabel('Mean Prediction')
+        axes[1].set_title('Acquired')
 
+        axes[2].hist(not_acquired)
+        axes[2].set_xlabel('Mean Prediction')
+        axes[2].set_title('Not Acquired')
 
-    def compare_binomial_and_abs_error(self, save_dir):
-        # Binomial loss should increase with absolute error, but not linearly
-        plt.figure()
-        g = sns.jointplot(self.abs_error, self.bin_loss_per_subject, kind='reg')
-        plt.xlabel('Abs. Error')
-        plt.ylabel('Binomial Loss')
-        plt.xlim([0., 0.5])
-        plt.tight_layout()
-        g.savefig(os.path.join(save_dir, 'bin_loss_vs_abs_error.png'))
-        plt.close()
-
-
-    def show_acquisition_vs_label(self, save_dir):
-        fig, row = plt.subplots(ncols=3, sharex=True, figsize=(12, 4))
-        _ = self.acquisition_vs_volunteer_votes(row)
         fig.tight_layout()
-        fig.savefig(os.path.join(save_dir, 'entropy_by_label.png'))
-        plt.close()
-
-
-    def acquisition_vs_volunteer_votes(self, row):
-        assert self.labels is not None
-        ax00, ax01, ax02 = row
-        ax00.scatter(self.labels, self.predictive_entropy)
-        ax00.set_ylabel('Predictive Entropy')
-        ax01.scatter(self.labels, self.expected_entropy)
-        ax01.set_ylabel('Expected Entropy')
-        ax02.scatter(self.labels, self.mutual_info)
-        ax02.set_ylabel('Mutual Information')
-
-        ax00.set_xlabel('Vote Fraction')
-        ax01.set_xlabel('Vote Fraction')
-        ax02.set_xlabel('Vote Fraction')
-
-        return ax00, ax01, ax02
-
-
-    def show_coverage(self, save_dir):
-        if self.labels is None:
-            raise ValueError('Calculating coverage requires volunteer votes to be known')
-        fig, ax = plt.subplots()
-        coverage_df = discrete_coverage.evaluate_discrete_coverage(self.votes, self.bin_probs)
-        discrete_coverage.plot_coverage_df(coverage_df, ax=ax)
-        fig.tight_layout()
-        save_loc = os.path.join(save_dir, 'discrete_coverage.png')
-        fig.savefig(save_loc)
-
-
-    def export_performance_metrics(self, save_dir):
-        # requires labels. Might be better to extract from the log at execute.py level, via analysis.py.
-        data = {}
-        data['mean square error'] = self.mean_square_error
-        data['mean absolute error'] = self.mean_abs_error
-        data['binomial loss'] = self.mean_bin_loss
-        with open(os.path.join(save_dir, 'metrics.json'), 'w') as f:
-            json.dump(data, f) 
+        fig.savefig(os.path.join(save_dir, 'acquistion_vs_mean_prediction.png'))

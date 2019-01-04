@@ -12,11 +12,19 @@ from astropy.io import fits
 from zoobot.active_learning import make_shards, execute
 
 
+@pytest.fixture()
+def n_subjects():
+    return 256
+
+
+@pytest.fixture()
+def id_strs(n_subjects):
+    return [str(n) for n in range(n_subjects)]
+
+
 @pytest.fixture
-def catalog_random_images(size, channels, fits_native_dir):
+def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir):
     assert os.path.exists(fits_native_dir)
-    n_subjects = 256
-    id_strings = [str(n) for n in range(n_subjects)]
     matrices = np.random.rand(n_subjects, size, size, channels)
     relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
     fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
@@ -24,7 +32,7 @@ def catalog_random_images(size, channels, fits_native_dir):
         hdu = fits.PrimaryHDU(matrix)
         hdu.writeto(loc, overwrite=True)
         assert os.path.isfile(loc)
-    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+    catalog = pd.DataFrame(data={'id_str': id_strs, 'fits_loc': fits_locs})
     return catalog
 
 
@@ -131,8 +139,14 @@ def acquisition():
 
 
 @pytest.fixture()
+def acquisitions(subjects):
+    return np.random.rand(len(subjects))
+
+
+@pytest.fixture()
 def subjects(size):
     return [{'matrix': np.random.rand(size, size, 3), 'id_str': 'id_' + str(n)} for n in range(128)]
+
 
 @pytest.fixture()
 def images(size):

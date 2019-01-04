@@ -119,10 +119,6 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
     assert samples.shape == (256 * len(shard_locs), new_iteration.n_samples)
 
 
-def test_save_metrics():
-    pass  # does nothing except call external individually-unit-tested functions
-
-
 def test_get_train_records(new_iteration, active_config):
     assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords
     new_iteration.acquired_tfrecord = 'acquired.tfrecord'
@@ -144,7 +140,7 @@ def previously_requested_subjects(request, new_iteration):
         return []
 
 
-def test_run(monkeypatch, new_iteration, previously_requested_subjects):
+def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
     SUBJECTS = [
         {'matrix': np.random.rand(new_iteration.initial_size, new_iteration.initial_size, 3),
         'id_str': str(n)}
@@ -188,11 +184,8 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
         return subjects, samples
     monkeypatch.setattr(iterations.Iteration, 'make_predictions', mock_make_predictions)
 
-    def mock_save_metrics(self, subjects, samples):
-        assert os.path.isdir(self.metrics_dir)
-        with open(os.path.join(self.metrics_dir, 'some_metrics.txt'), 'w') as f:
-            f.write('some metrics from iteration {}'.format(self.name))
-    monkeypatch.setattr(iterations.Iteration, 'save_metrics', mock_save_metrics)
+    # TODO check for single call with correct attrs?
+    # mocker.Mock('zoobot.active_learning.iterations.Iteration.record_state')
 
     ####
     new_iteration.run()
@@ -213,8 +206,8 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
     else:
         assert new_iteration.acquired_tfrecord not in new_iteration.get_train_records()
 
-    # check metrics were saved
-    assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
+    # check records were saved TODO
+    # assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
 
     # check the correct subjects were requested
     assert SUBJECTS_REQUESTED != previously_requested_subjects

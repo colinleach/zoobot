@@ -107,26 +107,8 @@ class Iteration():
         return make_predictions.load_predictor(predictor_loc)
 
 
-    def save_metrics(self, subjects, samples):
-        """[summary]
-        
-        Args:
-            subjects (list): of form [{'matrix': np.ndarray, 'id_str': str}, ...]
-            samples (np.array): model predictions for rho, of form [n_subjects, n_samples].
-        """
-        assert isinstance(subjects, list)
-        # TODO allow for direct acquisitions passing, for speed?
-        # TODO check entropies against radial extent of galaxy
-        # TODO add metrics for each active learning run, cross-matching to catalog for NSA params via id
-        model = metrics.Model(samples, labels=None, name=self.name)
-        model.show_acquisitions_vs_predictions(save_dir=self.metrics_dir)
-        acquisition_utils.save_acquisition_examples(
-            np.array([subject['matrix'] for subject in subjects]), 
-            model.mutual_info, 
-            acq_string='mutual_info', 
-            save_dir=self.metrics_dir
-        )
-        # TODO still need to verify that acq function values match up, or pass them directly
+    def record_state(self, subjects, samples, acquisitions):
+        metrics.save_iteration_state(self.iteration_dir, subjects, samples, acquisitions)
 
 
     def run(self):
@@ -147,14 +129,9 @@ class Iteration():
         subjects, samples = self.make_predictions(self.prediction_shards, self.initial_size)
 
         acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
-        self.save_metrics(subjects, samples)
+        self.record_state(subjects, samples, acquisitions)
 
-        args_to_sort = np.argsort(acquisitions)[::-1]  # reverse order, highest to lowest
-        top_acquisition_subjects = [subjects[i] for i in args_to_sort][:self.n_subjects_to_acquire]
-        top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
-        assert len(top_acquisition_ids) == len(set(top_acquisition_ids))  # no duplicates allowed
-        # TODO save acquisition ids for posterity?
-
+        _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
         request_labels(top_acquisition_ids)
 
 
@@ -171,19 +148,10 @@ def get_labels():
     return mock_panoptes.get_labels()
 
 
-
-    # def get_train_records(self):
-    #     logging.info('Attempting to load {}'.format(self.train_records_index_loc))
-    #     with open(self.train_records_index_loc, 'r') as f:  # must exist, see __init__
-    #         train_records = json.load(f)  # restore from disk all previous train records
-    #     logging.info('Loaded train records: {}'.format(train_records))
-    #     assert isinstance(train_records, list)
-    #     return train_records
-
-
-    # def add_train_record(self, new_record_loc):
-    #     # must always be kept in sync
-    #     current_records = self.get_train_records()
-    #     current_records.append(new_record_loc)
-    #     self.write_train_records_index(current_records)
-
+# to be shared for consistency
+def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
+    args_to_sort = np.argsort(acquisitions)[::-1]  # reverse order, highest to lowest
+    top_acquisition_subjects = [subjects[i] for i in args_to_sort][:n_subjects_to_acquire]
+    top_acquisition_ids = [subject['id_str'] for subject in top_acquisition_subjects]
+    assert len(top_acquisition_ids) == len(set(top_acquisition_ids))  # no duplicates allowed
+    return top_acquisition_subjects, top_acquisition_ids

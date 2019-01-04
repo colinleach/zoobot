@@ -75,6 +75,7 @@ def plot_coverage_df(df, ax):
     # print('Calibrated tidal truth: {}. Non-tidal: {}'.format(np.sum(test_df['true_label'] > 0.5), np.sum(test_df['true_label'] < 0.5)))
 
 if __name__ == '__main__':
+    # TODO refactor this with updated API
     samples = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/samples.npy')
     labels = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/labels.npy')
     import os

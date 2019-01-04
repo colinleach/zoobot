@@ -79,7 +79,7 @@ def save_metrics(subjects, labels, results, save_dir, name, mse_comparison=False
     model.show_coverage(save_dir)
     model.compare_binomial_and_abs_error(save_dir)
     model.show_acquisition_vs_label(save_dir)
-    model.show_acquisitions_vs_predictions(save_dir)
+    model.show_mutual_info_vs_predictions(save_dir)
     acquisition_utils.save_acquisition_examples(subjects, model.mutual_info, 'mutual_info', save_dir)
 
     compare_with_baseline(model)
