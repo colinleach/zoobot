@@ -8,8 +8,10 @@ deps:
   path: data/runs/al_mutual
 - md5: ba6f0bb84959319d85b118f5fda214f1.dir
   path: data/runs/al_baseline
-md5: 3e57c4dac63067a706a945945113b5e9
+- md5: f020502b7770d3dee4165984c20be007
+  path: zoobot/active_learning/analysis.py
+md5: 3738537684ed050f49f158febb34c47c
 outs:
 - cache: true
-  md5: 40c0fdc10ca784ed282c996f48d5e35d.dir
+  md5: 23647a2e045f080b9982ca0fdf9aa4f5.dir
   path: results/latest_metrics
