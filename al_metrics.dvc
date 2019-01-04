@@ -1,5 +1,6 @@
-cmd: ' python zoobot/active_learning/analysis.py --active_dir=data/runs/al_mutual
-  --baseline_dir=data/runs/al_baseline --initial=6000 --per_iter=1024 --output_dir=results/latest_metrics'
+cmd: ' python zoobot/active_learning/analysis.py --active-dir=data/runs/al_mutual
+  --baseline-dir=data/runs/al_baseline --initial=6000 --per-iter=1024 --output-dir=results/latest_metrics
+  --catalog-loc=data/panoptes_predictions_selected.csv'
 deps:
 - md5: 32e9afc5916d4c89c6b9f6c74165d65f.dir
   path: data/shards/si128_sf64_ss4096
@@ -7,8 +8,8 @@ deps:
   path: data/runs/al_mutual
 - md5: ba6f0bb84959319d85b118f5fda214f1.dir
   path: data/runs/al_baseline
-md5: d3f1e47aa6216133c05b0fd31f25e258
+md5: bdcef5eac73a646bcb13fdbf906e3800
 outs:
 - cache: true
-  md5: 87ce4170312614560f9b1dabdbf3399c.dir
+  md5: abed01bdb70e5176780e02a342333826.dir
   path: results/latest_metrics
