@@ -19,28 +19,6 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.tests import TEST_FIGURE_DIR
 
 
-
-def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_loc):
-    assert isinstance(tfrecord_locs, list)
-    nrows = len(tfrecord_locs)
-    ncols = n_subjects
-    scale = 2.
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
-
-    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
-        subjects = read_tfrecord.load_examples_from_tfrecord(
-            [tfrecord_loc], 
-            read_tfrecord.matrix_label_feature_spec(size, channels),
-            n_examples=n_subjects)
-
-        for subject_n, subject in enumerate(subjects):
-            read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
-
-
-    fig.tight_layout()
-    fig.savefig(save_loc)
-
-
 def get_metrics_from_log(log_loc):
     with open(log_loc, 'r') as f:
         content = f.readlines()
@@ -251,6 +229,40 @@ def get_final_train_locs(run_dir):
     return json.load(open(latest_train_index, 'r'))
     
 
+
+def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_loc):
+    assert isinstance(tfrecord_locs, list)
+    nrows = len(tfrecord_locs)
+    ncols = n_subjects
+    scale = 2.
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
+
+    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
+        subjects = read_tfrecord.load_examples_from_tfrecord(
+            [tfrecord_loc], 
+            read_tfrecord.matrix_label_feature_spec(size, channels),
+            n_examples=n_subjects)
+
+        for subject_n, subject in enumerate(subjects):
+            read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
+
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
+def identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog):
+    
+
+def show_votes_by_iteration(tfrecord_locs, max_subjects, size, channels, save_loc):
+    assert isinstance(tfrecord_locs, list)
+    feature_spec = read_tfrecord.id_feature_spec()
+    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
+        subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec, n_examples=max_subjects)
+        id_strs = [subject['id_str'] for subject in subjects]
+        df = catalog[catalog['id_str'].isin(set(id_strs))
+        
+    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Analyse active learning')
@@ -281,6 +293,7 @@ if __name__ == '__main__':
 
     active_train_locs = get_final_train_locs(args.active_dir)
     show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
+    show_votes_by_iteration(active_train_locs, max_subjects, size, channels, os.path.join(args.output_dir, 'vote_history_active.png'))
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
