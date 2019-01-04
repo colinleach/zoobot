@@ -250,31 +250,44 @@ def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_l
     fig.savefig(save_loc)
 
 
-def identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog):
-    
-
-def show_votes_by_iteration(tfrecord_locs, max_subjects, size, channels, save_loc):
-    assert isinstance(tfrecord_locs, list)
+def identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog, max_subjects=1024):
     feature_spec = read_tfrecord.id_feature_spec()
-    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
-        subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec, n_examples=max_subjects)
-        id_strs = [subject['id_str'] for subject in subjects]
-        df = catalog[catalog['id_str'].isin(set(id_strs))
-        
+    subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec, max_examples=max_subjects)
+    id_strs = [subject['id_str'].decode('utf-8') for subject in subjects]
+    assert len(set(id_strs)) == len(id_strs)
+    return catalog[catalog['subject_id'].isin(set(id_strs))]
+
+
+def identify_catalog_subjects_history(tfrecord_locs, catalog):
+    # thin wrapper, may be overkill
+    assert isinstance(tfrecord_locs, list)
+    return [identify_catalog_subjects_in_tfrecord(tfrecord_loc, catalog) for tfrecord_loc in tfrecord_locs]
+
+
+def show_catalog_col_by_iteration(catalog_history, catalog_col, save_loc):
+    fig, axes = plt.subplots(nrows=len(catalog_history), sharex=True)
+    for iteration_n, df in enumerate(catalog_history):
+        axes[iteration_n].hist(df[catalog_col], density=True)
+    axes[-1].set_xlabel(catalog_col)
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
     
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Analyse active learning')
-    parser.add_argument('--active_dir', dest='active_dir', type=str,
+    parser.add_argument('--active-dir', dest='active_dir', type=str,
                     help='')
-    parser.add_argument('--baseline_dir', dest='baseline_dir', type=str, default=None,
+    parser.add_argument('--baseline-dir', dest='baseline_dir', type=str, default=None,
                     help='')
     parser.add_argument('--initial', dest='initial', type=int,
                     help='')
-    parser.add_argument('--per_iter', dest='per_iter', type=int,
+    parser.add_argument('--per-iter', dest='per_iter', type=int,
                     help='')
-    parser.add_argument('--output_dir', dest='output_dir', type=str,
+    parser.add_argument('--output-dir', dest='output_dir', type=str,
+                    help='')
+    parser.add_argument('--catalog-loc', dest='catalog_loc', type=str,
                     help='')
 
     args = parser.parse_args()
@@ -291,9 +304,19 @@ if __name__ == '__main__':
     size = 128
     channels = 3
 
+    catalog = pd.read_csv(args.catalog_loc)
+
     active_train_locs = get_final_train_locs(args.active_dir)
     show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
-    show_votes_by_iteration(active_train_locs, max_subjects, size, channels, os.path.join(args.output_dir, 'vote_history_active.png'))
+    active_history = identify_catalog_subjects_history(active_train_locs, catalog)
+    catalog_cols = ['subject_id', 'smooth-or-featured_smooth_fraction']
+    for col in catalog_cols:
+        show_catalog_col_by_iteration(
+            active_history, 
+            col, 
+            os.path.join(args.output_dir, '{}_history_active.png'.format(col))
+        )
+    
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')

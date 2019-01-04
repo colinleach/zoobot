@@ -261,7 +261,7 @@ def tfrecord_matrix_id_loc(tfrecord_dir, size, channels):  # write shards dynami
         os.remove(tfrecord_loc)
         
     # monotonic labels, to check shuffling
-    examples = [{'matrix': np.random.rand(size, size, channels), 'id_str': '{}'.format(n)} for n in range(128)]
+    examples = [{'matrix': np.random.rand(size, size, channels), 'id_str': str(n)} for n in range(128)]
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
     for example in examples:  # depends on tfrecord.create_tfrecord
