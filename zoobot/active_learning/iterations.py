@@ -94,11 +94,11 @@ class Iteration():
         logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(shard_locs))
-        subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, initial_size=initial_size, n_samples=self.n_samples)
+        unlabelled_subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, self.db, initial_size=initial_size, n_samples=self.n_samples)
         # subjects should all be unique, otherwise there's a bug
-        id_strs = [subject['id_str'] for subject in subjects]
+        id_strs = [subject['id_str'] for subject in unlabelled_subjects]
         assert len(id_strs) == len(set(id_strs)) 
-        return subjects, samples
+        return unlabelled_subjects, samples
 
 
     def get_latest_model(self):

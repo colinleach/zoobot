@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 import json
+import random
 
 import numpy as np
 
@@ -102,12 +103,12 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
         return 'loaded latest model'
     monkeypatch.setattr(iterations.Iteration, 'get_latest_model', mock_get_latest_model)
 
-    def mock_make_predictions_on_tfrecord(shard_locs, predictor, initial_size, n_samples):
+    def mock_make_predictions_on_tfrecord(shard_locs, predictor, db, initial_size, n_samples):
         assert isinstance(shard_locs, list)
         assert predictor == 'loaded latest model'
         assert isinstance(initial_size, int)
         assert isinstance(n_samples, int)
-        n_subjects = 256 * len(shard_locs)
+        n_subjects = 112 * len(shard_locs)  # 112 unlabelled subjects per shard
         subjects = [{'matrix': np.random.rand(initial_size, initial_size, 3), 'id_str': str(n)} 
         for n in range(n_subjects)]
         samples = np.random.rand(n_subjects, n_samples)
@@ -115,8 +116,8 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
     monkeypatch.setattr(iterations.active_learning, 'make_predictions_on_tfrecord', mock_make_predictions_on_tfrecord)
 
     subjects, samples = new_iteration.make_predictions(shard_locs, size)
-    assert len(subjects) == 256 * len(shard_locs)
-    assert samples.shape == (256 * len(shard_locs), new_iteration.n_samples)
+    assert len(subjects) == 112 * len(shard_locs)
+    assert samples.shape == (112 * len(shard_locs), new_iteration.n_samples)
 
 
 def test_get_train_records(new_iteration, active_config):
@@ -175,13 +176,15 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
         assert isinstance(labels, list)
         assert isinstance(labels[0], float)
         pass  # don't actually bother adding the new labels to the db
+        # TODO use a mock and check the call for ids and labels
     monkeypatch.setattr(iterations.active_learning, 'add_labels_to_db', mock_add_labels_to_db)
 
     def mock_make_predictions(self, prediction_shards, initial_size):
-        subjects = SUBJECTS[:len(prediction_shards) * 256] # imagining there are 256 subjects per shard
-        images = np.array([subject['matrix'] for subject in subjects])
+        subjects = SUBJECTS[:len(prediction_shards) * 256]  # imagining there are 256 subjects per shard
+        unlabelled_subjects = random.sample(subjects, 212)  # some of which are labelled
+        images = np.array([subject['matrix'] for subject in unlabelled_subjects])
         samples = conftest.mock_get_samples_of_images(None, images, n_samples=self.n_samples)
-        return subjects, samples
+        return unlabelled_subjects, samples
     monkeypatch.setattr(iterations.Iteration, 'make_predictions', mock_make_predictions)
 
     # TODO check for single call with correct attrs?

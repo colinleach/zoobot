@@ -28,7 +28,12 @@ def test_match_id_strs_to_catalog(id_strs, catalog):
     assert sorted(list(df['subject_id'])) == ['12', '57']
 
 
-# TODO model needs a fixture
-def test_show_coverage(model, save_dir):
-    model.show_coverage(save_dir)
-    assert os.path.exists(os.path.join(save_dir, 'discrete_coverage.png'))
+# @pytest.fixture()
+# def model(mocker):
+#     mocker.patch('zoobot.')
+
+
+# # TODO model needs a fixture
+# def test_show_coverage(model, save_dir):
+#     model.show_coverage(save_dir)
+#     assert os.path.exists(os.path.join(save_dir, 'discrete_coverage.png'))

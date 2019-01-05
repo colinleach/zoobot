@@ -97,7 +97,8 @@ def filled_shard_db(empty_shard_db):
         ''',
         {
             'id_str': 'some_hash',
-            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits'),
+            'label': 1.  # already labelled!
         }
     )
     db.commit()
@@ -313,7 +314,7 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size):
+def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, filled_shard_db, size):
     
     monkeypatch.setattr(
         active_learning.make_predictions,
@@ -321,24 +322,38 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size)
         conftest.mock_get_samples_of_images
     )
 
+    MAX_ID_STR = 64
+    def mock_subject_is_unlabelled(id_str, db):
+        return int(id_str) > MAX_ID_STR
+    monkeypatch.setattr(
+        active_learning,
+        'subject_is_unlabelled',
+        mock_subject_is_unlabelled
+    )
+
     n_samples = 10
+    model = None  # avoid this via mocking, above
     subjects, samples = active_learning.make_predictions_on_tfrecord(
         tfrecord_matrix_id_loc,
-        model=None,  # avoid this via mocking, above
+        model,  
+        filled_shard_db,
         n_samples=n_samples,
         initial_size=size,
         max_images=20000
     )
     assert samples.shape == (len(subjects), n_samples)
-
-# def test_get_top_acquisitions_any_shard(filled_shard_db):
-#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
-#     assert top_ids == ['some_hash', 'some_other_hash']
+    assert [int(subject['id_str']) > MAX_ID_STR for subject in subjects]  # no labelled subjects 
 
 
-# def test_get_top_acquisitions(filled_shard_db):
-#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
-#     assert top_ids == ['some_hash', 'yet_another_hash']
+def test_subject_is_unlabelled(filled_shard_db):
+    id_strs = ['some_hash', 'some_other_hash', 'yet_another_hash']
+    labelled_ids = [active_learning.subject_is_unlabelled(id_str, filled_shard_db) for id_str in id_strs]
+    labelled_ids == [True, False, False]
+
+    with pytest.raises(ValueError):
+        active_learning.subject_is_unlabelled('missing_subject', filled_shard_db)
+
+
 
 
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):

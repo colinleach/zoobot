@@ -69,7 +69,7 @@ If you still need to acquire the data:
 - Repeat, including the newly-acquired shard in the training pool
 - Stop after a specified number of iterations, moving the log into the run directory
 
-fleet_id=sfr-....
+`fleet_id=sfr-....`
 
 `run_dir=data/runs/al_mutual`
 `dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`

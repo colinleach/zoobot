@@ -142,8 +142,7 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     db.commit()
 
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
-# probably better to move to make_predictions itself
-def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_images=20000):
+def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=20000):
     images, _, id_str = input_utils.predict_input_func(
         tfrecord_locs,
         n_galaxies=max_images, 
@@ -157,26 +156,14 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, 
     # tfrecord will have encoded to bytes, need to decode
     subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
     logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
-    samples = make_predictions.get_samples_of_images(model, images, n_samples)
-    return subjects, samples
-
-
-# def record_acquisitions_on_predictions(subjects, acquisitions, db, acquisition_func):
-#     """For every subject in tfrecord, get the acq. func value and save to db
-#     Records acq. func. value on all examples, even labelled ones.
-#     Acquisition func 
-#     Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
-    
-#     Args:
-#         subjects (list): of form [{'matrix': np.array, 'id_str':'some_name}]
-#         samples (np.array): of form [n_subjects, n_samples], where index must match subjects above
-#         db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
-#         acquisition_func (callable): expecting list of image matrices, returning list of scalars
-#     """
-
-#     # record acquisitions to db
-#     for subject, acquisition in zip(subjects, acquisitions):
-#         save_acquisition_to_db(subject['id_str'], float(acquisition), db)
+    # exclude subjects with labels in db
+    unlabelled_subjects = [subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db)]
+    if len(subjects) == len(unlabelled_subjects):
+        logging.warning('No unlabelled subjects found - hopefully, these are new shards...')
+    # make predictions on only those subjects
+    unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
+    samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
+    return unlabelled_subjects, samples
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 
@@ -200,7 +187,7 @@ def save_acquisition_to_db(subject_id, acquisition, db):
     db.commit()
 
 
-def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
+def subject_is_unlabelled(id_str, db):
     """Get the subject ids of up to `n_subjects`:
         1. Without labels (required for later training)
         1. With the highest acquisition values, up to the first `n_subjects`
@@ -227,52 +214,24 @@ def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):
     )
     unlabelled_subject = cursor.fetchone()
     if unlabelled_subject is None:
-        raise ValueError('Fatal: all subjects have labels in db. No more subjects to add!')
+        logging.critical('WARNING - shard appears to be completely labelled')
+        return True
 
-    if shard_loc is None:  # top subjects from any shard
-        cursor.execute(
-            '''
-            SELECT acquisitions.id_str, acquisitions.acquisition_value
-            FROM acquisitions
-            INNER JOIN catalog ON acquisitions.id_str = catalog.id_str
-            WHERE catalog.label IS NULL
-            ORDER BY acquisition_value DESC
-            LIMIT (:n_subjects)
-            ''',
-            (n_subjects,)
-        )
-    else:
-        # first, verify that shard_loc is in at least one row of shardindex table
-        cursor.execute(
-            '''
-            SELECT tfrecord from shardindex
-            WHERE tfrecord = (:shard_loc)
-            ''',
-            (shard_loc,)
-        )
-        rows_in_shard = cursor.fetchone()
-        assert rows_in_shard is not None
-        # since the shard checks out, get top unlabelled subjects from that shard only
-        cursor.execute(  
-            '''
-            SELECT acquisitions.id_str, acquisitions.acquisition_value, shardindex.id_str, shardindex.tfrecord
-            FROM acquisitions 
-            INNER JOIN shardindex ON acquisitions.id_str = shardindex.id_str
-            INNER JOIN catalog ON acquisitions.id_str = catalog.id_str
-            WHERE shardindex.tfrecord = (:shard_loc) AND catalog.label IS NULL
-            ORDER BY acquisition_value DESC
-            LIMIT (:n_subjects)
-            ''',
-            (shard_loc, n_subjects),
-        )
-
-    top_subjects = cursor.fetchall()  # sqlite3 may autoconvert id_str to int at this step
-    top_acquisitions = [str(x[0]) for x in top_subjects]  # to avoid, ensure id_str really is str
-    if len(top_acquisitions) == 0:
-        raise IndexError(
-            'Fatal: No top subjects. Perhaps no unlabelled subjects in shard {} ?'.format(shard_loc)
-            )
-    return top_acquisitions
+    # find subject in db.catalog
+    cursor.execute(
+        '''
+        SELECT id_str, label
+        FROM catalog
+        WHERE id_str IS (:id_str)
+        ''',
+        (id_str,)
+    )
+    matching_subjects = cursor.fetchall()  # sqlite3 may autoconvert id_str to int at this step
+    if len(matching_subjects) < 1:
+        raise ValueError('Subject not found: {}'.format(id_str))
+    if len(matching_subjects) > 1:
+        raise ValueError('Duplicate subject in db: {}'.format(id_str))
+    return bool(matching_subjects[0][1])  # True if label is not Null?
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
