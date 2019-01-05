@@ -159,7 +159,9 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     # exclude subjects with labels in db
     unlabelled_subjects = [subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db)]
     if len(subjects) == len(unlabelled_subjects):
-        logging.warning('No unlabelled subjects found - hopefully, these are new shards...')
+        logging.warning('No labelled subjects found - hopefully, these are new shards...')
+    if len(unlabelled_subjects) == 0:
+        raise ValueError('No unlabelled subjects found - this is likely a bug')
     # make predictions on only those subjects
     unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
@@ -231,6 +233,7 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
+    logging.debug(matching_subjects)
     return bool(matching_subjects[0][1])  # True if label is not Null?
 
 
