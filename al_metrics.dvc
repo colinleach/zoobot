@@ -4,14 +4,14 @@ cmd: ' python zoobot/active_learning/analysis.py --active-dir=data/runs/al_mutua
 deps:
 - md5: 32e9afc5916d4c89c6b9f6c74165d65f.dir
   path: data/shards/si128_sf64_ss4096
-- md5: 7631526639be654bdef2d0c7f1a03768.dir
+- md5: 364aa0f4fec7e0e175018736d2180f23.dir
   path: data/runs/al_mutual
 - md5: ba6f0bb84959319d85b118f5fda214f1.dir
   path: data/runs/al_baseline
-- md5: e7a3ba95df22e4ee7faa2cdf96c1bfef
+- md5: 9747ee955a68a16e35c877a88d21f46f
   path: zoobot/active_learning/analysis.py
-md5: 52cd9bce4cf595f7c5aa25277bd7e388
+md5: 3e85a3ae9440906e5546d920a01cc55a
 outs:
 - cache: true
-  md5: ff3814a4816d4ad5efea2a51daa293d2.dir
+  md5: 7ca8b71c9b8a7fe81b11178850bd0a91.dir
   path: results/latest_metrics
