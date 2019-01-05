@@ -234,7 +234,7 @@ def subject_is_unlabelled(id_str, db):
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
     logging.debug(matching_subjects)
-    return bool(matching_subjects[0][1])  # True if label is not Null?
+    return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
