@@ -228,9 +228,9 @@ if __name__ == '__main__':
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        n_iterations = 5  # 1.5h per iteration
-        subjects_per_iter = 1024
-        shards_per_iter = 3
+        n_iterations = 4  # 1.5h per iteration
+        subjects_per_iter = 3072
+        shards_per_iter = 4
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
