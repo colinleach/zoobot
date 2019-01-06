@@ -5,10 +5,10 @@ deps:
   path: data/shards/si128_sf64_ss4096
 - md5: 02b84102e93637c4385a4bdfb087cc8e
   path: zoobot/active_learning/oracle.csv
-- md5: a58ad8659f4a35315007fd1e1710209c.dir
+- md5: e477c9562a44169684abae93f2c5954d.dir
   path: zoobot
-md5: a36308bda9578840c770971de78536c2
+md5: b1d8c554477bed0b4989de4406a580ef
 outs:
 - cache: true
-  md5: 364aa0f4fec7e0e175018736d2180f23.dir
+  md5: cb95ee0bfd45a62880611323ff25d454.dir
   path: data/runs/al_mutual
