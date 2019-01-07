@@ -319,7 +319,7 @@ if __name__ == '__main__':
         baseline_iteration_dirs = get_iteration_dirs(args.baseline_dir)
         baseline_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in baseline_iteration_dirs]
         args.mkdir(os.path.join(args.output_dir, 'baseline'))
-        baseline_timeline = simulation_timeline.Timeline(baseline_states, catalog, os.path.join(args.output_dir, 'baseline'))
+        baseline_timeline = simulation_timeline.Timeline(baseline_states, catalog, args.per_iter, os.path.join(args.output_dir, 'baseline'))
         baseline_timeline.save_model_histograms()
 
         baseline_log_loc = find_log(args.baseline_dir)
