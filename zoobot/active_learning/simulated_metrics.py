@@ -124,6 +124,8 @@ def match_id_strs_to_catalog(id_strs, catalog):
     filtered_catalog = catalog[catalog['subject_id'].isin(set(id_strs))]
     print(filtered_catalog['smooth-or-featured_smooth_fraction'][:5])
     # id strs is sorted by acquisition - catalog must also become sorted
+    filtered_catalog['subject_id'] = filtered_catalog['subject_id'].astype(str)
+    print(filtered_catalog['subject_id'][:5])
     sorted_catalog = filtered_catalog.set_index('subject_id', drop=True).reindex(id_strs).reset_index()
     print(sorted_catalog['smooth-or-featured_smooth_fraction'][:5])
     return sorted_catalog
