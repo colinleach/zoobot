@@ -165,8 +165,8 @@ def get_train_callable(params):
 
     def train_callable(log_dir, train_records):
         # WARNING TESTING ONLY 
-        if len(train_records) > 1:
-            train_records = [train_records[0], 'some_bad_loc.tfrecord']
+        # if len(train_records) > 1:
+        #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
         # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records)
