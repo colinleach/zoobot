@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     active_iteration_dirs = get_iteration_dirs(args.active_dir)
     active_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in active_iteration_dirs]
-    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.output_dir)
+    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.per_iter, args.output_dir)
     active_timeline.save_model_histograms()
     
 
