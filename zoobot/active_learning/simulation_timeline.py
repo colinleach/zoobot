@@ -28,8 +28,11 @@ class Timeline():
 
 
     def save_model_histograms(self):
-        for attr_str in ['labels', 'ra', 'dec']:
-            show_model_attr_hist_by_iteration(self, attr_str, self.save_dir)
+        for attr_str in ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']:
+            try:
+                show_model_attr_hist_by_iteration(self, attr_str, self.save_dir)
+            except KeyError:
+                logging.warning('Key not found: {}'.format(attr_str))
 
 
 def simulated_models_over_time(states, catalog):
