@@ -21,18 +21,18 @@ class SimulatedModel():
     def __init__(self, model, full_catalog):
         
         self.model = model
-        catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
+        self.catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 
         # unpack the interesting columns as attrs, then discard the full catalog
         # maybe not very smart
-        self.labels = catalog['smooth-or-featured_smooth_fraction']
-        self.ra = catalog['ra']
-        self.dec = catalog['dec']
-        self.subject_id = catalog['subject_id']
+        self.labels = self.catalog['smooth-or-featured_smooth_fraction']
+        # self.ra = catalog['ra']
+        # self.dec = catalog['dec']
+        # self.subject_id = catalog['subject_id']
         
         self.calculate_default_metrics()
         self.votes = np.around(self.labels * 40)  # assume 40 votes for everything, for now
-        
+
 
     def calculate_default_metrics(self):
         """

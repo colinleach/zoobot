@@ -1,4 +1,5 @@
 import os
+import logging
 
 import numpy as np
 import pandas as pd
@@ -61,7 +62,10 @@ def identify_catalog_subjects_history(tfrecord_locs, catalog):
 def show_model_attr_hist_by_iteration(models, attr_str, save_dir):
     fig, axes = plt.subplots(nrows=len(models), sharex=True)
     for iteration_n, model in enumerate(models):
-        attr_values = getattr(model, attr_str)
+        try:
+            attr_values = getattr(model, attr_str)  # first, look in model attrs
+        except AttributeError:
+            attr_values = model.catalog[attr_str]  # else, look in catalog columns
         axes[iteration_n].hist(attr_values, density=True)
     axes[-1].set_xlabel(attr_str)
     fig.tight_layout()
