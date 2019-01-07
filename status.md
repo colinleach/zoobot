@@ -108,3 +108,15 @@ Use softmax before binomial loss
 Use binomial loss on non-noisy labels
 Reference epoch: 1545649528
 About 600 epochs to train to approx. convergence, at MSE 0.115 and loss 22.6 +/- 0.1
+
+## back to al_binomial
+
+I fixed the problem of re-acquiring examples - db now shows exactly 1024 * (n-1) iters labelled examples.
+Training on 1024*3 per iter instead of 1024 had **no effect** on performance. 
+This is definitely indicative of a bug: seeing 3x the number of images should have brought performance much closer to basic_split.
+The tfrecords do seem to be being created correctly, based on metrics so far (still more to do here though).
+So either the records are not actually being used as input for the model, or the model can't adapt to them.
+Simple test: force the acquired shard loc to be wrong, and do --test run. This should force an io error.
+If no io error, tfrecords are not actually being read.
+
+1024 images are 192.1mb - how many are 3072? 577mb - bang on.

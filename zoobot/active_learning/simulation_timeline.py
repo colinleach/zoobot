@@ -8,20 +8,37 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from zoobot.tfrecord import read_tfrecord
-from zoobot.active_learning import metrics
+from zoobot.active_learning import metrics, simulated_metrics
 
 class Timeline():
     """
     Create and compare SimulatedModel over many iterations
     """
     def __init__(self, states, catalog, save_dir):
-        self.models = simulated_models_over_time(states, catalog)
+        self._models = simulated_models_over_time(states, catalog)
         self.save_dir = save_dir
+
+    # TODO use collections.abc to generalise this automatically?
+
+    def __getitem__(self, key):
+        return self._models[key]
+
+    def __len__(self):
+        return len(self._models)
 
 
     def save_model_histograms(self):
         for attr_str in ['labels', 'ra', 'dec']:
-            show_model_attr_hist_by_iteration(self.models, attr_str, self.save_dir)
+            show_model_attr_hist_by_iteration(self, attr_str, self.save_dir)
+
+
+def simulated_models_over_time(states, catalog):
+    sim_models = []
+    for iteration_n, state in enumerate(states):
+        model = metrics.Model(state, name='iteration_{}'.format(iteration_n))
+        simulated_model = simulated_metrics.SimulatedModel(model, catalog)
+        sim_models.append(simulated_model)
+    return sim_models
 
 
 def read_id_strs_from_tfrecord(tfrecord_loc, max_subjects=1024):
@@ -35,7 +52,7 @@ def read_id_strs_from_tfrecord(tfrecord_loc, max_subjects=1024):
 
 def identify_catalog_subjects_history(tfrecord_locs, catalog):
     assert isinstance(tfrecord_locs, list)
-    return [metrics.match_id_strs_to_catalog(read_id_strs_from_tfrecord(tfrecord_loc), catalog) for tfrecord_loc in tfrecord_locs]
+    return [simulated_metrics.match_id_strs_to_catalog(read_id_strs_from_tfrecord(tfrecord_loc), catalog) for tfrecord_loc in tfrecord_locs]
 
 
 def show_model_attr_hist_by_iteration(models, attr_str, save_dir):
@@ -46,13 +63,3 @@ def show_model_attr_hist_by_iteration(models, attr_str, save_dir):
     axes[-1].set_xlabel(attr_str)
     fig.tight_layout()
     fig.savefig(os.path.join(save_dir, attr_str + '_over_time.png'))
-
-
-def simulated_models_over_time(states, catalog):
-    models_by_iter = []
-    for state, iteration_n in enumerate(states):
-        model = metrics.Model(state.samples, id_strs=state.id_strs, name='iteration_{}'.format(n), acquisitions=state.acquisitions)
-        simulated_model = metrics.SimulatedModel(model, catalog)
-        models_by_iter.append(model)
-    return models_by_iter
-

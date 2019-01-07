@@ -22,7 +22,11 @@ Below
 `catalog_loc=data/panoptes_predictions_selected.csv`
 `fits_dir=data/fits_native`
 `shard_dir=data/shards/si128_sf64_ss4096`
+`baseline_dir=data/runs/al_baseline`
+`run_dir=data/runs/al_mutual`
+`output_dir=results/latest_metrics`
 
+`fleet_id=sfr-....`
 ### Data from Outside Repo
 
 We need a catalog and images. 
@@ -69,14 +73,11 @@ If you still need to acquire the data:
 - Repeat, including the newly-acquired shard in the training pool
 - Stop after a specified number of iterations, moving the log into the run directory
 
-`fleet_id=sfr-....`
 
-`run_dir=data/runs/al_mutual`
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 OR baseline:
-`baseline_dir=data/runs/al_baseline`
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --warm-start --baseline && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --warm-start --baseline && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 This will execute the simulation, upload the results (via S3 and dvc) and then terminate the instance.
 If the simulation exits with an error code, the instance will not be terminated.
@@ -93,7 +94,7 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull $run_dir.dvc`
 `dvc pull $baseline_dir.dvc`
 
-`output_dir=results/latest_metrics`
+
 `dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc -d zoobot/active_learning/analysis.py --ignore-build-cache python zoobot/active_learning/analysis.py --active-dir=$run_dir --baseline-dir=$baseline_dir --initial=6000 --per-iter=1024 --output-dir=$output_dir --catalog-loc=$catalog_loc && git pull && git add al_metrics.dvc && git commit -m 'new metrics' && git push && dvc push -r s3 al_metrics.dvc`
 
 ## Optional: Run Tensorboard to Monitor

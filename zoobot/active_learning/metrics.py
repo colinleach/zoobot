@@ -19,6 +19,7 @@ from zoobot.uncertainty import discrete_coverage
 from zoobot.active_learning import acquisition_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 
+"""Useful for basic recording from iterations. Input to Model, should not be used elsewhere"""
 IterationState = namedtuple('IterationState', ['samples', 'acquisitions', 'id_strs'])
 
 
@@ -38,9 +39,10 @@ def load_iteration_state(iteration_dir):
 class Model():
     """Get and plot basic model results, with no external info"""
 
-    def __init__(self, state, name, bin_probs=None, acquisitions=None):
+    def __init__(self, state, name, bin_probs=None):
         self.samples = state.samples
         self.id_strs = state.id_strs
+        self.acquisitions = state.acquisitions
         self.name = name
 
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
@@ -51,9 +53,7 @@ class Model():
         
         self.mean_prediction = self.samples.mean(axis=1)
         self.calculate_mutual_info()
-
-        self.acquisitions = acquisitions
-
+        
 
     def calculate_mutual_info(self):
         self.predictive_entropy = acquisition_utils.predictive_binomial_entropy(self.bin_probs)

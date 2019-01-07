@@ -15,6 +15,7 @@ from zoobot.uncertainty import discrete_coverage
 class SimulatedModel():
     """
     Calculate and visualise additional metrics (vs. Model) using a provided catalog
+    Useful to create more info from a Model, or for internal use within Timeline
     """
 
     def __init__(self, model, full_catalog):
@@ -23,9 +24,11 @@ class SimulatedModel():
         catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 
         # unpack the interesting columns as attrs, then discard the full catalog
+        # maybe not very smart
         self.labels = catalog['smooth-or-featured_smooth_fraction']
         self.ra = catalog['ra']
         self.dec = catalog['dec']
+        self.subject_id = catalog['subject_id']
         
         self.calculate_default_metrics()
         self.votes = np.around(self.labels * 40)  # assume 40 votes for everything, for now

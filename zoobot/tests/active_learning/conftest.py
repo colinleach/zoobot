@@ -144,13 +144,14 @@ def acquisitions(subjects):
 
 
 @pytest.fixture()
-def subjects(size):
-    return [{'matrix': np.random.rand(size, size, 3), 'id_str': 'id_' + str(n)} for n in range(128)]
+def images(n_subjects, size):
+    return np.random.rand(n_subjects, size, size, 3)
 
 
 @pytest.fixture()
-def images(size):
-    return np.random.rand(128, size, size, 3)
+def subjects(size, images):
+    return [{'matrix': images[n], 'id_str': 'id_' + str(n)} for n in range(len(images))]
+
 
 def mock_get_samples_of_images(model, images, n_samples):
     # predict the mean of image batch, 10 times
