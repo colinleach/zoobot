@@ -117,4 +117,4 @@ class SimulatedModel():
 
 
 def match_id_strs_to_catalog(id_strs, catalog):
-    return catalog[catalog['subject_id'].isin(set(id_strs))]
+    return catalog[catalog['subject_id'].isin(set(id_strs))].set_index('subject_id', drop=True).reindex(id_strs).reset_index()

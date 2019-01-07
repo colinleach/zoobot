@@ -12,9 +12,9 @@ from zoobot.active_learning import simulated_metrics
 def tiny_catalog(): 
     # overrides conftest
     return pd.DataFrame([
-        {'subject_id': '12'},
         {'subject_id': '57'},
-        {'subject_id': '365'}
+        {'subject_id': '365'},
+        {'subject_id': '12'}
     ])
 
 
@@ -25,7 +25,7 @@ def tiny_id_strs():
 
 def test_match_id_strs_to_catalog(tiny_id_strs, tiny_catalog):
     df = simulated_metrics.match_id_strs_to_catalog(tiny_id_strs, tiny_catalog)
-    assert sorted(list(df['subject_id'])) == ['12', '57']
+    assert list(df['subject_id']) == ['12', '57']  # must have right values, in order matching id_strs
 
 
 def test_show_coverage(sim_model, save_dir):

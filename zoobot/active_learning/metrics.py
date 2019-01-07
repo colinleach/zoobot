@@ -40,9 +40,11 @@ class Model():
     """Get and plot basic model results, with no external info"""
 
     def __init__(self, state, name, bin_probs=None):
-        self.samples = state.samples
-        self.id_strs = state.id_strs
-        self.acquisitions = state.acquisitions
+        # save sorted by acq. value (descending), to avoid resorting later
+        args_to_sort = np.argsort(state.acquisitions)[::-1]
+        self.samples = state.samples[args_to_sort, :]
+        self.id_strs = [state.id_strs[n] for n in args_to_sort]  # list, sort with listcomp
+        self.acquisitions = state.acquisitions[args_to_sort]
         self.name = name
 
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
@@ -100,31 +102,44 @@ class Model():
 
 
     def acquisitions_vs_mean_prediction(self, n_acquired, save_dir):
-        if self.acquisitions is None:
-            raise ValueError('Acquistions is required')
-
-        fig, axes = plt.subplots(nrows=3, sharex=True)
-
-        sorted_by_acq = self.mean_prediction[np.argsort(self.acquisitions)[::-1]]
-        acquired, not_acquired = sorted_by_acq[:n_acquired], sorted_by_acq[n_acquired:]
+        acquisitions_vs_values(self.acquisitions, self.mean_prediction, n_acquired, 'Mean Prediction', save_dir)
 
 
-        sns.scatterplot(
-            x=self.mean_prediction, 
-            y=self.acquisitions, 
-            hue=self.acquisitions > sorted(self.acquisitions, reverse=True)[n_acquired],
-            ax=axes[0]
-            )
-        axes[0].set_ylabel('Acquisition')
-        axes[0].set_xlabel('Mean Prediction')
+def acquisitions_vs_values(acquisitions, values, n_acquired, xlabel, save_dir):
 
-        axes[1].hist(acquired)
-        axes[1].set_xlabel('Mean Prediction')
-        axes[1].set_title('Acquired')
+    verify_ready_to_plot(acquisitions, n_acquired)
+    
+    acquired, not_acquired = values[:n_acquired], values[n_acquired:]
 
-        axes[2].hist(not_acquired)
-        axes[2].set_xlabel('Mean Prediction')
-        axes[2].set_title('Not Acquired')
+    fig, axes = plt.subplots(nrows=3, sharex=True)
 
-        fig.tight_layout()
-        fig.savefig(os.path.join(save_dir, 'acquistion_vs_mean_prediction.png'))
+    sns.scatterplot(
+        x=values, 
+        y=acquisitions, 
+        hue=acquisitions > acquisitions[n_acquired],
+        ax=axes[0]
+        )
+
+    axes[0].set_ylabel('Acquisition')
+    axes[0].set_xlabel(xlabel)
+
+    axes[1].hist(acquired)
+    axes[1].set_xlabel(xlabel)
+    axes[1].set_title('Acquired')
+
+    axes[2].hist(not_acquired)
+    axes[2].set_xlabel(xlabel)
+    axes[2].set_title('Not Acquired')
+
+    fig.tight_layout()
+    fig.savefig(os.path.join(save_dir, 'acquistion_vs_{}.png'.format(xlabel.replace(' ', '_').lower())))
+
+
+def verify_ready_to_plot(acquisitions, n_acquired):
+    if acquisitions is None:
+        raise ValueError('Acquistions is required')
+    if len(acquisitions) < n_acquired:
+        raise ValueError('N Acquired is set incorrectly: should be less than all subjects')
+
+    # must already be sorted in descending order (no way to check 'value', ofc)
+    assert np.allclose(acquisitions, np.sort(acquisitions)[::-1])

@@ -15,8 +15,9 @@ class Timeline():
     """
     Create and compare SimulatedModel over many iterations
     """
-    def __init__(self, states, catalog, save_dir):
+    def __init__(self, states, catalog, n_acquired, save_dir):
         self._models = simulated_models_over_time(states, catalog)
+        self.n_acquired = n_acquired
         self.save_dir = save_dir
 
     # TODO use collections.abc to generalise this automatically?
@@ -31,7 +32,7 @@ class Timeline():
     def save_model_histograms(self):
         for attr_str in ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']:
             try:
-                show_model_attr_hist_by_iteration(self, attr_str, self.save_dir)
+                show_model_attr_hist_by_iteration(self, attr_str, self.n_acquired, self.save_dir)
             except KeyError:
                 logging.warning('Key not found: {}'.format(attr_str))
 
@@ -59,14 +60,14 @@ def identify_catalog_subjects_history(tfrecord_locs, catalog):
     return [simulated_metrics.match_id_strs_to_catalog(read_id_strs_from_tfrecord(tfrecord_loc), catalog) for tfrecord_loc in tfrecord_locs]
 
 
-def show_model_attr_hist_by_iteration(models, attr_str, save_dir):
+def show_model_attr_hist_by_iteration(models, attr_str, n_acquired, save_dir):
     fig, axes = plt.subplots(nrows=len(models), sharex=True)
     for iteration_n, model in enumerate(models):
         try:
             attr_values = getattr(model, attr_str)  # first, look in model attrs
         except AttributeError:
             attr_values = model.catalog[attr_str]  # else, look in catalog columns
-        axes[iteration_n].hist(attr_values, density=True)
+        axes[iteration_n].hist(attr_values[:n_acquired], density=True)
     axes[-1].set_xlabel(attr_str)
     fig.tight_layout()
     fig.savefig(os.path.join(save_dir, attr_str + '_over_time.png'))

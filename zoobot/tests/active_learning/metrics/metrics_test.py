@@ -22,8 +22,10 @@ def test_load_iteration_state(subjects, samples, acquisitions, iteration_dir):
 def test_model_init(state):
     example_metrics = metrics.Model(state, name='example')
     assert example_metrics.name == 'example'
-    # simply checks if it executes - each component is tested below
-
+     # should have been sorted by acq. value
+    assert np.allclose(example_metrics.acquisitions, np.sort(example_metrics.acquisitions)[::-1])
+    assert state.id_strs != example_metrics.id_strs 
+    # TODO proper checks that everything is sorted by acquisition
 
 def test_show_mutual_info_vs_predictions(model, save_dir):
     model.show_mutual_info_vs_predictions(save_dir)
