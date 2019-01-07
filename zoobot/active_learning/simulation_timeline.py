@@ -11,7 +11,7 @@ import seaborn as sns
 from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import metrics, simulated_metrics
 
-ATTR_STRS = ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']:
+ATTR_STRS = ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']
 
 class Timeline():
     """
