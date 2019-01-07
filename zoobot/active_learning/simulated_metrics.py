@@ -120,4 +120,10 @@ class SimulatedModel():
 
 
 def match_id_strs_to_catalog(id_strs, catalog):
-    return catalog[catalog['subject_id'].isin(set(id_strs))].set_index('subject_id', drop=True).reindex(id_strs).reset_index()
+    print(id_strs[:5])
+    filtered_catalog = catalog[catalog['subject_id'].isin(set(id_strs))]
+    print(filtered_catalog['smooth-or-featured_smooth_fraction'][:5])
+    # id strs is sorted by acquisition - catalog must also become sorted
+    sorted_catalog = filtered_catalog.set_index('subject_id', drop=True).reindex(id_strs).reset_index()
+    print(sorted_catalog['smooth-or-featured_smooth_fraction'][:5])
+    return sorted_catalog
