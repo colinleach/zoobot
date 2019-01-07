@@ -48,7 +48,7 @@ class Timeline():
                 except AttributeError:
                     attr_values = model.catalog[attr_str]  # else, look in catalog columns
                 metrics.acquisitions_vs_values(
-                    model.acquisitions, 
+                    model.model.acquisitions, 
                     attr_values, 
                     n_acquired=self.n_acquired, 
                     xlabel=attr_str, 
