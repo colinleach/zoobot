@@ -11,7 +11,7 @@ import seaborn as sns
 from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import metrics, simulated_metrics
 
-ATTR_STRS = ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']
+ATTR_STRS = ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']
 
 class Timeline():
     """
@@ -46,15 +46,18 @@ class Timeline():
                 if not os.path.isdir(save_dir):
                     os.mkdir(save_dir)
                 try:
-                    attr_values = getattr(model, attr_str)  # first, look in model attrs
-                except AttributeError:
-                    attr_values = model.catalog[attr_str]  # else, look in catalog columns
-                metrics.acquisitions_vs_values(
-                    model.model.acquisitions, 
-                    attr_values, 
-                    n_acquired=self.n_acquired, 
-                    xlabel=attr_str, 
-                    save_dir=save_dir)
+                    try:
+                        attr_values = getattr(model, attr_str)  # first, look in model attrs
+                    except AttributeError:
+                        attr_values = model.catalog[attr_str]  # else, look in catalog columns
+                    metrics.acquisitions_vs_values(
+                        model.model.acquisitions, 
+                        attr_values, 
+                        n_acquired=self.n_acquired, 
+                        xlabel=attr_str, 
+                        save_dir=save_dir)
+                except KeyError:
+                    logging.warning('{} not found'.format(attr_str))
 
 
 def simulated_models_over_time(states, catalog):
