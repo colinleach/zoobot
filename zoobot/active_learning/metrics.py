@@ -44,7 +44,7 @@ class Model():
         args_to_sort = np.argsort(state.acquisitions)[::-1]
         self.samples = state.samples[args_to_sort, :]
         self.id_strs = [state.id_strs[n] for n in args_to_sort]  # list, sort with listcomp
-        self.acquisitions = state.acquisitions[args_to_sort]
+        self.acquisitions = [state.acquisitions[n] for n in args_to_sort]
         self.name = name
 
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
