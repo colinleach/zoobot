@@ -116,7 +116,7 @@ def acquisitions_vs_values(acquisitions, values, n_acquired, xlabel, save_dir):
     sns.scatterplot(
         x=values, 
         y=acquisitions, 
-        hue=acquisitions > acquisitions[n_acquired],
+        hue=np.array(acquisitions) > acquisitions[n_acquired],
         ax=axes[0]
         )
 
