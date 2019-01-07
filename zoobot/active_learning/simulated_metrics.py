@@ -20,12 +20,15 @@ class SimulatedModel():
 
     def __init__(self, model, full_catalog):
         
+        print(full_catalog['smooth-or-featured_smooth_fraction'][:5])
+
         self.model = model
         self.catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 
         # unpack the interesting columns as attrs, then discard the full catalog
         # maybe not very smart
         self.labels = self.catalog['smooth-or-featured_smooth_fraction']
+        assert not any(np.isnan(self.labels))
         # self.ra = catalog['ra']
         # self.dec = catalog['dec']
         # self.subject_id = catalog['subject_id']
