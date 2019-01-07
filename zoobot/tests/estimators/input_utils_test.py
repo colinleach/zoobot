@@ -8,6 +8,7 @@ matplotlib.use('Agg')  # don't actually show any figures
 import matplotlib.pyplot as plt
 
 from zoobot.estimators import input_utils
+from zoobot.tfrecord import read_tfrecord
 from zoobot.tests import TEST_EXAMPLE_DIR, TEST_FIGURE_DIR
 
 
@@ -155,6 +156,34 @@ def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
 
 
+def test_get_batch(tfrecord_matrix_id_loc, size, channels):
+    feature_spec = read_tfrecord.matrix_id_feature_spec(size, channels)
+    batch = input_utils.get_batch(tfrecord_matrix_id_loc, feature_spec, batch_size=24, shuffle=True, repeat=True)
+    with tf.Session() as sess:  
+        batches = []
+        for i in range(10):
+            batches.append(sess.run(batch))
+    assert len(batches) == 10
+
+    id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str']]
+    assert '12' in set(id_strs)
+    assert len(set(id_strs)) == 128  # all ids in tfrecord
+
+
+def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct, size, channels):
+    feature_spec = read_tfrecord.matrix_id_feature_spec(size, channels)
+    tfrecord_locs = [tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct]
+    batch = input_utils.get_batch(tfrecord_locs, feature_spec, batch_size=24, shuffle=True, repeat=True)
+    with tf.Session() as sess:  
+        batches = []
+        for i in range(20):
+            batches.append(sess.run(batch))
+    assert len(batches) == 20
+
+    id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str']]
+    assert '12' in set(id_strs)
+    assert '240' in set(id_strs)
+    assert len(set(id_strs)) == 256  # all ids from BOTH tfrecords
 
 """
 Test augmentation applied by map_fn to a chain of images from from_tensor_slices

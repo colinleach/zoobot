@@ -13,8 +13,19 @@ def load_dataset(example_loc, feature_spec, num_parallel_calls=1):
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
     dataset = tf.data.TFRecordDataset(example_loc)
     parse_function = partial(tf.parse_single_example, features=feature_spec)
-    return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
-
+    if isinstance(example_loc, str):
+        return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
+    else:
+        # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
+         # read from all tfrecords in parallel, retrieving an even mix from all tfrecords, with 1 example from each record per cycle
+         # note: mix is inversely proportional to length of each tfrecord, so they should be similar sizes!
+        filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
+        return filenames_dataset.interleave(
+            lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
+            cycle_length=len(example_loc), 
+            block_length=1, 
+            num_parallel_calls=num_parallel_calls)
+        
 
 # TODO convert this to a proper test of dataset readability?
 # if __name__ == '__main__':
