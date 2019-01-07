@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     active_iteration_dirs = get_iteration_dirs(args.active_dir)
     active_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in active_iteration_dirs]
-    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.output_dir)
+    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.per_iter, args.output_dir)
     active_timeline.save_model_histograms()
     
 
@@ -316,13 +316,11 @@ if __name__ == '__main__':
         baseline_train_locs = get_final_train_locs(args.baseline_dir)
         show_subjects_by_iteration(baseline_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_baseline.png'))
         
-        # baseline_history = identify_catalog_subjects_history(baseline_train_locs, catalog)
-        # for col in catalog_cols:
-        #     show_catalog_col_by_iteration(
-        #         baseline_history, 
-        #         col, 
-        #         os.path.join(args.output_dir, '{}_history_baseline.png'.format(col))
-        #     )
+        baseline_iteration_dirs = get_iteration_dirs(args.baseline_dir)
+        baseline_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in baseline_iteration_dirs]
+        args.mkdir(os.path.join(args.output_dir, 'baseline'))
+        baseline_timeline = simulation_timeline.Timeline(baseline_states, catalog, args.per_iter, os.path.join(args.output_dir, 'baseline'))
+        baseline_timeline.save_model_histograms()
 
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')

@@ -55,6 +55,10 @@ def states(state):
 
 
 @pytest.fixture()
-def timeline(states, full_catalog):
-    return simulation_timeline.Timeline(states, full_catalog, save_dir)
+def n_acquired():
+    return 24
+
+@pytest.fixture()
+def timeline(states, full_catalog, n_acquired):
+    return simulation_timeline.Timeline(states, full_catalog, n_acquired, save_dir)
 

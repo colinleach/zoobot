@@ -12,6 +12,7 @@ def test_simulated_models_over_time(states, full_catalog):
     for iteration_n, model in enumerate(sim_models):
         assert model.model.name == 'iteration_{}'.format(iteration_n)
 
+
 @pytest.fixture()
 def save_dir(tmpdir):
     dir_loc = os.path.join(TEST_FIGURE_DIR, 'metrics', 'timeline_metrics')
@@ -19,6 +20,5 @@ def save_dir(tmpdir):
         os.mkdir(dir_loc)
     return dir_loc
 
-
 def test_show_model_attr_hist_by_iteration(timeline, save_dir):
-    simulation_timeline.show_model_attr_hist_by_iteration(timeline, 'ra', save_dir)
+    simulation_timeline.show_model_attr_hist_by_iteration(timeline, 'ra', timeline.n_acquired, save_dir)

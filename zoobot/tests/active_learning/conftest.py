@@ -140,7 +140,7 @@ def acquisition():
 
 @pytest.fixture()
 def acquisitions(subjects):
-    return np.random.rand(len(subjects))
+    return list(np.random.rand(len(subjects)))
 
 
 @pytest.fixture()
