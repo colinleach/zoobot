@@ -11,6 +11,8 @@ import seaborn as sns
 from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import metrics, simulated_metrics
 
+ATTR_STRS = ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']:
+
 class Timeline():
     """
     Create and compare SimulatedModel over many iterations
@@ -30,11 +32,27 @@ class Timeline():
 
 
     def save_model_histograms(self):
-        for attr_str in ['labels', 'ra', 'dec', 'petroth50', 'petrotheta', 'petro90', 'redshift', 'z', 'absolute_size', 'mag_g', 'mag_r', 'petroflux']:
+        for attr_str in ATTR_STRS:
             try:
                 show_model_attr_hist_by_iteration(self, attr_str, self.n_acquired, self.save_dir)
             except KeyError:
                 logging.warning('Key not found: {}'.format(attr_str))
+
+    
+    def save_acquistion_comparison(self):
+        for attr_str in ATTR_STRS:
+            for iteration_n, model in enumerate(self._models):
+                save_dir = os.path.join(self.save_dir, 'iteration_{}'.format(iteration_n))
+                try:
+                    attr_values = getattr(model, attr_str)  # first, look in model attrs
+                except AttributeError:
+                    attr_values = model.catalog[attr_str]  # else, look in catalog columns
+                metrics.acquisitions_vs_values(
+                    self.acquisitions, 
+                    attr_values, 
+                    n_acquired=self.n_acquired, 
+                    xlabel=attr_str, 
+                    save_dir=save_dir)
 
 
 def simulated_models_over_time(states, catalog):

@@ -19,19 +19,11 @@ class SimulatedModel():
     """
 
     def __init__(self, model, full_catalog):
-        
-        print(full_catalog['smooth-or-featured_smooth_fraction'][:5])
-
         self.model = model
         self.catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 
-        # unpack the interesting columns as attrs, then discard the full catalog
-        # maybe not very smart
         self.labels = self.catalog['smooth-or-featured_smooth_fraction']
         assert not any(np.isnan(self.labels))
-        # self.ra = catalog['ra']
-        # self.dec = catalog['dec']
-        # self.subject_id = catalog['subject_id']
         
         self.calculate_default_metrics()
         self.votes = np.around(self.labels * 40)  # assume 40 votes for everything, for now
@@ -120,12 +112,9 @@ class SimulatedModel():
 
 
 def match_id_strs_to_catalog(id_strs, catalog):
-    print(id_strs[:5])
     filtered_catalog = catalog[catalog['subject_id'].isin(set(id_strs))]
-    print(filtered_catalog['smooth-or-featured_smooth_fraction'][:5])
     # id strs is sorted by acquisition - catalog must also become sorted
+    # careful - reindexing by int-like strings will actually do int reindexing, not what I want
     filtered_catalog['subject_id'] = filtered_catalog['subject_id'].astype(str)
-    print(filtered_catalog['subject_id'][:5])
     sorted_catalog = filtered_catalog.set_index('subject_id', drop=True).reindex(id_strs).reset_index()
-    print(sorted_catalog['smooth-or-featured_smooth_fraction'][:5])
     return sorted_catalog
