@@ -43,6 +43,8 @@ class Timeline():
         for attr_str in ATTR_STRS:
             for iteration_n, model in enumerate(self._models):
                 save_dir = os.path.join(self.save_dir, 'iteration_{}'.format(iteration_n))
+                if not os.path.isdir(save_dir):
+                    os.mkdir(save_dir)
                 try:
                     attr_values = getattr(model, attr_str)  # first, look in model attrs
                 except AttributeError:
