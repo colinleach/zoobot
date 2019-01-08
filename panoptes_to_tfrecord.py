@@ -8,31 +8,18 @@ from zoobot import settings
 
 def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):
 
-    label_col = 'label'
-
     useful_cols = [
-        'smooth-or-featured_smooth',
-        'smooth-or-featured_featured-or-disk',
-        'smooth-or-featured_artifact',
         'smooth-or-featured_total-votes',
         'smooth-or-featured_smooth_fraction',
-        'smooth-or-featured_featured-or-disk_fraction',
-        'smooth-or-featured_artifact_fraction',
-        'smooth-or-featured_smooth_min',
-        'smooth-or-featured_smooth_max',
-        'smooth-or-featured_featured-or-disk_min',
-        'smooth-or-featured_featured-or-disk_max',
-        'smooth-or-featured_artifact_min',
-        'smooth-or-featured_artifact_max',
-        'smooth-or-featured_prediction-encoded',  # 0 for artifact, 1 for featured, 2 for smooth
         'classifications_count',
-        # 'iauname', string features not yet supported
-        'subject_id',
+        'id_str',
         'nsa_id',
         'ra',
         'dec']
 
     df = pd.read_csv(catalog_loc, usecols=useful_cols + ['fits_loc', 'png_loc', 'png_ready'])
+    df['id_str'] = df['subject_id'].astype(str)
+
     logging.info('Loaded {} catalog galaxies with predictions'.format(len(df)))
 
     # use the majority vote as a label
@@ -44,6 +31,7 @@ def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):
     # use best split of the data is around smooth vote fraction = 0.4
 
     # df[label_col] = (df['smooth-or-featured_smooth_fraction'] > label_split_value).astype(int)  # 0 for featured
+    label_col = 'label'
     df[label_col] = df['smooth-or-featured_smooth_fraction']  # 0 for featured
 
     df = df[df['smooth-or-featured_total-votes'] > 36]  # >36 votes required, gives low count uncertainty
