@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'nonnoisy_labels_bin_loss'
+    run_name = 'nonnoisy_labels_bin_loss_with_id'
 
     logging.basicConfig(
         filename=run_name + '.log',
