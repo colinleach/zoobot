@@ -120,7 +120,7 @@ def plot_samples(scores, labels, fig, axes):
             probability_record.append(probs)
             ax.plot(x, probs, 'k', alpha=0.15, label=name)
         probability_record = np.array(probability_record)
-        if score.shape[1] == 1:  # only 1 sample
+        if scores.shape[1] == 1:  # only 1 sample
             c='k'
         else:
             c='g'
