@@ -223,7 +223,7 @@ def get_smooth_metrics_from_log(log_loc, name=None):
 
 
 def get_iteration_dirs(run_dir):
-    return [os.path.join(run_dir, d) for d in os.listdir(args.active_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
+    return [os.path.join(run_dir, d) for d in os.listdir(run_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
 
 
 def get_final_train_locs(run_dir):
