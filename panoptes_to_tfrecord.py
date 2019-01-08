@@ -8,16 +8,15 @@ from zoobot import settings
 
 def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):
 
-    useful_cols = [
+    to_save = [
         'smooth-or-featured_total-votes',
         'smooth-or-featured_smooth_fraction',
         'classifications_count',
-        'id_str',
         'nsa_id',
         'ra',
         'dec']
 
-    df = pd.read_csv(catalog_loc, usecols=useful_cols + ['fits_loc', 'png_loc', 'png_ready'])
+    df = pd.read_csv(catalog_loc, usecols=to_save + ['fits_loc', 'png_loc', 'png_ready', 'subject_id'])
     df['id_str'] = df['subject_id'].astype(str)
 
     logging.info('Loaded {} catalog galaxies with predictions'.format(len(df)))
@@ -48,7 +47,7 @@ def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):
             train_loc,
             test_loc,
             size,
-            useful_cols + [label_col])
+            to_save + [label_col, 'id_str'])
 
 if __name__ == '__main__':
 
