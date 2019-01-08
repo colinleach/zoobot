@@ -107,16 +107,7 @@ def binomial_prob_per_k(rho, n_draws):
     return bin_probs
 
 
-def view_samples(scores, labels, annotate=False, display_width=5):
-    """For many subjects, view the distribution of scores and labels for that subject
-
-    Args:
-        scores (np.array): class scores, of shape (n_subjects, n_samples)
-        labels (np.array): class labels, of shape (n_subjects)
-    """
-    assert len(labels) == len(scores) > 1
-    fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharey=True)
-
+def plot_samples(scores, labels, fig, axes):
     x = np.arange(0, 41)
     for galaxy_n, ax in enumerate(axes):
         probability_record = []
@@ -132,6 +123,18 @@ def view_samples(scores, labels, annotate=False, display_width=5):
         ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
+
+
+def view_samples(scores, labels, annotate=False, display_width=5):
+    """For many subjects, view the distribution of scores and labels for that subject
+
+    Args:
+        scores (np.array): class scores, of shape (n_subjects, n_samples)
+        labels (np.array): class labels, of shape (n_subjects)
+    """
+    assert len(labels) == len(scores) > 1
+    fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharex=True)
+    plot_samples(fig, axes)
 
     axes[0].legend(
         loc='lower center', 
