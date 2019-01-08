@@ -17,9 +17,13 @@ build/*
 *.txt
 *.png
 *.ipynb_checkpoints*
+logs/*
 
 *shard_*.tfrecord
 acquired_shard_*
+results
+runs
+zoobot/legacy/embeddings/chollet_128
 
 .vscode/settings.json
 
