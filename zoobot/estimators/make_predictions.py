@@ -120,7 +120,11 @@ def plot_samples(scores, labels, fig, axes):
             probability_record.append(probs)
             ax.plot(x, probs, 'k', alpha=0.15, label=name)
         probability_record = np.array(probability_record)
-        ax.plot(x, probability_record.mean(axis=0), c='g', linewidth=2., label='Posterior')
+        if score.shape[1] == 1:  # only 1 sample
+            c='k'
+        else:
+            c='g'
+        ax.plot(x, probability_record.mean(axis=0), c=c, linewidth=2., label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
