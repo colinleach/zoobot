@@ -107,7 +107,7 @@ def binomial_prob_per_k(rho, n_draws):
     return bin_probs
 
 
-def view_samples(scores, labels, annotate=False):
+def view_samples(scores, labels, annotate=False, display_width=5):
     """For many subjects, view the distribution of scores and labels for that subject
 
     Args:
@@ -115,7 +115,7 @@ def view_samples(scores, labels, annotate=False):
         labels (np.array): class labels, of shape (n_subjects)
     """
     assert len(labels) == len(scores) > 1
-    fig, axes = plt.subplots(nrows=len(labels), figsize=(4, len(labels)), sharey=True)
+    fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharey=True)
 
     x = np.arange(0, 41)
     for galaxy_n, ax in enumerate(axes):
