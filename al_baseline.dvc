@@ -5,12 +5,10 @@ deps:
   path: data/shards/si128_sf64_ss4096
 - md5: 02b84102e93637c4385a4bdfb087cc8e
   path: zoobot/active_learning/oracle.csv
-- md5: fc4f73d29ffff9eb157d85b5016dff5c.dir
-  path: data/fits_native
-- md5: 86c9bfcb3b736e32402389dd0e7bb1af.dir
+- md5: f28e3e057da1350020bfcbed28d1eab9.dir
   path: zoobot
-md5: 16014c1fef736a59b4a2da5e94258992
+md5: 28efbc7b0f948a77c381f031799826b4
 outs:
 - cache: true
-  md5: ba6f0bb84959319d85b118f5fda214f1.dir
+  md5: 155463247bffd25f7f7309053e009f66.dir
   path: data/runs/al_baseline
