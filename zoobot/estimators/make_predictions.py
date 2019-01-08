@@ -134,7 +134,7 @@ def view_samples(scores, labels, annotate=False, display_width=5):
     """
     assert len(labels) == len(scores) > 1
     fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharex=True)
-    plot_samples(fig, axes)
+    plot_samples(scores, labels, fig, axes)
 
     axes[0].legend(
         loc='lower center', 
