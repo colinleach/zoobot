@@ -118,9 +118,9 @@ def plot_samples(scores, labels, fig, axes):
                 name = None
             probs = binomial_prob_per_k(score, n_draws=40)
             probability_record.append(probs)
-            ax.plot(x, probs, 'k', alpha=0.2, label=name)
+            ax.plot(x, probs, 'k', alpha=0.15, label=name)
         probability_record = np.array(probability_record)
-        ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
+        ax.plot(x, probability_record.mean(axis=0), c='g', linewidth=2., label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
@@ -128,7 +128,7 @@ def plot_samples(scores, labels, fig, axes):
 def view_samples(scores, labels, annotate=False, display_width=5):
     """For many subjects, view the distribution of scores and labels for that subject
 
-    Args:
+    Args:\
         scores (np.array): class scores, of shape (n_subjects, n_samples)
         labels (np.array): class labels, of shape (n_subjects)
     """
