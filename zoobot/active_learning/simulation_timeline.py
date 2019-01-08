@@ -90,10 +90,6 @@ def show_model_attr_hist_by_iteration(models, attr_str, n_acquired, save_dir):
             attr_values = getattr(model, attr_str)  # first, look in model attrs
         except AttributeError:
             attr_values = model.catalog[attr_str]  # else, look in catalog columns
-        print(attr_values)
-        print(attr_str)
-        print(len(attr_values))
-        print(len(attr_values[:n_acquired]))
         axes[iteration_n].hist(attr_values[:n_acquired], density=True)
     axes[-1].set_xlabel(attr_str)
     fig.tight_layout()
