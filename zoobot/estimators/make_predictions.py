@@ -110,21 +110,23 @@ def binomial_prob_per_k(rho, n_draws):
 def plot_samples(scores, labels, fig, axes):
     x = np.arange(0, 41)
     for galaxy_n, ax in enumerate(axes):
-        probability_record = []
-        for score_n, score in enumerate(scores[galaxy_n]):
-            if score_n == 0: 
-                name = 'Model Posteriors'
-            else:
-                name = None
-            probs = binomial_prob_per_k(score, n_draws=40)
-            probability_record.append(probs)
-            ax.plot(x, probs, 'k', alpha=0.15, label=name)
-        probability_record = np.array(probability_record)
-        if scores.shape[1] == 1:  # only 1 sample
-            c='k'
-        else:
+        if scores.shape[1] > 1:
             c='g'
-        ax.plot(x, probability_record.mean(axis=0), c=c, linewidth=2., label='Posterior')
+            probability_record = []
+            for score_n, score in enumerate(scores[galaxy_n]):
+                if score_n == 0: 
+                    name = 'Model Posteriors'
+                else:
+                    name = None
+                probs = binomial_prob_per_k(score, n_draws=40)
+                probability_record.append(probs)
+                ax.plot(x, probs, 'k', alpha=0.15, label=name)
+            probability_record = np.array(probability_record)
+            mean_posterior = probability_record.mean(axis=0)
+        else:
+            mean_posterior = scores[galaxy_n, 0]
+            c='k'
+        ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
         ax.yaxis.set_visible(False)
 
