@@ -103,8 +103,9 @@ class BayesianModel():
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
-
-                optimizer = self.optimizer(learning_rate=self.learning_rate)
+                lr = tf.identity(self.learning_rate)
+                tf.summary.scalar('learning_rate', lr)
+                optimizer = self.optimizer(learning_rate=lr)
 
                 # important to explicitly use within update_ops for batch norm to work
                 # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
