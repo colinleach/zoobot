@@ -1,11 +1,13 @@
 import logging
 import os
 import argparse
+import shutil
 
 import tensorflow as tf
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
+import git
 
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
 
@@ -37,10 +39,11 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'nonnoisy_labels_bin_loss_rmsprop_0p001'
+    run_name = 'latest_run'
 
+    log_loc = run_name + '.log'
     logging.basicConfig(
-        filename=run_name + '.log',
+        filename=log_loc,
         format='%(asctime)s %(message)s',
         filemode='w',
         level=logging.INFO)
@@ -139,3 +142,7 @@ if __name__ == '__main__':
 
     run_estimator.run_estimator(run_config)
     # warm_start.restart_estimator(run_config)
+
+    repo = git.Repo(search_parent_directories=True)
+    sha = repo.head.object.hexsha
+    shutil.move(log_loc, '{}.log'.format(sha))
