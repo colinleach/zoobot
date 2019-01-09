@@ -120,3 +120,7 @@ Simple test: force the acquired shard loc to be wrong, and do --test run. This s
 If no io error, tfrecords are not actually being read.
 
 1024 images are 192.1mb - how many are 3072? 577mb - bang on.
+
+with label repeat
+Reference epoch 1546957064
+worked exactly like before

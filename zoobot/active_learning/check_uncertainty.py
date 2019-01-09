@@ -54,13 +54,13 @@ def compare_models(model_a, model_b):
 def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name):
     size = 128
     n_samples = 30
-    images_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='labels')  # tf graph
+    images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='id_str')  # tf graph
     with tf.Session() as sess:
-        images, labels = sess.run([images_g, labels_g])
+        images, id_strs = sess.run([images_g, id_str_g])
     predictor_loc = os.path.join(results_dir, model_name)
     model = make_predictions.load_predictor(predictor_loc)
     results = make_predictions.get_samples_of_images(model, images, n_samples=n_samples)
-    return images, labels, results
+    return images, id_strs, results
 
 
 def save_metrics(subjects, labels, state, save_dir, name, mse_comparison=False):
