@@ -17,6 +17,8 @@ from zoobot.settings import GlobalConfig
 
 # expects tfrecord in data, and logs/estimator in runs
 
+# dvc run -d data/basic_split -o results/latest_basic_run -f basic_run.dvc python run_zoobot_on_panoptes.py --ec2
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Run Zoobot on basic panoptes split')
@@ -39,7 +41,7 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'latest_run'
+    run_name = 'latest_basic_run'
 
     log_loc = run_name + '.log'
     logging.basicConfig(
