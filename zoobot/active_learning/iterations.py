@@ -25,6 +25,7 @@ class Iteration():
         n_samples,  # may need more samples?
         n_subjects_to_acquire,
         initial_size,
+        learning_rate,
         initial_estimator_ckpt=None
         ):
 
@@ -42,6 +43,7 @@ class Iteration():
         self.n_samples = n_samples
         self.n_subjects_to_acquire = n_subjects_to_acquire
         self.initial_size = initial_size  # need to know what size to write new images to shards
+        self.learning_rate = learning_rate
 
         self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
@@ -122,7 +124,7 @@ class Iteration():
         # - log dir to train models in
         # - list of tfrecord files to train on
         self.record_train_records()
-        self.train_callable(self.estimators_dir, self.get_train_records())  # could be docker container to run, save model
+        self.train_callable(self.estimators_dir, self.get_train_records(), self.learning_rate)  # could be docker container to run, save model
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container

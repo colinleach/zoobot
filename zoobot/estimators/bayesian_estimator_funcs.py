@@ -104,7 +104,7 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
 
-                optimizer = self.optimizer(learning_rate=self.learning_rate)  # TODO adaptive learning rate
+                optimizer = self.optimizer(learning_rate=self.learning_rate)
 
                 # important to explicitly use within update_ops for batch norm to work
                 # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
@@ -114,7 +114,7 @@ class BayesianModel():
                     train_op = optimizer.minimize(
                         loss=loss,
                         global_step=tf.train.get_global_step())
-
+                
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
         else:  # must be EVAL mode
