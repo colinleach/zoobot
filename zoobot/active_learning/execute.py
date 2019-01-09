@@ -127,6 +127,7 @@ class ActiveConfig():
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
+        epochs = 150
         
         iterations_record = []
         while iteration_n < self.n_iterations:
@@ -150,6 +151,7 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
+                epochs=epochs,
                 initial_estimator_ckpt=initial_estimator_ckpt)
 
             # train as usual, with saved_model being placed in estimator_dir
@@ -169,15 +171,13 @@ class ActiveConfig():
 
 def get_train_callable(params):
 
-    def train_callable(log_dir, train_records, learning_rate):
+    def train_callable(log_dir, train_records, learning_rate, epochs):
         # WARNING TESTING ONLY 
         # if len(train_records) > 1:
         #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
         # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
-        run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate)
-        if params.warm_start:
-            run_config.epochs = 150  # for retraining
+        run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate, epochs)
         if params.test: # overrides warm_start
             run_config.epochs = 5  # minimal training, for speed
 
@@ -239,7 +239,7 @@ if __name__ == '__main__':
         shards_per_iter = 1
     else:
         n_iterations = 4  # 1.5h per iteration
-        subjects_per_iter = 3072
+        subjects_per_iter = 16  # aiming to test new input func
         shards_per_iter = 4
 
     # shards to use
@@ -254,6 +254,7 @@ if __name__ == '__main__':
         initial_estimator_ckpt=None
     )
 
+    # these do not change per iteration
     train_callable_params = TrainCallableParams(
         initial_size = active_config.shards.initial_size,
         final_size = active_config.shards.final_size,

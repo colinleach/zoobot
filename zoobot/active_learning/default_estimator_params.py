@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
 
 
-def get_run_config(params, log_dir, train_records, learning_rate):
+def get_run_config(params, log_dir, train_records, learning_rate, epochs):
 
     channels = 3
 
@@ -18,7 +18,7 @@ def get_run_config(params, log_dir, train_records, learning_rate):
         final_size=params.final_size,
         channels=channels,
         label_col='label',
-        epochs=600,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
+        epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         train_steps=30,
         eval_steps=5,
         batch_size=128,
