@@ -176,8 +176,7 @@ def get_train_callable(params):
         # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate)
-        if params.warm_start:
-            run_config.epochs = 150  # for retraining
+        run_config.epochs = 350  # for training like basic_split
         if params.test: # overrides warm_start
             run_config.epochs = 5  # minimal training, for speed
 
