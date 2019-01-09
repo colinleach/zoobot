@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     model = bayesian_estimator_funcs.BayesianModel(
         learning_rate=0.001,  # TODO remove this
-        optimizer=tf.train.RMSPropOptimizer(learning_rate=0.001),
+        optimizer=tf.train.RMSPropOptimizer,  # TODO insert here directly
         conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
