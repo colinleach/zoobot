@@ -134,7 +134,7 @@ class ActiveConfig():
             if iteration_n == 0:
                 learning_rate = 0.001
             else:
-                learning_rate = 0.0001  # 10x lower learning rate, to allow finetuning
+                learning_rate = 0.001  # leave alone for now
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -238,9 +238,9 @@ if __name__ == '__main__':
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        n_iterations = 4  # 1.5h per iteration
-        subjects_per_iter = 3072
-        shards_per_iter = 4
+        n_iterations = 2  # changed, one train and one finetune
+        subjects_per_iter = 1024
+        shards_per_iter = 2  # changed, now only 2 pool shards
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
