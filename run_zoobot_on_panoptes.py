@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'nonnoisy_labels_bin_loss_with_id'
+    run_name = 'nonnoisy_labels_bin_loss_rmsprop_0p001'
 
     logging.basicConfig(
         filename=run_name + '.log',
@@ -108,8 +108,8 @@ if __name__ == '__main__':
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
-        learning_rate=0.001,
-        optimizer=tf.train.AdamOptimizer,
+        learning_rate=0.001,  # TODO remove this
+        optimizer=tf.train.RMSPropOptimizer(learning_rate=0.001),
         conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
