@@ -18,6 +18,7 @@ build/*
 *.png
 *.ipynb_checkpoints*
 logs/*
+*.pickle
 
 *shard_*.tfrecord
 acquired_shard_*

@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 
 import numpy as np
 import pytest
@@ -170,20 +171,65 @@ def test_get_batch(tfrecord_matrix_id_loc, size, channels):
     assert len(set(id_strs)) == 128  # all ids in tfrecord
 
 
-def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct, size, channels):
-    feature_spec = read_tfrecord.matrix_id_feature_spec(size, channels)
+def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct):
+    feature_spec = read_tfrecord.id_feature_spec()
     tfrecord_locs = [tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct]
-    batch = input_utils.get_batch(tfrecord_locs, feature_spec, batch_size=24, shuffle=True, repeat=True)
+
+    n_batches = 81  # enough to cycle through full records, and get close to expected counts
+    shuffle = False
+
+    # load individually
+    batch_tf_0 = input_utils.get_batch(tfrecord_locs[0], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
+    with tf.Session() as sess:  
+        batches_tf_0 = []
+        for i in range(n_batches):
+            batches_tf_0.append(sess.run(batch_tf_0))
+    assert len(batches_tf_0) == n_batches
+
+    batch_tf_1 = input_utils.get_batch(tfrecord_locs[1], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
+    with tf.Session() as sess:  
+        batches_tf_1 = []
+        for i in range(n_batches):
+            batches_tf_1.append(sess.run(batch_tf_1))
+    assert len(batches_tf_1) == n_batches
+
+    # load from both
+    batch = input_utils.get_batch(tfrecord_locs, feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
     with tf.Session() as sess:  
         batches = []
-        for i in range(20):
+        for i in range(n_batches):
             batches.append(sess.run(batch))
-    assert len(batches) == 20
+    assert len(batches) == n_batches
 
+    for batch in batches:
+        print(batch)
     id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str']]
-    assert '12' in set(id_strs)
-    assert '240' in set(id_strs)
-    assert len(set(id_strs)) == 256  # all ids from BOTH tfrecords
+    id_strs_0 = [id_str.decode('utf-8') for b in batches_tf_0 for id_str in b['id_str']]
+    id_strs_1 = [id_str.decode('utf-8') for b in batches_tf_1 for id_str in b['id_str']]
+
+    # print(id_strs)
+    assert False
+
+    #  for tests to work, should be some ids only in one record or the other
+    assert len(set(id_strs_0) ^ set(id_strs_1)) > 0
+
+    #  should have loaded all ids in double-mode (n_batches is plenty to cycle through both)
+    assert set(id_strs_0) | set(id_strs_1) == set(id_strs)
+
+    counts_0 = Counter(id_strs_0)
+    counts_1 = Counter(id_strs_1)
+    counts = Counter(id_strs)
+
+    # check that for all tfrecords, looped through all elements evenly (3-4 times for double, 7-8 times for single, as records are shorter)
+    for counter in [counts_0, counts_1, counts]:
+        most_common_n_reads = counter.most_common()[0][1]
+        least_common_n_reads = counter.most_common()[::-1][0][1]
+        assert most_common_n_reads == least_common_n_reads + 1  # batch size won't exactly match record size
+
+    mean_tfrecord_0_reads = np.mean([counts[id_str] for id_str in id_strs_0])
+    mean_tfrecord_1_reads = np.mean([counts[id_str] for id_str in id_strs_1])
+    # images should be read at approximately the same rate, regardless of the size of the tfrecord that holds them
+    assert np.abs(mean_tfrecord_0_reads - mean_tfrecord_1_reads) < 0.2
 
 """
 Test augmentation applied by map_fn to a chain of images from from_tensor_slices
