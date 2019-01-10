@@ -127,7 +127,7 @@ class ActiveConfig():
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
-        epochs = 150
+        epochs = 200
         
         iterations_record = []
         while iteration_n < self.n_iterations:
@@ -135,7 +135,7 @@ class ActiveConfig():
             if iteration_n == 0:
                 learning_rate = 0.001
             else:
-                learning_rate = 0.0001  # 10x lower learning rate, to allow finetuning
+                learning_rate = 0.001
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -238,8 +238,8 @@ if __name__ == '__main__':
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        n_iterations = 4  # 1.5h per iteration
-        subjects_per_iter = 16  # aiming to test new input func
+        n_iterations = 2  # 1.5h per iteration
+        subjects_per_iter = 1024
         shards_per_iter = 4
 
     # shards to use
