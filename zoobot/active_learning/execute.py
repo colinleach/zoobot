@@ -151,8 +151,8 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
-                initial_estimator_ckpt=None,
-                epochs=epochs)  # WARNING will not warm start
+                initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
+                epochs=epochs)  
 
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration_n))
