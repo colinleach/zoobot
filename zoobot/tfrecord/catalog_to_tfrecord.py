@@ -42,7 +42,7 @@ def load_decals_as_pil(subject):
     return Image.fromarray(pil_safe_img, mode='RGB')
 
 
-def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):
+def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8, source='fits'):
     train_test_split = int(train_test_fraction * len(df))
 
     df = df.sample(frac=1).reset_index(drop=True)
@@ -54,8 +54,8 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
     assert not train_df.empty
     assert not test_df.empty
 
-    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, source='fits')
-    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, source='fits')
+    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, source=source)
+    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, source=source)
     return train_df, test_df
 
 
