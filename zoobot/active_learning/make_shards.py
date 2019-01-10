@@ -172,10 +172,19 @@ if __name__ == '__main__':
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
     catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
 
+    # with basic split, we do 80% train/test split
+    # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
+    # select 1024 new training images
+    # verify model is nearly as good as basic split (only missing about 4k images)
+    # verify that can add these images to training pool without breaking everything!
+    # may need to disable interleave, and instead make dataset of joined tfrecords (starting with new ones?)
+
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:8960]  # for initial training data
-    unlabelled_catalog = catalog[8960:]  # for new data
+    pool_size = 5*1024
+
+    labelled_catalog = catalog[:-pool_size]  # for training and eval. Could do basic split on these!
+    unlabelled_catalog = catalog[-pool_size:]  # for pool
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
@@ -183,7 +192,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.67)
+        train_test_fraction=0.8)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # finally, tidy up by moving the log into the shard directory

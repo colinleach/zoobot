@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
 
 
-def get_run_config(params, log_dir, train_records):
+def get_run_config(params, log_dir, train_records, learning_rate):
 
     channels = 3
 
@@ -69,7 +69,7 @@ def get_run_config(params, log_dir, train_records):
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
-        learning_rate=0.001,
+        learning_rate=learning_rate,
         optimizer=tf.train.AdamOptimizer,
         conv1_filters=32,
         conv1_kernel=3,
