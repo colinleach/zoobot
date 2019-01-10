@@ -66,6 +66,14 @@ def matrix_label_id_feature_spec(size, channels):
 def id_feature_spec():
     return {"id_str": tf.FixedLenFeature((), tf.string)}
 
+
+def id_label_feature_spec():
+    return {
+        "label": tf.FixedLenFeature((), tf.float32),
+        "id_str": tf.FixedLenFeature((), tf.string)
+        }
+
+
 # not required, use tf.parse_single_example directly
 # def parse_example(example, size, channels):
 #     features = {
