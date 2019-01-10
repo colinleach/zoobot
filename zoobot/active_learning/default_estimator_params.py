@@ -69,8 +69,8 @@ def get_run_config(params, log_dir, train_records):
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
-        learning_rate=0.001,  # TODO remove this
-        optimizer=tf.train.RMSPropOptimizer(learning_rate=0.001),
+        learning_rate=0.001,
+        optimizer=tf.train.AdamOptimizer,
         conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
