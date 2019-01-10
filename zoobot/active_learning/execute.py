@@ -128,14 +128,10 @@ class ActiveConfig():
         initial_db_loc = self.db_loc
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
         epochs = 200
+        learning_rate = 0.001
         
         iterations_record = []
         while iteration_n < self.n_iterations:
-
-            if iteration_n == 0:
-                learning_rate = 0.001
-            else:
-                learning_rate = 0.000000000001  # experiment with tiny learning rate
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -160,7 +156,7 @@ class ActiveConfig():
 
             iteration_n += 1
             initial_db_loc = iteration.db_loc
-            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
+            # initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
             # TODO only if warm_start
             # initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
             initial_estimator_ckpt = iteration.estimators_dir  # TODO rename
