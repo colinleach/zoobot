@@ -254,6 +254,16 @@ def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_l
     fig.savefig(save_loc)
 
 
+def verify_tfrecord_matches_catalog(tfrecord_loc, catalog):
+    feature_spec = read_tfrecord.id_label_feature_spec()
+    subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec)
+    for subject in subjects:
+        id_str = subject['id_str'].decode('utf-8')
+        label = subject['label']
+        matching_catalog_labels = catalog[catalog['subject_id'].astype(str) == id_str]['smooth-or-featured_smooth_fraction'].values
+        assert len(matching_catalog_labels) == 1
+        assert np.allclose(matching_catalog_labels, np.ones_like(matching_catalog_labels) * label)
+
 
 if __name__ == '__main__':
 
