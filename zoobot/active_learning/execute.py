@@ -135,7 +135,7 @@ class ActiveConfig():
             if iteration_n == 0:
                 learning_rate = 0.001
             else:
-                learning_rate = 0.001  # leave alone for now
+                learning_rate = 0.000000000001  # experiment with tiny learning rate
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
