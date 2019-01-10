@@ -135,7 +135,7 @@ class ActiveConfig():
             if iteration_n == 0:
                 learning_rate = 0.001
             else:
-                learning_rate = 0.001
+                learning_rate = 0.001  # leave alone for now
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -151,8 +151,8 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
-                epochs=epochs,
-                initial_estimator_ckpt=initial_estimator_ckpt)
+                initial_estimator_ckpt=None,
+                epochs=epochs)  # WARNING will not warm start
 
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration_n))
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         subjects_per_iter = 28
         shards_per_iter = 1
     else:
-        n_iterations = 2  # 1.5h per iteration
+        n_iterations = 2  # changed, one train and one finetune
         subjects_per_iter = 1024
         shards_per_iter = 4
 
