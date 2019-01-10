@@ -240,7 +240,7 @@ if __name__ == '__main__':
     else:
         n_iterations = 2  # changed, one train and one finetune
         subjects_per_iter = 1024
-        shards_per_iter = 4
+        shards_per_iter = 2  # needs to be <= total prediction shards
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
