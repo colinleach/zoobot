@@ -134,6 +134,10 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
+            initial_train_tfrecords = [
+                'data/shards/latest_shards/initial_train.tfrecord',
+                'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
+            ]
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
