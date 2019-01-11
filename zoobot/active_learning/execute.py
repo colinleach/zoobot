@@ -148,7 +148,7 @@ class ActiveConfig():
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
                 # initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
-                initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators'
+                initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
                 epochs=epochs)  
 
             # train as usual, with saved_model being placed in estimator_dir
