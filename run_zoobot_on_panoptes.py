@@ -33,8 +33,12 @@ if __name__ == '__main__':
     final_size = 64
 
     if ec2:
-        train_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
-        test_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        # train_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
+        # test_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
+        # update for GZ2
+        train_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split_gz2/gz2_smooth_frac_128_{}_lfloat_train.tfrecord'.format(initial_size)
+        test_tfrecord_loc = '/home/ubuntu/root/zoobot/data/basic_split_gz2/gz2_smooth_frac_128{}_lfloat_test.tfrecord'.format(initial_size)
+
     else:
         train_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)
         test_tfrecord_loc = '/data/repos/zoobot/data/basic_split/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)
