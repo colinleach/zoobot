@@ -21,7 +21,7 @@ def get_run_config(params, log_dir, train_records, learning_rate, epochs):
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         train_steps=30,
         eval_steps=5,
-        batch_size=128,
+        batch_size=256,  # increased from 128 for less training noise
         min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
         max_sadness=5.,  # to tweak
