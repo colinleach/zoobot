@@ -116,11 +116,11 @@ class Iteration():
 
 
     def run(self):
-        # subject_ids, labels = get_labels()
-        # if len(subject_ids) > 0:
-        #     active_learning.add_labels_to_db(subject_ids, labels, self.db)
-        #     self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
-        #     active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
+        subject_ids, labels = get_labels()
+        if len(subject_ids) > 0:
+            active_learning.add_labels_to_db(subject_ids, labels, self.db)
+            self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
+            active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
 
         # callable should expect 
         # - log dir to train models in
@@ -130,13 +130,13 @@ class Iteration():
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
-        # subjects, samples = self.make_predictions(self.prediction_shards, self.initial_size)
+        subjects, samples = self.make_predictions(self.prediction_shards, self.initial_size)
 
-        # acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
-        # self.record_state(subjects, samples, acquisitions)
+        acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
+        self.record_state(subjects, samples, acquisitions)
 
-        # _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
-        # request_labels(top_acquisition_ids)
+        _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
+        request_labels(top_acquisition_ids)
 
 
     def record_train_records(self):

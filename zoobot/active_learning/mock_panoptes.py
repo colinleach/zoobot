@@ -8,6 +8,9 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 DIR_OF_THIS_FILE = os.path.dirname(os.path.realpath(__file__))
 SUBJECTS_REQUESTED = os.path.join(DIR_OF_THIS_FILE, 'subjects_requested.json')
+# delete before each script execution, don't cross-contaminate
+if os.path.isfile(SUBJECTS_REQUESTED):
+    os.remove(SUBJECTS_REQUESTED)
 
 
 def request_labels(subject_ids):
