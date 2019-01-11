@@ -61,9 +61,9 @@ if __name__ == '__main__':
         channels=channels,
         label_col='label',
         epochs=1500,  # for debugging, min is 1
-        train_steps=30,
+        train_steps=15,
         eval_steps=3,
-        batch_size=128,
+        batch_size=256,
         min_epochs=1000,  # don't stop early automatically, wait for me
         early_stopping_window=10,
         max_sadness=4.,
