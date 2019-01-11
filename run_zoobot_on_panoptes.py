@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
 
     # run_name = 'bayesian_panoptes_featured_si{}_sf{}_lfloat_filters'.format(initial_size, final_size)
-    run_name = 'latest_basic_run'
+    run_name = 'latest_basic_run_gz2'
 
     log_loc = run_name + '.log'
     logging.basicConfig(
