@@ -117,7 +117,7 @@ if __name__ == '__main__':
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
-        learning_rate=0.1,
+        learning_rate=0.001,
         optimizer=tf.train.AdamOptimizer,
         conv1_filters=32,
         conv1_kernel=3,
