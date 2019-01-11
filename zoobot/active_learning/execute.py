@@ -127,17 +127,22 @@ class ActiveConfig():
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
         initial_train_tfrecords=[self.shards.train_tfrecord_loc]
-        epochs = 200
+        epochs = 250
         learning_rate = 0.001
         
         iterations_record = []
         while iteration_n < self.n_iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
-            initial_train_tfrecords = [
-                'data/shards/latest_shards/initial_train.tfrecord',
-                'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
-            ]
+            if iteration_n == 0:
+                initial_train_tfrecords = [
+                    'data/shards/latest_shards/initial_train.tfrecord'
+                ]
+            else:
+                initial_train_tfrecords = [
+                    'data/shards/latest_shards/initial_train.tfrecord',
+                    'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
+                ]
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
@@ -151,9 +156,9 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
-                # initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
-                initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
-                epochs=epochs)  
+                initial_estimator_ckpt=None,  # will not warm start, may or may not break
+                # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
+                epochs=epochs)
 
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration_n))
@@ -163,7 +168,7 @@ class ActiveConfig():
             initial_db_loc = iteration.db_loc
             # initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
             # TODO only if warm_start
-            # initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
+            initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
             initial_estimator_ckpt = iteration.estimators_dir  # TODO rename
             iterations_record.append(iteration)
 
