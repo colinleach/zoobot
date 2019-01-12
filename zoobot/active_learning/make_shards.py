@@ -31,8 +31,8 @@ class ShardConfig():
     def __init__(
         self,
         shard_dir,  # to hold a new folder, named after the shard config 
-        inital_size=128,
-        final_size=64,  # TODO consider refactoring this into execute.py
+        inital_size=256,
+        final_size=128,  # TODO consider refactoring this into execute.py
         shard_size=4096,
         **overflow_args  # TODO review removing this
         ):
@@ -147,8 +147,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('--shard_dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+    # parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
+    #                 help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
     log_loc = 'make_shards_{}.log'.format(time.time())
@@ -159,18 +159,51 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    # in memory for now, but will be saved to csv
-    catalog = pd.read_csv(args.catalog_loc)
+
+    # needs update
+    columns_to_save = [
+        't01_smooth_or_features_a01_smooth_count',
+        't01_smooth_or_features_a01_smooth_weighted_fraction',  # annoyingly, I only saved the weighted fractions. Should be quite similar, I hope.
+        't01_smooth_or_features_a02_features_or_disk_count',
+        't01_smooth_or_features_a03_star_or_artifact_count',
+        'id',
+        'ra',
+        'dec'
+    ]
+
+    
+    catalog_loc = '/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv'
+
+    # only exists if zoobot/get_catalogs/gz2 instructions have been followed
+    catalog = pd.read_csv(catalog_loc,
+                        usecols=columns_to_save + ['png_loc', 'png_ready'],
+                        nrows=None)
+
+
+    # # in memory for now, but will be saved to csv
+    # catalog = pd.read_csv(args.catalog_loc, usecols=columns_to_save)
+
+
     # 40 votes required, for accurate binomial statistics
-    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
-    catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
+    # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
+    # catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
+
+    # previous catalog didn't include total classifications/votes, so we'll need to work around that for now
+    catalog['smooth-or-featured_total-votes'] = catalog['t01_smooth_or_features_a01_smooth_count'] + catalog['t01_smooth_or_features_a02_features_or_disk_count'] + catalog['t01_smooth_or_features_a03_star_or_artifact_count']
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # >36 votes required, gives low count uncertainty
+
+    # for consistency
+    catalog['id_str'] = catalog['id'].astype(str)
+
+    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_weighted_fraction']
+
+    # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
     # temporary hacks for mocking panoptes
     # save catalog for mock_panoptes.py to return (now added to git)
     # TODO a bit hacky, as only coincidentally the same
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
-    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
+    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2.csv'), index=False)
 
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
@@ -179,12 +212,16 @@ if __name__ == '__main__':
     # verify that can add these images to training pool without breaking everything!
     # may need to disable interleave, and instead make dataset of joined tfrecords (starting with new ones?)
 
+    print(len(catalog))
+    exit(0)
+
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
-    pool_size = 5*1024
+    # pool_size = 5*1024
+    labelled_size = 30000
 
-    labelled_catalog = catalog[:-pool_size]  # for training and eval. Could do basic split on these!
-    unlabelled_catalog = catalog[-pool_size:]  # for pool
+    labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
+    unlabelled_catalog = catalog[labelled_size:]  # for pool
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
