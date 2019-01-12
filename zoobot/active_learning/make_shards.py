@@ -218,10 +218,10 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # pool_size = 5*1024
-    labelled_size = 25000
+    labelled_size = 5000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
-    unlabelled_catalog = catalog[labelled_size:]  # for pool
+    unlabelled_catalog = catalog[labelled_size:10000]  # for pool
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
