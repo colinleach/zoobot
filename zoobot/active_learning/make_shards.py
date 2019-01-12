@@ -97,7 +97,8 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=train_test_fraction)
+            train_test_fraction=train_test_fraction,
+            source='png')
 
         assert self.ready()
 
