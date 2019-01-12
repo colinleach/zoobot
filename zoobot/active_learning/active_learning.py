@@ -45,7 +45,7 @@ def create_db(catalog, db_loc):
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label FLOAT DEFAULT NULL,
-            fits_loc STRING)
+            png_loc STRING)
         '''
     )
     db.commit()
@@ -81,11 +81,11 @@ def add_catalog_to_db(df, db):
         db (sqlite3.Connection): database with `catalog` table to record df id_col and fits_loc
     """
 
-    catalog_entries = list(df[['id_str', 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
+    catalog_entries = list(df[['id_str', 'png_loc']].itertuples(index=False, name='CatalogEntry'))
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc) VALUES(?,NULL,?)''',
+        INSERT INTO catalog(id_str, label, png_loc) VALUES(?,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -265,7 +265,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, fits_loc FROM catalog
+            SELECT id_str, label, png_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -281,7 +281,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': float(subject[1]),
-            'fits_loc': str(subject[2])
+            'png_loc': str(subject[2])
         })
 
     top_subject_df = pd.DataFrame(data=rows)
@@ -291,7 +291,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         tfrecord_loc,
         size,
         columns_to_save=['id_str', 'label'],
-        source='fits')
+        source='png')
 
 
 def get_latest_checkpoint_dir(base_dir):
