@@ -212,8 +212,8 @@ if __name__ == '__main__':
     # verify that can add these images to training pool without breaking everything!
     # may need to disable interleave, and instead make dataset of joined tfrecords (starting with new ones?)
 
-    print(len(catalog))
-    exit(0)
+    # print(len(catalog))
+    # exit(0)
 
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
