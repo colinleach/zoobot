@@ -114,7 +114,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
 
     for shard_n, df_shard in enumerate(df_shards):
         save_loc = os.path.join(save_dir, 's{}_shard_{}.tfrecord'.format(img_size, shard_n))
-        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
+        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='png')
         add_tfrecord_to_db(save_loc, db, df_shard)
 
 
