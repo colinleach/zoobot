@@ -281,10 +281,12 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': float(subject[1]),
-            'png_loc': str(subject[2])
+            'png_loc': get_relative_loc(str(subject[2]))
         })
 
     top_subject_df = pd.DataFrame(data=rows)
+    # tweak for correct path
+
     assert len(top_subject_df) == len(subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
         top_subject_df,
@@ -292,6 +294,14 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         size,
         columns_to_save=['id_str', 'label'],
         source='png')
+
+
+def get_relative_loc(loc):
+    fname = loc.apply(lambda x: os.path.basename(loc))
+    subdir = os.path.basename(os.path.dirname(loc))
+    print(subdir, fname)
+    return os.path.join('data/gz2_shards/gz2_png', subdir, fname)
+
 
 
 def get_latest_checkpoint_dir(base_dir):
