@@ -249,6 +249,8 @@ if __name__ == '__main__':
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
+    new_shard_dir = 'data/gz2_shards'
+    shard_config.shard_dir = new_shard_dir
     attrs = [
         'train_tfrecord_loc',
         'eval_tfrecord_loc',
@@ -258,7 +260,7 @@ if __name__ == '__main__':
         'db_loc']
     for attr in attrs:
         old_loc = getattr(shard_config, attr)
-        new_loc = os.path.join('data/gz2_shards', os.path.split(old_loc)[-1])
+        new_loc = os.path.join(new_shard_dir, os.path.split(old_loc)[-1])
         print(attr, new_loc)
         setattr(shard_config, attr, new_loc)
     
