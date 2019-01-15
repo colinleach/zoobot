@@ -121,7 +121,8 @@ class ActiveConfig():
 
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
-        shards_iterable = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
+        all_shard_locs = [os.path.join(self.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
+        shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
 
         iteration_n = 0
         # initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
