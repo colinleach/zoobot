@@ -300,7 +300,7 @@ def get_relative_loc(loc):
     fname = os.path.basename(loc)
     subdir = os.path.basename(os.path.dirname(loc))
     print(subdir, fname)
-    return os.path.join('data/gz2_shards/gz2_png', subdir, fname)
+    return os.path.join('data/gz2_shards/gz2/png', subdir, fname)
 
 
 
