@@ -185,7 +185,7 @@ def get_train_callable(params):
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate, epochs)
         if params.test: # overrides warm_start
-            run_config.epochs = 5  # minimal training, for speed
+            run_config.epochs = 2  # minimal training, for speed
 
         # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
