@@ -126,7 +126,7 @@ class ActiveConfig():
         iteration_n = 0
         # initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords= [self.shards.train_tfrecord_loc]
+        initial_train_tfrecords = [self.shards.train_tfrecord_loc]
         epochs = 250
         learning_rate = 0.001
         
