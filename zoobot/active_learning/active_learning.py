@@ -297,7 +297,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
 
 
 def get_relative_loc(loc):
-    fname = loc.apply(lambda x: os.path.basename(loc))
+    fname = os.path.basename(loc)
     subdir = os.path.basename(os.path.dirname(loc))
     print(subdir, fname)
     return os.path.join('data/gz2_shards/gz2_png', subdir, fname)
