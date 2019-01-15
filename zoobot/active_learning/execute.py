@@ -121,13 +121,14 @@ class ActiveConfig():
 
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
-        shards_iterable = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
+        all_shard_locs = [os.path.join(self.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
+        shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
 
         iteration_n = 0
         # initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords = [self.shards.train_tfrecord_loc]
-        epochs = 250
+        initial_train_tfrecords= [self.shards.train_tfrecord_loc]
+        epochs = 500
         learning_rate = 0.001
         
         iterations_record = []
@@ -184,7 +185,7 @@ def get_train_callable(params):
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate, epochs)
         if params.test: # overrides warm_start
-            run_config.epochs = 5  # minimal training, for speed
+            run_config.epochs = 2  # minimal training, for speed
 
         # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
@@ -241,14 +242,28 @@ if __name__ == '__main__':
     if args.test:  # do a brief run only
         n_iterations = 2
         subjects_per_iter = 28
-        shards_per_iter = 1
+        shards_per_iter = 2
     else:
-        n_iterations = 2  # changed, one train and one finetune
-        subjects_per_iter = 1024
-        shards_per_iter = 2  # needs to be <= total prediction shards
+        n_iterations = 10
+        subjects_per_iter = 4096
+        shards_per_iter = 25  # needs to be <= total prediction shards
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
+    new_shard_dir = 'data/gz2_shards'
+    shard_config.shard_dir = new_shard_dir
+    attrs = [
+        'train_tfrecord_loc',
+        'eval_tfrecord_loc',
+        'labelled_catalog_loc',
+        'unlabelled_catalog_loc',
+        'config_save_loc',
+        'db_loc']
+    for attr in attrs:
+        old_loc = getattr(shard_config, attr)
+        new_loc = os.path.join(new_shard_dir, os.path.split(old_loc)[-1])
+        print(attr, new_loc)
+        setattr(shard_config, attr, new_loc)
     
     active_config = ActiveConfig(
         shard_config, 
@@ -273,7 +288,7 @@ if __name__ == '__main__':
     if args.test:
         n_samples = 2
     else:
-        n_samples = 20
+        n_samples = 15
 
     ###
     iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
@@ -285,4 +300,4 @@ if __name__ == '__main__':
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.initial_size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

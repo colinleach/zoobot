@@ -28,7 +28,7 @@ def get_labels():
         subject_ids = json.load(f)
     os.remove(SUBJECTS_REQUESTED)
 
-    oracle_loc = os.path.join(DIR_OF_THIS_FILE, 'oracle.csv')
+    oracle_loc = os.path.join(DIR_OF_THIS_FILE, 'oracle_gz2.csv')
     known_catalog = pd.read_csv(oracle_loc, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': float})
     # return labels from the oracle, mimicking live GZ classifications
     labels = []
