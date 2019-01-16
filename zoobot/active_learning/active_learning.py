@@ -144,7 +144,7 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
 def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=10000):
     # batch this up
-    records_per_batch = 4
+    records_per_batch = 2
     min_tfrecord = 0
     images = []
     id_str_bytes = []
@@ -158,23 +158,25 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
         )
         with tf.Session() as sess:
             batch_images, batch_id_str_bytes = sess.run([batch_images, batch_id_str])
+            if len(batch_images) == max_images:
+                logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
         # concatenate
         images.extend(batch_images)
         id_str_bytes.extend(batch_id_str_bytes)
         min_tfrecord += records_per_batch
-    # if len(images) == max_images:
-    #     logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
     # tfrecord will have encoded to bytes, need to decode
-    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
-    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
+    subjects = ({'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes))
+    del images  # free memory  
+    # logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
     # exclude subjects with labels in db
-    unlabelled_subjects = [subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db)]
-    if len(subjects) == len(unlabelled_subjects):
-        logging.warning('No labelled subjects found - hopefully, these are new shards...')
-    if len(unlabelled_subjects) == 0:
-        raise ValueError('No unlabelled subjects found - this is likely a bug')
+    unlabelled_subjects = (subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db))
+    # if len(subjects) == len(unlabelled_subjects):
+        # logging.warning('No labelled subjects found - hopefully, these are new shards...')
+    # if len(unlabelled_subjects) == 0:
+        # raise ValueError('No unlabelled subjects found - this is likely a bug')
+    del subjects  # free memory
     # make predictions on only those subjects
-    unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
+    unlabelled_subject_data = np.array((subject['matrix'] for subject in unlabelled_subjects))
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
     return unlabelled_subjects, samples
 
@@ -244,7 +246,6 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
-    logging.debug(matching_subjects)
     return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
 
