@@ -150,14 +150,14 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     id_str_bytes = []
     while min_tfrecord < len(tfrecord_locs):
         tfrecord_slice = slice(min_tfrecord, min_tfrecord + records_per_batch)
-        images, _, id_str = input_utils.predict_input_func(
+        batch_images, _, batch_id_str = input_utils.predict_input_func(
             tfrecord_locs[tfrecord_slice],
             n_galaxies=max_images, 
             initial_size=initial_size, 
             mode='id_str'
         )
         with tf.Session() as sess:
-            batch_images, batch_id_str_bytes = sess.run([images, id_str])
+            batch_images, batch_id_str_bytes = sess.run([batch_images, batch_id_str])
         # concatenate
         images.extend(batch_images)
         id_str_bytes.extend(batch_id_str_bytes)
