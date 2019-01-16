@@ -154,8 +154,10 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
             tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
             model, db, n_samples, initial_size, max_images=10000)
        
-        all_unlabelled_subjects.extend(list(unlabelled_subjects))
+        all_unlabelled_subjects.extend(unlabelled_subjects)
         all_samples.append(samples)
+
+        assert len(unlabelled_subjects) != 0
 
         min_tfrecord += records_per_batch
 
@@ -185,7 +187,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
         # logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
         # exclude subjects with labels in db
         logging.debug('Filtering for unlabelled subjects')
-        unlabelled_subjects = (subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db))
+        unlabelled_subjects = [subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db)]
         del subjects  # free memory
         # if len(subjects) == len(unlabelled_subjects):
             # logging.warning('No labelled subjects found - hopefully, these are new shards...')
