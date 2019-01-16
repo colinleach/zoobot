@@ -8,7 +8,7 @@ import tensorflow as tf
 # from tfrecord.create_tfrecord import image_to_tfrecord
 
 
-def load_dataset(example_loc, feature_spec, num_parallel_calls=1):
+def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
     dataset = tf.data.TFRecordDataset(example_loc)
@@ -17,6 +17,9 @@ def load_dataset(example_loc, feature_spec, num_parallel_calls=1):
         logging.debug('Loading single tfrecord')
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
+        assert isinstance(example_loc, list)
+        cycle_length = len(example_loc)
+        num_parallel_calls = min(num_parallel_calls, cycle_length)
         # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
          # read from all tfrecords in parallel, with block_length example from each record per cycle
         filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
