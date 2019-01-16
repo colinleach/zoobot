@@ -242,7 +242,7 @@ if __name__ == '__main__':
     if args.test:  # do a brief run only
         n_iterations = 2
         subjects_per_iter = 28
-        shards_per_iter = 6  # temp
+        shards_per_iter = 2  # temp
     else:
         n_iterations = 8
         subjects_per_iter = 4096
