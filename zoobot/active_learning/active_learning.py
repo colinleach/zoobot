@@ -142,7 +142,7 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     db.commit()
 
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
-def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=10000):
+def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=20000):
     # batch this up
     records_per_batch = 4  # best to be >= num. of CPU, for parallel reading
     min_tfrecord = 0
