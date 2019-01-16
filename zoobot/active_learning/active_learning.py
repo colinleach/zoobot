@@ -154,17 +154,16 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
             tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
             model, db, n_samples, initial_size, max_images=10000)
        
-        all_unlabelled_subjects.append(unlabelled_subjects)
+        all_unlabelled_subjects.extend(list(unlabelled_subjects))
         all_samples.append(samples)
 
         min_tfrecord += records_per_batch
 
-    all_subjects_list = list(itertools.chain.from_iterable(all_unlabelled_subjects))
     all_samples_arr = np.concatenate(all_samples, axis=0)
     logging.debug('Finished predictions {} on subjects {}'.format(
         all_samples_arr.shape, len(all_unlabelled_subjects))
     )
-    return all_subjects_list, all_samples_arr
+    return all_unlabelled_subjects, all_samples_arr
 
 
 def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_samples, initial_size, max_images=10000):

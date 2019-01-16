@@ -102,6 +102,7 @@ class Iteration():
         # subjects should all be unique, otherwise there's a bug
         id_strs = [subject['id_str'] for subject in unlabelled_subjects]
         assert len(id_strs) == len(set(id_strs)) 
+        assert isinstance(unlabelled_subjects, list)
         return unlabelled_subjects, samples
 
 
