@@ -179,7 +179,9 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     del subjects  # free memory
     # make predictions on only those subjects
     logging.debug('Extracting images from unlabelled subjects')
-    unlabelled_subject_data = np.array((subject['matrix'] for subject in unlabelled_subjects))
+    # need to construct array from list: required to have known length
+    # could work around if we knew how many unlabelled subjects, but we don't.
+    unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
     return unlabelled_subjects, samples
 
