@@ -146,8 +146,9 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     # batch this up
     records_per_batch = 2  # best to be >= num. of CPU, for parallel reading. But at 256px, only fits 2 records.
     min_tfrecord = 0
-    images = []
-    id_str_bytes = []
+    all_unlabelled_subjects = []
+    all_samples = []
+
     while min_tfrecord < len(tfrecord_locs):
         tfrecord_slice = slice(min_tfrecord, min_tfrecord + records_per_batch)
         batch_images, _, batch_id_str = input_utils.predict_input_func(
@@ -157,34 +158,35 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
             mode='id_str'
         )
         with tf.Session() as sess:
-            batch_images, batch_id_str_bytes = sess.run([batch_images, batch_id_str])
-            if len(batch_images) == max_images:
+            images, id_str_bytes = sess.run([batch_images, batch_id_str])
+            if len(images) == max_images:
                 logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
             sess.close()
-        # concatenate
-        images.extend(batch_images)
-        id_str_bytes.extend(batch_id_str_bytes)
+
+            # tfrecord will have encoded to bytes, need to decode
+            logging.debug('Constructing subjects from loaded data')
+            subjects = ({'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes))
+            del images  # free memory  
+            # logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
+            # exclude subjects with labels in db
+            logging.debug('Filtering for unlabelled subjects')
+            unlabelled_subjects = (subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db))
+            # if len(subjects) == len(unlabelled_subjects):
+                # logging.warning('No labelled subjects found - hopefully, these are new shards...')
+            # if len(unlabelled_subjects) == 0:
+                # raise ValueError('No unlabelled subjects found - this is likely a bug')
+            del subjects  # free memory
+            # make predictions on only those subjects
+            logging.debug('Extracting images from unlabelled subjects')
+            # need to construct array from list: required to have known length
+            unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
+            samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
+
+            all_unlabelled_subjects.extend(unlabelled_subjects)
+            all_samples.extend(samples)
+
         min_tfrecord += records_per_batch
-    # tfrecord will have encoded to bytes, need to decode
-    logging.debug('Constructing subjects from loaded data')
-    subjects = ({'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes))
-    del images  # free memory  
-    # logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
-    # exclude subjects with labels in db
-    logging.debug('Filtering for unlabelled subjects')
-    unlabelled_subjects = (subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db))
-    # if len(subjects) == len(unlabelled_subjects):
-        # logging.warning('No labelled subjects found - hopefully, these are new shards...')
-    # if len(unlabelled_subjects) == 0:
-        # raise ValueError('No unlabelled subjects found - this is likely a bug')
-    del subjects  # free memory
-    # make predictions on only those subjects
-    logging.debug('Extracting images from unlabelled subjects')
-    # need to construct array from list: required to have known length
-    # could work around if we knew how many unlabelled subjects, but we don't.
-    unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
-    samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
-    return unlabelled_subjects, samples
+        return all_unlabelled_subjects, np.concatenate(all_samples)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 
