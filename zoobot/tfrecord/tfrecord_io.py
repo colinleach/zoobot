@@ -27,7 +27,7 @@ def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
         return filenames_dataset.interleave(
             lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
             cycle_length=len(example_loc), 
-            block_length=16,
+            block_length=64,
             num_parallel_calls=num_parallel_calls)
 
 

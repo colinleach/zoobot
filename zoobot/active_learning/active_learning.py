@@ -144,7 +144,7 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
 def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=20000):
     # batch this up
-    records_per_batch = 4  # best to be >= num. of CPU, for parallel reading
+    records_per_batch = 2  # best to be >= num. of CPU, for parallel reading. But at 256px, only fits 2 records.
     min_tfrecord = 0
     images = []
     id_str_bytes = []
