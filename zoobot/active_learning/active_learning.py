@@ -150,18 +150,29 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     all_samples = []
 
     while min_tfrecord < len(tfrecord_locs):
-        tfrecord_slice = slice(min_tfrecord, min_tfrecord + records_per_batch)
+        unlabelled_subjects, samples = make_predictions_on_tfrecord_batch(
+            tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
+            model, db, n_samples, initial_size, max_images=10000)
+       
+        all_unlabelled_subjects.extend(unlabelled_subjects)
+        all_samples.extend(samples)
+
+        min_tfrecord += records_per_batch
+
+    return all_unlabelled_subjects, np.concatenate(all_samples)
+
+
+def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_samples, initial_size, max_images=10000):
         batch_images, _, batch_id_str = input_utils.predict_input_func(
-            tfrecord_locs[tfrecord_slice],
-            n_galaxies=max_images, 
-            initial_size=initial_size, 
-            mode='id_str'
-        )
+                    tfrecords_batch_locs,
+                    n_galaxies=max_images, 
+                    initial_size=initial_size, 
+                    mode='id_str'
+                )
         with tf.Session() as sess:
             images, id_str_bytes = sess.run([batch_images, batch_id_str])
             if len(images) == max_images:
                 logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
-            sess.close()
 
             # tfrecord will have encoded to bytes, need to decode
             logging.debug('Constructing subjects from loaded data')
@@ -181,12 +192,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
             # need to construct array from list: required to have known length
             unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
             samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
-
-            all_unlabelled_subjects.extend(unlabelled_subjects)
-            all_samples.extend(samples)
-
-        min_tfrecord += records_per_batch
-        return all_unlabelled_subjects, np.concatenate(all_samples)
+            return unlabelled_subjects, samples
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 
