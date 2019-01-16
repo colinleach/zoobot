@@ -146,24 +146,25 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_si
     # batch this up
     records_per_batch = 2  # best to be >= num. of CPU, for parallel reading. But at 256px, only fits 2 records.
     min_tfrecord = 0
-    all_unlabelled_subjects = []
-    all_samples = []
+    all_unlabelled_subjects = []  # list of generators for unlabelled subjects
+    all_samples = []  # list of np arrays of samples
 
     while min_tfrecord < len(tfrecord_locs):
         unlabelled_subjects, samples = make_predictions_on_tfrecord_batch(
             tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
             model, db, n_samples, initial_size, max_images=10000)
        
-        all_unlabelled_subjects.extend(unlabelled_subjects)
-        all_samples.extend(samples)
+        all_unlabelled_subjects.append(unlabelled_subjects)
+        all_samples.append(samples)
 
         min_tfrecord += records_per_batch
 
+    all_subjects_list = list(itertools.chain.from_iterable(all_unlabelled_subjects))
     all_samples_arr = np.concatenate(all_samples, axis=0)
     logging.debug('Finished predictions {} on subjects {}'.format(
         all_samples_arr.shape, len(all_unlabelled_subjects))
     )
-    return all_unlabelled_subjects, all_samples_arr
+    return all_subjects_list, all_samples_arr
 
 
 def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_samples, initial_size, max_images=10000):

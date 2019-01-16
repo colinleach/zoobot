@@ -134,7 +134,7 @@ class Iteration():
 
         acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
         self.record_state(subjects, samples, acquisitions)
-        logging.debug(len(acquisitions), len(subjects), len(samples))
+        logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
         request_labels(top_acquisition_ids)
