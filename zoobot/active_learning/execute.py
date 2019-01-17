@@ -130,8 +130,8 @@ class ActiveConfig():
         # initial_train_tfrecords= [self.shards.train_tfrecord_loc]
 
         iteration_n = 1
-        initial_db_loc = 'data/runs/al_baseline/iteration_0/iteration.db'
-        initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/runs/al_baseline/acquired_from_0th_iter.tfrecord']
+        initial_db_loc = 'data/runs/iteration_0th_only.db'
+        initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/runs/acquired_from_0th_iter.tfrecord']
 
         epochs = 650
         learning_rate = 0.001
