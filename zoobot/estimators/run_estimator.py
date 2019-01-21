@@ -27,7 +27,8 @@ class RunEstimatorConfig():
             max_sadness=4.,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
-            warm_start=True
+            warm_start=True,
+            warm_start_settings=None
     ):  # TODO refactor for consistent order
         self.initial_size = initial_size
         self.final_size=final_size
@@ -39,13 +40,14 @@ class RunEstimatorConfig():
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
-        self.warm_start=warm_start
+        self.warm_start = warm_start
         self.max_sadness = max_sadness
         self.early_stopping_window = early_stopping_window
         self.min_epochs = min_epochs
         self.train_config = None
         self.eval_config = None
         self.model = None
+        self.warm_start_settings = warm_start_settings
 
     
     def assemble(self, train_config, eval_config, model):
@@ -78,12 +80,6 @@ def train_input(input_config):
 def eval_input(input_config):
     return input_utils.get_input(config=input_config)
 
-# temporary
-# def get_latest_checkpoint_dir(base_dir):
-#         saved_models = os.listdir(base_dir)  # subfolders
-#         saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
-#         return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
-    
 
 def run_estimator(config):
     """
@@ -101,63 +97,10 @@ def run_estimator(config):
         if os.path.exists(config.log_dir):
             shutil.rmtree(config.log_dir)
 
-    '''
-    initial problem: checkpointing was not frequent enough (steps) for trained model to be saved
-    hence, loading model from 'latest' checkpoint always started from scratch
-    resolution - run for longer or train for more steps
-
-    current problem: 
-    initial 'fresh' model trains fine
-    model loaded from checkpoint via model_dir = config.log_dir steps do not increment
-    log no longer shows training results: loss = x, steps = y. Only eval results.
-    tensorboard similarly shows new eval results (at same step), but no new train results
-    inference: training appears to be either disabled or blocked after loading checkpoint from model dir
-
-    logging updated to record each training call and steps requested
-    steps are used in incrementing mode i.e. do another 20, not max_steps i.e. never do more than 20 total
-    '''
-        
 
     # Create the Estimator
 
     model_fn_partial = partial(bayesian_estimator_funcs.estimator_wrapper)
-    # fast_checkpoint_config = tf.estimator.RunConfig(
-        # save_checkpoints_secs = 20,  # Save checkpoints every 20 secs
-        # keep_checkpoint_max = 10       # Retain the 10 most recent checkpoints.
-        # save_checkpoints_steps = 2  # save a checkpoint every 2 steps
-    # )
-
-
-    '''
-    warm_start_from loc of latest timestamped saved model e.g. log_dir/{latest timestamp}
-    '''
-    # try:
-    #     warm_start_from = get_latest_checkpoint_dir(config.log_dir)
-    # except IndexError:  # no saved checkpoints
-    #     warm_start_from = None
-
-    '''
-    warm_start_from 'checkpoint' file (index-like) in log_dir base directory
-    '''
-    # warm_start_from = os.path.join(config.log_dir, 'checkpoint')
-    # if not os.path.exists(warm_start_from):
-    #     warm_start_from = None
-
-    '''
-    if there's a 'checkpoint' file in config.log_dir,
-    warm start from config.log_dir using ckpt_to_initialize_from arg in WarmStartSettings
-    save model to new_dir
-    otherwise, save (first, implicitly) model to log_dir
-    '''
-    # if os.path.exists(os.path.join(config.log_dir, 'checkpoint')):
-    #     model_dir = os.path.join(config.log_dir, 'new_dir')
-    #     warm_start_from = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=config.log_dir)
-    # else:
-    #     model_dir = config.log_dir
-    #     warm_start_from = None
-    # model_dir = warm_start_from
-
-    # logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
 
     estimator_config = tf.estimator.RunConfig(
         save_checkpoints_secs=5*60,  # Save checkpoints every 5 minutes (but actually much faster)
@@ -168,7 +111,8 @@ def run_estimator(config):
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
         params=config.model,
-        config=estimator_config
+        config=estimator_config,
+        warm_start_from=config.warm_start_settings
     )
 
 
@@ -192,25 +136,6 @@ def run_estimator(config):
             config=config.eval_config  # using eval config setup
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
-
-
-    # def serving_input_receiver_fn_record():
-    #     """
-    #     An input receiver that expects an image array (batch, size, size, channels)
-    #     Doesn't work as tf doesn't allow graph to be set using placeholder for dataset tfrecord loc
-    #     """
-    #     record = tf.placeholder(
-    #         dtype=tf.string,
-    #         shape=(1), 
-    #         name='record')
-    #     receiver_tensors = {'examples': record}  # dict of tensors the predictor will expect
-
-    #     predict_config = copy.copy(config.eval_config)
-    #     predict_config.repeat = False
-    #     predict_config.name = 'predict'
-    #     predict_config.tfrecord_loc = record
-    #     preprocessed_batch_features, batch_labels = input_utils.get_input(predict_config)
-    #     return tf.estimator.export.ServingInputReceiver(preprocessed_batch_features, receiver_tensors)
 
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)
@@ -254,18 +179,6 @@ def run_estimator(config):
 
         logging.info('End epoch {}'.format(epoch_n))
         epoch_n += 1
-
-    # logging.info('Making final predictions')
-    # with open('predictions_no_pred_dropout.txt', 'w') as f:
-    #     predictions = estimator.predict(
-    #         predict_input_func,
-    #         hooks=predict_logging
-    #     )
-    #     prediction_rows = list(predictions)
-    #     logging.info('Predictions ({}): '.format(len(prediction_rows)))
-    #     for row in prediction_rows:
-    #         # logging.info(row)
-    #         f.write('{}\n'.format(row))
 
     logging.info('All epochs completed - finishing gracefully')
 
