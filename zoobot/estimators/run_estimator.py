@@ -146,6 +146,8 @@ def run_estimator(config):
 
     while epoch_n < config.epochs:
 
+        logging.info('Beginning epoch {}'.format(epoch_n))
+
         # Train the estimator
         # logging.debug('training {} steps'.format(config.train_batches))
         estimator.train(
