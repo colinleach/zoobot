@@ -110,11 +110,10 @@ def run_estimator(config):
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
-        params=config.model,
-        config=estimator_config
+        params=config.model
+        # config=estimator_config
         # warm_start_from=config.warm_start_settings
     )
-
 
     def serving_input_receiver_fn_image():
         """
