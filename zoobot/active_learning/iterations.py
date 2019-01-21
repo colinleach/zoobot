@@ -34,8 +34,15 @@ class Iteration():
         # shards should be unique, or everything falls apart.
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
+        
         assert isinstance(initial_train_tfrecords, list)
+        try:
+            assert all([os.path.isfile(loc) for loc in initial_db_loc])
+        except AssertionError:
+            logging.critical('Fatal error: missing tfrecords!')
+            logging.critical(initial_train_tfrecords)
         self.initial_train_tfrecords = initial_train_tfrecords  # acquired up to start of iteration
+
         self.acquired_tfrecord = None
         assert callable(train_callable)
         self.train_callable = train_callable

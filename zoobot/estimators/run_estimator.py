@@ -104,15 +104,15 @@ def run_estimator(config):
 
     estimator_config = tf.estimator.RunConfig(
         save_checkpoints_secs=5*60,  # Save checkpoints every 5 minutes (but actually much faster)
-        keep_checkpoint_max=5      # Retain the 5 most recent checkpoints (25 mins)
+        keep_checkpoint_max=5      # Retain the 5 most recent checkpoints
     )
 
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
-        params=config.model
-        # config=estimator_config
-        # warm_start_from=config.warm_start_settings
+        params=config.model,
+        config=estimator_config,
+        warm_start_from=config.warm_start_settings
     )
 
     def serving_input_receiver_fn_image():
