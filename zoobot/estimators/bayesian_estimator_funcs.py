@@ -479,6 +479,7 @@ def binomial_loss(labels, predictions):
     # negative log likelihood
     bin_loss = -( yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon) )
     tf.summary.histogram('bin_loss', bin_loss)
+    tf.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
     return bin_loss
 
 

@@ -27,19 +27,25 @@ def request_labels(subject_ids):
 def get_labels():
     # oracle.csv is created by make_shards.py, contains label and id_str pairs of vote fractions
     if not os.path.isfile(SUBJECTS_REQUESTED):
-        logging.warning('No previous subjects requested at {}'.format(SUBJECTS_REQUESTED))
+        logging.warning(
+            'No previous subjects requested at {}'.format(SUBJECTS_REQUESTED))
         return [], []
 
     with open(SUBJECTS_REQUESTED, 'r') as f:
         subject_ids = json.load(f)
     os.remove(SUBJECTS_REQUESTED)
-    
-    known_catalog = pd.read_csv(ORACLE_LOC, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': float})
+
+    known_catalog = pd.read_csv(
+        ORACLE_LOC,
+        usecols=['id_str', 'label'],
+        dtype={'id_str': str, 'label': float}
+    )
     # return labels from the oracle, mimicking live GZ classifications
     labels = []
     for id_str in subject_ids:
         matching_rows = known_catalog[known_catalog['id_str'] == id_str]
-        assert len(matching_rows) > 0  # throw error if id_str not recognised by oracle
+        # throw error if id_str not recognised by oracle
+        assert len(matching_rows) > 0
         matching_row = matching_rows.iloc[0]
         labels.append(matching_row['label'])
     assert len(subject_ids) == len(labels)
