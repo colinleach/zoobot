@@ -131,8 +131,8 @@ class ActiveConfig():
 
         iteration_n = 1
         initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/run_cache/acquired_from_0th_iter.tfrecord']
-        initial_train_tfrecords = [self.shards.train_tfrecord_loc, self.shards.train_tfrecord_loc]
+        initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
+        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, self.shards.train_tfrecord_loc]
 
         epochs = 650
         learning_rate = 0.001
@@ -140,6 +140,11 @@ class ActiveConfig():
         iterations_record = []
 
         while iteration_n < self.n_iterations:
+
+            try:
+                assert all([os.path.isfile(loc) for loc in initial_db_loc])
+            except AssertionError:
+                logging.critical(initial_train_tfrecords)
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
             # if iteration_n == 0:
