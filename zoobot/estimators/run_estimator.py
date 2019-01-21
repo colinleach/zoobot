@@ -111,8 +111,8 @@ def run_estimator(config):
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
         params=config.model,
-        config=estimator_config,
-        warm_start_from=config.warm_start_settings
+        config=estimator_config
+        # warm_start_from=config.warm_start_settings
     )
 
 

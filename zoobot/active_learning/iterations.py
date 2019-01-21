@@ -127,6 +127,7 @@ class Iteration():
         # - log dir to train models in
         # - list of tfrecord files to train on
         self.record_train_records()
+        logging.info('Saving to {}'.format(self.estimators_dir))
         self.train_callable(self.estimators_dir, self.get_train_records(), self.learning_rate, self.epochs)  # could be docker container to run, save model
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
