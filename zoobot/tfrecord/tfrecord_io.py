@@ -18,17 +18,20 @@ def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
         assert isinstance(example_loc, list)
-        cycle_length = len(example_loc)
-        num_parallel_calls = min(num_parallel_calls, cycle_length)
-        # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
-         # read from all tfrecords in parallel, with block_length example from each record per cycle
-        filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
-        logging.debug('Interleaving tfrecords {} as {}'.format(example_loc, filenames_dataset))
-        return filenames_dataset.interleave(
-            lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
-            cycle_length=len(example_loc), 
-            block_length=64,
-            num_parallel_calls=num_parallel_calls)
+        logging.debug('Loading multiple tfrecords, no interleaving')
+        dataset = tf.data.TFRecordDataset(example_loc)
+        return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
+        # cycle_length = len(example_loc)
+        # num_parallel_calls = min(num_parallel_calls, cycle_length)
+        # # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
+        #  # read from all tfrecords in parallel, with block_length example from each record per cycle
+        # filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
+        # logging.debug('Interleaving tfrecords {} as {}'.format(example_loc, filenames_dataset))
+        # return filenames_dataset.interleave(
+        #     lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
+        #     cycle_length=len(example_loc), 
+        #     block_length=64,
+        #     num_parallel_calls=num_parallel_calls)
 
 
 # TODO convert this to a proper test of dataset readability?
