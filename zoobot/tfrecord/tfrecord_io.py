@@ -11,10 +11,10 @@ import tensorflow as tf
 def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
-    dataset = tf.data.TFRecordDataset(example_loc)
     parse_function = partial(tf.parse_single_example, features=feature_spec)
     if isinstance(example_loc, str):
         logging.debug('Loading single tfrecord')
+        dataset = tf.data.TFRecordDataset(example_loc)
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
         assert isinstance(example_loc, list)
