@@ -477,7 +477,7 @@ def binomial_loss(labels, predictions):
     p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
-    bin_loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon), axis=1)
+    bin_loss = -( yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon) )
     tf.summary.histogram('bin_loss', bin_loss)
     return bin_loss
 
