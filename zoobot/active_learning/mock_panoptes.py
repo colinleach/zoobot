@@ -7,6 +7,11 @@ import pandas as pd
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 DIR_OF_THIS_FILE = os.path.dirname(os.path.realpath(__file__))
+
+# ORACLE_LOC = os.path.join(DIR_OF_THIS_FILE, 'oracle_gz2.csv')
+ORACLE_LOC = 'data/gz2_shards/runs_cache/oracle_gz2.csv'
+assert os.path.isfile(ORACLE_LOC)
+
 SUBJECTS_REQUESTED = os.path.join(DIR_OF_THIS_FILE, 'subjects_requested.json')
 # delete before each script execution, don't cross-contaminate
 if os.path.isfile(SUBJECTS_REQUESTED):
@@ -27,9 +32,8 @@ def get_labels():
     with open(SUBJECTS_REQUESTED, 'r') as f:
         subject_ids = json.load(f)
     os.remove(SUBJECTS_REQUESTED)
-
-    oracle_loc = os.path.join(DIR_OF_THIS_FILE, 'oracle_gz2.csv')
-    known_catalog = pd.read_csv(oracle_loc, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': float})
+    
+    known_catalog = pd.read_csv(ORACLE_LOC, usecols=['id_str', 'label'], dtype={'id_str': str, 'label': float})
     # return labels from the oracle, mimicking live GZ classifications
     labels = []
     for id_str in subject_ids:
