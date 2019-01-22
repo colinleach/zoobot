@@ -37,7 +37,7 @@ class Iteration():
         
         assert isinstance(initial_train_tfrecords, list)
         try:
-            assert all([os.path.isfile(loc) for loc in initial_db_loc])
+            assert all([os.path.isfile(loc) for loc in initial_train_tfrecords])
         except AssertionError:
             logging.critical('Fatal error: missing tfrecords!')
             logging.critical(initial_train_tfrecords)
@@ -64,6 +64,7 @@ class Iteration():
         os.mkdir(self.metrics_dir)
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
+        assert os.path.isfile(initial_db_loc)
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
 
