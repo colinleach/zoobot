@@ -131,7 +131,9 @@ class ActiveConfig():
 
         iteration_n = 1
         initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
+        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
+        initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/30k_random.tfrecord']
+        
 
         epochs = 650
         learning_rate = 0.001
