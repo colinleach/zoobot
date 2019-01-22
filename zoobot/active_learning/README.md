@@ -21,7 +21,7 @@ Below
 
 `catalog_loc=data/panoptes_predictions_selected.csv`
 `fits_dir=data/fits_native`
-`shard_dir=data/shards/latest_shards`
+`shard_dir=data/gz2_shards`
 `baseline_dir=data/runs/al_baseline`
 `run_dir=data/runs/al_mutual`
 `output_dir=results/latest_metrics`
