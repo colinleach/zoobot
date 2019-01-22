@@ -13,11 +13,13 @@ ORACLE_LOC = 'data/gz2_shards/runs_cache/oracle_gz2.csv'
 # ORACLE_LOC = 'this_should_fail'
 # assert os.path.isfile(ORACLE_LOC)
 
-SUBJECTS_REQUESTED = os.path.join(DIR_OF_THIS_FILE, 'subjects_requested.json')
-# delete before each script execution, don't cross-contaminate
-if os.path.isfile(SUBJECTS_REQUESTED):
-    os.remove(SUBJECTS_REQUESTED)
+# SUBJECTS_REQUESTED = os.path.join(DIR_OF_THIS_FILE, 'subjects_requested.json')
+# # delete before each script execution, don't cross-contaminate
+# if os.path.isfile(SUBJECTS_REQUESTED):
+#     os.remove(SUBJECTS_REQUESTED)
 
+
+SUBJECTS_REQUESTED = 'data/gz2_shards/runs_cache/many_random_subjects.json'
 
 def request_labels(subject_ids):
     with open(SUBJECTS_REQUESTED, 'w') as f:
@@ -50,3 +52,10 @@ def get_labels():
         labels.append(matching_row['label'])
     assert len(subject_ids) == len(labels)
     return subject_ids, labels
+
+
+if __name__ == '__main__':
+    # fill out subjects_requested so that we acquire many new random shards
+    unlabelled_catalog = pd.read_csv('data/gz2_shards/unlabelled_catalog.csv')
+    subject_ids = list(unlabelled_catalog.sample(30000)['subject_id'].astype(str))  # id str?
+    request_labels(subject_ids)  # will write to updated loc
