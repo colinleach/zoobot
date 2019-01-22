@@ -35,6 +35,8 @@ def get_labels():
 
     with open(SUBJECTS_REQUESTED, 'r') as f:
         subject_ids = json.load(f)
+    assert isinstance(subject_ids, list)
+    assert len(subject_ids) > 0
     os.remove(SUBJECTS_REQUESTED)
 
     known_catalog = pd.read_csv(
