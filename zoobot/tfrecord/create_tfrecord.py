@@ -94,3 +94,7 @@ def float_to_feature(float_to_save):
 def float_list_to_feature(floats_to_save):
     return tf.train.Feature(
         float_list=tf.train.FloatList(value=floats_to_save))
+        # could be done with tf.train.BytesList, might save a lot of storage space
+        # I think: will be much smaller for pngs (uint8), but exactly the same for fits
+        # could make loading much faster, since am loading the gz thumbnails anyway
+        # see https://medium.com/ymedialabs-innovation/how-to-use-tfrecord-with-datasets-and-iterators-in-tensorflow-with-code-samples-ffee57d298af

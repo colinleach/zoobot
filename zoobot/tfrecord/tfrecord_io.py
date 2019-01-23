@@ -9,6 +9,7 @@ import tensorflow as tf
 
 
 def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
+    # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
     parse_function = partial(tf.parse_single_example, features=feature_spec)
@@ -18,6 +19,8 @@ def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
         assert isinstance(example_loc, list)
+        # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
+        assert all([os.path.isfile(loc) for loc in example_loc])
         logging.debug('Loading multiple tfrecords, no interleaving')
         dataset = tf.data.TFRecordDataset(example_loc)
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
