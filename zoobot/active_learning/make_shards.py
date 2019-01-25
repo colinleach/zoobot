@@ -241,13 +241,13 @@ if __name__ == '__main__':
     # verify that can add thAese images to training pool without breaking everything!
     # may need to disable interleave, and instead make dataset of joined tfrecords (starting with new ones?)
 
-    # print(len(catalog))
-    # exit(0)
-
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
-    # pool_size = 5*1024
+    # real mode:
     labelled_size = 25000
+    # test mode:
+    # catalog = catalog[:10000]
+    # labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
     unlabelled_catalog = catalog[labelled_size:]  # for pool
