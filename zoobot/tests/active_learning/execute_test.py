@@ -16,15 +16,17 @@ def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord
     # TODO need to test we're using the estimators we expect, needs refactoring first
     # catalog_random_images is a required arg because the fits files must actually exist
 
+    # retrieve these shard locs for use in .run()
     mocker.patch('zoobot.active_learning.execute.active_learning.get_all_shard_locs')
     execute.active_learning.get_all_shard_locs.return_value = ['shard_loc_a', 'shard_loc_b', 'shard_loc_c', 'shard_loc_d']
 
-    # no return value - we can now use execute.iterations.Iteration as a mocked object
+    # mock out Iteration
     mocker.patch('zoobot.active_learning.execute.iterations.Iteration', autospec=True)
     mock_iteration = execute.iterations.Iteration.return_value  # shorthand reference for the instantiated class
+    # set db_loc and estimator_dirs attributes
     type(mock_iteration).db_loc = mocker.PropertyMock(side_effect=['first_db_loc', 'second_db_loc', 'third_db_loc'])  
     type(mock_iteration).estimators_dir = mocker.PropertyMock(side_effect=['first_est_dir', 'second_est_dir', 'third_est_dir'])  
-
+    # set train_records
     mock_iteration.get_train_records.side_effect = ['first_records', 'second_records', 'third_records']
 
     # TODO mock iterations as a whole, piecemeal moved to iterations
@@ -43,19 +45,25 @@ def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord
 
     # for each call, check that args are updated correctly over iterations
     first_init_call_args = init_calls[0][2]
-    assert first_init_call_args['prediction_shards'] == ['shard_loc_a', 'shard_loc_b']
+    assert first_init_call_args['prediction_shards'] == [
+        os.path.join(active_config.shards.shard_dir, shard_loc) for shard_loc in ['shard_loc_a', 'shard_loc_b']
+        ]
     assert first_init_call_args['initial_estimator_ckpt'] == active_config.initial_estimator_ckpt
     assert first_init_call_args['initial_db_loc'] == active_config.db_loc
     assert first_init_call_args['initial_train_tfrecords'] == [active_config.shards.train_tfrecord_loc]
 
     second_init_call_args = init_calls[1][2]
-    assert second_init_call_args['prediction_shards'] == ['shard_loc_c', 'shard_loc_d']
+    assert second_init_call_args['prediction_shards'] == [
+        os.path.join(active_config.shards.shard_dir, shard_loc) for shard_loc in ['shard_loc_c', 'shard_loc_d']
+        ]
     assert second_init_call_args['initial_estimator_ckpt'] == 'first_est_dir'
     assert second_init_call_args['initial_db_loc'] == 'first_db_loc'
     assert second_init_call_args['initial_train_tfrecords'] == 'first_records'
 
     third_init_call_args = init_calls[2][2]
-    assert third_init_call_args['prediction_shards'] == ['shard_loc_a', 'shard_loc_b']
+    assert third_init_call_args['prediction_shards'] == [
+        os.path.join(active_config.shards.shard_dir, shard_loc) for shard_loc in ['shard_loc_a', 'shard_loc_b']
+        ]
     assert third_init_call_args['initial_estimator_ckpt'] == 'second_est_dir'
     assert third_init_call_args['initial_db_loc'] == 'second_db_loc'
     assert third_init_call_args['initial_train_tfrecords'] == 'second_records'
@@ -82,7 +90,7 @@ def test_get_train_callable(mocker, train_callable_params):
     mocker.patch('zoobot.estimators.run_estimator.run_estimator')
     log_dir = 'log_dir'
     train_records = 'train_records'
-    train_callable(log_dir, train_records)
+    train_callable(log_dir, train_records, learning_rate=0.001, epochs=2)
     run_estimator.run_estimator.assert_called_once()
     config = run_estimator.run_estimator.mock_calls[0][1][0]  # first call, positional args, first arg
     assert config.log_dir == log_dir

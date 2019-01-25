@@ -17,8 +17,12 @@ import matplotlib.pyplot as plt
 
 # TODO refactor to make sure this aligns with downloader
 def load_decals_as_pil(subject):
-
-    img = fits.getdata(subject['fits_loc'])
+    try:
+        loc = subject['fits_loc']
+    except KeyError:
+        loc = subject['file_loc']
+        assert loc[-5:] == '.fits'
+    img = fits.getdata(loc)
 
     _scales = dict(
         g=(2, 0.008),
@@ -42,7 +46,45 @@ def load_decals_as_pil(subject):
     return Image.fromarray(pil_safe_img, mode='RGB')
 
 
-def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8, source='fits'):
+def load_png_as_pil(subject):
+    try:
+        loc = subject['png_loc']
+    except KeyError:
+        loc = subject['file_loc']
+        assert loc[-4:] == '.png'
+    return Image.open(loc)
+
+
+def get_reader(paths):
+    # find file format
+    file_format = paths[0].split('.')[-1]
+    # check for consistency
+    assert all([loc.split('.')[-1] == file_format for loc in paths])
+    # check that file paths resolve correctly
+    assert all(os.path.isfile(loc) for loc in paths)
+    if file_format == 'png':
+        reader = load_png_as_pil
+    elif file_format == 'fits':
+        reader = load_decals_as_pil
+    return reader
+
+
+def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, reader, train_test_fraction=0.8):
+    """[summary]
+    
+    Args:
+        df ([type]): [description]
+        train_loc ([type]): [description]
+        test_loc ([type]): [description]
+        img_size ([type]): [description]
+        columns_to_save ([type]): [description]
+        reader (function): expecting subject dictlike (i.e. row), returning PIL image
+        train_test_fraction (float, optional): Defaults to 0.8. [description]
+    
+    Returns:
+        [type]: [description]
+    """
+
     train_test_split = int(train_test_fraction * len(df))
 
     df = df.sample(frac=1).reset_index(drop=True)
@@ -54,12 +96,12 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
     assert not train_df.empty
     assert not test_df.empty
 
-    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, source=source)
-    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, source=source)
+    write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, reader=reader)
+    write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, reader=reader)
     return train_df, test_df
 
 
-def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, append=False, source='fits', load_fits_as_pil=load_decals_as_pil):
+def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, reader, append=False):
     # TODO tfrecord does not support appending :'(
     if append:
         raise NotImplementedError('tfrecord does not support appending')
@@ -70,22 +112,15 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, appe
 
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
     for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
-        serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, source, load_fits_as_pil)
+        serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, reader)
         writer.write(serialized_example)
     writer.close()  # good to be explicit - will give 'DataLoss' error if writer not closed
 
 
-def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_as_pil):
+def row_to_serialized_example(row, img_size, columns_to_save, reader):
     # row should have columns that exactly match a read_tfrecord feature spec function
 
-    if source == 'fits':
-        pil_img = load_fits_as_pil(row)  # passed by user - may vary
-    elif source == 'png':
-        pil_img = load_png_as_pil(row)
-    else:
-        logging.critical('Fatal error: image source "{}" not understood'.format(source))
-        raise ValueError
-
+    pil_img = reader(row)
     # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')
     # to align with north/east 
     # TODO refactor this to make sure it matches downloader
@@ -98,7 +133,3 @@ def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_
         extra_kwargs.update({col: row[col]})
 
     return create_tfrecord.serialize_image_example(matrix, **extra_kwargs)
-
-
-def load_png_as_pil(subject):
-    return Image.open(subject['png_loc'])

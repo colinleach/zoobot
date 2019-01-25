@@ -357,3 +357,8 @@ def catalog(label_col, id_col, unique_id):
 @pytest.fixture()
 def fits_native_dir(tmpdir):
     return tmpdir.mkdir('fits_native').strpath
+
+
+@pytest.fixture()
+def png_native_dir(tmpdir):
+    return tmpdir.mkdir('png_native').strpath

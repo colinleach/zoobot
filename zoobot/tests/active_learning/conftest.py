@@ -7,6 +7,7 @@ import json
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from astropy.io import fits
 from zoobot.active_learning import make_shards, execute
@@ -22,17 +23,41 @@ def id_strs(n_subjects):
     return [str(n) for n in range(n_subjects)]
 
 
+@pytest.fixture(params=['png_loc', 'fits_loc'])
+def file_col(request):
+    return request.param
+
+
 @pytest.fixture
-def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir):
-    assert os.path.exists(fits_native_dir)
+def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir, png_native_dir, file_col):
+    """Construct labelled/unlabelled catalogs for testing active learning"""
+    
+    
+    assert os.path.isdir(fits_native_dir)
+    assert os.path.isdir(png_native_dir)
     matrices = np.random.rand(n_subjects, size, size, channels)
-    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
-    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
-    for matrix, loc in zip(matrices, fits_locs):  # write to fits
-        hdu = fits.PrimaryHDU(matrix)
-        hdu.writeto(loc, overwrite=True)
-        assert os.path.isfile(loc)
-    catalog = pd.DataFrame(data={'id_str': id_strs, 'fits_loc': fits_locs})
+    some_feature = np.random.rand(n_subjects)
+
+    catalog = pd.DataFrame(data={'id_str': id_strs, 'some_feature': some_feature})
+
+    if file_col == 'fits_loc':
+        relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
+        fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
+        for matrix, loc in zip(matrices, fits_locs):  # write to fits
+            hdu = fits.PrimaryHDU(matrix)
+            hdu.writeto(loc, overwrite=True)
+            assert os.path.isfile(loc)
+        catalog['file_loc'] = fits_locs
+
+    if file_col == 'png_loc':
+        relative_png_locs = ['random_{}.png'.format(n) for n in range(n_subjects)]
+        png_locs = list(map(lambda rel_loc: os.path.join(png_native_dir, rel_loc), relative_png_locs))
+        for matrix, loc in zip(matrices, png_locs):  # write to fits
+            rgb_matrix = (matrix * 256).astype(np.uint8)
+            Image.fromarray(rgb_matrix, mode='RGB').save(loc)
+            assert os.path.isfile(loc)
+        catalog['file_loc'] = png_locs
+
     return catalog
 
 
@@ -124,7 +149,7 @@ def mock_acquisition_func(samples):
     return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
 
 
-def mock_train_callable(estimators_dir, train_tfrecord_locs):
+def mock_train_callable(estimators_dir, train_tfrecord_locs, learning_rate, epochs):
     # pretend to save a model in subdirectory of estimator_dir
     assert os.path.isdir(estimators_dir)
     subdir_loc = os.path.join(estimators_dir, str(time.time()))

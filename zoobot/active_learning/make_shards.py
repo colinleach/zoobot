@@ -76,9 +76,9 @@ class ShardConfig():
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)
 
-        # check that fits_loc columns resolve correctly
-        assert os.path.isfile(labelled_catalog['png_loc'].iloc[0])
-        assert os.path.isfile(unlabelled_catalog['png_loc'].iloc[0])
+        # check that file paths resolve correctly
+        assert all(os.path.isfile(path) for path in labelled_catalog['file_loc'])
+        assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
         labelled_catalog.to_csv(self.labelled_catalog_loc)
@@ -97,8 +97,9 @@ class ShardConfig():
             self.eval_tfrecord_loc, 
             self.initial_size, 
             ['id_str', 'label'], 
-            train_test_fraction=train_test_fraction,
-            source='png')
+            catalog_to_tfrecord.get_reader(labelled_catalog['file_loc']),
+            train_test_fraction=train_test_fraction
+        )
 
         assert self.ready()
 
@@ -119,7 +120,10 @@ class ShardConfig():
     # TODO move to shared utilities
     def to_dict(self):
         excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
-        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
+        # TODO use dict comprehension
+        return dict(
+            [(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys]
+            )
 
     
     def write(self):
@@ -139,7 +143,14 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     # set up db and shards using unknown catalog data
     db = active_learning.create_db(catalog, db_loc)
     columns_to_save = ['id_str']
-    active_learning.write_catalog_to_tfrecord_shards(catalog, db, size, columns_to_save, shard_dir, shard_size=shard_size)
+    active_learning.write_catalog_to_tfrecord_shards(
+        catalog,
+        db,
+        size,
+        columns_to_save,
+        shard_dir,
+        shard_size
+    )
 
 
 if __name__ == '__main__':
@@ -197,6 +208,8 @@ if __name__ == '__main__':
     catalog['id_str'] = catalog['id'].astype(str)
 
     catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_weighted_fraction']
+
+    catalog['file_loc'] = catalog['png_col']  # active learning will load from png by default
 
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 

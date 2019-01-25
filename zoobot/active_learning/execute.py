@@ -124,17 +124,17 @@ class ActiveConfig():
         all_shard_locs = [os.path.join(self.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
         shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
 
-        # iteration_n = 0
-        # initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
-        # initial_db_loc = self.db_loc
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc]
+        iteration_n = 0
+        initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
+        initial_db_loc = self.db_loc
+        initial_train_tfrecords = [self.shards.train_tfrecord_loc]
 
-        iteration_n = 1
-        initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
+        # iteration_n = 1
+        # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
         # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/30k_random.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
-        initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
+        # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
         
 
         epochs = 650
@@ -143,7 +143,6 @@ class ActiveConfig():
         iterations_record = []
 
         while iteration_n < self.n_iterations:
-            
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
             # if iteration_n == 0:
@@ -169,7 +168,7 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
                 learning_rate=learning_rate,
-                initial_estimator_ckpt=None,  # will not warm start, may or may not break
+                initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
                 # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
                 epochs=epochs)
 
@@ -180,7 +179,7 @@ class ActiveConfig():
             iteration_n += 1
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
-            # initial_estimator_ckpt = iteration.estimators_dir  # TODO rename, only if warm_start
+            initial_estimator_ckpt = iteration.estimators_dir  # TODO rename, only if warm_start
             iterations_record.append(iteration)
 
         return iterations_record

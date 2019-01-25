@@ -106,7 +106,13 @@ class Iteration():
         logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(shard_locs))
-        unlabelled_subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, self.db, initial_size=initial_size, n_samples=self.n_samples)
+        unlabelled_subjects, samples = active_learning.make_predictions_on_tfrecord(
+            shard_locs,
+            predictor,
+            self.db,
+            n_samples=self.n_samples,
+            size=initial_size
+        )
         # subjects should all be unique, otherwise there's a bug
         id_strs = [subject['id_str'] for subject in unlabelled_subjects]
         assert len(id_strs) == len(set(id_strs)) 
@@ -131,9 +137,13 @@ class Iteration():
             self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
             active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
 
-        # callable should expect 
-        # - log dir to train models in
-        # - list of tfrecord files to train on
+        """
+        Callable should expect 
+        - log dir to train models in
+        - list of tfrecord files to train on
+        - learning rate to use 
+        - epochs to train for
+        """  
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
         self.train_callable(self.estimators_dir, self.get_train_records(), self.learning_rate, self.epochs)  # could be docker container to run, save model
