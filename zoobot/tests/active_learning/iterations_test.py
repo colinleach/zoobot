@@ -37,12 +37,15 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
-            initial_estimator_ckpt=initial_estimator_ckpt
+            initial_estimator_ckpt=initial_estimator_ckpt,
+            learning_rate=0.001,
+            epochs=2
         )
 
         return iteration
 
 
+# TODO could maybe refactor into the fixture above
 def test_init(tmpdir, initial_estimator_ckpt, active_config):
         run_dir = active_config.run_dir
         iteration_n = 0
@@ -59,7 +62,9 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
-            initial_estimator_ckpt=initial_estimator_ckpt
+            initial_estimator_ckpt=initial_estimator_ckpt,
+            learning_rate=0.001,
+            epochs=2
         )
 
         assert iteration.acquired_tfrecord is None
@@ -103,13 +108,13 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
         return 'loaded latest model'
     monkeypatch.setattr(iterations.Iteration, 'get_latest_model', mock_get_latest_model)
 
-    def mock_make_predictions_on_tfrecord(shard_locs, predictor, db, initial_size, n_samples):
+    def mock_make_predictions_on_tfrecord(shard_locs, predictor, db, size, n_samples):
         assert isinstance(shard_locs, list)
         assert predictor == 'loaded latest model'
-        assert isinstance(initial_size, int)
+        assert isinstance(size, int)
         assert isinstance(n_samples, int)
         n_subjects = 112 * len(shard_locs)  # 112 unlabelled subjects per shard
-        subjects = [{'matrix': np.random.rand(initial_size, initial_size, 3), 'id_str': str(n)} 
+        subjects = [{'matrix': np.random.rand(size, size, 3), 'id_str': str(n)} 
         for n in range(n_subjects)]
         samples = np.random.rand(n_subjects, n_samples)
         return subjects, samples

@@ -34,8 +34,15 @@ class Iteration():
         # shards should be unique, or everything falls apart.
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
+        
         assert isinstance(initial_train_tfrecords, list)
+        try:
+            assert all([os.path.isfile(loc) for loc in initial_train_tfrecords])
+        except AssertionError:
+            logging.critical('Fatal error: missing tfrecords!')
+            logging.critical(initial_train_tfrecords)
         self.initial_train_tfrecords = initial_train_tfrecords  # acquired up to start of iteration
+
         self.acquired_tfrecord = None
         assert callable(train_callable)
         self.train_callable = train_callable
@@ -57,6 +64,7 @@ class Iteration():
         os.mkdir(self.metrics_dir)
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
+        assert os.path.isfile(initial_db_loc)
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
 
@@ -98,10 +106,17 @@ class Iteration():
         logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(shard_locs))
-        unlabelled_subjects, samples = active_learning.make_predictions_on_tfrecord(shard_locs, predictor, self.db, initial_size=initial_size, n_samples=self.n_samples)
+        unlabelled_subjects, samples = active_learning.make_predictions_on_tfrecord(
+            shard_locs,
+            predictor,
+            self.db,
+            n_samples=self.n_samples,
+            size=initial_size
+        )
         # subjects should all be unique, otherwise there's a bug
         id_strs = [subject['id_str'] for subject in unlabelled_subjects]
         assert len(id_strs) == len(set(id_strs)) 
+        assert isinstance(unlabelled_subjects, list)
         return unlabelled_subjects, samples
 
 
@@ -122,10 +137,15 @@ class Iteration():
             self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
             active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
 
-        # callable should expect 
-        # - log dir to train models in
-        # - list of tfrecord files to train on
+        """
+        Callable should expect 
+        - log dir to train models in
+        - list of tfrecord files to train on
+        - learning rate to use 
+        - epochs to train for
+        """  
         self.record_train_records()
+        logging.info('Saving to {}'.format(self.estimators_dir))
         self.train_callable(self.estimators_dir, self.get_train_records(), self.learning_rate, self.epochs)  # could be docker container to run, save model
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
@@ -134,6 +154,7 @@ class Iteration():
 
         acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
         self.record_state(subjects, samples, acquisitions)
+        logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
         request_labels(top_acquisition_ids)

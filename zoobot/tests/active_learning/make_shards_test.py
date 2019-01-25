@@ -24,10 +24,10 @@ def test_write_and_load(shard_config, tmpdir):
     # TODO check equality of fields
 
 
-def test_make_database_and_shards(catalog, db_loc, size, channels, tfrecord_dir):
+def test_make_database_and_shards(unlabelled_catalog, db_loc, size, channels, tfrecord_dir):
     assert os.path.isdir(tfrecord_dir)
-    make_shards.make_database_and_shards(catalog, db_loc, size, tfrecord_dir, shard_size=25)
+    make_shards.make_database_and_shards(unlabelled_catalog, db_loc, size, tfrecord_dir, shard_size=25)
     db = sqlite3.connect(db_loc)
     # verify_db_matches_catalog(catalog, db)
     verify_db_matches_shards(db, size, channels)
-    verify_catalog_matches_shards(catalog, db, size, channels)
+    verify_catalog_matches_shards(unlabelled_catalog, db, size, channels)

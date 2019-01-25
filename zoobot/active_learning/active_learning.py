@@ -23,6 +23,9 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import mock_panoptes
 
 
+LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
+
+
 def create_db(catalog, db_loc):
     """Instantiate sqlite database at db_loc with the following tables:
     1. `catalog`: analogy of catalog dataframe, for fits locations and (sometimes) labels
@@ -45,7 +48,7 @@ def create_db(catalog, db_loc):
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label FLOAT DEFAULT NULL,
-            fits_loc STRING)
+            file_loc STRING)
         '''
     )
     db.commit()
@@ -81,18 +84,18 @@ def add_catalog_to_db(df, db):
         db (sqlite3.Connection): database with `catalog` table to record df id_col and fits_loc
     """
 
-    catalog_entries = list(df[['id_str', 'fits_loc']].itertuples(index=False, name='CatalogEntry'))
+    catalog_entries = list(df[['id_str', 'file_loc']].itertuples(index=False, name='CatalogEntry'))
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, fits_loc) VALUES(?,NULL,?)''',
+        INSERT INTO catalog(id_str, label, file_loc) VALUES(?,NULL,?)''',
         catalog_entries
     )
     db.commit()
 
 
 def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size=1000):
-    """Write galaxy catalog across many tfrecords.
+    """Write galaxy catalog of id_str and file_loc across many tfrecords, and record in db.
     Useful to quickly load images for repeated predictions.
 
     Args:
@@ -105,6 +108,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
     """
     assert not df.empty
     assert 'id_str' in columns_to_save
+    assert all(column in df.columns.values for column in columns_to_save)
 
     df = df.copy().sample(frac=1).reset_index(drop=True)  # shuffle
     # split into shards
@@ -114,7 +118,13 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
 
     for shard_n, df_shard in enumerate(df_shards):
         save_loc = os.path.join(save_dir, 's{}_shard_{}.tfrecord'.format(img_size, shard_n))
-        catalog_to_tfrecord.write_image_df_to_tfrecord(df_shard, save_loc, img_size, columns_to_save, append=False, source='fits')
+        catalog_to_tfrecord.write_image_df_to_tfrecord(
+            df_shard, 
+            save_loc,
+            img_size,
+            columns_to_save,
+            reader=catalog_to_tfrecord.get_reader(df['file_loc']),
+            append=False)
         add_tfrecord_to_db(save_loc, db, df_shard)
 
 
@@ -142,27 +152,105 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     db.commit()
 
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
-def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, initial_size, max_images=20000):
-    images, _, id_str = input_utils.predict_input_func(
-        tfrecord_locs,
-        n_galaxies=max_images, 
-        initial_size=initial_size, 
-        mode='id_str'
+def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_images=10000):
+    """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
+    Load in batches to avoid maxing out GPU memory
+    See make_predictions_on_tfrecord_batch for more details.
+    Uses db to identify which subjects are unlabelled by matching on id_str feature.
+    
+    Args:
+        tfrecord_locs (list): paths to tfrecords to load
+        model (function): callable returning [batch, n_samples] predictions
+        db (sqlite3): database of galaxies, with id_str and label columns. Not modified.
+        n_samples (int): number of MC dropout samples to calculate (i.e. n forward passes)
+        size (int): size of saved images
+        max_images (int, optional): Defaults to 10000. Load no more than this many images per record
+    
+    Returns:
+        list: unlabelled subjects of form [{id_str: .., matrix: ..}, ..]
+        np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
+    """
+    assert isinstance(tfrecord_locs, list)
+    # TODO review this once images have been made smaller, may be able to have much bigger batches
+
+    records_per_batch = 2  # best to be >= num. of CPU, for parallel reading. But at 256px, only fits 2 records.
+    min_tfrecord = 0
+    all_unlabelled_subjects = []  # list of generators for unlabelled subjects
+    all_samples = []  # list of np arrays of samples
+
+    while min_tfrecord < len(tfrecord_locs):
+        unlabelled_subjects, samples = make_predictions_on_tfrecord_batch(
+            tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
+            model, db, n_samples, size, max_images=10000)
+       
+        all_unlabelled_subjects.extend(unlabelled_subjects)
+        all_samples.append(samples)
+
+        assert len(unlabelled_subjects) != 0
+
+        min_tfrecord += records_per_batch
+
+    all_samples_arr = np.concatenate(all_samples, axis=0)
+    logging.debug('Finished predictions {} on subjects {}'.format(
+        all_samples_arr.shape, len(all_unlabelled_subjects))
     )
+    return all_unlabelled_subjects, all_samples_arr
+
+
+def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_samples, size, max_images=10000):
+    """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
+    Uses db to identify which subjects are unlabelled by matching on id_str feature.
+    Data in tfrecords_batch_locs must fit in memory; otherwise use `make_predictions_on_tfrecord`
+
+    Args:
+        tfrecords_batch_locs (list): paths to tfrecords to load
+        model (function): callable returning [batch, samples] predictions
+        db (sqlite3): database of galaxies, with id_str and label columns. Not modified.
+        n_samples (int): number of MC dropout samples to calculate (i.e. n forward passes)
+        size (int): size of saved images
+        max_images (int, optional): Defaults to 10000. Load no more than this many images per record
+    
+    Returns:
+        list: unlabelled subjects of form [{id_str: .., matrix: ..}, ..]
+        np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
+    """
+    batch_images, _, batch_id_str = input_utils.predict_input_func(
+                tfrecords_batch_locs,
+                n_galaxies=max_images,
+                initial_size=size,
+                mode='id_str'
+            )
     with tf.Session() as sess:
-        images, id_str_bytes = sess.run([images, id_str])
-    if len(images) == max_images:
-        logging.critical('Warning! Shards are larger than memory! Loaded {} images'.format(max_images))
+        images, id_str_bytes = sess.run([batch_images, batch_id_str])
+        if len(images) == max_images:
+            logging.critical(
+                'Warning! Shards are larger than memory! Loaded {} images'.format(max_images)
+            )
+
     # tfrecord will have encoded to bytes, need to decode
-    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
-    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
+    logging.debug('Constructing subjects from loaded data')
+    subjects = (
+        {'matrix': image, 'id_str': id_st.decode('utf-8')} 
+        for image, id_st in zip(images, id_str_bytes)
+    )
+    del images  # free memory
+
     # exclude subjects with labels in db
-    unlabelled_subjects = [subject for subject in subjects if subject_is_unlabelled(subject['id_str'], db)]
-    if len(subjects) == len(unlabelled_subjects):
-        logging.warning('No labelled subjects found - hopefully, these are new shards...')
-    if len(unlabelled_subjects) == 0:
-        raise ValueError('No unlabelled subjects found - this is likely a bug')
+    logging.debug('Filtering for unlabelled subjects')
+    unlabelled_subjects = [
+        subject for subject in subjects
+        if subject_is_unlabelled(subject['id_str'], db)
+    ]
+    logging.debug('Loaded {} unlabelled subjects from {} of size {}'.format(
+        len(unlabelled_subjects),
+        tfrecords_batch_locs,
+         size)
+        )
+    del subjects  # free memory
+
     # make predictions on only those subjects
+    logging.debug('Extracting images from unlabelled subjects')
+    # need to construct array from list: required to have known length
     unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
     return unlabelled_subjects, samples
@@ -233,7 +321,6 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
-    logging.debug(matching_subjects)
     return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
 
@@ -265,7 +352,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, fits_loc FROM catalog
+            SELECT id_str, label, file_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -281,17 +368,27 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': float(subject[1]),
-            'fits_loc': str(subject[2])
+            'file_loc': get_relative_loc(str(subject[2]))
         })
 
     top_subject_df = pd.DataFrame(data=rows)
+
+    
+
     assert len(top_subject_df) == len(subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
         top_subject_df,
         tfrecord_loc,
         size,
         columns_to_save=['id_str', 'label'],
-        source='fits')
+        reader=catalog_to_tfrecord.get_reader(top_subject_df['file_loc']))
+
+
+def get_relative_loc(loc):
+    fname = os.path.basename(loc)
+    subdir = os.path.basename(os.path.dirname(loc))
+    return os.path.join(LOCAL_IMAGE_FOLDER, subdir, fname)
+
 
 
 def get_latest_checkpoint_dir(base_dir):

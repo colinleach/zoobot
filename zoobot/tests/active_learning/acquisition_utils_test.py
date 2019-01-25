@@ -103,3 +103,8 @@ def test_save_acquisition_examples(subjects, save_dir):
     acq_values = np.random.rand(len(subjects))
     acq_string = 'mock_acquisition'
     acquisition_utils.save_acquisition_examples(subject_data, acq_values, acq_string, save_dir)
+
+
+@pytest.mark.xfail
+def test_show_acquisitions_from_tfrecords():
+    acquisition_utils.show_acquisitions_from_tfrecords()

@@ -77,7 +77,9 @@ def save_metrics(subjects, labels, state, save_dir, name, mse_comparison=False):
 
     model = metrics.Model(state, name=name)
     model.show_mutual_info_vs_predictions(save_dir)
-    acquisition_utils.save_acquisition_examples(subjects, model.mutual_info, 'mutual_info', save_dir)
+    acquisition_utils.save_acquisition_examples(
+        subjects, model.mutual_info, 'mutual_info', save_dir
+    )
 
     # add in catalog details for more metrics
     catalog = pd.DataFrame('data/panoptes_predictions_selected.csv')

@@ -8,26 +8,34 @@ import tensorflow as tf
 # from tfrecord.create_tfrecord import image_to_tfrecord
 
 
-def load_dataset(example_loc, feature_spec, num_parallel_calls=1):
+def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
+    # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
-    dataset = tf.data.TFRecordDataset(example_loc)
     parse_function = partial(tf.parse_single_example, features=feature_spec)
     if isinstance(example_loc, str):
         logging.debug('Loading single tfrecord')
+        dataset = tf.data.TFRecordDataset(example_loc)
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
-        # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
-         # read from all tfrecords in parallel, retrieving an even mix from all tfrecords, with 1 example from each record per cycle
-         # note: mix is inversely proportional to length of each tfrecord, so they should be similar sizes!
-        filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
-        logging.debug('Interleaving tfrecords {} as {}'.format(example_loc, filenames_dataset))
-        return filenames_dataset.interleave(
-            lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
-            cycle_length=len(example_loc), 
-            block_length=1, 
-            num_parallel_calls=num_parallel_calls)
-        
+        assert isinstance(example_loc, list)
+        # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
+        assert all([os.path.isfile(loc) for loc in example_loc])
+        logging.debug('Loading multiple tfrecords, no interleaving')
+        dataset = tf.data.TFRecordDataset(example_loc)
+        return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
+        # cycle_length = len(example_loc)
+        # num_parallel_calls = min(num_parallel_calls, cycle_length)
+        # # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
+        #  # read from all tfrecords in parallel, with block_length example from each record per cycle
+        # filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
+        # logging.debug('Interleaving tfrecords {} as {}'.format(example_loc, filenames_dataset))
+        # return filenames_dataset.interleave(
+        #     lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
+        #     cycle_length=len(example_loc), 
+        #     block_length=64,
+        #     num_parallel_calls=num_parallel_calls)
+
 
 # TODO convert this to a proper test of dataset readability?
 # if __name__ == '__main__':
