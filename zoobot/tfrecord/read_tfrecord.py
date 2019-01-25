@@ -35,7 +35,7 @@ def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None, ma
 
 def matrix_feature_spec(size, channels):  # used for predict mode
     return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32)}
+        "matrix": tf.FixedLenFeature([], tf.string)}
 
 
 def matrix_label_feature_spec(size, channels, float_label=True):
@@ -44,20 +44,20 @@ def matrix_label_feature_spec(size, channels, float_label=True):
     else:
         label_dtype = tf.int64
     return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "matrix": tf.FixedLenFeature([], tf.string),
         "label": tf.FixedLenFeature((), label_dtype)}
 
 
 def matrix_id_feature_spec(size, channels):
     return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "matrix": tf.FixedLenFeature([], tf.string),
         "id_str": tf.FixedLenFeature((), tf.string)
         }
 
 
 def matrix_label_id_feature_spec(size, channels):
     return {
-        "matrix": tf.FixedLenFeature((size * size * channels), tf.float32),
+        "matrix": tf.FixedLenFeature([], tf.string),
         "label": tf.FixedLenFeature((), tf.float32),
         "id_str": tf.FixedLenFeature((), tf.string)
         }

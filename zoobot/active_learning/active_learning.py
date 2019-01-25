@@ -125,7 +125,8 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
             columns_to_save,
             reader=catalog_to_tfrecord.get_reader(df['file_loc']),
             append=False)
-        add_tfrecord_to_db(save_loc, db, df_shard)
+        if db is not None:  # explicitly not passing db will skip this step, for e.g. train/test
+            add_tfrecord_to_db(save_loc, db, df_shard)
 
 
 def add_tfrecord_to_db(tfrecord_loc, db, df):

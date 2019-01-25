@@ -71,6 +71,7 @@ class ActiveConfig():
 
         self.prepare_run_folders()
 
+
     # TODO test the case where run_dir does not yet exist
     def prepare_run_folders(self):
         """
@@ -127,7 +128,8 @@ class ActiveConfig():
         iteration_n = 0
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords = [self.shards.train_tfrecord_loc]
+        initial_train_tfrecords = self.shards.train_tfrecord_locs()
+        eval_tfrecords = self.shards.eval_tfrecord_locs()
 
         # iteration_n = 1
         # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
@@ -162,6 +164,7 @@ class ActiveConfig():
                 prediction_shards=prediction_shards,
                 initial_db_loc=initial_db_loc,
                 initial_train_tfrecords=initial_train_tfrecords,
+                eval_tfrecords=eval_tfrecords,
                 train_callable=train_callable,
                 acquisition_func=acquisition_func,
                 n_samples=n_samples,
@@ -187,13 +190,13 @@ class ActiveConfig():
 
 def get_train_callable(params):
 
-    def train_callable(log_dir, train_records, learning_rate, epochs):
+    def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
         # WARNING TESTING ONLY 
         # if len(train_records) > 1:
         #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
         # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
-        run_config = default_estimator_params.get_run_config(params, log_dir, train_records, learning_rate, epochs)
+        run_config = default_estimator_params.get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs)
         if params.test: # overrides warm_start
             run_config.epochs = 2  # minimal training, for speed
 

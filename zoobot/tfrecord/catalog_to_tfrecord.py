@@ -69,6 +69,17 @@ def get_reader(paths):
     return reader
 
 
+def split_df(df, train_test_fraction):
+    # TODO needs test
+    train_test_split = int(train_test_fraction * len(df))
+    df = df.sample(frac=1).reset_index(drop=True)
+    train_df = df[:train_test_split].copy()
+    test_df = df[train_test_split:].copy()
+    assert not train_df.empty
+    assert not test_df.empty
+    return train_df, test_df
+
+
 def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, reader, train_test_fraction=0.8):
     """[summary]
     
@@ -84,17 +95,10 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
     Returns:
         [type]: [description]
     """
-
-    train_test_split = int(train_test_fraction * len(df))
-
-    df = df.sample(frac=1).reset_index(drop=True)
-    train_df = df[:train_test_split].copy()
-    test_df = df[train_test_split:].copy()
+    train_df, test_df = split_df(df, train_test_fraction)
     train_df.to_csv(train_loc + '.csv')  # ugly but effective
     test_df.to_csv(test_loc + '.csv')
 
-    assert not train_df.empty
-    assert not test_df.empty
 
     write_image_df_to_tfrecord(train_df, train_loc, img_size, columns_to_save, append=False, reader=reader)
     write_image_df_to_tfrecord(test_df, test_loc, img_size, columns_to_save, append=False, reader=reader)

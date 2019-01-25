@@ -14,7 +14,7 @@ from zoobot.tfrecord.tfrecord_io import load_dataset
 def extra_data_feature_spec(size, channels):
     return {
         'label': tf.FixedLenFeature([], tf.float32),
-        'matrix': tf.FixedLenFeature([size ** 2 * channels], tf.float32),
+        'matrix': tf.FixedLenFeature([], tf.string),
         'an_int': tf.FixedLenFeature([], tf.int64),
         'a_float': tf.FixedLenFeature([], tf.float32),
         'some_floats': tf.FixedLenFeature([3], tf.float32),
@@ -29,7 +29,7 @@ def test_serialize_image_example(visual_check_image_data, size, channels):
             serialized_example, 
             features=read_tfrecord.matrix_label_feature_spec(size, channels, float_label=True)
             )
-        recovered_matrix = example['matrix'].eval()
+        recovered_matrix = tf.io.decode_raw(example['matrix'], out_type=tf.uint8).eval()
         assert np.allclose(recovered_matrix, visual_check_image_data.flatten())
         assert example['label'].eval() == 1.
 
@@ -53,7 +53,7 @@ def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_
     )
     with tf.Session() as sess:
         example = tf.parse_single_example(serialized_example, extra_data_feature_spec)
-        recovered_matrix = example['matrix'].eval()
+        recovered_matrix = tf.io.decode_raw(example['matrix'], out_type=tf.uint8).eval()
         assert np.allclose(recovered_matrix, visual_check_image_data.flatten())
         assert example['label'].eval() == label
         assert example['an_int'].eval() == an_int

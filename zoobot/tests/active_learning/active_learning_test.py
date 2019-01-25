@@ -298,8 +298,8 @@ def verify_catalog_matches_shards(unlabelled_catalog, db, size, channels):
 
 
 
-def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, unlabelled_catalog):  # bad loc
-    active_learning.add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, unlabelled_catalog)
+def test_add_tfrecord_to_db(tfrecord_matrix_ints_loc, empty_shard_db, unlabelled_catalog):  # bad loc
+    active_learning.add_tfrecord_to_db(tfrecord_matrix_ints_loc, empty_shard_db, unlabelled_catalog)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -309,7 +309,7 @@ def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, unlabelle
     saved_subjects = cursor.fetchall()
     for n, subject in enumerate(saved_subjects):
         assert str(subject[0]) == unlabelled_catalog.iloc[n]['id_str']  # strange string casting when read back
-        assert subject[1] == tfrecord_matrix_float_loc
+        assert subject[1] == tfrecord_matrix_ints_loc
 
 
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
