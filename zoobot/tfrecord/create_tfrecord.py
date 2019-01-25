@@ -15,9 +15,7 @@ def serialize_image_example(matrix, **extra_kwargs):
     Returns:
         None
     """
-
-    flat_matrix = np.reshape(matrix, matrix.size)
-    matrix_feature = float_list_to_feature(flat_matrix)
+    matrix_feature = uint8_array_to_feature(matrix)
 
     # Expects TensorFlow data format convention, "Height-Width-Depth".
     if matrix.shape[1] > matrix.shape[0]:
@@ -98,3 +96,12 @@ def float_list_to_feature(floats_to_save):
         # I think: will be much smaller for pngs (uint8), but exactly the same for fits
         # could make loading much faster, since am loading the gz thumbnails anyway
         # see https://medium.com/ymedialabs-innovation/how-to-use-tfrecord-with-datasets-and-iterators-in-tensorflow-with-code-samples-ffee57d298af
+
+
+def uint8_array_to_feature(matrix_to_save):
+    """Useful for images. Feature 'matrix' is later decoded into float32 by read_tfrecord"""
+    flat_matrix = np.reshape(matrix_to_save, matrix_to_save.size)
+    bytes_to_save = flat_matrix.astype(np.uint8).tobytes()
+    return tf.train.Feature(
+        bytes_list=tf.train.BytesList(value=[bytes_to_save])
+    )

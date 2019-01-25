@@ -126,11 +126,16 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'all_augmentations_check.png'))
 
 
-def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_float_loc, size):
+def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_ints_loc, size):
     
     # tfrecord_matrix_loc
     n_galaxies = 24
-    subjects, labels, _ = input_utils.predict_input_func(tfrecord_matrix_float_loc, n_galaxies=n_galaxies, initial_size=size, mode='labels')
+    subjects, labels, _ = input_utils.predict_input_func(
+        tfrecord_matrix_ints_loc,
+        n_galaxies=n_galaxies,
+        initial_size=size,
+        mode='labels'
+    )
     with tf.Session() as sess:
         subjects = sess.run(subjects)
         assert subjects.shape == (n_galaxies, size, size, 3)
@@ -201,14 +206,12 @@ def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_di
             batches.append(sess.run(batch))
     assert len(batches) == n_batches
 
-    for batch in batches:
-        print(batch)
     id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str']]
     id_strs_0 = [id_str.decode('utf-8') for b in batches_tf_0 for id_str in b['id_str']]
     id_strs_1 = [id_str.decode('utf-8') for b in batches_tf_1 for id_str in b['id_str']]
-
-    # print(id_strs)
-    assert False
+    # for batch in batches:
+        # print(batch)
+    # assert False
 
     #  for tests to work, should be some ids only in one record or the other
     assert len(set(id_strs_0) ^ set(id_strs_1)) > 0
@@ -372,13 +375,13 @@ Test augmentation applied by map_fn to a chain of images from from_tensor_slices
 #         assert images[example_n, :, :, :] == pytest.approx(expected_matrix)
 
 
-# def test_input_utils_visual(tfrecord_matrix_float_loc, size, channels):
+# def test_input_utils_visual(tfrecord_matrix_ints_loc, size, channels):
 #     # example_tfrecords sets up the tfrecords to read - needs to be an arg but is implicitly called by pytest
 #     batch_size = 16
 
 #     config = input_utils.InputConfig(
 #         name='train',
-#         tfrecord_loc=tfrecord_matrix_float_loc,
+#         tfrecord_loc=tfrecord_matrix_ints_loc,
 #         initial_size=size,
 #         final_size=size,
 #         channels=channels,

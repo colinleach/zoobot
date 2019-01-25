@@ -5,14 +5,25 @@ import logging
 import numpy as np
 import tensorflow as tf
 
-# from tfrecord.create_tfrecord import image_to_tfrecord
+
+def cast_bytes_of_uint8_to_float32(some_bytes):
+    return tf.cast(tf.io.decode_raw(some_bytes, out_type=tf.uint8), tf.float32)
+
+
+def general_parsing_function(serialized_example, features):
+    """Parse example. Decode feature 'matrix' into float32 if present"""
+    example = tf.parse_single_example(serialized_example, features)
+    if 'matrix' in features.keys():
+        example['matrix'] = cast_bytes_of_uint8_to_float32(example['matrix'])
+    return example
 
 
 def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
     # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
-    parse_function = partial(tf.parse_single_example, features=feature_spec)
+
+    parse_function = partial(general_parsing_function, features=feature_spec)
     if isinstance(example_loc, str):
         logging.debug('Loading single tfrecord')
         dataset = tf.data.TFRecordDataset(example_loc)

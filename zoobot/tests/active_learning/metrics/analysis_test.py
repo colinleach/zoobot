@@ -14,8 +14,8 @@ from zoobot.active_learning import analysis
 
 
 @pytest.fixture()
-def tfrecord_locs(tfrecord_matrix_float_loc):
-    return [tfrecord_matrix_float_loc, tfrecord_matrix_float_loc]
+def tfrecord_locs(tfrecord_matrix_ints_loc):
+    return [tfrecord_matrix_ints_loc, tfrecord_matrix_ints_loc]
 
 
 @pytest.fixture()
