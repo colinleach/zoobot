@@ -149,7 +149,7 @@ def mock_acquisition_func(samples):
     return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
 
 
-def mock_train_callable(estimators_dir, train_tfrecord_locs, learning_rate, epochs):
+def mock_train_callable(estimators_dir, train_tfrecord_locs, eval_tfrecord_locs, learning_rate, epochs):
     # pretend to save a model in subdirectory of estimator_dir
     assert os.path.isdir(estimators_dir)
     subdir_loc = os.path.join(estimators_dir, str(time.time()))

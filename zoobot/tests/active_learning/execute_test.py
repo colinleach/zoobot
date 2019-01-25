@@ -50,7 +50,8 @@ def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord
         ]
     assert first_init_call_args['initial_estimator_ckpt'] == active_config.initial_estimator_ckpt
     assert first_init_call_args['initial_db_loc'] == active_config.db_loc
-    assert first_init_call_args['initial_train_tfrecords'] == [active_config.shards.train_tfrecord_loc]
+    assert first_init_call_args['initial_train_tfrecords'] == [os.path.join(active_config.shards.train_dir, loc) for loc in os.listdir(active_config.shards.train_dir) if loc.endswith('.tfrecord')]
+    assert first_init_call_args['eval_tfrecords'] == [os.path.join(active_config.shards.eval_dir, loc) for loc in os.listdir(active_config.shards.eval_dir) if loc.endswith('.tfrecord')]
 
     second_init_call_args = init_calls[1][2]
     assert second_init_call_args['prediction_shards'] == [
@@ -90,7 +91,8 @@ def test_get_train_callable(mocker, train_callable_params):
     mocker.patch('zoobot.estimators.run_estimator.run_estimator')
     log_dir = 'log_dir'
     train_records = 'train_records'
-    train_callable(log_dir, train_records, learning_rate=0.001, epochs=2)
+    eval_records = 'eval_records'
+    train_callable(log_dir, train_records, eval_records, learning_rate=0.001, epochs=2)
     run_estimator.run_estimator.assert_called_once()
     config = run_estimator.run_estimator.mock_calls[0][1][0]  # first call, positional args, first arg
     assert config.log_dir == log_dir

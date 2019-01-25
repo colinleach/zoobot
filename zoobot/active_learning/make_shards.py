@@ -53,14 +53,24 @@ class ShardConfig():
         self.db_loc = os.path.join(self.shard_dir, 'static_shard_db.db')  # record shard contents
 
         # paths for fixed tfrecords for initial training and (permanent) evaluation
-        self.train_tfrecord_loc = os.path.join(self.shard_dir, 'initial_train.tfrecord') 
-        self.eval_tfrecord_loc = os.path.join(self.shard_dir, 'eval.tfrecord')
+        self.train_dir = os.path.join(self.shard_dir, 'train_shards') 
+        self.eval_dir = os.path.join(self.shard_dir, 'eval_shards')
 
         # paths for catalogs. Used to look up .fits locations during active learning.
         self.labelled_catalog_loc = os.path.join(self.shard_dir, 'labelled_catalog.csv')
         self.unlabelled_catalog_loc = os.path.join(self.shard_dir, 'unlabelled_catalog.csv')
 
         self.config_save_loc = os.path.join(self.shard_dir, 'shard_config.json')
+
+
+    def train_tfrecord_locs(self):
+        return [os.path.join(self.train_dir, loc) for loc in os.listdir(self.train_dir)
+            if loc.endswith('.tfrecord')]
+
+
+    def eval_tfrecord_locs(self):
+        return [os.path.join(self.eval_dir, loc) for loc in os.listdir(self.eval_dir)
+            if loc.endswith('.tfrecord')]
 
 
     def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction=0.1):
@@ -75,6 +85,8 @@ class ShardConfig():
         if os.path.isdir(self.shard_dir):
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)
+        os.mkdir(self.train_dir)
+        os.mkdir(self.eval_dir)
 
         # check that file paths resolve correctly
         assert all(os.path.isfile(path) for path in labelled_catalog['file_loc'])
@@ -84,22 +96,26 @@ class ShardConfig():
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
+        # save train/test split into training and eval shards
+        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=0.8)
+        train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
+        eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
+        for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
+            active_learning.write_catalog_to_tfrecord_shards(
+                df,
+                db=None,
+                img_size=self.initial_size,
+                columns_to_save=['id_str', 'label'],
+                save_dir=save_dir,
+                shard_size=self.shard_size
+            )
+
         make_database_and_shards(
             unlabelled_catalog, 
             self.db_loc, 
             self.initial_size, 
             self.shard_dir, 
             self.shard_size)
-
-        catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
-            labelled_catalog, 
-            self.train_tfrecord_loc, 
-            self.eval_tfrecord_loc, 
-            self.initial_size, 
-            ['id_str', 'label'], 
-            catalog_to_tfrecord.get_reader(labelled_catalog['file_loc']),
-            train_test_fraction=train_test_fraction
-        )
 
         assert self.ready()
 
@@ -109,8 +125,8 @@ class ShardConfig():
 
     def ready(self):
         assert os.path.isdir(self.shard_dir)
-        assert os.path.isfile(self.train_tfrecord_loc)
-        assert os.path.isfile(self.eval_tfrecord_loc)
+        assert os.path.isdir(self.train_dir)
+        assert os.path.isdir(self.eval_dir)
         assert os.path.isfile(self.db_loc)
         assert os.path.isfile(self.labelled_catalog_loc)
         assert os.path.isfile(self.unlabelled_catalog_loc)
@@ -191,7 +207,6 @@ if __name__ == '__main__':
                         usecols=columns_to_save + ['png_loc', 'png_ready'],
                         nrows=None)
 
-
     # # in memory for now, but will be saved to csv
     # catalog = pd.read_csv(args.catalog_loc, usecols=columns_to_save)
 
@@ -209,7 +224,7 @@ if __name__ == '__main__':
 
     catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_weighted_fraction']
 
-    catalog['file_loc'] = catalog['png_col']  # active learning will load from png by default
+    catalog['file_loc'] = catalog['png_loc']  # active learning will load from png by default
 
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 

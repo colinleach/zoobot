@@ -31,7 +31,8 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
             iteration_n,
             prediction_shards,
             initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
+            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
+            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
             train_callable=conftest.mock_train_callable,
             acquisition_func=conftest.mock_acquisition_func,
             n_samples=10,  # may need more samples?
@@ -56,7 +57,8 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
             iteration_n,
             prediction_shards,
             initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
+            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
+            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
             train_callable=np.random.rand,
             acquisition_func=np.random.rand,
             n_samples=10,  # may need more samples?

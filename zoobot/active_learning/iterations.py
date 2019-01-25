@@ -20,6 +20,7 @@ class Iteration():
         prediction_shards,
         initial_db_loc,
         initial_train_tfrecords,
+        eval_tfrecords,
         train_callable,
         acquisition_func,
         n_samples,  # may need more samples?
@@ -35,13 +36,17 @@ class Iteration():
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
         
-        assert isinstance(initial_train_tfrecords, list)
-        try:
-            assert all([os.path.isfile(loc) for loc in initial_train_tfrecords])
-        except AssertionError:
-            logging.critical('Fatal error: missing tfrecords!')
-            logging.critical(initial_train_tfrecords)
-        self.initial_train_tfrecords = initial_train_tfrecords  # acquired up to start of iteration
+        for (tfrecords, attr) in [
+            (initial_train_tfrecords, 'initial_train_tfrecords'), # acquired up to start of iteration
+            (eval_tfrecords, 'eval_tfrecords')]:
+            assert isinstance(initial_train_tfrecords, list)
+            try:
+                assert all([os.path.isfile(loc) for loc in initial_train_tfrecords])
+            except AssertionError:
+                logging.critical('Fatal error: missing {}!'.format(attr))
+                logging.critical(tfrecords)
+            setattr(self, attr, tfrecords)
+
 
         self.acquired_tfrecord = None
         assert callable(train_callable)
@@ -141,12 +146,19 @@ class Iteration():
         Callable should expect 
         - log dir to train models in
         - list of tfrecord files to train on
+        - list of tfrecord files to eval on
         - learning rate to use 
         - epochs to train for
         """  
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
-        self.train_callable(self.estimators_dir, self.get_train_records(), self.learning_rate, self.epochs)  # could be docker container to run, save model
+        self.train_callable(
+            self.estimators_dir,
+            self.get_train_records(),
+            self.eval_tfrecords,
+            self.learning_rate,
+            self.epochs
+        )  # could be docker container to run, save model
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
