@@ -135,7 +135,7 @@ class ActiveConfig():
         # initial_train_tfrecords = self.shards.train_tfrecord_locs() 
         # initial_train_tfrecords = random_galaxies_4k + self.shards.train_tfrecord_locs()
         # initial_train_tfrecords = self.shards.train_tfrecord_locs() + random_galaxies
-        initial_train_tfrecords = random_galaxies
+        initial_train_tfrecords = random_galaxies_30k
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
 
