@@ -30,13 +30,16 @@ def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
     else:
         # see https://github.com/tensorflow/tensorflow/issues/14857#issuecomment-365439428
         logging.warning('Loading multiple tfrecords with interleaving, shuffle={}'.format(shuffle))
+        assert isinstance(filenames, list)
         assert len(filenames) > 0
         # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
         assert all([os.path.isfile(loc) for loc in filenames])
-        assert isinstance(filenames, list)
         num_shards = len(filenames)
         # get tfrecords matching filenames, optionally shuffling order of shards to be read
-        dataset = tf.data.Dataset.list_files(filenames, shuffle=shuffle)
+        # dataset = tf.data.Dataset.list_files(filenames, shuffle=shuffle)
+        dataset = tf.data.Dataset.from_tensor_slices(tf.constant(filenames, dtype=tf.string))
+        if shuffle:
+            dataset = dataset.shuffle(num_shards)
         # read 1 file per shard, cycling through shards
         dataset = dataset.interleave(
             lambda filename: tf.data.TFRecordDataset(filename).map(parse_function),
