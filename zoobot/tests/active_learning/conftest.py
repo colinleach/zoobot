@@ -127,11 +127,6 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
         )
 
     assert os.path.isdir(config.run_dir)  # permanent directory for dvc control
-    subdirs = [
-        config.requested_fits_dir, 
-        config.requested_tfrecords_dir
-    ]
-    assert all([os.path.exists(subdir) for subdir in subdirs])
     assert os.path.exists(config.db_loc)
 
     assert config.ready()

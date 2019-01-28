@@ -63,11 +63,6 @@ class ActiveConfig():
 
         self.initial_estimator_ckpt = initial_estimator_ckpt
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
-    
-        # will download/copy fits of top acquisitions into here
-        self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
-        # and then write them into tfrecords here
-        self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
 
         self.prepare_run_folders()
 
@@ -82,7 +77,7 @@ class ActiveConfig():
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
 
-        directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
+        directories = [self.run_dir]
         for directory in directories:
             os.mkdir(directory)
 
@@ -95,8 +90,6 @@ class ActiveConfig():
             assert os.path.isdir(self.initial_estimator_ckpt)
             assert os.path.exists(os.path.join(self.initial_estimator_ckpt, 'saved_model.pb'))
         assert os.path.isdir(self.run_dir)
-        assert os.path.isdir(self.requested_fits_dir)
-        assert os.path.isdir(self.requested_tfrecords_dir)
         return True
 
 
@@ -170,7 +163,7 @@ class ActiveConfig():
 
             iteration_n += 1
             initial_db_loc = iteration.db_loc
-            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
+            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shards
             initial_estimator_ckpt = iteration.estimators_dir  # TODO rename, only if warm_start
             iterations_record.append(iteration)
 

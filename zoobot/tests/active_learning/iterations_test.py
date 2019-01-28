@@ -7,6 +7,7 @@ import json
 import random
 
 import numpy as np
+import pandas as pd
 
 from zoobot.active_learning import iterations
 from zoobot.tests.active_learning import conftest
@@ -69,7 +70,7 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
             epochs=2
         )
 
-        assert iteration.acquired_tfrecord is None
+        assert not iteration.get_acquired_tfrecords()
  
         expected_iteration_dir = os.path.join(run_dir, 'iteration_{}'.format(iteration_n))
         assert os.path.isdir(expected_iteration_dir)
@@ -84,7 +85,7 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
         assert os.path.exists(expected_db_loc)
 
         # if initial estimator was provided, it should have been copied into the of 0th iteration subdir
-        # TODO TODO TODO
+        # TODO
         # if initial_estimator_ckpt is not None:
         #     expected_initial_estimator_copy = os.path.join(expected_estimators_dir, 'some_datetime_ckpt')
         #     assert os.path.isdir(expected_initial_estimator_copy)
@@ -129,8 +130,10 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
 
 def test_get_train_records(new_iteration, active_config):
     assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords
-    new_iteration.acquired_tfrecord = 'acquired.tfrecord'
-    assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords + ['acquired.tfrecord']
+    tfrecord_loc = os.path.join(new_iteration.acquired_tfrecords_dir, 'something.tfrecord')
+    with open(tfrecord_loc, 'w') as f:
+        f.write('a mock tfrecord')
+    assert new_iteration.get_train_records() == new_iteration.initial_train_tfrecords + [tfrecord_loc]
 
 
 def test_record_train_records(new_iteration):
@@ -166,15 +169,35 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
         SUBJECTS_REQUESTED.extend(subject_ids)
     monkeypatch.setattr(iterations, 'request_labels', mock_request_labels)
 
-    def mock_add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
-        assert len(subject_ids) > 0
-        assert isinstance(subject_ids, list)
-        assert os.path.exists(os.path.dirname(tfrecord_loc))
-        assert isinstance(size, int)
+    def mock_get_file_loc_df_from_db(db, subject_ids):
+        data = {
+            'id_str': subject_ids,
+            'file_loc': 'somewhere',
+            'label': np.random.randint(low=0, high=40, size=len(subject_ids))
+        }
+        return pd.DataFrame(data=data)
+    monkeypatch.setattr(iterations.active_learning, 'get_file_loc_df_from_db', mock_get_file_loc_df_from_db)
+    
+
+    def mock_write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size):
         # save the subject ids here, pretending to be a tfrecord of those subjects
-        with open(tfrecord_loc, 'w') as f:
-            json.dump(subject_ids, f)
-    monkeypatch.setattr(iterations.active_learning, 'add_labelled_subjects_to_tfrecord', mock_add_labelled_subjects_to_tfrecord)
+        assert set(columns_to_save) == {'id_str', 'label'}
+        tfrecord_locs = [os.path.join(save_dir, loc) for loc in ['shard_0.tfrecord', 'shard_1.tfrecord']]
+        for loc in tfrecord_locs:
+            with open(loc, 'w') as f:
+                json.dump([str(x) for x in df['id_str']], f)
+    monkeypatch.setattr(iterations.active_learning, 'write_catalog_to_tfrecord_shards', mock_write_catalog_to_tfrecord_shards)
+
+
+    # def mock_add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    #     assert len(subject_ids) > 0
+    #     assert isinstance(subject_ids, list)
+    #     assert os.path.exists(os.path.dirname(tfrecord_loc))
+    #     assert isinstance(size, int)
+    #     # save the subject ids here, pretending to be a tfrecord of those subjects
+    #     with open(tfrecord_loc, 'w') as f:
+    #         json.dump(subject_ids, f)
+    # monkeypatch.setattr(iterations.active_learning, 'add_labelled_subjects_to_tfrecord', mock_add_labelled_subjects_to_tfrecord)
 
 
     def mock_add_labels_to_db(subject_ids, labels, db):
@@ -208,13 +231,18 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
         assert os.path.isdir(expected_ckpt_copy)
 
     # previous iteration may have asked for some subjects - check they were acquired and used
-    if len(previously_requested_subjects) > 0:
-        assert new_iteration.acquired_tfrecord == os.path.join(new_iteration.requested_tfrecords_dir, 'acquired_shard.tfrecord')
-        subjects_saved_from_earlier_request = json.load(open(new_iteration.acquired_tfrecord))
+    expected_tfrecords = [
+        os.path.join(new_iteration.acquired_tfrecords_dir, 'shard_0.tfrecord'),
+        os.path.join(new_iteration.acquired_tfrecords_dir, 'shard_1.tfrecord')
+    ]
+    if previously_requested_subjects:
+        assert new_iteration.get_acquired_tfrecords() == expected_tfrecords
+        # mock_write_catalog_to_tfrecord_shards saved json of acquired id_strs to each tfrecord
+        subjects_saved_from_earlier_request = json.load(open(expected_tfrecords[0]))
         assert subjects_saved_from_earlier_request == previously_requested_subjects
-        assert new_iteration.acquired_tfrecord in new_iteration.get_train_records()
+        assert set(expected_tfrecords).issubset(set(new_iteration.get_train_records()))
     else:
-        assert new_iteration.acquired_tfrecord not in new_iteration.get_train_records()
+        assert set(expected_tfrecords).intersection(set(new_iteration.get_train_records())) == set()
 
     # check records were saved TODO
     # assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))

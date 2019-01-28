@@ -325,26 +325,22 @@ def subject_is_unlabelled(id_str, db):
     return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
 
-def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
-    """Write the subjects with ids in `subject_ids` to a tfrecord at `tfrecord_loc`
-    tfrecord will save the image stored at `db.catalog.fits_loc` at size `size`
-    tfrecord will include the label stored under `db.catalog.label`
+def get_file_loc_df_from_db(db, subject_ids):
+    """
+    Look up the file_loc and label in db for the subjects with ids in `subject_ids`
+    df will include the image_loc stored at `db.catalog.file_loc`
+    df will include the label stored under `db.catalog.label`
     Useful for creating additional training tfrecords during active learning
     
     Args:
         db (sqlite3.Connection): database with `db.catalog` table to get subject image and label
         subject_ids (list): of subject ids matching `db.catalog.id_str` values
-        tfrecord_loc (str): path into which to save new tfrecord
-        size (int): height/width dimension of image matrix to rescale and save to tfrecords
     
     Raises:
         IndexError: No matches found to an id in `subject_ids` within db.catalog.id_str
         ValueError: Subject with an id in `subject_ids` has null label (code error in this func.)
     """
-
-    logging.info('Adding {} subjects  (e.g. {}) to new tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
     assert len(subject_ids) > 0
-    assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     cursor = db.cursor()
 
     rows = []
@@ -373,16 +369,20 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         })
 
     top_subject_df = pd.DataFrame(data=rows)
-
-    
-
     assert len(top_subject_df) == len(subject_ids)
+    return top_subject_df
+
+
+def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
+    df = get_file_loc_df_from_db(db, subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
-        top_subject_df,
+        df,
         tfrecord_loc,
         size,
         columns_to_save=['id_str', 'label'],
-        reader=catalog_to_tfrecord.get_reader(top_subject_df['file_loc']))
+        reader=catalog_to_tfrecord.get_reader(df['file_loc']))
+
 
 
 def get_relative_loc(loc):
