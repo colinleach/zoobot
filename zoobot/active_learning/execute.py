@@ -124,12 +124,16 @@ class ActiveConfig():
         # initial_train_tfrecords = self.shards.train_tfrecord_locs()
         eval_tfrecords = self.shards.eval_tfrecord_locs()
 
-        base_dir = 'data/gz2_shards/runs_cache/uint8/30k_random_galaxies'
-        random_galaxies = [os.path.join(base_dir, loc) for loc in os.listdir(base_dir)]
+        dir_30k = 'data/gz2_shards/runs_cache/uint8/30k_random_galaxies'
+        random_galaxies_30k = [os.path.join(dir_30k, loc) for loc in os.listdir(dir_30k)]
+
+        dir_4k = 'data/gz2_shards/runs_cache/uint8/4k_random_galaxies'
+        random_galaxies_4k = [os.path.join(dir_4k, loc) for loc in os.listdir(dir_4k)]
 
         iteration_n = 1
         # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        initial_train_tfrecords = self.shards.train_tfrecord_locs() 
+        # initial_train_tfrecords = self.shards.train_tfrecord_locs() 
+        initial_train_tfrecords = random_galaxies_4k + self.shards.train_tfrecord_locs()
         # initial_train_tfrecords = self.shards.train_tfrecord_locs() + random_galaxies
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
