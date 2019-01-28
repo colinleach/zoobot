@@ -125,19 +125,18 @@ class ActiveConfig():
         all_shard_locs = [os.path.join(self.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
         shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
 
-        iteration_n = 0
+        # iteration_n = 0
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords = self.shards.train_tfrecord_locs()
+        # initial_train_tfrecords = self.shards.train_tfrecord_locs()
         eval_tfrecords = self.shards.eval_tfrecord_locs()
 
-        # iteration_n = 1
+        iteration_n = 1
         # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/30k_random.tfrecord']
+        initial_train_tfrecords = self.shards.train_tfrecord_locs() 
+        # initial_train_tfrecords = self.shards.train_tfrecord_locs() + ['data/gz2_shards/runs_cache/30k_random.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
-        
 
         epochs = 650
         learning_rate = 0.001
@@ -147,16 +146,6 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
-            # if iteration_n == 0:
-            #     initial_train_tfrecords = [
-            #         'data/shards/latest_shards/initial_train.tfrecord'
-            #     ]
-            # else:
-            #     initial_train_tfrecords = [
-            #         'data/shards/latest_shards/initial_train.tfrecord',
-            #         # 'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
-            #         'data/shards'
-            #     ]
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
