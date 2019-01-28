@@ -124,7 +124,8 @@ class ActiveConfig():
         # initial_train_tfrecords = self.shards.train_tfrecord_locs()
         eval_tfrecords = self.shards.eval_tfrecord_locs()
 
-        random_galaxies = [os.path.join('data/gz2_shards/runs_cache/30k_random_galaxies', loc) for loc in os.listdir('data/gz2_shards/runs_cache/30k_random_galaxies')]
+        base_dir = 'data/gz2_shards/runs_cache/uint8/30k_random_galaxies'
+        random_galaxies = [os.path.join(base_dir, loc) for loc in os.listdir(base_dir)]
 
         iteration_n = 1
         # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
