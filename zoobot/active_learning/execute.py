@@ -255,8 +255,8 @@ if __name__ == '__main__':
     new_shard_dir = 'data/gz2_shards'
     shard_config.shard_dir = new_shard_dir
     attrs = [
-        'train_tfrecord_loc',
-        'eval_tfrecord_loc',
+        'train_dir',
+        'eval_dir',
         'labelled_catalog_loc',
         'unlabelled_catalog_loc',
         'config_save_loc',
