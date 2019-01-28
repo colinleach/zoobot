@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
-    new_shard_dir = 'data/gz2_shards'
+    new_shard_dir = 'data/gz2_shards/uint8_256px'
     shard_config.shard_dir = new_shard_dir
     attrs = [
         'train_dir',
