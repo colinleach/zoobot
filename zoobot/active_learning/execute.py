@@ -278,10 +278,11 @@ if __name__ == '__main__':
 
     # these do not change per iteration
     train_callable_params = TrainCallableParams(
-        initial_size = active_config.shards.initial_size,
-        final_size = active_config.shards.final_size,
-        warm_start = args.warm_start,
-        eval_tfrecord_loc=active_config.shards.eval_tfrecord_loc,
+        initial_size=active_config.shards.initial_size,
+        final_size=active_config.shards.final_size,
+        warm_start=args.warm_start,
+        # TODO remove?
+        eval_tfrecord_loc=active_config.shards.eval_tfrecord_locs(),
         test=args.test
     )
 
