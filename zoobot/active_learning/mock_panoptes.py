@@ -58,6 +58,6 @@ def get_labels():
 
 if __name__ == '__main__':
     # fill out subjects_requested so that we acquire many new random shards
-    unlabelled_catalog = pd.read_csv('data/gz2_shards/unlabelled_catalog.csv')
+    unlabelled_catalog = pd.read_csv('data/gz2_shards/uint8_256px/unlabelled_catalog.csv')
     subject_ids = list(unlabelled_catalog.sample(30000)['id_str'].astype(str))
     request_labels(subject_ids)  # will write to updated loc
