@@ -27,7 +27,7 @@ def test_coverage_fraction(predictions, true_params):
     # here, the posterior is good, expect correct coverage
     alpha = 0.05
     coverage = dropout_calibration.coverage_fraction(predictions, true_params, alpha)
-    assert 0.99 > coverage > 0.9  # sig2 should be 0.95 coverage, on average
+    assert 0.99 > coverage > .85  # sig2 should be 0.95 coverage, on average
 
 
 def test_check_coverage_fractions(predictions, true_params):

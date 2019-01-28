@@ -18,7 +18,7 @@ def general_parsing_function(serialized_example, features):
     return example
 
 
-def load_dataset(filenames, feature_spec, num_parallel_calls=4):
+def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
     # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(filenames))
@@ -29,19 +29,18 @@ def load_dataset(filenames, feature_spec, num_parallel_calls=4):
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
         # see https://github.com/tensorflow/tensorflow/issues/14857#issuecomment-365439428
-        logging.debug('Loading multiple tfrecords, no interleaving')
+        logging.warning('Loading multiple tfrecords with interleaving and SHUFFLING')
         # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
         assert all([os.path.isfile(loc) for loc in filenames])
         assert isinstance(filenames, list)
         num_shards = len(filenames)
-        # shuffle order of shards to be read
-        dataset = tf.data.Dataset.list_files(filenames).shuffle(num_shards)
+        # get tfrecords matching filenames, optionally shuffling order of shards to be read
+        dataset = tf.data.Dataset.list_files(filenames, shuffle=shuffle)
         # read 1 file per shard, cycling through shards
         dataset = dataset.interleave(
             lambda filename: tf.data.TFRecordDataset(filename).map(parse_function),
             cycle_length=num_shards
         )
             # could add num_parallel_calls if desired, but let's leave for now 
-        # for extra randomness, shuffle those (1st in s1, 1st in s2, ...) subjects
-        dataset = dataset.shuffle(5000)
+        # for extra randomness, may shuffle those (1st in s1, 1st in s2, ...) subjects
         return dataset

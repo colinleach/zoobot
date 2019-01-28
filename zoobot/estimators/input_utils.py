@@ -110,11 +110,11 @@ def make_labels_noisy(labels):
 
 
 def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
-        dataset = load_dataset(tfrecord_loc, feature_spec)
+        dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
         if shuffle:
-            dataset = dataset.shuffle(batch_size * 20)
+            dataset = dataset.shuffle(5000)  # should be > len of each tfrecord
         if repeat:
-            dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
+            dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
         iterator = dataset.make_one_shot_iterator()

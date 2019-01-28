@@ -376,6 +376,7 @@ def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_lab
 
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
+    # should NOT be read back shuffled!
     assert subjects[0]['id_str'] == 'some_hash'.encode('utf-8')  # tfrecord saves as bytes
     assert subjects[1]['id_str'] == 'yet_another_hash'.encode('utf-8')  #tfrecord saves as bytes
 
