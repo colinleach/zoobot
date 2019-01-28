@@ -116,9 +116,9 @@ class ActiveConfig():
         """
         # clear any leftover mocked labels awaiting collection
         # won't do this in production
-        # from zoobot.active_learning import mock_panoptes
-        # if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
-        #     os.remove(mock_panoptes.SUBJECTS_REQUESTED)
+        from zoobot.active_learning import mock_panoptes
+        if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
+            os.remove(mock_panoptes.SUBJECTS_REQUESTED)
 
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
@@ -133,8 +133,8 @@ class ActiveConfig():
 
         iteration_n = 1
         # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        initial_train_tfrecords = self.shards.train_tfrecord_locs() 
-        # initial_train_tfrecords = self.shards.train_tfrecord_locs() + ['data/gz2_shards/runs_cache/30k_random.tfrecord']
+        # initial_train_tfrecords = self.shards.train_tfrecord_locs() 
+        initial_train_tfrecords = self.shards.train_tfrecord_locs() + ['data/gz2_shards/runs_cache/30k_random_galaxies_uint8.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
 
