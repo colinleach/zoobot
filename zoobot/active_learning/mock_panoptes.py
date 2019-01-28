@@ -46,6 +46,7 @@ def get_labels():
     )
     # return labels from the oracle, mimicking live GZ classifications
     labels = []
+    # TODO could make this search far quicker by joining, not searching many times
     for id_str in subject_ids:
         matching_rows = known_catalog[known_catalog['id_str'] == id_str]
         # throw error if id_str not recognised by oracle
