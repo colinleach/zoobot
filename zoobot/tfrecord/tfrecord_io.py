@@ -29,7 +29,8 @@ def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
         # see https://github.com/tensorflow/tensorflow/issues/14857#issuecomment-365439428
-        logging.warning('Loading multiple tfrecords with interleaving and SHUFFLING')
+        logging.warning('Loading multiple tfrecords with interleaving, shuffle={}'.format(shuffle))
+        assert len(filenames) > 0
         # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
         assert all([os.path.isfile(loc) for loc in filenames])
         assert isinstance(filenames, list)
