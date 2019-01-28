@@ -19,8 +19,8 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         channels=channels,
         label_col='label',
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
-        train_steps=300,  # compensating for doubling the batch, still want to measure often
-        eval_steps=10,
+        train_steps=15,  # compensating for doubling the batch, still want to measure often
+        eval_steps=5,
         batch_size=256,  # increased from 128 for less training noise
         min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
