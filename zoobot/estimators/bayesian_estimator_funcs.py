@@ -347,8 +347,8 @@ def binomial_loss(labels, predictions):
     epsilon = tf.constant(ep, dtype=tf.float32)
 
     # multiplication in tf requires floats
-    yes_votes = tf.cast(labels[0, :], tf.float32)
-    total_votes = tf.cast(labels[1, :], tf.float32)
+    yes_votes = tf.cast(labels[:, 0], tf.float32)
+    total_votes = tf.cast(labels[:, 1], tf.float32)
     p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
