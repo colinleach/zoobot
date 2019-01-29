@@ -25,7 +25,7 @@ if __name__ == '__main__':
     published_data_loc = '{}/gz2_hart16.csv'.format(catalog_dir)  # volunteer labels
     subject_manifest_loc = '{}/galaxyzoo2_sandor.csv'.format(catalog_dir)  # subjects on AWS
     labels_loc = '{}/basic_regression_labels.csv'.format(catalog_dir)  # will place catalog of file list and labels here
-    output_loc = '{}/basic_regression_labels_downloaded.csv'.format(catalog_dir)  # includes png_ready etc.
+    output_loc = '{}/basic_regression_labels_with_bars.csv'.format(catalog_dir)  # includes png_ready etc.
     png_dir = '/Volumes/alpha/gz2/png'  # will place downloaded png here (5GB or so)
 
     classifications = get_classification_results(published_data_loc, nrows=nrows)

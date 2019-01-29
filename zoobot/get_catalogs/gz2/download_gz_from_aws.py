@@ -25,7 +25,9 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
     # pool.close()
     # pool.join()
 
-    catalog = check_images_are_downloaded(catalog)
+    # catalog = check_images_are_downloaded(catalog)
+    previous_catalog = pd.read_csv('/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv', usecols=['png_ready'])
+    catalog['png_ready'] = previous_catalog['png_ready']
 
     print("\n{} total galaxies".format(len(catalog)))
     print("{} png are downloaded".format(np.sum(catalog['png_ready'])))
