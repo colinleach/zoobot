@@ -152,7 +152,7 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             return response, None  # no loss, as labels not known (in general)
 
-        if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for TRAIN/EVAL with binomial
+        else: # calculate loss for TRAIN/EVAL with binomial
             labels = tf.stop_gradient(labels)
             scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
             loss = binomial_loss(labels, scalar_predictions)
