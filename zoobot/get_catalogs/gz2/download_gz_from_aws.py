@@ -14,17 +14,17 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
 
     catalog['png_loc'] = [get_png_loc(png_dir, catalog.iloc[index]) for index in range(len(catalog))]
 
-    download_params = {
-        'overwrite': overwrite,
-        'pbar': pbar
-    }
-    download_images_partial = functools.partial(download_images, **download_params)
+    # download_params = {
+    #     'overwrite': overwrite,
+    #     'pbar': pbar
+    # }
+    # download_images_partial = functools.partial(download_images, **download_params)
 
-    pool = ThreadPool(30)
-    pool.map(download_images_partial, catalog.iterrows())
-    pbar.close()
-    pool.close()
-    pool.join()
+    # pool = ThreadPool(30)
+    # pool.map(download_images_partial, catalog.iterrows())
+    # pbar.close()
+    # pool.close()
+    # pool.join()
 
     catalog = check_images_are_downloaded(catalog)
 
