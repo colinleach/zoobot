@@ -41,7 +41,7 @@ def get_png_loc(png_dir, galaxy):
     name = str(galaxy['dr7objid']) + '.png'
     subdir = name[:6]
     if not os.path.isdir(subdir):
-        os.mkdir(subdir)
+        os.mkdir(os.path.join(png_dir, subdir))
     return os.path.join(png_dir, subdir, name)
 
 
