@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import functools
 import numpy as np
+import pandas as pd
 
 from multiprocessing.dummy import Pool as ThreadPool
 
