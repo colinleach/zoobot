@@ -9,7 +9,7 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 DIR_OF_THIS_FILE = os.path.dirname(os.path.realpath(__file__))
 
 # ORACLE_LOC = os.path.join(DIR_OF_THIS_FILE, 'oracle_gz2.csv')
-ORACLE_LOC = 'data/gz2_shards/runs_cache/oracle_gz2.csv'
+ORACLE_LOC = 'data/gz2_shards/runs_cache/oracle_gz2_bar.csv'
 # ORACLE_LOC = 'this_should_fail'
 # assert os.path.isfile(ORACLE_LOC)
 
@@ -59,6 +59,6 @@ def get_labels():
 
 if __name__ == '__main__':
     # fill out subjects_requested so that we acquire many new random shards
-    unlabelled_catalog = pd.read_csv('data/gz2_shards/uint8_256px/unlabelled_catalog.csv')
+    unlabelled_catalog = pd.read_csv('data/gz2_shards/uint8_256px_bar_n/unlabelled_catalog.csv')
     subject_ids = list(unlabelled_catalog['id_str'].astype(str))  # entire unlabelled catalog!
     request_labels(subject_ids)  # will write to updated loc
