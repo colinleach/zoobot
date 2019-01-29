@@ -206,7 +206,7 @@ if __name__ == '__main__':
     ]
 
     
-    catalog_loc = 'data/gz2_shards/basic_regression_labels_downloaded.csv'
+    catalog_loc = 'data/gz2_shards/basic_regression_labels_with_bars.csv'
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
     catalog = pd.read_csv(catalog_loc,
