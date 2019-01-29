@@ -19,7 +19,7 @@ def get_labels_and_images(classifications, subject_manifest, png_dir, output_loc
 if __name__ == '__main__':
 
     nrows = None
-    overwrite = True
+    overwrite = False
 
     catalog_dir = '/data/galaxy_zoo/gz2/catalogs'  # shared folder, for convenience
     published_data_loc = '{}/gz2_hart16.csv'.format(catalog_dir)  # volunteer labels
