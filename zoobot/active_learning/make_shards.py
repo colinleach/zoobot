@@ -234,9 +234,6 @@ if __name__ == '__main__':
 
     catalog['file_loc'] = catalog['png_loc']
     catalog['file_loc'] = catalog['file_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
-    print(catalog['file_loc'].sample())
-    print(len(catalog))
-    exit(0)
 
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
