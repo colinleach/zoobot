@@ -202,7 +202,7 @@ if __name__ == '__main__':
     ]
 
     
-    catalog_loc = '/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv'
+    catalog_loc = 'data/gz2_shards/basic_regression_labels_downloaded.csv'
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
     catalog = pd.read_csv(catalog_loc,
@@ -231,6 +231,9 @@ if __name__ == '__main__':
     catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
     catalog['file_loc'] = catalog['png_loc']  # active learning will load from png by default
+    print(catalog['file_loc'].sample())
+    print(len(catalog))
+    exit(0)
 
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
