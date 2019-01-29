@@ -1,10 +1,10 @@
+import os
+from multiprocessing.dummy import Pool as ThreadPool
+
 from tqdm import tqdm
 import functools
 import numpy as np
 import pandas as pd
-
-from multiprocessing.dummy import Pool as ThreadPool
-
 from PIL import Image
 from urllib.request import urlretrieve  # urlretrieve is unstable multithreaded - but doesn't seem to fall apart here
 
