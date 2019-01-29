@@ -376,7 +376,7 @@ def get_eval_metric_ops(self, labels, predictions):
     tf.summary.histogram('total_votes', labels[1, :])
     assert labels.dtype == tf.int64
     assert predictions['prediction'].dtype == tf.float32
-    return {"rmse": tf.metrics.root_mean_squared_error(tf.cast(labels[0, :], dtype=tf.float32) / tf.cast(labels[1, :], dtype=tf.float32), predictions['prediction'])}
+    return {"rmse": tf.metrics.root_mean_squared_error(tf.cast(labels[:, 0], dtype=tf.float32) / tf.cast(labels[:, 1], dtype=tf.float32), predictions['prediction'])}
 
 def logging_hooks(model_config):
     train_tensors = {
