@@ -232,7 +232,7 @@ if __name__ == '__main__':
     catalog['total_votes'] = catalog['spiral_total-votes']
     catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    catalog['file_loc'] = catalog['png_loc']  # active learning will load from png by default
+    catalog['file_loc'] = catalog['png_loc'].str.lstrip('/Volumes/alpha')  # active learning will load from png by default
     print(catalog['file_loc'].sample())
     print(len(catalog))
     exit(0)
