@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
-from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec
+from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec, matrix_label_counts_feature_spec
 
 
 class InputConfig():
@@ -89,14 +89,15 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
-        batch_images, batch_labels = load_batches_with_labels(config)
+        # batch_images, batch_labels = load_batches_with_labels(config)
+        batch_images, batch_labels, batch_counts = load_batches_with_counts(config)
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
         assert preprocessed_batch_images['x'].shape[3] == 1
-        # print_op = tf.print('ex input', batch_labels)
-        # with tf.control_dependencies([print_op]):
-        return preprocessed_batch_images, tf.identity(batch_labels)
+
+        joint_batch_labels = tf.concat([batch_labels, batch_counts], axis=1)
+        return preprocessed_batch_images, joint_batch_labels
 
 
 def make_labels_noisy(labels):
@@ -145,6 +146,10 @@ def get_labels_from_batch(batch, noisy_labels):
     return sampled_labels
 
 
+def get_counts_from_batch(batch):
+    return batch['total_votes']
+
+
 def load_batches_with_labels(config):
     """
     Get batches of images and labels from tfrecord according to instructions in config
@@ -166,6 +171,19 @@ def load_batches_with_labels(config):
         batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
         batch_labels = get_labels_from_batch(batch, config.noisy_labels)
         return batch_images, batch_labels
+
+
+def load_batches_with_counts(config):
+    with tf.name_scope('load_batches_{}'.format(config.name)):
+        feature_spec = matrix_label_counts_feature_spec(config.initial_size, config.channels)
+
+        batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+
+        batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
+        batch_labels = get_labels_from_batch(batch, config.noisy_labels)
+        batch_counts = get_counts_from_batch(batch)
+
+        return batch_images, batch_labels, batch_counts
 
 
 def load_batches_without_labels(config):

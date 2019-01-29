@@ -26,6 +26,8 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
     # pool.close()
     # pool.join()
 
+    assert os.path.exists(catalog['png_loc'][12])
+    exit(0)
     catalog = check_images_are_downloaded(catalog, lazy=True)
     # previous_catalog = pd.read_csv('/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv', usecols=['png_ready'])
     # catalog['png_ready'] = previous_catalog['png_ready']
@@ -37,14 +39,17 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
 
 
 def get_png_loc(png_dir, galaxy):
-    return '{}/{}.png'.format(png_dir, galaxy['dr7objid'])
+    name = str(galaxy['dr7objid']) + '.png'
+    subdir = name[:6]
+    if not os.path.isdir(subdir):
+        os.mkdir(subdir)
+    return os.path.join(png_dir, subdir, name)
 
 
 def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
 
     # TODO Temporary fix for iterrows
     galaxy = galaxy[1]
-
     png_loc = galaxy['png_loc']
 
     if not png_downloaded_correctly(png_loc) or overwrite:
@@ -62,22 +67,23 @@ def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
         pbar.update()
 
 
-def png_downloaded_correctly(png_loc, lazy=False):
-    if lazy:
-        return os.path.isfile(png_loc)
-    else:
-        try:
-            _ = Image.open(png_loc)
-            return True
-        except:
-            return False
+def png_downloaded_correctly(png_loc):
+    try:
+        _ = Image.open(png_loc)
+        return True
+    except:
+        return False
 
 
 def check_images_are_downloaded(catalog, lazy=False):
-    catalog['png_ready'] = np.zeros(len(catalog), dtype=bool)
+    if lazy:
+        catalog['png_ready'] = catalog['png_loc'].apply(os.path.exists)
 
-    for row_index, galaxy in tqdm(catalog.iterrows(), total=len(catalog), unit=' images checked'):
-        png_loc = galaxy['png_loc']
-        catalog['png_ready'][row_index] = png_downloaded_correctly(png_loc, lazy=lazy)
+    else:
+        catalog['png_ready'] = np.zeros(len(catalog), dtype=bool)
+
+        for row_index, galaxy in tqdm(catalog.iterrows(), total=len(catalog), unit=' images checked'):
+            png_loc = galaxy['png_loc']
+            catalog['png_ready'][row_index] = png_downloaded_correctly(png_loc)
 
     return catalog
