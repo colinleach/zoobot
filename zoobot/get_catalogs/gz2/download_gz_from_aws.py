@@ -73,7 +73,7 @@ def png_downloaded_correctly(png_loc, lazy=False):
             return False
 
 
-def check_images_are_downloaded(catalog, lazy=lazy):
+def check_images_are_downloaded(catalog, lazy=False):
     catalog['png_ready'] = np.zeros(len(catalog), dtype=bool)
 
     for row_index, galaxy in tqdm(catalog.iterrows(), total=len(catalog), unit=' images checked'):
