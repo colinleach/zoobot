@@ -196,6 +196,8 @@ if __name__ == '__main__':
         't01_smooth_or_features_a03_star_or_artifact_count',
         't04_spiral_a08_spiral_count',
         't04_spiral_a09_no_spiral_count',
+        't03_bar_a06_bar_count',
+        't03_bar_a07_no_bar_count',
         'id',
         'ra',
         'dec',
@@ -227,10 +229,16 @@ if __name__ == '__main__':
     catalog['id_str'] = catalog['id'].astype(str)
 
     catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
+    catalog['bar_total-votes'] = catalog['t03_bar_a06_bar_count'] + catalog['t03_bar_a07_no_bar_count']
+    
 
-    catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
-    catalog['total_votes'] = catalog['spiral_total-votes']
-    catalog['label'] = catalog['t04_spiral_a08_spiral_count']
+    # catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
+    # catalog['total_votes'] = catalog['spiral_total-votes']
+    # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
+
+    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
+    catalog['total_votes'] = catalog['bar_total-votes']
+    catalog['label'] = catalog['t03_bar_a06_bar_count']
 
     catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
     del catalog['png_loc']  # else may load this by default
@@ -241,7 +249,7 @@ if __name__ == '__main__':
     # save catalog for mock_panoptes.py to return (now added to git)
     # TODO a bit hacky, as only coincidentally the same
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
-    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2_spiral.csv'), index=False)
+    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2_bar.csv'), index=False)
 
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
