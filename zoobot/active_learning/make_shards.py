@@ -194,6 +194,8 @@ if __name__ == '__main__':
         't01_smooth_or_features_a01_smooth_weighted_fraction',  # annoyingly, I only saved the weighted fractions. Should be quite similar, I hope.
         't01_smooth_or_features_a02_features_or_disk_count',
         't01_smooth_or_features_a03_star_or_artifact_count',
+        't04_spiral_a08_spiral_count',
+        't04_spiral_a09_no_spiral_count',
         'id',
         'ra',
         'dec',
