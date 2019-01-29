@@ -26,9 +26,9 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
     # pool.close()
     # pool.join()
 
-    # catalog = check_images_are_downloaded(catalog)
-    previous_catalog = pd.read_csv('/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv', usecols=['png_ready'])
-    catalog['png_ready'] = previous_catalog['png_ready']
+    catalog = check_images_are_downloaded(catalog, lazy=True)
+    # previous_catalog = pd.read_csv('/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv', usecols=['png_ready'])
+    # catalog['png_ready'] = previous_catalog['png_ready']
 
     print("\n{} total galaxies".format(len(catalog)))
     print("{} png are downloaded".format(np.sum(catalog['png_ready'])))
@@ -62,19 +62,22 @@ def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
         pbar.update()
 
 
-def png_downloaded_correctly(png_loc):
-    try:
-        _ = Image.open(png_loc)
-        return True
-    except:
-        return False
+def png_downloaded_correctly(png_loc, lazy=False):
+    if lazy:
+        return os.path.isfile(png_loc)
+    else:
+        try:
+            _ = Image.open(png_loc)
+            return True
+        except:
+            return False
 
 
-def check_images_are_downloaded(catalog):
+def check_images_are_downloaded(catalog, lazy=lazy):
     catalog['png_ready'] = np.zeros(len(catalog), dtype=bool)
 
     for row_index, galaxy in tqdm(catalog.iterrows(), total=len(catalog), unit=' images checked'):
         png_loc = galaxy['png_loc']
-        catalog['png_ready'][row_index] = png_downloaded_correctly(png_loc)
+        catalog['png_ready'][row_index] = png_downloaded_correctly(png_loc, lazy=lazy)
 
     return catalog
