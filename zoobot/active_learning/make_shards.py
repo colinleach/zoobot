@@ -105,7 +105,7 @@ class ShardConfig():
                 df,
                 db=None,
                 img_size=self.initial_size,
-                columns_to_save=['id_str', 'label'],
+                columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=save_dir,
                 shard_size=self.shard_size
             )
@@ -189,14 +189,16 @@ if __name__ == '__main__':
 
 
     # needs update
-    columns_to_save = [
+    usecols = [
         't01_smooth_or_features_a01_smooth_count',
         't01_smooth_or_features_a01_smooth_weighted_fraction',  # annoyingly, I only saved the weighted fractions. Should be quite similar, I hope.
         't01_smooth_or_features_a02_features_or_disk_count',
         't01_smooth_or_features_a03_star_or_artifact_count',
         'id',
         'ra',
-        'dec'
+        'dec',
+        'png_loc',
+        'png_ready'
     ]
 
     
@@ -204,7 +206,7 @@ if __name__ == '__main__':
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
     catalog = pd.read_csv(catalog_loc,
-                        usecols=columns_to_save + ['png_loc', 'png_ready'],
+                        usecols=usecols,
                         nrows=None)
 
     # # in memory for now, but will be saved to csv
@@ -222,7 +224,11 @@ if __name__ == '__main__':
     # for consistency
     catalog['id_str'] = catalog['id'].astype(str)
 
-    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_weighted_fraction']
+    catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
+
+    catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
+    catalog['total_votes'] = catalog['spiral_total-votes']
+    catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
     catalog['file_loc'] = catalog['png_loc']  # active learning will load from png by default
 
@@ -232,7 +238,7 @@ if __name__ == '__main__':
     # save catalog for mock_panoptes.py to return (now added to git)
     # TODO a bit hacky, as only coincidentally the same
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
-    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2.csv'), index=False)
+    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2_spiral.csv'), index=False)
 
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
@@ -244,10 +250,10 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    labelled_size = 25000
+    # labelled_size = 25000
     # test mode:
-    # catalog = catalog[:10000]
-    # labelled_size = 6000
+    catalog = catalog[:10000]
+    labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
     unlabelled_catalog = catalog[labelled_size:]  # for pool
