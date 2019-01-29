@@ -374,7 +374,7 @@ def get_eval_metric_ops(self, labels, predictions):
     # record distribution of predictions for tensorboard
     tf.summary.histogram('yes_votes', labels[0, :])
     tf.summary.histogram('total_votes', labels[1, :])
-    assert labels.dtype == tf.float32
+    assert labels.dtype == tf.int64
     assert predictions['prediction'].dtype == tf.float32
     return {"rmse": tf.metrics.root_mean_squared_error(tf.cast(labels[0, :], dtype=tf.float32) / tf.cast(labels[1, :], dtype=tf.float32), predictions['prediction'])}
 
