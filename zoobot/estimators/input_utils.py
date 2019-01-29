@@ -96,7 +96,7 @@ def get_input(config):
         # tf.shape is important to record the dynamic shape, rather than static shape
         assert preprocessed_batch_images['x'].shape[3] == 1
 
-        joint_batch_labels = tf.concat([batch_labels, batch_counts], axis=1)
+        joint_batch_labels = tf.stack([batch_labels, batch_counts], axis=1)
         return preprocessed_batch_images, joint_batch_labels
 
 
