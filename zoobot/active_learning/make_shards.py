@@ -248,9 +248,7 @@ if __name__ == '__main__':
 
     # temporary hacks for mocking panoptes
     # save catalog for mock_panoptes.py to return (now added to git)
-    # TODO a bit hacky, as only coincidentally the same
-    dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
-    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2_bar.csv'), index=False)
+    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle_gz2_bar.csv'), index=False)
 
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
