@@ -10,10 +10,9 @@ from urllib.request import urlretrieve  # urlretrieve is unstable multithreaded 
 
 def download_png_threaded(catalog, png_dir, overwrite=False):
 
-    pbar = tqdm(total=len(catalog), unit=' images created')
-
     catalog['png_loc'] = [get_png_loc(png_dir, catalog.iloc[index]) for index in range(len(catalog))]
 
+    # pbar = tqdm(total=len(catalog), unit=' images created')
     # download_params = {
     #     'overwrite': overwrite,
     #     'pbar': pbar
