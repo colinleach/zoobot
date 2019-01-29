@@ -51,8 +51,8 @@ def matrix_label_feature_spec(size, channels, float_label=True):
 def matrix_label_counts_feature_spec(size, channels):
     return {
         "matrix": tf.FixedLenFeature([], tf.string),
-        "label": tf.FixedLenFeature((), tf.float32),
-        "total_votes": tf.FixedLenFeature([], tf.float32)
+        "label": tf.FixedLenFeature((), tf.int64),
+        "total_votes": tf.FixedLenFeature([], tf.int64)
     }
 
 
