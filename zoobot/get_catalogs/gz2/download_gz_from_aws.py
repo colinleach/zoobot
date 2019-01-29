@@ -27,7 +27,6 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
     # pool.join()
 
     assert os.path.exists(catalog['png_loc'][12])
-    exit(0)
     catalog = check_images_are_downloaded(catalog, lazy=True)
     # previous_catalog = pd.read_csv('/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv', usecols=['png_ready'])
     # catalog['png_ready'] = previous_catalog['png_ready']
