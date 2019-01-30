@@ -258,7 +258,7 @@ if __name__ == '__main__':
     # real mode:
     print(len(catalog))
     exit(0)
-    labelled_size = 10000
+    labelled_size = 45000
     # test mode:
     # catalog = catalog[:10000]
     # labelled_size = 6000
