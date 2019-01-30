@@ -41,10 +41,12 @@ def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
         if shuffle:
             dataset = dataset.shuffle(num_shards)
         # read 1 file per shard, cycling through shards
-        dataset = dataset.interleave(
-            lambda filename: tf.data.TFRecordDataset(filename).map(parse_function),
-            cycle_length=num_shards
-        )
+        print_op = tf.print("loading filenames:", dataset)
+        with tf.control_dependencies([print_op]):
+            dataset = dataset.interleave(
+                lambda filename: tf.data.TFRecordDataset(filename).map(parse_function),
+                cycle_length=num_shards
+            )
             # could add num_parallel_calls if desired, but let's leave for now 
         # for extra randomness, may shuffle those (1st in s1, 1st in s2, ...) subjects
         return dataset
