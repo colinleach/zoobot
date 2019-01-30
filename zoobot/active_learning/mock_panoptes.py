@@ -32,7 +32,7 @@ def get_labels():
     if not os.path.isfile(SUBJECTS_REQUESTED):
         logging.warning(
             'No previous subjects requested at {}'.format(SUBJECTS_REQUESTED))
-        return [], []
+        return [], [], []  # must unpack 3 values, look here if 'not enough values to unpack' error
 
     with open(SUBJECTS_REQUESTED, 'r') as f:
         subject_ids = json.load(f)
@@ -49,8 +49,8 @@ def get_labels():
     labels = []
     id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
     matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
-    labels = matching_df['label'].astype(int).values
-    counts = matching_df['total_votes'].astype(int).values
+    labels = list(matching_df['label'].astype(int))
+    counts = list(matching_df['total_votes'].astype(int))
     assert len(id_str_dummy_df) == len(matching_df)
     assert len(subject_ids) == len(labels)
     return subject_ids, labels, counts
