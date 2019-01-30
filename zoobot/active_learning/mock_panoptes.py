@@ -59,5 +59,5 @@ def get_labels():
 if __name__ == '__main__':
     # fill out subjects_requested so that we acquire many new random shards
     unlabelled_catalog = pd.read_csv(os.path.join(SHARD_DIR, 'unlabelled_catalog.csv'))
-    subject_ids = list(unlabelled_catalog['id_str'].astype(str))  # entire unlabelled catalog!
+    subject_ids = list(unlabelled_catalog['id_str'][:100].astype(str))  # entire unlabelled catalog!
     request_labels(subject_ids)  # will write to updated loc
