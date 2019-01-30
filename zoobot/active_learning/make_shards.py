@@ -246,12 +246,6 @@ if __name__ == '__main__':
     print(catalog['file_loc'].sample())
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
-    # temporary hacks for mocking panoptes
-    # save catalog for mock_panoptes.py to return (now added to git)
-    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle_gz2_bar.csv'), index=False)
-
-    exit(0)
-
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
     # select 1024 new training images
@@ -278,6 +272,11 @@ if __name__ == '__main__':
         unlabelled_catalog,
         train_test_fraction=0.8)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
+
+    # temporary hacks for mocking panoptes
+    # do this last as shard_dir is wiped and remade when making shards
+    # save catalog for mock_panoptes.py to return (now added to git)
+    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle_gz2_bar.csv'), index=False)
 
     # finally, tidy up by moving the log into the shard directory
     # could not be create here because shard directory did not exist at start of script

@@ -422,7 +422,8 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             ''',
             {
                 'label': label,
-                'subject_id': subject_id
+                'subject_id': subject_id,
+                'total_votes': total_votes
             }
         )
         db.commit()
