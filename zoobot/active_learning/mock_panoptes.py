@@ -22,6 +22,7 @@ ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle_gz2_bar.csv')
 SUBJECTS_REQUESTED = 'data/gz2_shards/runs_cache/many_random_subjects.json'
 
 def request_labels(subject_ids):
+    assert len(set(subject_ids)) == len(subject_ids)  # must be unique
     with open(SUBJECTS_REQUESTED, 'w') as f:
         json.dump(subject_ids, f)
 
@@ -41,20 +42,18 @@ def get_labels():
 
     known_catalog = pd.read_csv(
         ORACLE_LOC,
-        usecols=['id_str', 'label'],
-        dtype={'id_str': str, 'label': float}
+        usecols=['id_str', 'label', 'total_votes'],
+        dtype={'id_str': str, 'label': int, 'total_votes': int}
     )
     # return labels from the oracle, mimicking live GZ classifications
     labels = []
-    # TODO could make this search far quicker by joining, not searching many times
-    for id_str in subject_ids:
-        matching_rows = known_catalog[known_catalog['id_str'] == id_str]
-        # throw error if id_str not recognised by oracle
-        assert len(matching_rows) > 0
-        matching_row = matching_rows.iloc[0]
-        labels.append(matching_row['label'])
+    id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
+    matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
+    labels = matching_df['labels'].astype(int).values
+    counts = matching_df['counts'].astype(int).values
+    assert len(id_str_dummy_df) == len(matching_df)
     assert len(subject_ids) == len(labels)
-    return subject_ids, labels
+    return subject_ids, labels, counts
 
 
 if __name__ == '__main__':

@@ -135,9 +135,9 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels = get_labels()
+        subject_ids, labels, counts = get_labels()
         if len(subject_ids) > 0:
-            active_learning.add_labels_to_db(subject_ids, labels, self.db)
+            active_learning.add_labels_to_db(subject_ids, labels, counts, self.db)
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,

@@ -47,7 +47,8 @@ def create_db(catalog, db_loc):
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label FLOAT DEFAULT NULL,
+            label INT DEFAULT NULL,
+            count INT DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -88,7 +89,7 @@ def add_catalog_to_db(df, db):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, file_loc) VALUES(?,NULL,?)''',
+        INSERT INTO catalog(id_str, label, count, file_loc) VALUES(?,NULL,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -126,7 +127,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
             reader=catalog_to_tfrecord.get_reader(df['file_loc']),
             append=False)
         if db is not None:  # explicitly not passing db will skip this step, for e.g. train/test
-            add_tfrecord_to_db(save_loc, db, df_shard)
+            add_tfrecord_to_db(save_loc, db, df_shard)  # record ids in db, not labels
 
 
 def add_tfrecord_to_db(tfrecord_loc, db, df):
@@ -324,7 +325,7 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
     return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
-
+# bad name, actually gets all table columns
 def get_file_loc_df_from_db(db, subject_ids):
     """
     Look up the file_loc and label in db for the subjects with ids in `subject_ids`
@@ -349,7 +350,7 @@ def get_file_loc_df_from_db(db, subject_ids):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, file_loc FROM catalog
+            SELECT id_str, label, count, file_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -364,8 +365,9 @@ def get_file_loc_df_from_db(db, subject_ids):
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': float(subject[1]),
-            'file_loc': get_relative_loc(str(subject[2]))
+            'label': int(subject[1]),
+            'total_votes': int(subject[2]),
+            'file_loc': get_relative_loc(str(subject[3]))
         })
 
     top_subject_df = pd.DataFrame(data=rows)
@@ -380,7 +382,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         df,
         tfrecord_loc,
         size,
-        columns_to_save=['id_str', 'label'],
+        columns_to_save=['id_str', 'label', 'total_votes'],
         reader=catalog_to_tfrecord.get_reader(df['file_loc']))
 
 
@@ -398,19 +400,20 @@ def get_latest_checkpoint_dir(base_dir):
     return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
-def add_labels_to_db(subject_ids, labels, db):
+def add_labels_to_db(subject_ids, labels, counts, db):
     cursor = db.cursor()
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
+        count = counts[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        if isinstance(label, np.float32):
-            label = float(label)
-        assert isinstance(label, float)
+        label = int(label)
+        count = int(count)
+        assert isinstance(label, int)
+        assert isinstance(label, int)
         assert isinstance(subject_id, str)
-
         cursor.execute(
             '''
             UPDATE catalog
@@ -423,18 +426,35 @@ def add_labels_to_db(subject_ids, labels, db):
             }
         )
         db.commit()
-
-        # check labels really have been added, and not as byte string
+        # TODO single sql statement?
         cursor.execute(
             '''
-            SELECT label FROM catalog
+            UPDATE catalog
+            SET count = (:count)
             WHERE id_str = (:subject_id)
-            LIMIT 1
             ''',
-            (subject_id,)
+            {
+                'count': count,
+                'subject_id': subject_id
+            }
         )
-        retrieved_label = cursor.fetchone()[0]
-        assert retrieved_label == label
+        db.commit()
+
+        if subject_n == 0:  # careful check on first write only, for speed
+            # check labels really have been added, and not as byte string
+            cursor.execute(
+                '''
+                SELECT label, count FROM catalog
+                WHERE id_str = (:subject_id)
+                LIMIT 1
+                ''',
+                (subject_id,)
+            )
+            row = cursor.fetchone()
+            retrieved_label = row[0]
+            assert retrieved_label == label
+            retrieved_count = row[1]
+            assert retrieved_count == count
 
 
 def get_all_shard_locs(db):

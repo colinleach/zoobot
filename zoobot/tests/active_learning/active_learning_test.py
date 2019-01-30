@@ -52,6 +52,7 @@ def empty_shard_db():
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label INT DEFAULT NULL,
+            count INT DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -102,7 +103,8 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
         {
             'id_str': 'some_hash',
             'file_loc': file_loc_of_image,
-            'label': 1.  # already labelled!
+            'label': 1,  # already labelled!,
+            'count': 1
         }
     )
     db.commit()
@@ -201,15 +203,40 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
 def filled_shard_db_with_labels(filled_shard_db):
     db = filled_shard_db
     cursor = db.cursor()
-    default_loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
-    for pair in [('some_hash', 1), ('some_other_hash', 1), ('yet_another_hash', 0)]:
+    rows = [
+        {
+            'id_str': 'some_hash',
+            'label': 1,
+            'count': 1
+         },
+         {
+            'id_str': 'some_other_hash',
+            'label': 1,
+            'count': 1
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'label': 0,
+            'count': 1
+        }
+    ]
+    for row in rows:
         cursor.execute(
             '''
-            UPDATE catalog SET label = ? WHERE id_str = ?
+            UPDATE catalog SET label = ?, count = ?
+            WHERE id_str = ?
             ''',
-            (pair[1], pair[0])
+            (row['label'], row['count'], row['id_str'])
         )
         db.commit()
+    cursor.execute(
+        '''
+        SELECT id_str, label, count FROM catalog
+        '''
+    )
+    # trust but verify
+    catalog = cursor.fetchall()
+    assert catalog == [('some_hash', 1, 1), ('some_other_hash', 1, 1), ('yet_another_hash', 0, 1)]
     return db
 
 
@@ -365,8 +392,6 @@ def test_subject_is_unlabelled(filled_shard_db):
         active_learning.subject_is_unlabelled('missing_subject', filled_shard_db)
 
 
-
-
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
     # e.g. root image directory is tests, with images in subdirectory test_examples
     monkeypatch.setattr(active_learning, 'LOCAL_IMAGE_FOLDER', os.path.dirname(TEST_EXAMPLE_DIR))
@@ -385,16 +410,19 @@ def test_add_labels_to_db(filled_shard_db):
     subjects = [
         {
             'id_str': 'some_hash',
-            'label': 0.
+            'label': 0,
+            'total_votes': 0
         },
         {
             'id_str': 'yet_another_hash',
-            'label': 1.
+            'label': 1,
+            'total_votes': 1
         }
     ]
     subject_ids = [x['id_str'] for x in subjects]
     labels = [x['label'] for x in subjects]
-    active_learning.add_labels_to_db(subject_ids, labels, filled_shard_db)
+    counts = [x['total_votes'] for x in subjects]
+    active_learning.add_labels_to_db(subject_ids, labels, counts, filled_shard_db)
     # read db, check labels match
     cursor = filled_shard_db.cursor()
     for subject in subjects:
