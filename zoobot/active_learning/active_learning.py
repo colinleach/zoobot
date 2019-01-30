@@ -405,12 +405,12 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
-        total_votes = total_votes[subject_n]
+        total_votes_val = total_votes[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
         label = int(label)
-        total_votes = int(total_votes)
+        total_votes_val = int(total_votes_val)
         assert isinstance(label, int)
         assert isinstance(label, int)
         assert isinstance(subject_id, str)
@@ -423,7 +423,7 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             {
                 'label': label,
                 'subject_id': subject_id,
-                'total_votes': total_votes
+                'total_votes': total_votes_val
             }
         )
         db.commit()
@@ -442,7 +442,7 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             retrieved_label = row[0]
             assert retrieved_label == label
             retrieved_total_votes = row[1]
-            assert retrieved_total_votes == total_votes
+            assert retrieved_total_votes == total_votes_val
 
 
 def get_all_shard_locs(db):
