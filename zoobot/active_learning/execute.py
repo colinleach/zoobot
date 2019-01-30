@@ -249,7 +249,7 @@ if __name__ == '__main__':
     else:
         n_iterations = 8
         subjects_per_iter = 4096
-        shards_per_iter = 8  # needs to be <= total prediction shards
+        shards_per_iter = 2  # needs to be <= total prediction shards
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
