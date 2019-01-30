@@ -250,6 +250,8 @@ if __name__ == '__main__':
     # save catalog for mock_panoptes.py to return (now added to git)
     catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle_gz2_bar.csv'), index=False)
 
+    exit(0)
+
     # with basic split, we do 80% train/test split
     # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
     # select 1024 new training images
