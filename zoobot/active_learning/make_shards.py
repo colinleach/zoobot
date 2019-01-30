@@ -256,8 +256,6 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    print(len(catalog))
-    exit(0)
     labelled_size = 45000
     # test mode:
     # catalog = catalog[:10000]
@@ -272,7 +270,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.8)  # copying basic_split
+        train_test_fraction=0.95)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
