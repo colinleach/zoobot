@@ -143,7 +143,7 @@ class Iteration():
                 top_subject_df,
                 db=None,
                 img_size=self.initial_size,
-                columns_to_save=['id_str', 'label'],
+                columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=self.acquired_tfrecords_dir,
                 shard_size=4096  # hardcoded, awkward TODO
             )
