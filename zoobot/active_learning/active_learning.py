@@ -48,7 +48,7 @@ def create_db(catalog, db_loc):
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label INT DEFAULT NULL,
-            count INT DEFAULT NULL,
+            total_votes INT DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -89,7 +89,7 @@ def add_catalog_to_db(df, db):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, count, file_loc) VALUES(?,NULL,NULL,?)''',
+        INSERT INTO catalog(id_str, label, total_votes, file_loc) VALUES(?,NULL,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -350,7 +350,7 @@ def get_file_loc_df_from_db(db, subject_ids):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, count, file_loc FROM catalog
+            SELECT id_str, label, total_votes, file_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -400,41 +400,28 @@ def get_latest_checkpoint_dir(base_dir):
     return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
-def add_labels_to_db(subject_ids, labels, counts, db):
+def add_labels_to_db(subject_ids, labels, total_votes, db):
     cursor = db.cursor()
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
-        count = counts[subject_n]
+        total_votes = total_votes[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
         label = int(label)
-        count = int(count)
+        total_votes = int(total_votes)
         assert isinstance(label, int)
         assert isinstance(label, int)
         assert isinstance(subject_id, str)
         cursor.execute(
             '''
             UPDATE catalog
-            SET label = (:label)
+            SET label = (:label), total_votes = (:total_votes)
             WHERE id_str = (:subject_id)
             ''',
             {
                 'label': label,
-                'subject_id': subject_id
-            }
-        )
-        db.commit()
-        # TODO single sql statement?
-        cursor.execute(
-            '''
-            UPDATE catalog
-            SET count = (:count)
-            WHERE id_str = (:subject_id)
-            ''',
-            {
-                'count': count,
                 'subject_id': subject_id
             }
         )
@@ -444,7 +431,7 @@ def add_labels_to_db(subject_ids, labels, counts, db):
             # check labels really have been added, and not as byte string
             cursor.execute(
                 '''
-                SELECT label, count FROM catalog
+                SELECT label, total_votes FROM catalog
                 WHERE id_str = (:subject_id)
                 LIMIT 1
                 ''',
@@ -453,8 +440,8 @@ def add_labels_to_db(subject_ids, labels, counts, db):
             row = cursor.fetchone()
             retrieved_label = row[0]
             assert retrieved_label == label
-            retrieved_count = row[1]
-            assert retrieved_count == count
+            retrieved_total_votes = row[1]
+            assert retrieved_total_votes == total_votes
 
 
 def get_all_shard_locs(db):

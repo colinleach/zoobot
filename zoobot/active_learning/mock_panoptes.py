@@ -50,10 +50,10 @@ def get_labels():
     id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
     matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
     labels = list(matching_df['label'].astype(int))
-    counts = list(matching_df['total_votes'].astype(int))
+    total_votes = list(matching_df['total_votes'].astype(int))
     assert len(id_str_dummy_df) == len(matching_df)
     assert len(subject_ids) == len(labels)
-    return subject_ids, labels, counts
+    return subject_ids, labels, total_votes
 
 
 if __name__ == '__main__':

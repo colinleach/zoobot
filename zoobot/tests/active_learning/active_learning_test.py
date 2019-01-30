@@ -52,7 +52,7 @@ def empty_shard_db():
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label INT DEFAULT NULL,
-            count INT DEFAULT NULL,
+            total_votes INT DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -104,7 +104,7 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
             'id_str': 'some_hash',
             'file_loc': file_loc_of_image,
             'label': 1,  # already labelled!,
-            'count': 1
+            'total_votes': 1
         }
     )
     db.commit()
@@ -207,31 +207,31 @@ def filled_shard_db_with_labels(filled_shard_db):
         {
             'id_str': 'some_hash',
             'label': 1,
-            'count': 1
+            'total_votes': 1
          },
          {
             'id_str': 'some_other_hash',
             'label': 1,
-            'count': 1
+            'total_votes': 1
         },
         {
             'id_str': 'yet_another_hash',
             'label': 0,
-            'count': 1
+            'total_votes': 1
         }
     ]
     for row in rows:
         cursor.execute(
             '''
-            UPDATE catalog SET label = ?, count = ?
+            UPDATE catalog SET label = ?, total_votes = ?
             WHERE id_str = ?
             ''',
-            (row['label'], row['count'], row['id_str'])
+            (row['label'], row['total_votes'], row['id_str'])
         )
         db.commit()
     cursor.execute(
         '''
-        SELECT id_str, label, count FROM catalog
+        SELECT id_str, label, total_votes FROM catalog
         '''
     )
     # trust but verify
@@ -421,8 +421,8 @@ def test_add_labels_to_db(filled_shard_db):
     ]
     subject_ids = [x['id_str'] for x in subjects]
     labels = [x['label'] for x in subjects]
-    counts = [x['total_votes'] for x in subjects]
-    active_learning.add_labels_to_db(subject_ids, labels, counts, filled_shard_db)
+    total_votes = [x['total_votes'] for x in subjects]
+    active_learning.add_labels_to_db(subject_ids, labels, total_votes, filled_shard_db)
     # read db, check labels match
     cursor = filled_shard_db.cursor()
     for subject in subjects:
