@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # catalog['total_votes'] = catalog['spiral_total-votes']
     # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    # catalog = catalog[catalog['bar_total-votes'] > 2]  # filter to at least a bit featured
+    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
     catalog['total_votes'] = catalog['bar_total-votes']
     catalog['label'] = catalog['t03_bar_a06_bar_count']
 
@@ -256,7 +256,8 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    labelled_size = len(catalog) - 5000
+    labelled_size = 20000
+    # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:10000]
     # labelled_size = 6000
