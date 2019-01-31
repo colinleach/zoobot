@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # catalog['total_votes'] = catalog['spiral_total-votes']
     # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    catalog = catalog[catalog['bar_total-votes'] > 2]  # filter to at least a bit featured
+    catalog = catalog[catalog['bar_total-votes'] > 5]  # filter to at least a bit featured
     catalog['total_votes'] = catalog['bar_total-votes']
     catalog['label'] = catalog['t03_bar_a06_bar_count']
 
