@@ -175,10 +175,8 @@ def load_batches_with_labels(config):
 
 def load_batches_with_counts(config):
     with tf.name_scope('load_batches_{}'.format(config.name)):
-        feature_spec = matrix_label_counts_feature_spec(config.initial_size, config.channels)
-
+        feature_spec = matrix_label_counts_feature_spec()
         batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
-
         batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
         batch_labels = get_labels_from_batch(batch, config.noisy_labels)
         batch_counts = get_counts_from_batch(batch)

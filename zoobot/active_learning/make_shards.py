@@ -31,20 +31,18 @@ class ShardConfig():
     def __init__(
         self,
         shard_dir,  # to hold a new folder, named after the shard config 
-        inital_size=256,
-        final_size=128,  # TODO consider refactoring this into execute.py
+        size=128,  # IMPORTANT
         shard_size=4096,
         **overflow_args  # TODO review removing this
         ):
         """
         Args:
             shard_dir (str): directory into which to save shards
-            inital_size (int, optional): Defaults to 128. Resolution to save fits to tfrecord
+            size (int, optional): Defaults to 128. Resolution to save fits to tfrecord
             final_size (int, optional): Defaults to 64. Resolution to load from tfrecord into model
             shard_size (int, optional): Defaults to 4096. Galaxies per shard.
         """
-        self.initial_size = inital_size
-        self.final_size = final_size
+        self.size = size
         self.shard_size = shard_size
         self.shard_dir = shard_dir
 
@@ -104,7 +102,7 @@ class ShardConfig():
             active_learning.write_catalog_to_tfrecord_shards(
                 df,
                 db=None,
-                img_size=self.initial_size,
+                img_size=self.size,
                 columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=save_dir,
                 shard_size=self.shard_size
@@ -113,7 +111,7 @@ class ShardConfig():
         make_database_and_shards(
             unlabelled_catalog, 
             self.db_loc, 
-            self.initial_size, 
+            self.size, 
             self.shard_dir, 
             self.shard_size)
 
@@ -206,7 +204,7 @@ if __name__ == '__main__':
     ]
 
     
-    catalog_loc = 'data/gz2_shards/basic_regression_labels_with_bars.csv'
+    catalog_loc = 'data/basic_regression_labels_with_bars.csv'
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
     catalog = pd.read_csv(catalog_loc,
@@ -223,7 +221,7 @@ if __name__ == '__main__':
 
     # previous catalog didn't include total classifications/votes, so we'll need to work around that for now
     catalog['smooth-or-featured_total-votes'] = catalog['t01_smooth_or_features_a01_smooth_count'] + catalog['t01_smooth_or_features_a02_features_or_disk_count'] + catalog['t01_smooth_or_features_a03_star_or_artifact_count']
-    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # >36 votes required, gives low count uncertainty
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # should be properly retired, may change later
 
     # for consistency
     catalog['id_str'] = catalog['id'].astype(str)
@@ -236,11 +234,13 @@ if __name__ == '__main__':
     # catalog['total_votes'] = catalog['spiral_total-votes']
     # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    catalog = catalog[catalog['bar_total-votes'] > 5]  # filter to at least a bit featured
+    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
     catalog['total_votes'] = catalog['bar_total-votes']
     catalog['label'] = catalog['t03_bar_a06_bar_count']
 
-    catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
+    catalog['file_loc'] = catalog['png_loc']
+    assert all(loc for loc in catalog['file_loc'])
+    # catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
     del catalog['png_loc']  # else may load this by default
 
     print(catalog['file_loc'].sample())
@@ -257,10 +257,10 @@ if __name__ == '__main__':
     # split catalog and pretend most is unlabelled
     # real mode:
     # labelled_size = 20000
-    labelled_size = len(catalog) - 5000
+    # labelled_size = len(catalog) - 5000
     # test mode:
-    # catalog = catalog[:10000]
-    # labelled_size = 6000
+    catalog = catalog[:13000]
+    labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
     unlabelled_catalog = catalog[labelled_size:]  # for pool
@@ -271,13 +271,13 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.97)  # copying basic_split
+        train_test_fraction=0.8)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
     # do this last as shard_dir is wiped and remade when making shards
     # save catalog for mock_panoptes.py to return (now added to git)
-    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle_gz2_bar.csv'), index=False)
+    catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle.csv'), index=False)
 
     # finally, tidy up by moving the log into the shard directory
     # could not be create here because shard directory did not exist at start of script

@@ -1,0 +1,6 @@
+md5: 965038c0c7fc4801e32d2b9480970622
+outs:
+- cache: true
+  md5: 594c85a113cec54346ad100960ae27f2
+  metric: false
+  path: ZOO_model_full_catalogue.fit

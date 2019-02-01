@@ -6,20 +6,12 @@ import pandas as pd
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 
-SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_noisy_5'
-# DIR_OF_THIS_FILE = os.path.dirname(os.path.realpath(__file__))
-# ORACLE_LOC = os.path.join(DIR_OF_THIS_FILE, 'oracle_gz2_bar.csv')
-ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle_gz2_bar.csv')
-# ORACLE_LOC = 'this_should_fail'
-# assert os.path.isfile(ORACLE_LOC)
+SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
+assert os.path.isdir(SHARD_DIR)
+ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle.csv')
+assert os.path.isfile(ORACLE_LOC)
 
-# SUBJECTS_REQUESTED = os.path.join(DIR_OF_THIS_FILE, 'subjects_requested.json')
-# # delete before each script execution, don't cross-contaminate
-# if os.path.isfile(SUBJECTS_REQUESTED):
-#     os.remove(SUBJECTS_REQUESTED)
-
-
-SUBJECTS_REQUESTED = 'data/gz2_shards/runs_cache/many_random_subjects.json'
+SUBJECTS_REQUESTED = 'data/subjects_requested.json'
 
 def request_labels(subject_ids):
     assert len(set(subject_ids)) == len(subject_ids)  # must be unique

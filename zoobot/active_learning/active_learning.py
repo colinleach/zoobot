@@ -23,7 +23,13 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.active_learning import mock_panoptes
 
 
-LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
+try:
+    LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
+    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
+except AssertionError:
+    LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
+    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
+
 
 
 def create_db(catalog, db_loc):

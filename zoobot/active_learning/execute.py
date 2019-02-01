@@ -159,7 +159,7 @@ class ActiveConfig():
                 acquisition_func=acquisition_func,
                 n_samples=n_samples,
                 n_subjects_to_acquire=self.subjects_per_iter,
-                initial_size=self.shards.initial_size,
+                initial_size=self.shards.size,
                 learning_rate=learning_rate,
                 initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
                 # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
@@ -230,7 +230,6 @@ if __name__ == '__main__':
                     help='After each iteration, continue training the same model')
     args = parser.parse_args()
 
-
     log_loc = 'execute_{}.log'.format(time.time())
 
     logging.basicConfig(
@@ -244,16 +243,18 @@ if __name__ == '__main__':
     # instructions for the run
     if args.test:  # do a brief run only
         n_iterations = 2
-        subjects_per_iter = 28
+        subjects_per_iter = 6000
         shards_per_iter = 2  # temp
+        final_size = 32
     else:
         n_iterations = 8
         subjects_per_iter = 4096
         shards_per_iter = 2  # needs to be <= total prediction shards
+        final_size = 128
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
-    new_shard_dir = 'data/gz2_shards/uint8_256px_bar_n_noisy_5'  # classify bars
+    new_shard_dir = os.path.dirname(args.shard_config_loc)
     shard_config.shard_dir = new_shard_dir
     attrs = [
         'train_dir',
@@ -279,8 +280,8 @@ if __name__ == '__main__':
 
     # these do not change per iteration
     train_callable_params = TrainCallableParams(
-        initial_size=active_config.shards.initial_size,
-        final_size=active_config.shards.final_size,
+        initial_size=active_config.shards.size,
+        final_size=final_size,
         warm_start=args.warm_start,
         # TODO remove?
         eval_tfrecord_loc=active_config.shards.eval_tfrecord_locs(),
@@ -304,4 +305,4 @@ if __name__ == '__main__':
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.initial_size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
