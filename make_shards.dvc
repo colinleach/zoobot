@@ -1,12 +1,12 @@
-cmd: python zoobot/active_learning/make_shards.py --shard_dir=/Volumes/alpha/uint8_256px_bar_n
+cmd: python zoobot/active_learning/make_shards.py --shard_dir=data/gz2_shards/uint8_256px_bar_n_8k
 deps:
-- md5: 88ee406ed1da864adb358f56f58321a5
-  path: data/panoptes_predictions_selected.csv
-- md5: 09140276ecc3d8b3589dd01b4c8df78a
+- md5: e6037f046cc401af4317df4deb366cfb
+  path: data/basic_regression_labels_with_bars.csv
+- md5: f625789a7b145bf37b98f4cb30a68bf7
   path: zoobot/active_learning/make_shards.py
-md5: 48116efb4b4fac9199aea28ece17a62d
+md5: 66e845f31a87861efddeed45d049416a
 outs:
 - cache: true
-  md5: b5c01083a4d123d67703b35ad0ad1eba.dir
+  md5: 8d71fbc4ba610edac8d2f1ad386e5a89.dir
   metric: false
-  path: /Volumes/alpha/uint8_256px_bar_n
+  path: data/gz2_shards/uint8_256px_bar_n_8k
