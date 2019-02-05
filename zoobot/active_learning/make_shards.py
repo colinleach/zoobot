@@ -234,9 +234,11 @@ if __name__ == '__main__':
     catalog['total_votes'] = catalog['bar_total-votes']
     catalog['label'] = catalog['t03_bar_a06_bar_count']
 
-    catalog['file_loc'] = catalog['png_loc']
+    # local
+    # catalog['file_loc'] = catalog['png_loc']
+    # ec2
+    catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
     assert all(loc for loc in catalog['file_loc'])
-    # catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
     del catalog['png_loc']  # else may load this by default
 
     print(catalog['file_loc'].sample(5))
