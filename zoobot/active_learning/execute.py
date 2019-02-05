@@ -139,12 +139,17 @@ class ActiveConfig():
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
         # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
 
-        epochs = 650
+        # epochs = 2
         learning_rate = 0.001
 
         iterations_record = []
 
         while iteration_n < self.n_iterations:
+
+            if iteration_n == 0:
+                epochs = 2
+            else:
+                epochs = 650
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -247,9 +252,9 @@ if __name__ == '__main__':
         shards_per_iter = 2  # temp
         final_size = 32
     else:
-        n_iterations = 8
-        subjects_per_iter = 4096
-        shards_per_iter = 2  # needs to be <= total prediction shards
+        n_iterations = 2
+        subjects_per_iter = 10000 # to match 8k init + 10k here with 20k init
+        shards_per_iter = 5  # needs to be <= total prediction shards, will fail loudly if so
         final_size = 128
 
     # shards to use
@@ -293,7 +298,7 @@ if __name__ == '__main__':
     if args.test:
         n_samples = 2
     else:
-        n_samples = 15
+        n_samples = 2  # for speed, random selection anyway
 
     ###
     iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
