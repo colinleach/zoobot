@@ -20,9 +20,6 @@ from zoobot.estimators import run_estimator
 from zoobot.estimators import make_predictions
 from zoobot.tfrecord import read_tfrecord
 
-from zoobot.active_learning import mock_panoptes
-
-
 try:
     LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
     assert os.path.isdir(LOCAL_IMAGE_FOLDER)
@@ -445,6 +442,7 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
                 (subject_id,)
             )
             row = cursor.fetchone()
+            assert row is not None
             retrieved_label = row[0]
             assert retrieved_label == label
             retrieved_total_votes = row[1]
