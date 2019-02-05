@@ -31,7 +31,7 @@ class ShardConfig():
     def __init__(
         self,
         shard_dir,  # to hold a new folder, named after the shard config 
-        size=128,  # IMPORTANT
+        size=256,  # IMPORTANT
         shard_size=4096,
         **overflow_args  # TODO review removing this
         ):
