@@ -255,7 +255,7 @@ if __name__ == '__main__':
     # split catalog and pretend most is unlabelled
     # real mode:
     labelled_size = 10000
-    labelled_size = len(catalog) - 5000
+    # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
     # labelled_size = 6000
