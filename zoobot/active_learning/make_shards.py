@@ -256,7 +256,6 @@ if __name__ == '__main__':
     # labelled_size = len(catalog) - 5000
     # test mode:
     catalog = catalog[:13000]
-    catalog.to_csv(os.path.join(args.shard_dir, 'full_catalog.csv'), index=False)
     labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
@@ -275,6 +274,7 @@ if __name__ == '__main__':
     # do this last as shard_dir is wiped and remade when making shards
     # save catalog for mock_panoptes.py to return (now added to git)
     catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(args.shard_dir, 'oracle.csv'), index=False)
+    catalog.to_csv(os.path.join(args.shard_dir, 'full_catalog.csv'), index=False)
 
     # finally, tidy up by moving the log into the shard directory
     # could not be create here because shard directory did not exist at start of script
