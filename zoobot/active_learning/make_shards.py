@@ -206,9 +206,12 @@ if __name__ == '__main__':
     catalog_loc = 'data/basic_regression_labels_with_bars.csv'
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
-    catalog = pd.read_csv(catalog_loc,
+    unshuffled_catalog = pd.read_csv(catalog_loc,
                         usecols=usecols,
                         nrows=None)
+
+    # THIS IS CRUCIAL. GZ catalog is not properly shuffled, and featured-ness changes systematically
+    catalog = unshuffled_catalog.sample(len(unshuffled_catalog)).reset_index()
 
     # 40 votes required, for accurate binomial statistics
     # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]

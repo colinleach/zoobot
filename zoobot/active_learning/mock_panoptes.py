@@ -31,6 +31,7 @@ def get_labels():
         subject_ids = json.load(f)
     assert isinstance(subject_ids, list)
     assert len(subject_ids) > 0
+    assert len(set(subject_ids)) == len(subject_ids)  # must be unique
     os.remove(SUBJECTS_REQUESTED)
 
     known_catalog = pd.read_csv(
