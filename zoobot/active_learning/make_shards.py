@@ -172,8 +172,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('--shard_dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
-    # parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
-    #                 help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+    parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
+                    help='Path to csv catalog of Panoptes labels and file_loc, for shards')
     args = parser.parse_args()
 
     log_loc = 'make_shards_{}.log'.format(time.time())
@@ -202,16 +202,15 @@ if __name__ == '__main__':
         'png_ready'
     ]
 
-    
-    catalog_loc = 'data/basic_regression_labels_with_bars.csv'
-
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
-    unshuffled_catalog = pd.read_csv(catalog_loc,
+    unshuffled_catalog = pd.read_csv(args.catalog_loc,
                         usecols=usecols,
                         nrows=None)
 
     # THIS IS CRUCIAL. GZ catalog is not properly shuffled, and featured-ness changes systematically
     catalog = unshuffled_catalog.sample(len(unshuffled_catalog)).reset_index()
+
+    catalog = catalog[catalog['sample'] == 'original']
 
     # 40 votes required, for accurate binomial statistics
     # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]

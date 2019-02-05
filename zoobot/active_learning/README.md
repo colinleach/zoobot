@@ -19,7 +19,7 @@ Below
 `external_catalog_loc=/data/galaxy_zoo/decals/panoptes/reduction/output/2018-11-05_panoptes_predictions_with_catalog.csv`
 `external_fits_dir=/Volumes/alpha/decals/fits_native` (hardcoded into create_panoptes_only_files.py, only used to track dependencies)
 
-`catalog_loc=data/basic_regression_labels_with_bars.csv`
+`catalog_loc=data/gz2_classifications_and_subjects.csv`
 `fits_dir=data/fits_native`
 
 EC2:
@@ -56,7 +56,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir`
+`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir --catalog_loc=$catalog_loc`
 
 ### Execution
 

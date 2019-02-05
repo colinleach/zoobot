@@ -39,10 +39,10 @@ def download_png_threaded(catalog, png_dir, overwrite=False):
 
 def get_png_loc(png_dir, galaxy):
     name = str(galaxy['dr7objid']) + '.png'
-    subdir = name[:6]
+    subdir = os.path.join(png_dir, name[:6])
     if not os.path.isdir(subdir):
-        os.mkdir(os.path.join(png_dir, subdir))
-    return os.path.join(png_dir, subdir, name)
+        os.mkdir(subdir)
+    return os.path.join(subdir, name)
 
 
 def download_images(galaxy, overwrite, max_attempts=5, pbar=None):
