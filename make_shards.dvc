@@ -1,12 +1,13 @@
 cmd: python zoobot/active_learning/make_shards.py --shard_dir=data/gz2_shards/uint8_256px_bar_n_8k
+  --catalog_loc=data/gz2_classifications_and_subjects.csv
 deps:
-- md5: e6037f046cc401af4317df4deb366cfb
-  path: data/basic_regression_labels_with_bars.csv
-- md5: 251a3b1781b137cf0feb9572009f4c92
+- md5: 057bb9ee8282a0ff35ade29d672f0a75
+  path: data/gz2_classifications_and_subjects.csv
+- md5: 839a3d7fc8913aa4b06ea6fe7cc3f138
   path: zoobot/active_learning/make_shards.py
-md5: 4cbc1751779f7ed0d3ec4574eda4c409
+md5: e54bd836ed4b4ae91795c54589e7c0dd
 outs:
 - cache: true
-  md5: 95e7713816aabc26947380dcf9d2a665.dir
+  md5: 12b4017a920b06f76090935250b24ecc.dir
   metric: false
   path: data/gz2_shards/uint8_256px_bar_n_8k
