@@ -79,7 +79,6 @@ class ShardConfig():
             unlabelled_catalog (pd.DataFrame): unlabelled galaxies, including fits_loc column
             train_test_fraction (float): fraction of labelled catalog to use as training data
         """
-
         if os.path.isdir(self.shard_dir):
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)

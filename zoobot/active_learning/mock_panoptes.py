@@ -28,7 +28,7 @@ def get_labels():
         return [], [], []  # must unpack 3 values, look here if 'not enough values to unpack' error
 
     with open(SUBJECTS_REQUESTED, 'r') as f:
-    subject_ids = json.load(f)
+        subject_ids = json.load(f)
     assert isinstance(subject_ids, list)
     assert len(subject_ids) > 0
     os.remove(SUBJECTS_REQUESTED)
