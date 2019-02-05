@@ -243,7 +243,7 @@ if __name__ == '__main__':
     # instructions for the run
     if args.test:  # do a brief run only
         n_iterations = 2
-        subjects_per_iter = 6000
+        subjects_per_iter = 256  # tests show acquiring this way gives good tfrecords
         shards_per_iter = 2  # temp
         final_size = 32
     else:

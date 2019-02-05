@@ -23,7 +23,7 @@ Below
 `fits_dir=data/fits_native`
 
 EC2:
-`shard_dir=data/gz2_shards/uint8_256px_bar_n`
+`shard_dir=data/gz2_shards/uint8_256px_bar_n_8k`
 OR
 `shard_dir=/Volumes/alpha/uint8_256px_bar_n`
 

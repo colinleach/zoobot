@@ -211,10 +211,6 @@ if __name__ == '__main__':
                         usecols=usecols,
                         nrows=None)
 
-    # # in memory for now, but will be saved to csv
-    # catalog = pd.read_csv(args.catalog_loc, usecols=columns_to_save)
-
-
     # 40 votes required, for accurate binomial statistics
     # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
     # catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
@@ -243,7 +239,7 @@ if __name__ == '__main__':
     # catalog['file_loc'] = catalog['png_loc'].apply(lambda x: 'data/gz2_shards/' + x.lstrip('/Volumes/alpha'))  # active learning will load from png by default
     del catalog['png_loc']  # else may load this by default
 
-    print(catalog['file_loc'].sample())
+    print(catalog['file_loc'].sample(5))
     # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
     # with basic split, we do 80% train/test split
@@ -260,6 +256,7 @@ if __name__ == '__main__':
     # labelled_size = len(catalog) - 5000
     # test mode:
     catalog = catalog[:13000]
+    catalog.to_csv(os.path.join(args.shard_dir, 'full_catalog.csv'), index=False)
     labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!

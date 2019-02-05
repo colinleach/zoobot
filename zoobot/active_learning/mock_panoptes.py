@@ -6,7 +6,8 @@ import pandas as pd
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 
-SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
+# SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
+SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_8k'
 assert os.path.isdir(SHARD_DIR)
 ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle.csv')
 assert os.path.isfile(ORACLE_LOC)
@@ -48,8 +49,8 @@ def get_labels():
     return subject_ids, labels, total_votes
 
 
-if __name__ == '__main__':
-    # fill out subjects_requested so that we acquire many new random shards
-    unlabelled_catalog = pd.read_csv(os.path.join(SHARD_DIR, 'unlabelled_catalog.csv'))
-    subject_ids = list(unlabelled_catalog['id_str'].astype(str))  # entire unlabelled catalog!
-    request_labels(subject_ids)  # will write to updated loc
+# if __name__ == '__main__':
+#     # fill out subjects_requested so that we acquire many new random shards
+#     unlabelled_catalog = pd.read_csv(os.path.join(SHARD_DIR, 'unlabelled_catalog.csv'))
+#     subject_ids = list(unlabelled_catalog['id_str'].astype(str))  # entire unlabelled catalog!
+#     request_labels(subject_ids)  # will write to updated loc
