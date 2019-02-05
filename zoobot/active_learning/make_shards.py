@@ -199,7 +199,8 @@ if __name__ == '__main__':
         'ra',
         'dec',
         'png_loc',
-        'png_ready'
+        'png_ready',
+        'sample'
     ]
 
     # only exists if zoobot/get_catalogs/gz2 instructions have been followed
