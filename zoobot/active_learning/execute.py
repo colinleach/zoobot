@@ -300,16 +300,15 @@ if __name__ == '__main__':
     else:
         n_samples = 15
 
-    assert os.path.exists(log_loc)
-
     ###
     iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
     ###
 
     # finally, tidy up by moving the log into the run directory
     # could not be create here because run directory did not exist at start of script
-    repo = git.Repo(search_parent_directories=True)
-    sha = repo.head.object.hexsha
-    shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
+    if os.path.exists(log_loc):  # temporary workaround for disappearing log
+        repo = git.Repo(search_parent_directories=True)
+        sha = repo.head.object.hexsha
+        shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
     analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
