@@ -243,7 +243,7 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
     )
-    # logging.getLogger().addHandler(logging.StreamHandler())
+    logging.getLogger().addHandler(logging.StreamHandler())
 
     # instructions for the run
     if args.test:  # do a brief run only
