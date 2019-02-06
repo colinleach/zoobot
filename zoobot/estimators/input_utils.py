@@ -353,7 +353,7 @@ def crop_random_size(im, zoom, central):
     original_width = int(im.shape[1]) # int cast allows division of Dimension
     new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))
     if central:
-        lost_width = (original_width - new_width) / 2
+        lost_width = int((original_width - new_width) / 2)
         return im[lost_width:-lost_width, lost_width:-lost_width]
     else:
         cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
