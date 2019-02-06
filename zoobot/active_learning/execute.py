@@ -300,6 +300,8 @@ if __name__ == '__main__':
     else:
         n_samples = 15
 
+    assert os.path.exists(log_loc)
+    
     ###
     iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
     ###
