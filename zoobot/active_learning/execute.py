@@ -109,9 +109,9 @@ class ActiveConfig():
         """
         # clear any leftover mocked labels awaiting collection
         # won't do this in production
-        # from zoobot.active_learning import mock_panoptes
-        # if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
-        #     os.remove(mock_panoptes.SUBJECTS_REQUESTED)
+        from zoobot.active_learning import mock_panoptes
+        if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
+            os.remove(mock_panoptes.SUBJECTS_REQUESTED)
 
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
