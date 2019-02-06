@@ -147,9 +147,9 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 500
+                epochs = 1000
             else:
-                epochs = 500
+                epochs = 1000
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
         final_size = 32
     else:
         n_iterations = 2
-        subjects_per_iter = 10000 # to match 8k init + 10k here with 20k init
+        subjects_per_iter = 35000 # to see if performance improves at all with more images
         shards_per_iter = 10  # needs to be <= total prediction shards, will fail loudly if so
         final_size = 128
 

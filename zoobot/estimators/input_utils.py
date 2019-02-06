@@ -26,7 +26,7 @@ class InputConfig():
             regression=True,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
-            max_zoom=1.1,
+            zoom=(1., 1.1),
             fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,
@@ -54,7 +54,7 @@ class InputConfig():
 
         self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
         self.shift_range = shift_range  # not yet implemented
-        self.max_zoom = max_zoom
+        self.zoom = zoom
         self.fill_mode = fill_mode  # not yet implemented, 'pad' or 'zoom'
 
         self.photographic_augmentation = photographic_augmentation
@@ -261,7 +261,7 @@ def augment_images(images, input_config):
     if input_config.geometric_augmentation:
         images = geometric_augmentation(
             images,
-            max_zoom=input_config.max_zoom,
+            zoom=input_config.zoom,
             final_size=input_config.final_size)
 
     if input_config.photographic_augmentation:
@@ -294,7 +294,7 @@ def augment_images(images, input_config):
 #         images = tf.concat(images, axis=3)
 
 
-def geometric_augmentation(images, max_zoom, final_size):
+def geometric_augmentation(images, zoom, final_size):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -304,7 +304,7 @@ def geometric_augmentation(images, max_zoom, final_size):
 
     Args:
         images ():
-        max_zoom ():
+        zoom (tuple): of form {min zoom in decimals e,g, 1.0, max zoom in decimals e.g, 1.2}
         final_size ():
 
     Returns:
@@ -314,7 +314,9 @@ def geometric_augmentation(images, max_zoom, final_size):
     images = ensure_images_have_batch_dimension(images)
 
     assert images.shape[1] == images.shape[2]  # must be square
-    assert max_zoom > 1. and max_zoom < 10.  # catch user accidentally putting in pixel values here
+    assert len(zoom) == 2
+    assert zoom[0] <= zoom[1]
+    assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
 
     # flip functions don't support batch dimension - wrap with map_fn
     images = tf.map_fn(
@@ -327,8 +329,8 @@ def geometric_augmentation(images, max_zoom, final_size):
         random_rotation,
         images)
 
-    # if max_zoom = 1.3, zoom randomly 1x to 1.3x
-    images = tf.map_fn(lambda x: random_crop_random_size(x, max_zoom=max_zoom), images)
+    # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
+    images = tf.map_fn(lambda x: random_crop_random_size(x, zoom=zoom), images)
 
     # do not change batch  or 'channel' dimension
     # resize to final desired size (may match crop size)
@@ -355,8 +357,8 @@ def random_rotation(im):
     )
 
 
-def random_crop_random_size(im, max_zoom):
-    new_width = int(int(im.shape[1]) / np.random.uniform(1.0, max_zoom))  # first int cast allows division of Dimension
+def random_crop_random_size(im, zoom):
+    new_width = int(int(im.shape[1]) / np.random.uniform(zoom[0], zoom[1]))  # first int cast allows division of Dimension
     cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
     return tf.random_crop(im, cropped_shape)
 
@@ -418,7 +420,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
         regression=True,
         geometric_augmentation=None,
         photographic_augmentation=None,
-        max_zoom=None,
+        zoom=None,
         fill_mode=None,
         batch_size=n_galaxies,
         initial_size=initial_size,
