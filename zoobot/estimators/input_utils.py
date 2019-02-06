@@ -330,17 +330,9 @@ def geometric_augmentation(images, zoom, final_size):
         images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
-    images = tf.map_fn(lambda x: random_crop_random_size(x, zoom=zoom), images)
+    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=True), images)
 
-    # do not change batch  or 'channel' dimension
     # resize to final desired size (may match crop size)
-    # pad...
-    # image = tf.image.resize_image_with_crop_or_pad(
-    #     image,
-    #     target_size,
-    #     target_size
-    # )
-    # ...or zoom
     images = tf.image.resize_images(
         images,
         tf.constant([final_size, final_size], dtype=tf.int32),
@@ -357,10 +349,21 @@ def random_rotation(im):
     )
 
 
-def random_crop_random_size(im, zoom):
+def crop_random_size(im, zoom, central):
+    cropped_shape = random_crop_shape(im, zoom)
+    if central:
+        lost_width = (im.shape[1] - cropped_shape[1]) / 2
+        return im[lost_width:-lost_width, lost_width:-lost_width]
+    else:
+        return tf.random_crop(im, cropped_shape)
+
+
+def random_crop_shape(im, zoom):
     new_width = int(int(im.shape[1]) / np.random.uniform(zoom[0], zoom[1]))  # first int cast allows division of Dimension
     cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
-    return tf.random_crop(im, cropped_shape)
+    return cropped_shape
+
+
 
 
 def photographic_augmentation(images, max_brightness_delta, contrast_range):
