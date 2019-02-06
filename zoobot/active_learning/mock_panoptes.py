@@ -10,6 +10,7 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_8k'
 assert os.path.isdir(SHARD_DIR)
 ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle.csv')
+logging.info('Using oracle loc: {}'.format(ORACLE_LOC))
 assert os.path.isfile(ORACLE_LOC)
 
 SUBJECTS_REQUESTED = 'data/subjects_requested.json'

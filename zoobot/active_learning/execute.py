@@ -147,9 +147,9 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 2
+                epochs = 500
             else:
-                epochs = 650
+                epochs = 500
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
 
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     else:
         n_iterations = 2
         subjects_per_iter = 10000 # to match 8k init + 10k here with 20k init
-        shards_per_iter = 5  # needs to be <= total prediction shards, will fail loudly if so
+        shards_per_iter = 10  # needs to be <= total prediction shards, will fail loudly if so
         final_size = 128
 
     # shards to use
@@ -295,10 +295,10 @@ if __name__ == '__main__':
 
     train_callable = get_train_callable(train_callable_params)
     acquisition_func = get_acquisition_func(baseline=args.baseline)
-    if args.test:
+    if args.test or args.baseline:
         n_samples = 2
     else:
-        n_samples = 2  # for speed, random selection anyway
+        n_samples = 15
 
     ###
     iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
