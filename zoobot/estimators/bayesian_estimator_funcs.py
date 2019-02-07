@@ -282,12 +282,12 @@ def input_to_dense(features, mode, model):
 
     """
     Flatten tensor into a batch of vectors
-    Start with image_dim shape, 1 channel (3 channels?)
+    Start with image_dim shape, 1 channel (*3 if 3 channels)
     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
     length ^ 2 to make shape 1D
     64 filters in final layer
     """
-    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
+    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim * 3 / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
 
     # Dense Layer
     dense1 = tf.layers.dense(
