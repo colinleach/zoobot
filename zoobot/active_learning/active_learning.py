@@ -257,6 +257,8 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     logging.debug('Extracting images from unlabelled subjects')
     # need to construct array from list: required to have known length
     unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
+    for subject in unlabelled_subjects:
+        del subject['matrix']  # we don't need after this, so long as we skip recording state
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
     return unlabelled_subjects, samples
 
