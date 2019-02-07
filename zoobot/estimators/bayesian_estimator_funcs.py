@@ -287,7 +287,7 @@ def input_to_dense(features, mode, model):
     length ^ 2 to make shape 1D
     64 filters in final layer
     """
-    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim * 3 / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
+    pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
 
     # Dense Layer
     dense1 = tf.layers.dense(
