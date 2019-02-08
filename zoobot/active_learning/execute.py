@@ -254,7 +254,7 @@ if __name__ == '__main__':
     else:
         n_iterations = 2
         subjects_per_iter = 35000 # to see if performance improves at all with more images
-        shards_per_iter = 10  # needs to be <= total prediction shards, will fail loudly if so
+        shards_per_iter = 1  # needs to be <= total prediction shards, will fail loudly if so
         final_size = 128
 
     # shards to use
