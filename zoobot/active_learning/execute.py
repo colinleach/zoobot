@@ -150,8 +150,7 @@ class ActiveConfig():
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.size,
                 learning_rate=learning_rate,
-                initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
-                # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
+                initial_estimator_ckpt=initial_estimator_ckpt,  # will only warm start with --warm_start, though
                 epochs=epochs)
 
             # train as usual, with saved_model being placed in estimator_dir
@@ -239,7 +238,7 @@ if __name__ == '__main__':
         n_iterations = 10
         subjects_per_iter = 1000 # to see if performance improves at all with more images
         shards_per_iter = 4  # needs to be <= total prediction shards, will fail loudly if so
-        final_size = 128
+        final_size = 96
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
