@@ -71,7 +71,7 @@ class ShardConfig():
             if loc.endswith('.tfrecord')]
 
 
-    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction=0.1):
+    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction):
         """[summary]
         
         Args:
@@ -94,7 +94,7 @@ class ShardConfig():
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
         # save train/test split into training and eval shards
-        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=0.8)
+        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
