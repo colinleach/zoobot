@@ -256,7 +256,7 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    labelled_size = 10000
+    labelled_size = 1000
     # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
