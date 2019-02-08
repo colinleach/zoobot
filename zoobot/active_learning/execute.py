@@ -147,7 +147,7 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 2
+                epochs = 1000
             else:
                 epochs = 1000
 
