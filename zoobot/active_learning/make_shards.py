@@ -271,7 +271,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.33)  # copying basic_split
+        train_test_fraction=0.16)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
