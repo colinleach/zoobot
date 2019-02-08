@@ -259,7 +259,7 @@ if __name__ == '__main__':
     labelled_size = 3000
     # labelled_size = len(catalog) - 5000
     # test mode:
-    catalog = catalog[:13000]
+    # catalog = catalog[:13000]
     # labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
