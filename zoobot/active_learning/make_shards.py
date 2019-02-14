@@ -259,7 +259,7 @@ if __name__ == '__main__':
     labelled_size = 3000
     # labelled_size = len(catalog) - 5000
     # test mode:
-    catalog = catalog[:13000]
+    # catalog = catalog[:13000]
     # labelled_size = 6000
 
     labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
@@ -271,7 +271,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.33)  # copying basic_split
+        train_test_fraction=0.16)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
