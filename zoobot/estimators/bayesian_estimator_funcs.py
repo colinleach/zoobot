@@ -173,8 +173,9 @@ def input_to_dense(features, mode, model):
 
     """
     input_layer = features["x"]
-    tf.summary.image('model_input', input_layer, 1)
-    assert input_layer.shape[3] == 1  # should be greyscale, for later science
+    # tf.summary.image('model_input', input_layer, 1)
+    # assert input_layer.shape[3] == 1  # should be greyscale, for later science
+    tf.summary.image('model_input', input_layer, 3)
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     # dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
@@ -281,7 +282,7 @@ def input_to_dense(features, mode, model):
 
     """
     Flatten tensor into a batch of vectors
-    Start with image_dim shape, 1 channel
+    Start with image_dim shape, 1 channel (*3 if 3 channels)
     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
     length ^ 2 to make shape 1D
     64 filters in final layer

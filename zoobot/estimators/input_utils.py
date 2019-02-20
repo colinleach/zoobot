@@ -94,7 +94,7 @@ def get_input(config):
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        assert preprocessed_batch_images['x'].shape[3] == 1
+        assert preprocessed_batch_images['x'].shape[3] == 3
 
         joint_batch_labels = tf.stack([batch_labels, batch_counts], axis=1)
         return preprocessed_batch_images, joint_batch_labels
@@ -204,14 +204,14 @@ def preprocess_batch(batch_images, config):
         assert len(batch_images.shape) == 4
         assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
-        greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
-        assert greyscale_images.shape[1] == config.initial_size
-        assert greyscale_images.shape[2] == config.initial_size
-        assert greyscale_images.shape[3] == 1
-        tf.summary.image('b_greyscale', greyscale_images)
+        # greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
+        # assert greyscale_images.shape[1] == config.initial_size
+        # assert greyscale_images.shape[2] == config.initial_size
+        # assert greyscale_images.shape[3] == 1
+        # tf.summary.image('b_greyscale', greyscale_images)
 
-        augmented_images = augment_images(greyscale_images, config)
-        print(augmented_images.shape)
+        # augmented_images = augment_images(greyscale_images, config)
+        augmented_images = augment_images(batch_images, config)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
