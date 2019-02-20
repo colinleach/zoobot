@@ -85,7 +85,7 @@ def is_eval_log_entry(line):
     return 'Saving dict for global step' in line
 
 
-def smooth_loss(metrics_list):
+def smooth_loss(metrics_list, frac=0.25):
     """Smooth out the loss of a model to remove stochastic noise and find typical performance.
     
     Args:
@@ -94,7 +94,6 @@ def smooth_loss(metrics_list):
     Returns:
         (list): as metrics_list, but where each df has 'smooth_loss' column added with smoothed loss
     """
-
     smoothed_list = []
     for df in metrics_list:
         lowess = sm.nonparametric.lowess
@@ -102,7 +101,7 @@ def smooth_loss(metrics_list):
             df['loss'],
             df['step'],
             is_sorted=True, 
-            frac=0.25)  # controls how much smoothing
+            frac=frac)  # controls how much smoothing
         df['smoothed_loss'] = smoothed_metrics[:, 1]
         smoothed_list.append(df)
     return smoothed_list

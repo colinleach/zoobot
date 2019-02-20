@@ -71,7 +71,7 @@ class ShardConfig():
             if loc.endswith('.tfrecord')]
 
 
-    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction=0.1):
+    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction):
         """[summary]
         
         Args:
@@ -94,7 +94,7 @@ class ShardConfig():
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
         # save train/test split into training and eval shards
-        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=0.8)
+        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    labelled_size = 10000
+    labelled_size = 3000
     # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
@@ -271,7 +271,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.8)  # copying basic_split
+        train_test_fraction=0.16)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes

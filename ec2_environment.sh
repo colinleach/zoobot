@@ -21,7 +21,6 @@ pip install -r zoobot/requirements.txt && \
 pip install -e zoobot  && \
 pip install -e shared-astro-utilities  && \
 cd zoobot && \
-mkdir data/gz2_shards && \
 sudo mount /dev/xvdc data/gz2_shards && \
 source deactivate && \
 screen -R run
