@@ -5,9 +5,9 @@ deps:
   path: data/gz2_classifications_and_subjects.csv
 - md5: f462ab47cbb8c8f154a8948659a54ecf
   path: zoobot/active_learning/make_shards.py
-md5: aacaac9d9e1f87373c9aa8656c710e75
+md5: 82296bcbd0f9e307ff0c3dec410134ef
 outs:
 - cache: true
-  md5: 1cc1f82b469674435278483b01aac689.dir
+  md5: 05d120be37a95647b58e426fa77c1bf2.dir
   metric: false
   path: data/gz2_shards/uint8_256px_bar_n_500
