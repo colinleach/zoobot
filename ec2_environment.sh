@@ -15,7 +15,7 @@ aws s3 cp s3://galaxy-zoo/github.pub ~/.ssh/github.pub  && \
 eval "$(ssh-agent -s)"  && \
 chmod 400 ~/.ssh/github  && \
 ssh-add ~/.ssh/github  && \
-cd root/zoobot && git pull && git checkout al-iter-arms && cd ../ && \
+cd root/zoobot && git pull && git checkout al-iter-arms-smooth-full && cd ../ && \
 source activate tensorflow_p36 && \
 pip install -r zoobot/requirements.txt && \
 pip install -e zoobot  && \
