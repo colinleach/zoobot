@@ -66,6 +66,7 @@ class InputConfig():
         self.noisy_labels = noisy_labels
 
         self.greyscale = greyscale
+        self.zoom_central = zoom_central
 
     def set_stratify_probs_from_csv(self, csv_loc):
         subject_df = pd.read_csv(csv_loc)
