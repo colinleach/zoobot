@@ -22,7 +22,7 @@ Below
 `catalog_loc=data/gz2_classifications_and_subjects.csv`
 
 EC2:
-`shard_dir=data/gz2_shards/uint8_256px_bar_n_full`
+`shard_dir=data/gz2_shards/uint8_256px_bar_n_500`
 OR
 `shard_dir=/Volumes/alpha/uint8_256px_bar_n`
 
