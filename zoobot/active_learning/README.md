@@ -22,7 +22,7 @@ Below
 `catalog_loc=data/gz2_classifications_and_subjects.csv`
 
 EC2:
-`shard_dir=data/gz2_shards/uint8_256px_bar_n_full`
+`shard_dir=data/gz2_shards/uint8_256px_smooth_n_full`
 OR
 `shard_dir=/Volumes/alpha/uint8_256px_bar_n`
 
@@ -55,7 +55,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards_full.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir --catalog_loc=$catalog_loc`
+`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards_smooth_full.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir --catalog_loc=$catalog_loc`
 
 ### Execution
 

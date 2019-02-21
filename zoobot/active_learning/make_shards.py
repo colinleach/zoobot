@@ -213,28 +213,28 @@ if __name__ == '__main__':
 
     catalog = catalog[catalog['sample'] == 'original']
 
-    # 40 votes required, for accurate binomial statistics
-    # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    # catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
-
     # previous catalog didn't include total classifications/votes, so we'll need to work around that for now
     catalog['smooth-or-featured_total-votes'] = catalog['t01_smooth_or_features_a01_smooth_count'] + catalog['t01_smooth_or_features_a02_features_or_disk_count'] + catalog['t01_smooth_or_features_a03_star_or_artifact_count']
-    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # should be properly retired, may change later
+    # artificially enforce as simple test case
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
+
+    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_count']
+    catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
 
     # for consistency
     catalog['id_str'] = catalog['id'].astype(str)
 
-    catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
-    catalog['bar_total-votes'] = catalog['t03_bar_a06_bar_count'] + catalog['t03_bar_a07_no_bar_count']
+    # catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
+    # catalog['bar_total-votes'] = catalog['t03_bar_a06_bar_count'] + catalog['t03_bar_a07_no_bar_count']
     
-
     # catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
     # catalog['total_votes'] = catalog['spiral_total-votes']
     # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
-    catalog['total_votes'] = catalog['bar_total-votes']
-    catalog['label'] = catalog['t03_bar_a06_bar_count']
+    # catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
+    # catalog['total_votes'] = catalog['bar_total-votes']
+    # catalog['label'] = catalog['t03_bar_a06_bar_count']
+
 
     # local
     # catalog['file_loc'] = catalog['png_loc']
