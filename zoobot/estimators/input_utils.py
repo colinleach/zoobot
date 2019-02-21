@@ -217,7 +217,7 @@ def preprocess_batch(batch_images, config):
             assert channel_images.shape[3] == 1
             tf.summary.image('b_greyscale', channel_images)
         else:
-            channel_images = tf.identify(batch_images)
+            channel_images = tf.identity(batch_images)
 
         augmented_images = augment_images(channel_images, config)
         assert augmented_images.shape[1] == config.final_size
