@@ -32,7 +32,8 @@ class InputConfig():
             max_brightness_delta=0.05,
             contrast_range=(0.95, 1.05),
             noisy_labels=True,
-            greyscale=True
+            greyscale=True,
+            zoom_central=True
     ):
 
         self.name = name
@@ -270,7 +271,8 @@ def augment_images(images, input_config):
         images = geometric_augmentation(
             images,
             zoom=input_config.zoom,
-            final_size=input_config.final_size)
+            final_size=input_config.final_size,
+            central=input_config.zoom_central)
 
     if input_config.photographic_augmentation:
         images = photographic_augmentation(
@@ -302,7 +304,7 @@ def augment_images(images, input_config):
 #         images = tf.concat(images, axis=3)
 
 
-def geometric_augmentation(images, zoom, final_size):
+def geometric_augmentation(images, zoom, final_size, central):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -338,7 +340,7 @@ def geometric_augmentation(images, zoom, final_size):
         images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
-    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=True), images)
+    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central), images)
 
     # resize to final desired size (may match crop size)
     images = tf.image.resize_images(
