@@ -131,7 +131,7 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 50  # not 125, will massively overfit the first epoch
+                epochs = 125  # warning, may massively overfit the first epoch
             else:
                 epochs = 50
 
