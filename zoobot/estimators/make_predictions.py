@@ -118,7 +118,7 @@ def binomial_prob_per_k(rho, n_draws):
     return bin_probs
 
 
-def plot_samples(scores, labels, fig, axes):
+def plot_samples(scores, labels, total_votes, fig, axes):
     x = np.arange(0, 41)
     for galaxy_n, ax in enumerate(axes):
         if scores.shape[1] > 1:
@@ -135,7 +135,7 @@ def plot_samples(scores, labels, fig, axes):
             probability_record = np.array(probability_record)
             mean_posterior = probability_record.mean(axis=0)
         else:
-            mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=40)
+            mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=total_votes[galaxy_n])
             c='k'
         ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
