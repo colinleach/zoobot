@@ -67,6 +67,7 @@ def labelled_catalog(catalog_random_images):
     catalog = catalog_random_images.copy()
     catalog['id_str'] = catalog_random_images['id_str'] + '_from_labelled'  # must be unique
     catalog['label'] = np.random.rand(len(catalog))
+    catalog['total_votes'] = np.random.randint(low=1, high=41, size=len(catalog))
     return catalog
 
 
@@ -91,7 +92,7 @@ def shard_config(tmpdir, size, channels):
 @pytest.fixture()
 def shard_config_ready(shard_config, labelled_catalog, unlabelled_catalog):
     config = copy.copy(shard_config)
-    config.prepare_shards(labelled_catalog, unlabelled_catalog)
+    config.prepare_shards(labelled_catalog, unlabelled_catalog, train_test_fraction=0.8)
     assert config.ready()
     return config
 

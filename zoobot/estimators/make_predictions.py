@@ -74,35 +74,46 @@ def binomial_likelihood(labels, predictions, total_votes):
     """
     labels = np.expand_dims(labels, 1)
     yes_votes = labels * total_votes
-    est_p_yes = np.clip(predictions, 0., 1.)
+    # must be within meaningful limits, or fail loudly
+    assert predictions.min() >= 0.
+    assert predictions.max() <= 1.
+    est_p_yes = predictions  # rename for clarity
     epsilon = 1e-8
     return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
 
 
-def bin_prob_of_samples(samples, n_draws):
+def bin_prob_of_samples(samples, total_votes):
     # designed to operate on (n_subjects, n_samples) standard response
     assert isinstance(samples, np.ndarray)
     assert len(samples) > 1
-    binomial_probs_per_sample = np.zeros(list(samples.shape) + [n_draws + 1])  # add k dimension
+    assert len(total_votes) == len(samples)
+    # nested lists of dim samples, with elements of another list of variable length (p of k)
+    binomial_probs_of_subjects = []
     for subject_n in range(samples.shape[0]):
+        binomial_probs_of_samples = []
         for sample_n in range(samples.shape[1]):
             rho = samples[subject_n, sample_n]
-            binomial_probs_per_sample[subject_n, sample_n] = binomial_prob_per_k(rho, n_draws)
-    return binomial_probs_per_sample  # (n_subject, n_samples, k)
+            n_draws = total_votes[subject_n]
+            binomial_probs_of_samples.append(binomial_prob_per_k(rho, n_draws))
+        binomial_probs_of_subjects.append(binomial_probs_of_samples)
+    # nested lists of shape (n_subject, n_samples, k) where k varies
+    return binomial_probs_of_subjects
 
 
 def binomial_prob_per_k(rho, n_draws):
-    """[summary]
+    """Calculate p(k|rho, n_draws) over all possible k, for one rho and one n 
     
     Args:
-        sampled_rho (float): MLEs of binomial probability, of any dimension
+        sampled_rho (float): MLEs of binomial probability. 1st dim=galaxy, 2nd dim=sample.
         n_draws (int): N draws for those MLEs.
 
     Returns:
-        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+        (np.array): p(k|rho, n_draws) for all possible k, starting with k=0 through k=n_draws
     """
+    assert isinstance(rho, float)
+    assert isinstance(n_draws, int) or isinstance(n_draws, np.int64)
     k = np.arange(0, n_draws + 1)  # include k=n
-    bin_probs = np.array(scipy.stats.binom.pmf(k=k, p=rho, n=n_draws))
+    bin_probs = np.array(scipy.stats.binom.pmf(k=k, p=rho, n=int(n_draws)))
     assert np.allclose(bin_probs.sum(), 1.)  # must be one k in (0, ..., n_draws)
     return bin_probs
 

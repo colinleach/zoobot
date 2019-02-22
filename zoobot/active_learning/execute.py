@@ -189,13 +189,13 @@ def mock_acquisition_func(samples):
     return [np.random.rand() for n in range(len(samples))]
 
 
-def get_acquisition_func(baseline):
+def get_acquisition_func(baseline, expected_votes):
     if baseline:
         logging.critical('Using mock acquisition function, baseline test mode!')
         return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
         logging.critical('Using mutual information acquisition function')
-        return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
+        return lambda x: acquisition_utils.mutual_info_acquisition_func(x, expected_votes)  
 
 
 TrainCallableParams = namedtuple(
@@ -277,7 +277,8 @@ if __name__ == '__main__':
     )
 
     train_callable = get_train_callable(train_callable_params)
-    acquisition_func = get_acquisition_func(baseline=args.baseline)
+    # TODO generalise to many classes at once, don't need to manually set expected_votes
+    acquisition_func = get_acquisition_func(baseline=args.baseline, expected_votes=10)
     if args.test or args.baseline:
         n_samples = 2
     else:
