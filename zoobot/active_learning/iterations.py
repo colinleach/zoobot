@@ -173,7 +173,7 @@ class Iteration():
         subjects, samples = self.make_predictions(self.prediction_shards, self.initial_size)
 
         acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
-        # self.record_state(subjects, samples, acquisitions)
+        self.record_state(subjects, samples, acquisitions)
         logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
