@@ -52,7 +52,7 @@ def compare_models(model_a, model_b):
 
 
 def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name, inital_size=256, n_samples=30):
-    images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='id_str')  # tf graph
+    images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=inital_size, mode='id_str')  # tf graph
     with tf.Session() as sess:
         images, id_strs = sess.run([images_g, id_str_g])
     predictor_loc = os.path.join(results_dir, model_name)
