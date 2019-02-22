@@ -271,7 +271,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=2500/len(labelled_catalog))  # always eval on random 2500 galaxies
+        train_test_fraction=(len(labelled_catalog) - 2500)/len(labelled_catalog))  # always eval on random 2500 galaxies
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
