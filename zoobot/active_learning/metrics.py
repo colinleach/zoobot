@@ -39,17 +39,19 @@ def load_iteration_state(iteration_dir):
 class Model():
     """Get and plot basic model results, with no external info"""
 
-    def __init__(self, state, name, bin_probs=None):
+    def __init__(self, state, name, bin_probs=None, total_votes=None):
         # save sorted by acq. value (descending), to avoid resorting later
         args_to_sort = np.argsort(state.acquisitions)[::-1]
         self.samples = state.samples[args_to_sort, :]
         self.id_strs = [state.id_strs[n] for n in args_to_sort]  # list, sort with listcomp
         self.acquisitions = [state.acquisitions[n] for n in args_to_sort]
         self.name = name
+        if total_votes is None:
+            self.total_votes = [40 for n in range(len(self.id_strs))]   # TODO terrible sin!
 
         # for speed, calculate the (subject_n, sample_n, k) probabilities once here and re-use
         if bin_probs is None:
-            self.bin_probs = make_predictions.bin_prob_of_samples(self.samples, n_draws=40)
+            self.bin_probs = make_predictions.bin_prob_of_samples(self.samples, total_votes=self.total_votes) 
         else:
             self.bin_probs = bin_probs
         
