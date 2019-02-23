@@ -8,14 +8,15 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import seaborn as sns
 
+from zoobot.active_learning import acquisition_utils
 
 def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
     data = []
     if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
         raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
-    n_subjects = sample_probs_by_k.shape[0]
-    max_possible_k = sample_probs_by_k.shape[2]
-    mean_posterior = sample_probs_by_k.mean(axis=1)
+    n_subjects = len(sample_probs_by_k)
+    max_possible_k = 50  # TODO?
+    mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
     for subject_n in range(n_subjects):
         most_likely_k = mean_posterior[subject_n].argmax()
         for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
