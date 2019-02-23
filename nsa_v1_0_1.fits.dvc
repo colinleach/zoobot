@@ -1,6 +1,0 @@
-md5: 3cc902e7458055693d0929490890bbb7
-outs:
-- cache: true
-  md5: ca8f3da6f5d114917da8f2121b778041
-  metric: false
-  path: /data/galaxy_zoo/decals/catalogs/nsa_v1_0_1.fits
