@@ -22,7 +22,7 @@ def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
         for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
             max_k = np.min([most_likely_k + max_error_in_k, max_possible_k])
             min_k = np.max([most_likely_k - max_error_in_k, 0])
-            prediction = mean_posterior[subject_n, min_k:max_k+1].sum()  # include max_k in slice
+            prediction = np.sum(mean_posterior[subject_n][min_k:max_k+1])  # include max_k in slice
             actual_k = volunteer_votes[subject_n]
             observed = float(min_k <= actual_k <= max_k)
             data.append({
