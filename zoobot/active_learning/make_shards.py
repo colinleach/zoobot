@@ -100,7 +100,7 @@ class ShardConfig():
         logging.info('\nTraining subjects: {}'.format(len(train_df)))
         logging.info('Eval subjects: {}'.format(len(eval_df)))
         if len(train_df) < len(eval_df):
-            logging.warning('More eval subjects than training subjects - is this intended?')
+            print('More eval subjects than training subjects - is this intended?')
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
