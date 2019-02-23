@@ -34,6 +34,8 @@ binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def distribution_entropy(probabilities):
+    print(probabilities)
+    print(type(probabilities))
     assert isinstance(probabilities, np.ndarray)  # e.g. array of p(k|n) for many k, one subject
     assert probabilities.ndim == 1
     assert probabilities.max() <= 1. 
@@ -59,7 +61,6 @@ def predictive_binomial_entropy(bin_probs_of_samples):
     """
     # average over samples to get the mean prediction per k, per subject
     mean_predictions = get_mean_predictions(bin_probs_of_samples)
-    print(mean_predictions)
     # get the distribution entropy for each of those mean predictions, return as array
     return np.array([distribution_entropy(probabilities) for probabilities in mean_predictions])
 
