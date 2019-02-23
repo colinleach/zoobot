@@ -11,36 +11,16 @@ from shared_astro_utils import plotting_utils
 from zoobot.estimators import make_predictions
 
 
-def distribution_entropy(probabilities):
-    """Find the total entropy in a sampled probability distribution
-    Done accidentally - should really by summing over each class, according to Lewis
-    However, highly useful!
-
-    Args:
-        probabilites (np.array): observed probabilities e.g. calibrated class scores from ML model
-    
-    Returns:
-        float: total entropy in distribution
-    """
-    # do p * log p for every sample, sum for each subject
-    probabilities = np.clip(probabilities, 0., 1.)
-    return -np.sum(list(map(lambda p: p * np.log(p + 1e-12), probabilities)), axis=-1)
-
-
-
-def predictive_binomial_entropy(binomial_probs_per_sample):
-    """[summary]
-    
-    Args:
-        sampled_rho (float): MLEs of binomial probability, of any dimension
-        n_draws (int): N draws for those MLEs.
-    
-    Returns:
-        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
-    """
+def get_mean_predictions(binomial_probs_per_sample):
     # average over samples to get the mean prediction per k, per subject
-    bin_probs_per_k_per_subject = np.mean(binomial_probs_per_sample, axis=1)
-    return distribution_entropy(bin_probs_per_k_per_subject)
+    mean_predictions = []
+    for galaxy in binomial_probs_per_sample:
+        all_samples = np.stack([sample for sample in galaxy])
+        mean_prediction = np.mean(all_samples, axis=0)  # 0th axis is sample, 1st is k
+        # print(all_samples.shape)
+        # print(mean_prediction.shape)
+        mean_predictions.append(mean_prediction)
+    return mean_predictions
 
 
 def binomial_entropy(rho, n_draws):
@@ -53,19 +33,56 @@ def binomial_entropy(rho, n_draws):
 binomial_entropy = np.vectorize(binomial_entropy)
 
 
-def expected_binomial_entropy(binomial_probs_per_sample):
+def distribution_entropy(probabilities):
+    assert isinstance(probabilities, np.ndarray)  # e.g. array of p(k|n) for many k, one subject
+    assert probabilities.ndim == 1
+    assert probabilities.max() <= 1. 
+    assert probabilities.min() >= 0.
+    return float(
+        np.sum(
+            list(map(
+                lambda p: -p * np.log(p + 1e-12),
+                probabilities)
+            )
+        )
+    )
+
+def predictive_binomial_entropy(bin_probs_of_samples):
+    """[summary]
+    
+    Args:
+        sampled_rho (float): MLEs of binomial probability, of any dimension
+        n_draws (int): N draws for those MLEs.
+    
+    Returns:
+        (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
+    """
+    # average over samples to get the mean prediction per k, per subject
+    mean_predictions = get_mean_predictions(bin_probs_of_samples)
+    print(mean_predictions)
+    # get the distribution entropy for each of those mean predictions, return as array
+    return np.array([distribution_entropy(probabilities) for probabilities in mean_predictions])
+
+
+def expected_binomial_entropy(bin_probs_of_samples):
     # get the entropy over all k (reduce axis 2)
-    entropy_per_sample = np.apply_along_axis(distribution_entropy, axis=2, arr=binomial_probs_per_sample)
-    return np.mean(entropy_per_sample, axis=1)  # average over samples (reduce axis 1)
+    n_subjects, n_samples = len(bin_probs_of_samples), len(bin_probs_of_samples[0])
+    binomial_entropy_of_samples = np.zeros((n_subjects, n_samples))
+    for subject_n in range(n_subjects):
+        for sample_n in range(n_samples):
+            entropy_of_sample = distribution_entropy(bin_probs_of_samples[subject_n][sample_n])
+            binomial_entropy_of_samples[subject_n, sample_n] = entropy_of_sample
+    # average over samples (reduce axis 1)
+    return np.mean(binomial_entropy_of_samples, axis=1) 
 
 
-def mutual_info_acquisition_func(samples):
-        bin_probs = make_predictions.bin_prob_of_samples(samples, n_draws=40)  # currently hardcoded
-        predictive_entropy = predictive_binomial_entropy(bin_probs)
-        expected_entropy = expected_binomial_entropy(bin_probs)
-        mutual_info = predictive_entropy - expected_entropy
-        return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
-
+def mutual_info_acquisition_func(samples, expected_votes):
+    assert len(samples) == len(expected_votes)
+    bin_probs = make_predictions.bin_prob_of_samples(samples, expected_votes)
+    predictive_entropy = predictive_binomial_entropy(bin_probs)
+    expected_entropy = expected_binomial_entropy(bin_probs)
+    mutual_info = predictive_entropy - expected_entropy
+    return [float(mutual_info[n]) for n in range(len(mutual_info))]  # return a list
 
 
 def sample_variance(samples):

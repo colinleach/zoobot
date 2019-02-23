@@ -163,7 +163,8 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
         selected_labels = list(np.random.rand(len(selected_ids)))
         SUBJECTS_REQUESTED.clear()
         assert len(SUBJECTS_REQUESTED) == 0
-        return selected_ids, selected_labels
+        total_votes = [40 for n in range(len(selected_labels))]  # always pretend 40 total votes
+        return selected_ids, selected_labels, total_votes  
     monkeypatch.setattr(iterations, 'get_labels', mock_get_labels)
     def mock_request_labels(subject_ids):
         SUBJECTS_REQUESTED.extend(subject_ids)
@@ -181,7 +182,7 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
 
     def mock_write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size):
         # save the subject ids here, pretending to be a tfrecord of those subjects
-        assert set(columns_to_save) == {'id_str', 'label'}
+        assert set(columns_to_save) == {'id_str', 'label', 'total_votes'}
         tfrecord_locs = [os.path.join(save_dir, loc) for loc in ['shard_0.tfrecord', 'shard_1.tfrecord']]
         for loc in tfrecord_locs:
             with open(loc, 'w') as f:
@@ -200,11 +201,13 @@ def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
     # monkeypatch.setattr(iterations.active_learning, 'add_labelled_subjects_to_tfrecord', mock_add_labelled_subjects_to_tfrecord)
 
 
-    def mock_add_labels_to_db(subject_ids, labels, db):
+    def mock_add_labels_to_db(subject_ids, labels, total_votes, db):
         assert isinstance(subject_ids, list)
         assert isinstance(subject_ids[0], str)
         assert isinstance(labels, list)
         assert isinstance(labels[0], float)
+        assert isinstance(total_votes, list)
+        assert isinstance(total_votes[0], int)
         pass  # don't actually bother adding the new labels to the db
         # TODO use a mock and check the call for ids and labels
     monkeypatch.setattr(iterations.active_learning, 'add_labels_to_db', mock_add_labels_to_db)
