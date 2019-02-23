@@ -131,7 +131,7 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 125  # warning, may massively overfit the first epoch
+                epochs = 10000  # brake for no-one
             else:
                 epochs = 50
 
@@ -235,10 +235,10 @@ if __name__ == '__main__':
         shards_per_iter = 2  # temp
         final_size = 32
     else:
-        n_iterations = 24
+        n_iterations = 1  # doesn't matter, we're going all in one iteration
         subjects_per_iter = 250 # to see if performance improves at all with more images
-        shards_per_iter = 4  # needs to be <= total prediction shards, will fail loudly if so
-        final_size = 96
+        shards_per_iter = 1  # needs to be <= total prediction shards, will fail loudly if so
+        final_size = 128
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)

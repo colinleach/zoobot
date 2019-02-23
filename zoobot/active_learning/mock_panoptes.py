@@ -6,6 +6,7 @@ import pandas as pd
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 
+
 try:
     SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_500'
     assert os.path.isdir(SHARD_DIR)

@@ -90,11 +90,17 @@ class ShardConfig():
         assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
+        logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
+        logging.info('Unlabelled subjects: {}'.format(len(unlabelled_catalog)))
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
         # save train/test split into training and eval shards
         train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
+        logging.info('\nTraining subjects: {}'.format(len(train_df)))
+        logging.info('Eval subjects: {}'.format(len(eval_df)))
+        if len(train_df) < len(eval_df):
+            print('More eval subjects than training subjects - is this intended?')
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
@@ -213,28 +219,28 @@ if __name__ == '__main__':
 
     catalog = catalog[catalog['sample'] == 'original']
 
-    # 40 votes required, for accurate binomial statistics
-    # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    # catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
-
     # previous catalog didn't include total classifications/votes, so we'll need to work around that for now
     catalog['smooth-or-featured_total-votes'] = catalog['t01_smooth_or_features_a01_smooth_count'] + catalog['t01_smooth_or_features_a02_features_or_disk_count'] + catalog['t01_smooth_or_features_a03_star_or_artifact_count']
-    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # should be properly retired, may change later
+    # artificially enforce as simple test case
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
+
+    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_count']
+    catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
 
     # for consistency
     catalog['id_str'] = catalog['id'].astype(str)
 
-    catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
-    catalog['bar_total-votes'] = catalog['t03_bar_a06_bar_count'] + catalog['t03_bar_a07_no_bar_count']
+    # catalog['spiral_total-votes'] = catalog['t04_spiral_a08_spiral_count'] + catalog['t04_spiral_a09_no_spiral_count']
+    # catalog['bar_total-votes'] = catalog['t03_bar_a06_bar_count'] + catalog['t03_bar_a07_no_bar_count']
     
-
     # catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
     # catalog['total_votes'] = catalog['spiral_total-votes']
     # catalog['label'] = catalog['t04_spiral_a08_spiral_count']
 
-    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
-    catalog['total_votes'] = catalog['bar_total-votes']
-    catalog['label'] = catalog['t03_bar_a06_bar_count']
+    # catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
+    # catalog['total_votes'] = catalog['bar_total-votes']
+    # catalog['label'] = catalog['t03_bar_a06_bar_count']
+
 
     # local
     # catalog['file_loc'] = catalog['png_loc']
@@ -256,8 +262,8 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    labelled_size = 3000
-    # labelled_size = len(catalog) - 5000
+    # labelled_size = 3000
+    labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
     # labelled_size = 6000
@@ -271,7 +277,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.16)  # copying basic_split
+        train_test_fraction=(len(labelled_catalog) - 2500)/len(labelled_catalog))  # always eval on random 2500 galaxies
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
