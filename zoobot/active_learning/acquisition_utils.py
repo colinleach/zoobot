@@ -34,12 +34,15 @@ binomial_entropy = np.vectorize(binomial_entropy)
 
 
 def distribution_entropy(probabilities):
-    print(probabilities)
-    print(type(probabilities))
-    assert isinstance(probabilities, np.ndarray)  # e.g. array of p(k|n) for many k, one subject
-    assert probabilities.ndim == 1
-    assert probabilities.max() <= 1. 
-    assert probabilities.min() >= 0.
+    try:
+        assert isinstance(probabilities, np.ndarray)  # e.g. array of p(k|n) for many k, one subject
+        assert probabilities.ndim == 1
+        assert probabilities.max() <= 1. 
+        assert probabilities.min() >= 0.
+    except:
+        print(probabilities)
+        print(type(probabilities))
+        raise ValueError('Probabilities must be ndarray of values between 0 and 1')
     return float(
         np.sum(
             list(map(
