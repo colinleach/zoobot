@@ -61,7 +61,7 @@ class Model():
 
     def calculate_mutual_info(self):
         self.predictive_entropy = acquisition_utils.predictive_binomial_entropy(self.bin_probs)
-        self.expected_entropy = np.mean(acquisition_utils.distribution_entropy(self.bin_probs), axis=1)
+        self.expected_entropy = acquisition_utils.expected_binomial_entropy(self.bin_probs)
         self.mutual_info = self.predictive_entropy - self.expected_entropy
 
 

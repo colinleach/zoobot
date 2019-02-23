@@ -17,8 +17,6 @@ def get_mean_predictions(binomial_probs_per_sample):
     for galaxy in binomial_probs_per_sample:
         all_samples = np.stack([sample for sample in galaxy])
         mean_prediction = np.mean(all_samples, axis=0)  # 0th axis is sample, 1st is k
-        # print(all_samples.shape)
-        # print(mean_prediction.shape)
         mean_predictions.append(mean_prediction)
     return mean_predictions
 
