@@ -90,11 +90,17 @@ class ShardConfig():
         assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
+        logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
+        logging.info('Unlabelled subjects: {}'.format(len(unlabelled_catalog)))
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
         # save train/test split into training and eval shards
         train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
+        logging.info('\nTraining subjects: {}'.format(len(train_df)))
+        logging.info('Eval subjects: {}'.format(len(eval_df)))
+        if len(train_df) < len(eval_df):
+            logging.warning('More eval subjects than training subjects - is this intended?')
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
