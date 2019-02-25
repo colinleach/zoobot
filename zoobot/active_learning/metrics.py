@@ -40,7 +40,7 @@ class Model():
     """Get and plot basic model results, with no external info"""
 
     def __init__(self, state, name, bin_probs=None, total_votes=None):
-        # save sorted by acq. value (descending), to avoid resorting later
+        # save samples, id_strs and acquisitions sorted by acq. value (descending), to avoid resorting later
         args_to_sort = np.argsort(state.acquisitions)[::-1]
         self.samples = state.samples[args_to_sort, :]
         self.id_strs = [state.id_strs[n] for n in args_to_sort]  # list, sort with listcomp

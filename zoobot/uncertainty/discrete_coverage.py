@@ -15,7 +15,7 @@ def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
     if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
         raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
     n_subjects = len(sample_probs_by_k)
-    max_possible_k = 50  # TODO?
+    max_possible_k = 40  # beyond this, let's just consider it wrong - very close to 1 by this point
     mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
     for subject_n in range(n_subjects):
         most_likely_k = mean_posterior[subject_n].argmax()
