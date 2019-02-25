@@ -38,7 +38,6 @@ def volunteer_votes(true_p, n_draws):
 @pytest.fixture()
 def bin_prob_of_samples_by_k(n_subjects, n_samples, n_draws, true_p):
     """ of form [subject_n, sample_n, k] """
-    # return make_predictions.bin_prob_of_samples(samples, n_draws=40)
     bin_probs = np.zeros((n_subjects, n_samples, n_draws + 1))
     for subject_n in range(n_subjects):
         for sample_n in range(n_samples):
@@ -135,7 +134,7 @@ def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):
     fig.tight_layout()
     fig.savefig(save_loc)
 
-def test_evaluate_discrete_coverage_bad_fractions(bin_prob_of_samples_by_k):
+def test_evaluate_discrete_coverage_bad_fractions(bin_prob_of_samples_by_k):  # TODO
     """Should raise an error if mistakenly called with vote fractions instead of labels"""
     vote_fracs = np.random.rand(len(bin_prob_of_samples_by_k))
     with pytest.raises(ValueError):

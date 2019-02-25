@@ -79,7 +79,7 @@ def test_binomial_entropy_vectorized():
 
 
 def test_get_mean_prediction(bin_probs_of_samples):
-    mean_predictions = acquisition_utils.get_mean_predictions(bin_probs_of_samples)
+    mean_predictions = acquisition_utils.get_mean_k_predictions(bin_probs_of_samples)
     assert len(mean_predictions) == len(bin_probs_of_samples)
     for subject_n, subject in enumerate(mean_predictions):
         assert not np.allclose(subject, subject.mean())  # should vary by k for each subject
