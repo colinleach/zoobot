@@ -238,7 +238,7 @@ if __name__ == '__main__':
         n_iterations = 1  # doesn't matter, we're going all in one iteration
         subjects_per_iter = 250 # to see if performance improves at all with more images
         shards_per_iter = 1  # needs to be <= total prediction shards, will fail loudly if so
-        final_size = 128
+        final_size = 96  # BAR MODE
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
