@@ -135,7 +135,7 @@ def plot_samples(scores, labels, total_votes, fig, axes):
             probability_record = np.array(probability_record)
             mean_posterior = probability_record.mean(axis=0)
         else:
-            mean_posterior = binomial_prob_per_k(scores[galaxy_n], n_draws=total_votes[galaxy_n])
+            mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=total_votes[galaxy_n])
             c='k'
         ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
         ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
