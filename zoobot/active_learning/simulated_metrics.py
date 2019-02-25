@@ -26,8 +26,8 @@ class SimulatedModel():
         self.model = model
         self.catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 
-        self.labels = self.catalog['label']
-        self.total_votes = self.catalog['total_votes']
+        self.labels = self.catalog['label'].values
+        self.total_votes = self.catalog['total_votes'].values
         assert not any(np.isnan(self.labels))
         assert not any(np.isnan(self.total_votes))
 
@@ -41,7 +41,7 @@ class SimulatedModel():
         self.calculate_mutual_info()
 
         self.mean_rho_predicton = np.mean(self.model.samples, axis=1)
-        self.mean_k_prediction = acquisition_utils.get_mean_predictions(self.bin_probs)
+        self.mean_k_prediction = acquisition_utils.get_mean_k_predictions(self.bin_probs)
     
         self.calculate_default_metrics()
         self.votes = np.around(self.labels * 40)  # assume 40 votes for everything, for now

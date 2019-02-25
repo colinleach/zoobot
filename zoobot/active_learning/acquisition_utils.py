@@ -11,7 +11,7 @@ from shared_astro_utils import plotting_utils
 from zoobot.estimators import make_predictions
 
 
-def get_mean_predictions(binomial_probs_per_sample):
+def get_mean_k_predictions(binomial_probs_per_sample):
     # average over samples to get the mean prediction per k, per subject
     mean_predictions = []
     for galaxy in binomial_probs_per_sample:
@@ -61,9 +61,9 @@ def predictive_binomial_entropy(bin_probs_of_samples):
         (float): entropy of binomial with N draws and p=sampled rho, same shape as inputs
     """
     # average over samples to get the mean prediction per k, per subject
-    mean_predictions = get_mean_predictions(bin_probs_of_samples)
+    mean_k_predictions = get_mean_k_predictions(bin_probs_of_samples)
     # get the distribution entropy for each of those mean predictions, return as array
-    return np.array([distribution_entropy(probabilities) for probabilities in mean_predictions])
+    return np.array([distribution_entropy(probabilities) for probabilities in mean_k_predictions])
 
 
 def expected_binomial_entropy(bin_probs_of_samples):
