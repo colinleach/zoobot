@@ -62,7 +62,7 @@ class SimulatedModel():
 
     def mutual_info_vs_mean_prediction(self, row):
         mean_pred_range = np.linspace(0.02, 0.98)
-        entropy_of_mean_pred_range = acquisition_utils.binomial_entropy(mean_pred_range, n_draws=40)
+        entropy_of_mean_pred_range = acquisition_utils.binomial_entropy(mean_pred_range, n_draws=self.total_votes)  # WARNING
 
         row[0].scatter(self.mean_prediction, self.predictive_entropy)
         row[0].plot(mean_pred_range, entropy_of_mean_pred_range)
@@ -81,7 +81,7 @@ class SimulatedModel():
 
 
     def delta_acquisition_vs_mean_prediction(self, row):
-        entropy_of_mean_prediction = acquisition_utils.binomial_entropy(self.mean_prediction, n_draws=40)
+        entropy_of_mean_prediction = acquisition_utils.binomial_entropy(self.mean_prediction, n_draws=40)  # WARNING will need to be changed for bars N = 10
         row[0].scatter(self.mean_prediction, self.predictive_entropy - entropy_of_mean_prediction)
         row[0].set_ylabel('Delta Predictive Entropy')
         row[1].scatter(self.mean_prediction, self.expected_entropy - entropy_of_mean_prediction)
@@ -112,7 +112,7 @@ class SimulatedModel():
         self.mean_abs_error = np.mean(self.abs_error)
         self.mean_square_error = np.mean(self.square_error)
 
-        self.bin_likelihood = make_predictions.binomial_likelihood(self.labels, self.model.samples, total_votes=40)
+        self.bin_likelihood = make_predictions.binomial_likelihood(self.labels, self.model.samples, total_votes=self.total_votes)  # WARNING
         self.bin_loss_per_sample = - self.bin_likelihood  # we want to minimise the loss to maximise the likelihood
         self.bin_loss_per_subject = np.mean(self.bin_loss_per_sample, axis=1)
         self.mean_bin_loss = np.mean(self.bin_loss_per_subject)  # scalar, mean likelihood
@@ -158,7 +158,7 @@ class SimulatedModel():
         if self.labels is None:
             raise ValueError('Calculating coverage requires volunteer votes to be known')
         fig, ax = plt.subplots()
-        coverage_df = discrete_coverage.evaluate_discrete_coverage(self.votes, self.model.bin_probs)
+        coverage_df = discrete_coverage.evaluate_discrete_coverage(self.votes, self.mean_prediction)
         discrete_coverage.plot_coverage_df(coverage_df, ax=ax)
         fig.tight_layout()
         save_loc = os.path.join(save_dir, 'discrete_coverage.png')

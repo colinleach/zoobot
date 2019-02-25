@@ -10,13 +10,13 @@ import seaborn as sns
 
 from zoobot.active_learning import acquisition_utils
 
-def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
+def evaluate_discrete_coverage(volunteer_votes, mean_posterior):
     data = []
     if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
         raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
-    n_subjects = len(sample_probs_by_k)
+    n_subjects = len(volunteer_votes)
     max_possible_k = 40  # beyond this, let's just consider it wrong - very close to 1 by this point
-    mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
+    # mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
     for subject_n in range(n_subjects):
         most_likely_k = mean_posterior[subject_n].argmax()
         for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
