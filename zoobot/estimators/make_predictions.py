@@ -120,7 +120,7 @@ def binomial_prob_per_k(rho, n_draws):
 
 def plot_samples(scores, labels, total_votes, fig, axes):
     for galaxy_n, ax in enumerate(axes):
-        x = np.arange(0, total_votes[galaxy_n])
+        x = np.arange(0, total_votes[galaxy_n]+1) # inclusive
         if scores.shape[1] > 1:
             c='g'
             probability_record = []
