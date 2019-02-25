@@ -328,7 +328,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     if labels is not None:
         tf.summary.histogram('yes_votes', labels[:, 0])
         tf.summary.histogram('total_votes', labels[:, 1])
-        tf.summary.histogram('observed_vote_fraction', labels[:, 0] * labels[:, 1])
+        tf.summary.histogram('observed_vote_fraction', labels[:, 0] / labels[:, 1])
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
