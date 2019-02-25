@@ -1,0 +1,13 @@
+cmd: python zoobot/active_learning/make_shards.py --shard_dir=data/gz2_shards/uint8_256px_bar_n_full
+  --catalog_loc=data/gz2_classifications_and_subjects.csv
+deps:
+- md5: 057bb9ee8282a0ff35ade29d672f0a75
+  path: data/gz2_classifications_and_subjects.csv
+- md5: 20fb02266348f846947266dd5bae7e38
+  path: zoobot/active_learning/make_shards.py
+md5: 426bed28635e3f99336c402f3477f0fa
+outs:
+- cache: true
+  md5: 1d9f907c221b6ddafcf8c2c988f98b9b.dir
+  metric: false
+  path: data/gz2_shards/uint8_256px_bar_n_full
