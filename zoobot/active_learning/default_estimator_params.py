@@ -40,7 +40,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
-        zoom=(1.7, 1.9),  # BAR MODE
+        zoom=(2.2, 2.5),  # BAR MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
         batch_size=run_config.batch_size,
@@ -62,7 +62,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
-        zoom=(1.7, 1.9),  # BAR MODE
+        zoom=(2.2, 2.5),  # BAR MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
         batch_size=run_config.batch_size,
