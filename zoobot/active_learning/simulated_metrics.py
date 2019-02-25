@@ -107,8 +107,8 @@ class SimulatedModel():
         """
         assert self.labels is not None
         
-        self.abs_error = np.abs(self.model.mean_prediction - self.labels)
-        self.square_error = (self.labels - self.model.mean_prediction) ** 2.
+        self.abs_error = np.abs(self.mean_prediction - self.labels)
+        self.square_error = (self.labels - self.mean_prediction) ** 2.
         self.mean_abs_error = np.mean(self.abs_error)
         self.mean_square_error = np.mean(self.square_error)
 
