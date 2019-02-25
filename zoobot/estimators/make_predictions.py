@@ -129,7 +129,7 @@ def plot_samples(scores, labels, total_votes, fig, axes):
                     name = 'Model Posteriors'
                 else:
                     name = None
-                probs = binomial_prob_per_k(score, n_draws=40)
+                probs = binomial_prob_per_k(score, n_draws=total_votes[galaxy_n])
                 probability_record.append(probs)
                 ax.plot(x, probs, 'k', alpha=0.15, label=name)
             probability_record = np.array(probability_record)
