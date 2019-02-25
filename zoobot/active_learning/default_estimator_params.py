@@ -48,7 +48,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         final_size=run_config.final_size,
         channels=run_config.channels,
         noisy_labels=False,  # train using softmax proxy for binomial loss,
-        greyscale=False,  # BAR MODE
+        greyscale=True,  # BAR MODE
         zoom_central=True  # BAR MODE
     )
 
@@ -70,7 +70,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         final_size=run_config.final_size,
         channels=run_config.channels,
         noisy_labels=False,  # eval using binomial loss
-        greyscale=False,  # BAR MODE
+        greyscale=True,  # BAR MODE
         zoom_central=True  # BAR MODE
     )
 
