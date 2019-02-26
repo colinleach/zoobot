@@ -1,4 +1,5 @@
 import logging
+import functools
 
 import pandas as pd
 import numpy as np
@@ -72,7 +73,6 @@ def binomial_likelihood(labels, predictions, total_votes):
     Returns:
         [type]: [description]
     """
-    labels = np.expand_dims(labels, 1)
     yes_votes = labels * total_votes
     # must be within meaningful limits, or fail loudly
     assert predictions.min() >= 0.
@@ -94,12 +94,14 @@ def bin_prob_of_samples(samples, total_votes):
         for sample_n in range(samples.shape[1]):
             rho = samples[subject_n, sample_n]
             n_draws = total_votes[subject_n]
-            binomial_probs_of_samples.append(binomial_prob_per_k(rho, n_draws))
+            rho_rounded = np.around(rho, decimals=3)  # round to use caching, some precision loss
+            binomial_probs_of_samples.append(binomial_prob_per_k(rho_rounded, n_draws))
         binomial_probs_of_subjects.append(binomial_probs_of_samples)
     # nested lists of shape (n_subject, n_samples, k) where k varies
     return binomial_probs_of_subjects
 
 
+@functools.lru_cache(maxsize=16384)  # factor of 2, larger than possible 3dp numbers in {0, 1}
 def binomial_prob_per_k(rho, n_draws):
     """Calculate p(k|rho, n_draws) over all possible k, for one rho and one n 
     
@@ -142,7 +144,7 @@ def plot_samples(scores, labels, total_votes, fig, axes):
         ax.yaxis.set_visible(False)
 
 
-def view_samples(scores, labels, annotate=False, display_width=5):
+def view_samples(scores, labels, total_votes, annotate=False, display_width=5):
     """For many subjects, view the distribution of scores and labels for that subject
 
     Args:\
@@ -151,7 +153,7 @@ def view_samples(scores, labels, annotate=False, display_width=5):
     """
     assert len(labels) == len(scores) > 1
     fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharex=True)
-    plot_samples(scores, labels, fig, axes)
+    plot_samples(scores, labels, total_votes, fig, axes)
 
     axes[0].legend(
         loc='lower center', 

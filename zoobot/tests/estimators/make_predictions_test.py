@@ -10,18 +10,17 @@ import matplotlib.pyplot as plt
 from zoobot.tests import TEST_FIGURE_DIR
 from zoobot.estimators import make_predictions
 
+@pytest.fixture
+def n_galaxies():
+    return 30
 
 @pytest.fixture
-def predictions():
-    return np.array([[0.4, 0.5, 0.6] for n in range(2)])
+def mean_rho_predictions(n_galaxies):
+    return np.random.rand(n_galaxies)
 
 @pytest.fixture
 def n_draws():
     return 10
-
-@pytest.fixture
-def n_galaxies():
-    return 30
 
 @pytest.fixture
 def n_samples():
@@ -30,6 +29,12 @@ def n_samples():
 @pytest.fixture
 def samples(n_galaxies, n_samples):
     return np.random.rand(n_galaxies, n_samples)
+
+
+@pytest.fixture
+def labels(n_galaxies):
+    return np.random.randint(low=1, high=6, size=n_galaxies)
+
 
 @pytest.fixture
 def total_votes(n_galaxies):
@@ -40,7 +45,14 @@ def test_load_predictor(predictor_model_loc):
     predictor = make_predictions.load_predictor(predictor_model_loc)
     assert callable(predictor)
 
+def test_binomial_likelihood_1D_predictions(labels, mean_rho_predictions, total_votes):
+    likelihoods = make_predictions.binomial_likelihood(labels, mean_rho_predictions, total_votes)
+    assert likelihoods.shape == mean_rho_predictions.shape
 
+# def test_binomial_likelihood_samples(labels, samples, total_votes):
+#     likelihoods = make_predictions.binomial_likelihood(labels, samples, total_votes)
+#     assert likelihoods.shape == samples.shape
+    
 def test_get_samples_of_subjects(predictor, size, channels):
     n_samples = 5
     n_subjects = 26
@@ -81,3 +93,8 @@ def test_bin_prob_of_samples(samples, total_votes):
         for sample in gal:
             # each list of k's should be as long as total_votes for that galaxy, +1 for edge 
             assert len(sample) == total_votes[gal_n] + 1
+
+
+@pytest.mark.xfail
+def test_view_samples():
+    raise NotImplementedError

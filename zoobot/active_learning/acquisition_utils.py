@@ -12,7 +12,7 @@ from zoobot.estimators import make_predictions
 
 
 def get_mean_k_predictions(binomial_probs_per_sample):
-    # average over samples to get the mean prediction per k, per subject
+    # average over samples to get the mean prediction per subject (0th), per k (1st)
     mean_predictions = []
     for galaxy in binomial_probs_per_sample:
         all_samples = np.stack([sample for sample in galaxy])
