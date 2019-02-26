@@ -1,0 +1,6 @@
+md5: abe0bcd968fb74d31884bd257458d54f
+outs:
+- cache: true
+  md5: d3c7195b34a4d7c9aaa2d145840f82b7
+  metric: false
+  path: nair_sdss_catalog_interpreted.csv
