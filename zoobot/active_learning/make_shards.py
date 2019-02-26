@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import git
 
+from shared_astro_utils import matching_utils
+
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
 from zoobot.active_learning import active_learning, default_estimator_params
@@ -262,13 +264,20 @@ if __name__ == '__main__':
     # split catalog and pretend most is unlabelled
     # real mode:
     # labelled_size = 3000
-    labelled_size = len(catalog) - 5000
+    # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
     # labelled_size = 6000
 
-    labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
-    unlabelled_catalog = catalog[labelled_size:]  # for pool
+    # labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
+    # unlabelled_catalog = catalog[labelled_size:]  # for pool
+    nair_catalog = 'data/nair_sdss_catalog_interpreted.csv'
+
+    # train on galaxies that are NOT in Nair (minus 500 for eval). Later, will evaluate on galaxies in Nair.
+    # Note that these will be in unlabelled shards, not eval shard.
+    unlabelled_catalog, labelled_catalog = matching_utils.match_galaxies_to_catalog_pandas(catalog, nair_catalog)
+    print('Not in Nair: {}'.format(labelled_catalog))
+    print('In Nair" {}'.format(unlabelled_catalog))
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
@@ -276,7 +285,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=(len(labelled_catalog) - 2500)/len(labelled_catalog))  # always eval on random 2500 galaxies
+        train_test_fraction=(len(labelled_catalog) - 500)/len(labelled_catalog))  # always eval on random 2500 galaxies
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
