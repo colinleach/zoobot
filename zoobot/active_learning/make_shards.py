@@ -271,7 +271,7 @@ if __name__ == '__main__':
 
     # labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
     # unlabelled_catalog = catalog[labelled_size:]  # for pool
-    nair_catalog = 'data/nair_sdss_catalog_interpreted.csv'
+    nair_catalog = pd.read_csv('data/nair_sdss_catalog_interpreted.csv')
 
     # train on galaxies that are NOT in Nair (minus 500 for eval). Later, will evaluate on galaxies in Nair.
     # Note that these will be in unlabelled shards, not eval shard.
