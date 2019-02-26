@@ -276,8 +276,8 @@ if __name__ == '__main__':
     # train on galaxies that are NOT in Nair (minus 500 for eval). Later, will evaluate on galaxies in Nair.
     # Note that these will be in unlabelled shards, not eval shard.
     unlabelled_catalog, labelled_catalog = matching_utils.match_galaxies_to_catalog_pandas(catalog, nair_catalog)
-    print('Not in Nair: {}'.format(labelled_catalog))
-    print('In Nair" {}'.format(unlabelled_catalog))
+    print('Not in Nair: {}'.format(len(labelled_catalog)))
+    print('In Nair" {}'.format(len(unlabelled_catalog)))
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
