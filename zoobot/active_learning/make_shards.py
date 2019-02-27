@@ -230,13 +230,13 @@ if __name__ == '__main__':
 
     # SMOOTH MODE
     # artificially enforce as simple test case
-    # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    # catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_count']
-    # catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
+    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_count']
+    catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
     # BAR MODE
-    catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
-    catalog['label'] = catalog['t03_bar_a06_bar_count']
-    catalog['total_votes'] = catalog['bar_total-votes']
+    # catalog = catalog[catalog['bar_total-votes'] > 10]  # filter to at least a bit featured
+    # catalog['label'] = catalog['t03_bar_a06_bar_count']
+    # catalog['total_votes'] = catalog['bar_total-votes']
     # SPIRAL MODE
     # catalog = catalog[catalog['spiral_total-votes'] > 10]  # filter to at least a bit featured
     # catalog['total_votes'] = catalog['spiral_total-votes']
@@ -263,21 +263,24 @@ if __name__ == '__main__':
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
     # real mode:
-    # labelled_size = 3000
+    train_size = 256
+    eval_size = 2500
+    labelled_size = train_size + eval_size
     # labelled_size = len(catalog) - 5000
     # test mode:
     # catalog = catalog[:13000]
     # labelled_size = 6000
 
-    # labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
-    # unlabelled_catalog = catalog[labelled_size:]  # for pool
-    nair_catalog = pd.read_csv('data/nair_sdss_catalog_interpreted.csv')
+    labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
+    unlabelled_catalog = catalog[labelled_size:]  # for pool
 
+    # nair_catalog = pd.read_csv('data/nair_sdss_catalog_interpreted.csv')
     # train on galaxies that are NOT in Nair (minus 500 for eval). Later, will evaluate on galaxies in Nair.
     # Note that these will be in unlabelled shards, not eval shard.
-    unlabelled_catalog, labelled_catalog = matching_utils.match_galaxies_to_catalog_pandas(catalog, nair_catalog)
-    print('Not in Nair: {}'.format(len(labelled_catalog)))
-    print('In Nair" {}'.format(len(unlabelled_catalog)))
+    # unlabelled_catalog, labelled_catalog = matching_utils.match_galaxies_to_catalog_pandas(catalog, nair_catalog)
+    # print('Not in Nair: {}'.format(len(labelled_catalog)))
+    # print('In Nair" {}'.format(len(unlabelled_catalog)))
+
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
@@ -285,7 +288,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=(len(labelled_catalog) - 500)/len(labelled_catalog))  # always eval on random 2500 galaxies
+        train_test_fraction=(len(labelled_catalog) - eval_size)/len(labelled_catalog))  # always eval on random 2500 galaxies
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # temporary hacks for mocking panoptes
