@@ -8,7 +8,7 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 
 try:
-    SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_full'
+    SHARD_DIR = 'data/gz2_shards/uint8_256px_smooth_n_128'
     assert os.path.isdir(SHARD_DIR)
 except AssertionError:
     SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
