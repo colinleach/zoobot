@@ -78,10 +78,10 @@ If you still need to acquire the data:
 - Stop after a specified number of iterations, moving the log into the run directory
 
 
-`dvc run -d $shard_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 OR baseline:
-`dvc run -d $shard_dir -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline --warm-start && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 This will execute the simulation, upload the results (via S3 and dvc) and then terminate the instance.
 If the simulation exits with an error code, the instance will not be terminated.
