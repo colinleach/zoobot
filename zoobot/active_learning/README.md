@@ -65,7 +65,7 @@ Now we have the data to create shards.
 Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
 
 If you still need to acquire the data:
-`dvc pull -r s3 make_shards.dvc`
+`dvc pull -r s3 make_shards.dvc` (replace with latest shard file.dvc as appropriate)
 `aws sync s3://galaxy-zoo/decals/fits_native data/fits_native` (takes a few minutes)
 (eventually, can do dvc pull, but need to branch away from basic_split)
 
