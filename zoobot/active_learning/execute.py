@@ -169,10 +169,6 @@ class ActiveConfig():
 def get_train_callable(params):
 
     def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
-        # WARNING TESTING ONLY 
-        # if len(train_records) > 1:
-        #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
-        # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs)
         if params.test: # overrides warm_start
@@ -278,7 +274,7 @@ if __name__ == '__main__':
 
     train_callable = get_train_callable(train_callable_params)
     # TODO generalise to many classes at once, don't need to manually set expected_votes
-    acquisition_func = get_acquisition_func(baseline=args.baseline, expected_votes=10)
+    acquisition_func = get_acquisition_func(baseline=args.baseline, expected_votes=40)  # IMPORTANT SMOOTH MODE
     if args.test or args.baseline:
         n_samples = 2
     else:
