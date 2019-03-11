@@ -79,6 +79,9 @@ def expected_binomial_entropy(bin_probs_of_samples):
 
 
 def mutual_info_acquisition_func(samples, expected_votes):
+    if isinstance(expected_votes, int):
+        typical_votes = expected_votes
+        expected_votes = [typical_votes for n in range(len(samples))]
     assert len(samples) == len(expected_votes)
     bin_probs = make_predictions.bin_prob_of_samples(samples, expected_votes)
     predictive_entropy = predictive_binomial_entropy(bin_probs)
