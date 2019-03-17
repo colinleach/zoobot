@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import git
 
-from shared_astro_utils import matching_utils
+from shared_astro_utils import matching_utils, object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
@@ -138,24 +138,40 @@ class ShardConfig():
         return True
 
 
-    # TODO move to shared utilities
     def to_dict(self):
-        excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
-        # TODO use dict comprehension
-        return dict(
-            [(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys]
-            )
+        return object_utils.object_to_dict(self)
 
-    
     def write(self):
         with open(self.config_save_loc, 'w+') as f:
             json.dump(self.to_dict(), f)
 
 
 def load_shard_config(shard_config_loc):
+    # shards to use
+    shard_config = load_shard_config_naive(shard_config_loc)
+    # update shard paths in case shard dir was moved since creation
+    new_shard_dir = os.path.dirname(shard_config_loc)
+    shard_config.shard_dir = new_shard_dir
+    attrs = [
+        'train_dir',
+        'eval_dir',
+        'labelled_catalog_loc',
+        'unlabelled_catalog_loc',
+        'config_save_loc',
+        'db_loc']
+    for attr in attrs:
+        old_loc = getattr(shard_config, attr)
+        new_loc = os.path.join(new_shard_dir, os.path.split(old_loc)[-1])
+        logging.info(attr, new_loc)
+        setattr(shard_config, attr, new_loc)
+    return shard_config
+
+
+def load_shard_config_naive(shard_config_loc):
     with open(shard_config_loc, 'r') as f:
         shard_config_dict = json.load(f)
     return ShardConfig(**shard_config_dict)
+
 
 
 def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):

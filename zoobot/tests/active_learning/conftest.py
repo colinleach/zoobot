@@ -10,7 +10,7 @@ import pandas as pd
 from PIL import Image
 
 from astropy.io import fits
-from zoobot.active_learning import make_shards, execute
+from zoobot.active_learning import make_shards, create_instructions
 
 
 @pytest.fixture()
@@ -108,7 +108,7 @@ def shard_config_ready(shard_config, labelled_catalog, unlabelled_catalog):
             'warm_start': False
         }
     ])
-def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
+def instructions(shard_config_ready, tmpdir, predictor_model_loc, request, n_samples):
 
     warm_start = request.param['warm_start']
 
@@ -118,16 +118,16 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
     else:
         initial_estimator_ckpt = None
     
-    config = execute.ActiveConfig(
+    config = create_instructions.Instructions(
         shard_config_ready, 
-        run_dir=tmpdir.mkdir('run_dir').strpath,
-        n_iterations=3,  # 1st is only the initial cycle
+        save_dir=tmpdir.mkdir('run_dir').strpath,
         shards_per_iter=2,
         subjects_per_iter=10,
-        initial_estimator_ckpt=initial_estimator_ckpt
+        initial_estimator_ckpt=initial_estimator_ckpt,
+        n_samples=n_samples
         )
 
-    assert os.path.isdir(config.run_dir)  # permanent directory for dvc control
+    assert os.path.isdir(config.save_dir)  # permanent directory for dvc control
     assert os.path.exists(config.db_loc)
 
     assert config.ready()

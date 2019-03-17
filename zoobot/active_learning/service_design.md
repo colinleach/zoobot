@@ -17,11 +17,33 @@ There are three types of folder expected to change often:
 
 We also need a few static folders and files:
 - `{survey_png_dir}` with the image files
-- `{survey}_classifications.csv` with reduced classifications *prior to any active learning*, for making shards
+- `{survey}_reduced_classifications.csv` with reduced classifications *prior to any active learning*, for making shards
 
 We can then run active learning with these stateless files:
 - `create_instructions.py` to create `instructions` from command line args and sensible hard-coded values
 - `run_iteration.py`to run an iteration, with `instructions` and an `{iteration_name}` as input and a new `{iteration_name}` as output
+
+For production, we schedule:
+- Spin up an EC2 instance with our filesystem and environment
+- Run `run_iteration.py` with the previous (latest?) `{iteration_name}` as an input directory.
+- Save the new filesystem to S3
+
+I need to ask Adam how to best achieve this. 
+This will require some state to track what's going on.
+
+For simulations, we can do exactly the same except on a single filesystem and with trivial scheduling.
+
+
+## Getting and Requesting Labels
+
+I need to update mock_panoptes to give raw classification output, exactly like the API. `iterations.py` will then run the reduction pipeline on raw classifications to get labels.
+
+Requesting labels will pull all raw classifications after some last classification_id (defined by command line and recorded in `instructions`)matching the last id used to create the original `{survey}_reduced_classifications.csv`. A reduction will then be run on only those raw classifications, for every iteration. This is messy, but is easy and will work okay for now.
+
+For the moment, let's get the stateless system working first and *then* change the mocking to be more complicated.
+
+
+---
 
  
 ### State Before Iterations
