@@ -24,8 +24,11 @@ try:
     LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
     assert os.path.isdir(LOCAL_IMAGE_FOLDER)
 except AssertionError:
-    LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
-    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
+    try:
+        LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
+        assert os.path.isdir(LOCAL_IMAGE_FOLDER)
+    except AssertionError:
+        logging.critical('active_learning.py - no such local image folder: {}'.format(LOCAL_IMAGE_FOLDER))
 
 
 
@@ -57,6 +60,7 @@ def create_db(catalog, db_loc):
     )
     db.commit()
 
+    # no longer used
     cursor.execute(
         '''
         CREATE TABLE shardindex(
@@ -66,6 +70,7 @@ def create_db(catalog, db_loc):
     )
     db.commit()
 
+    # no longer used
     cursor.execute(
         '''
         CREATE TABLE acquisitions(
@@ -351,6 +356,7 @@ def get_file_loc_df_from_db(db, subject_ids):
 
     rows = []
     for subject_id in subject_ids:
+        # find subject data in db
         assert isinstance(subject_id, str)
         logging.debug(subject_id)
         cursor.execute(
@@ -368,12 +374,14 @@ def get_file_loc_df_from_db(db, subject_ids):
         if subject[1] is None:
             raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
+        # add subject data to df
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': int(subject[1]),
             'total_votes': int(subject[2]),
-            'file_loc': get_relative_loc(str(subject[3]))
+            'file_loc': str(subject[3])  # db must contain accurate path to image
         })
+        assert os.path.isfile(str(subject[3]))  # check that image path is correct
 
     top_subject_df = pd.DataFrame(data=rows)
     assert len(top_subject_df) == len(subject_ids)
@@ -389,14 +397,6 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         size,
         columns_to_save=['id_str', 'label', 'total_votes'],
         reader=catalog_to_tfrecord.get_reader(df['file_loc']))
-
-
-
-def get_relative_loc(loc):
-    fname = os.path.basename(loc)
-    subdir = os.path.basename(os.path.dirname(loc))
-    return os.path.join(LOCAL_IMAGE_FOLDER, subdir, fname)
-
 
 
 def get_latest_checkpoint_dir(base_dir):

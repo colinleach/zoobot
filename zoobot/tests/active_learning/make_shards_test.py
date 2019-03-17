@@ -12,7 +12,7 @@ from zoobot.tests.active_learning.active_learning_test import verify_db_matches_
 
 def test_prepare_shards(shard_config, labelled_catalog, unlabelled_catalog):
     # put fits in the right place
-    shard_config.prepare_shards(labelled_catalog, unlabelled_catalog)
+    shard_config.prepare_shards(labelled_catalog, unlabelled_catalog, train_test_fraction=0.8)
     assert shard_config.ready()
 
 

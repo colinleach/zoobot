@@ -16,7 +16,7 @@ class Iteration():
     def __init__(
         self, 
         run_dir,
-        iteration_n,
+        name,
         prediction_shards,
         initial_db_loc,
         initial_train_tfrecords,
@@ -31,7 +31,7 @@ class Iteration():
         initial_estimator_ckpt=None
         ):
 
-        self.name = 'iteration_{}'.format(iteration_n)
+        self.name = name
         # shards should be unique, or everything falls apart.
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
@@ -138,7 +138,7 @@ class Iteration():
         subject_ids, labels, total_votes = get_labels()
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
-            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
+            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids, )
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,
                 db=None,
@@ -186,11 +186,22 @@ class Iteration():
 
 
 def request_labels(top_acquisition_ids):
+
+
     mock_panoptes.request_labels(top_acquisition_ids)
 
 
-def get_labels():
-    return mock_panoptes.get_labels()
+def get_labels():  # should be passed in as a callable, like `train_callable`
+    try:
+        shard_dir = 'data/gz2_shards/uint8_256px_smooth_n_128'
+        assert os.path.isdir(shard_dir)
+    except AssertionError:
+        shard_dir = '/Volumes/alpha/uint8_128px_bar_n'
+    oracle_loc = os.path.join(shard_dir, 'oracle.csv')
+    logging.info('Using oracle loc: {}'.format(oracle_loc))
+    assert os.path.isfile(oracle_loc)
+
+    return mock_panoptes.get_labels(oracle_loc)
 
 
 # to be shared for consistency

@@ -8,6 +8,27 @@ import pandas as pd
 from zoobot.active_learning import mock_panoptes
 
 
+@pytest.fixture()
+def oracle_loc(tmpdir):
+    df = pd.DataFrame([
+        {
+            'id_str': '20927311',
+            'label': 12,
+            'total_votes': 3
+
+        },
+        {
+            'id_str': '20530807',
+            'label': 4,
+            'total_votes': 2
+        }
+    ])
+    oracle_dir = tmpdir.mkdir('oracle_dir').strpath
+    oracle_loc = os.path.join(oracle_dir, 'oracle.csv')
+    df.to_csv(oracle_loc)
+    return oracle_loc
+
+
 @pytest.fixture(params=[True, False])
 def subjects_requested_save_loc_possible(request, subjects_to_request, subjects_requested_save_loc):
     if request.param:
@@ -36,27 +57,9 @@ def test_request_labels(subjects_requested_save_loc, subjects_to_request):
     
 
 
-def test_get_labels(monkeypatch, subjects_requested_save_loc_possible, subjects_to_request):
+def test_get_labels(subjects_requested_save_loc_possible, subjects_to_request, oracle_loc):
 
-
-    def mock_read_csv(oracle_loc, usecols, dtype):
-        return pd.DataFrame([
-            {
-                'id_str': '20927311',
-                'label': 12,
-                'total_votes': 3
-
-            },
-            {
-                'id_str': '20530807',
-                'label': 4,
-                'total_votes': 2
-            }
-        ])
-
-    monkeypatch.setattr(mock_panoptes.pd, 'read_csv', mock_read_csv)
-
-    subject_ids, labels, counts = mock_panoptes.get_labels()
+    subject_ids, labels, counts = mock_panoptes.get_labels(oracle_loc)
 
     if subjects_requested_save_loc_possible == 'broken_path':
         assert subject_ids == []

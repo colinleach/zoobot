@@ -107,11 +107,11 @@ def baseline(request):
     return request.param
 
 def test_get_acquisition_func(baseline, samples):
-    acq_func = execute.get_acquisition_func(baseline)
+    acq_func = execute.get_acquisition_func(baseline, expected_votes=5)
     if baseline:
         assert acq_func == execute.mock_acquisition_func
     else:
-        assert acq_func == execute.acquisition_utils.mutual_info_acquisition_func
+        assert acq_func != execute.mock_acquisition_func
     
 
     # # verify the folders appear as expected

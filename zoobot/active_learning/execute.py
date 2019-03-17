@@ -71,16 +71,16 @@ class ActiveConfig():
     def prepare_run_folders(self):
         """
         Create the folders needed to run active learning. 
-        Copy the shard database, to be modified by the run
+        Copy the shard database, to be modified by each iteration
         Wipes any existing folders in run_dir
         """
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
+        os.mkdir(self.run_dir)
 
-        directories = [self.run_dir]
-        for directory in directories:
-            os.mkdir(directory)
-
+        # not actually needed. 
+        # execute.py doesn't modify the db
+        # Each iteration copies db in initial_db_loc.
         shutil.copyfile(self.shards.db_loc, self.db_loc)
 
 
@@ -139,7 +139,7 @@ class ActiveConfig():
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
-                iteration_n=iteration_n, 
+                name='iteration_{}'.format(iteration_n), 
                 prediction_shards=prediction_shards,
                 initial_db_loc=initial_db_loc,
                 initial_train_tfrecords=initial_train_tfrecords,
@@ -157,11 +157,14 @@ class ActiveConfig():
             logging.info('Training iteration {}'.format(iteration_n))
             iteration.run()
 
+            # each of these needs to be saved to disk
             iteration_n += 1
             initial_db_loc = iteration.db_loc
             initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shards
             initial_estimator_ckpt = iteration.estimators_dir
-            iterations_record.append(iteration)
+            iterations_record.append(iteration)  # not needed
+
+            # need to be able to end process here
 
         return iterations_record
 
@@ -192,6 +195,14 @@ def get_acquisition_func(baseline, expected_votes):
     else:  # callable expecting samples np.ndarray, returning list
         logging.critical('Using mutual information acquisition function')
         return lambda x: acquisition_utils.mutual_info_acquisition_func(x, expected_votes)  
+
+
+# this should be part of setup, so that db is modified to point to correct image folder
+def get_relative_loc(loc, local_image_folder):
+    fname = os.path.basename(loc)
+    subdir = os.path.basename(os.path.dirname(loc))
+    return os.path.join(local_image_folder, subdir, fname)
+
 
 
 TrainCallableParams = namedtuple(

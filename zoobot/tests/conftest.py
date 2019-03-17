@@ -16,7 +16,7 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 @pytest.fixture()
 def size():
-    return 28
+    return 14
 
 
 @pytest.fixture()

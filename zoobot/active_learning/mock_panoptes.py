@@ -7,15 +7,6 @@ import pandas as pd
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 
-try:
-    SHARD_DIR = 'data/gz2_shards/uint8_256px_smooth_n_128'
-    assert os.path.isdir(SHARD_DIR)
-except AssertionError:
-    SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
-ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle.csv')
-logging.info('Using oracle loc: {}'.format(ORACLE_LOC))
-assert os.path.isfile(ORACLE_LOC)
-
 SUBJECTS_REQUESTED = 'data/subjects_requested.json'
 
 def request_labels(subject_ids):
@@ -24,7 +15,7 @@ def request_labels(subject_ids):
         json.dump(subject_ids, f)
 
 
-def get_labels():
+def get_labels(oracle_loc):
     # oracle.csv is created by make_shards.py, contains label and id_str pairs of vote fractions
     if not os.path.isfile(SUBJECTS_REQUESTED):
         logging.warning(
