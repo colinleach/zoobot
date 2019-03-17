@@ -22,6 +22,7 @@ We also need a few static folders and files:
 We can then run active learning with these stateless files:
 - `create_instructions.py` to create `instructions` from command line args and sensible hard-coded values
 - `run_iteration.py`to run an iteration, with `instructions` and an `{iteration_name}` as input and a new `{iteration_name}` as output
+
  
 ### State Before Iterations
 
