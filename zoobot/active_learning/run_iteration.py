@@ -94,7 +94,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
 
     instructions = create_instructions.load_instructions(instructions_dir)
     train_callable = create_instructions.load_train_callable(instructions_dir).get()
-    acquisition_func = create_instructions.load_acquisition_function(instructions_dir).get()
+    acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()
 
     if args.test:  # override instructions and do a brief run only
         instructions.use_test_mode()
