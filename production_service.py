@@ -21,6 +21,7 @@ def get_latest(items):
 def iterate(base_dir, simulation, test):
 
     if simulation:
+        logging.warning('Enabling simulation mode for this iteration')
         # TODO will need to toggle the mock_panoptes requests, currently always on
         # may need to pass this further forwards
         pass
