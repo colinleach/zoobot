@@ -35,7 +35,8 @@ class Instructions():
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
         initial_estimator_ckpt,
-        n_samples):
+        n_samples,
+        **overflow_args):  # when reloading, ignore any new properties not needed for __init__
         """
         Instructions for running each iteration, on existing shards
 
@@ -47,19 +48,19 @@ class Instructions():
             subjects_per_iter (int): how many subjects to acquire per training iteration
             initial_estimator_ckpt (str): path to checkpoint folder (datetime) of est. for initial iteration
         """
+        # important to store all input args, to be able to save and restore from disk
         self.shard_config_loc = shard_config_loc  # useful to save, so we can restore Instructions from disk
         self.shards = make_shards.load_shard_config(shard_config_loc)
         self.save_dir = save_dir
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
         self.initial_estimator_ckpt = initial_estimator_ckpt
+        self.n_samples = n_samples
 
         self.db_loc = os.path.join(self.save_dir, 'run_db.db')  
 
-        # wipe any previous instructions
-        if os.path.exists(self.save_dir):
-            shutil.rmtree(self.save_dir)
-        os.mkdir(self.save_dir)
+        if not os.path.exists(self.save_dir):
+            os.mkdir(self.save_dir)
 
         # copy database
         shutil.copyfile(self.shards.db_loc, self.db_loc)
@@ -84,7 +85,10 @@ class Instructions():
     def save(self, save_dir):
         # will lose shards, but save shard_config_loc so shards can be recovered
         with open(os.path.join(save_dir, 'instructions.json'), 'w') as f:  # path must match load_instructions
-            json.dump(self.to_dict(), f)
+            data = self.to_dict()
+            print(data)
+            del data['shards']
+            json.dump(data, f)
 
 def load_instructions(save_dir):
     # necessary to reconstruct the instructions from disk in a new process before starting an iteration
@@ -211,14 +215,16 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Execute active learning')
-    parser.add_argument('--shard_config', dest='shard_config_loc', type=str,
+    parser.add_argument('--shard-config', dest='shard_config_loc', type=str,
                     help='Details of shards to use')
-    parser.add_argument('--instructions_dir', dest='instructions_dir', type=str,
+    parser.add_argument('--instructions-dir', dest='instructions_dir', type=str,
                     help='Directory to save instructions')
     parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
                     help='Use random subject selection only')
     parser.add_argument('--warm-start', dest='warm_start', action='store_true', default=False,
                     help='After each iteration, continue training the same model')
+    parser.add_argument('--test', dest='test', action='store_true', default=False,
+                    help='Minimal training')
     args = parser.parse_args()
 
     log_loc = 'create_instructions_{}.log'.format(time.time())

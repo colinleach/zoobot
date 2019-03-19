@@ -6,6 +6,8 @@ import sqlite3
 import shutil
 import argparse
 import time
+from collections import namedtuple
+import json
 
 import git
 import numpy as np
@@ -13,8 +15,31 @@ import numpy as np
 from zoobot.estimators import run_estimator
 from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions
 
+InitialState = namedtuple(
+    'InitialState',
+    [
+        'iteration_dir',
+        'iteration_n',
+        'initial_estimator_ckpt',
+        'initial_train_tfrecords',
+        'initial_db_loc',
+        'prediction_shards',
+        'learning_rate',
+        'epochs'
+    ]
+)
 
-def run(instructions, train_callable, acquisition_func):
+FinalState = namedtuple(
+    'FinalState',
+    [
+        'iteration_n',
+        'estimators_dir',
+        'train_records',
+        'db_loc',
+    ]
+)
+
+def run(initial_state, instructions, train_callable, acquisition_func):
     """Main active learning training loop. 
     
     Learn with train_callable
@@ -34,89 +59,130 @@ def run(instructions, train_callable, acquisition_func):
     if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
         os.remove(mock_panoptes.SUBJECTS_REQUESTED)
 
-    assert instructions.ready()
+    iteration = iterations.Iteration(
+        iteration_dir=initial_state.iteration_dir, 
+        prediction_shards=initial_state.prediction_shards,
+        initial_db_loc=initial_state.initial_db_loc,
+        initial_train_tfrecords=initial_state.initial_train_tfrecords,
+        eval_tfrecords=instructions.shards.eval_tfrecord_locs(),
+        train_callable=train_callable,
+        acquisition_func=acquisition_func,
+        n_samples=instructions.n_samples,
+        n_subjects_to_acquire=instructions.subjects_per_iter,
+        initial_size=instructions.shards.size,
+        learning_rate=initial_state.learning_rate,
+        initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # will only warm start with --warm_start, though
+        epochs=initial_state.epochs)
+
+    # train as usual, with saved_model being placed in estimator_dir
+    logging.info('Training iteration {}'.format(initial_state.iteration_n))
+    iteration.run()
+
+    final_state = FinalState(
+        iteration_n=initial_state.iteration_n,
+        estimators_dir=iteration.estimators_dir,  # to become initial_estimator_ckpt'
+        train_records=iteration.get_train_records(),  # initial_train_tfrecords
+        db_loc=iteration.db_loc
+    )
+    return final_state
+
+
+def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
+    """Decide, based on previous final state, what to tweak for the next iteration
+    
+    Args:
+        instructions ([type]): [description]
+        this_iteration_dir ([type]): [description]
+        previous_iteration_dir ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    if (previous_iteration_dir is None) or (previous_iteration_dir is ""):
+        this_iteration_n = 0
+        initial_state = InitialState(
+            iteration_dir=this_iteration_dir,  # duplication
+            iteration_n=0,  # duplication
+            initial_estimator_ckpt=instructions.initial_estimator_ckpt,  # for first iteration, the first model is the one passed to ActiveConfig
+            initial_db_loc=instructions.db_loc,
+            initial_train_tfrecords=instructions.shards.train_tfrecord_locs(),
+            prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
+            learning_rate=get_learning_rate(this_iteration_n),  # duplication
+            epochs=get_epochs(this_iteration_n)  # duplication
+        )
+    else:
+        with open(os.path.join(previous_iteration_dir, 'final_state.json'), 'r') as f:
+            previous_final_state = FinalState(**json.load(f))
+            this_iteration_n = previous_final_state.iteration_n + 1
+            initial_state = InitialState(
+                iteration_dir=this_iteration_dir,  # duplication
+                iteration_n=this_iteration_n,  # duplication
+                initial_train_tfrecords=previous_final_state.train_records,
+                initial_estimator_ckpt=previous_final_state.estimators_dir,
+                initial_db_loc=previous_final_state.db_loc,
+                prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
+                learning_rate=get_learning_rate(this_iteration_n),  # duplication
+                epochs=get_epochs(this_iteration_n)  # duplication
+            )
+    return initial_state
+
+
+def save_final_state(final_state):
+    with open(os.path.join(final_state.iteration_dir, 'final_state.json')) as f:
+        json.dump(final_state, f)
+
+
+def get_prediction_shards(iteration_n, instructions):
     db = sqlite3.connect(instructions.db_loc)
     all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
     shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
-
-    iteration_n = 0
-    initial_estimator_ckpt = instructions.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
-    initial_db_loc = instructions.db_loc
-    initial_train_tfrecords = instructions.shards.train_tfrecord_locs()
-    eval_tfrecords = instructions.shards.eval_tfrecord_locs()
-
-    learning_rate = 0.001
-
-    iterations_record = []
-
-    while iteration_n < instructions.n_iterations:
-
-        if iteration_n == 0:
-            epochs = 125
-        else:
-            epochs = 50
-
+    for n in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.
         prediction_shards = [next(shards_iterable) for n in range(instructions.shards_per_iter)]
+    return prediction_shards
 
-        iteration = iterations.Iteration(
-            run_dir=instructions.run_dir, 
-            name='iteration_{}'.format(iteration_n), 
-            prediction_shards=prediction_shards,
-            initial_db_loc=initial_db_loc,
-            initial_train_tfrecords=initial_train_tfrecords,
-            eval_tfrecords=eval_tfrecords,
-            train_callable=train_callable,
-            acquisition_func=acquisition_func,
-            n_samples=instructions.n_samples,
-            n_subjects_to_acquire=instructions.subjects_per_iter,
-            initial_size=instructions.shards.size,
-            learning_rate=learning_rate,
-            initial_estimator_ckpt=initial_estimator_ckpt,  # will only warm start with --warm_start, though
-            epochs=epochs)
 
-        # train as usual, with saved_model being placed in estimator_dir
-        logging.info('Training iteration {}'.format(iteration_n))
-        iteration.run()
+def get_learning_rate(iteration_n):
+    return 0.001
 
-        # each of these needs to be saved to disk
-        iteration_n += 1
-        initial_db_loc = iteration.db_loc
-        initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shards
-        initial_estimator_ckpt = iteration.estimators_dir
-        iterations_record.append(iteration)  # not needed
 
-        # need to be able to end process here
-
-    return iterations_record
+def get_epochs(iteration_n):
+    if iteration_n == 0:
+        return 125
+    else:
+        return 50
 
 
 def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=False):
 
     instructions = create_instructions.load_instructions(instructions_dir)
+    assert instructions.ready()
     train_callable = create_instructions.load_train_callable(instructions_dir).get()
     acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()
 
-    if args.test:  # override instructions and do a brief run only
+    if test:  # override instructions and do a brief run only
         instructions.use_test_mode()
+        train_callable.test = True
 
-    run(instructions, train_callable, acquisition_func)
+    initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
+    final_state = run(initial_state, instructions, train_callable, acquisition_func)
+    save_final_state(final_state)
 
     # finally, tidy up by moving the log into the run directory
     # could not be create here because run directory did not exist at start of script
     if os.path.exists(log_loc):  # temporary workaround for disappearing log
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
-        shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
+        shutil.move(log_loc, os.path.join(args.this_iteration_dir, '{}.log'.format(sha)))
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Execute single active learning iteration')
-    parser.add_argument('--instructions_dir', dest='instructions_dir', type=str,
+    parser.add_argument('--instructions-dir', dest='instructions_dir', type=str,
                     help='Directory with instructions for the execution of an iteration (e.g. shards_per_iter)')
-    parser.add_argument('--this_iteration_dir', dest='this_iteration_dir', type=str,
+    parser.add_argument('--this-iteration-dir', dest='this_iteration_dir', type=str,
                     help='Directory to save this iteration')
-    parser.add_argument('--previous_iteration_dir', dest='previous_iteration_dir_dir', type=str,
+    parser.add_argument('--previous-iteration-dir', dest='previous_iteration_dir', type=str,
                     help='Directory with previously-executed iteration from which to begin (if provided)')
     parser.add_argument('--test', dest='test', action='store_true', default=False,
                     help='Only do a minimal iteration to verify that everything works')

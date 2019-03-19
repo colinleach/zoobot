@@ -15,8 +15,7 @@ class Iteration():
 
     def __init__(
         self, 
-        run_dir,
-        name,
+        iteration_dir,
         prediction_shards,
         initial_db_loc,
         initial_train_tfrecords,
@@ -31,7 +30,8 @@ class Iteration():
         initial_estimator_ckpt=None
         ):
 
-        self.name = name
+        self.iteration_dir = iteration_dir
+
         # shards should be unique, or everything falls apart.
         assert len(prediction_shards) == len(set(prediction_shards))
         self.prediction_shards = prediction_shards
@@ -47,6 +47,7 @@ class Iteration():
                 logging.critical(tfrecords)
             setattr(self, attr, tfrecords)
 
+    
         assert callable(train_callable)
         self.train_callable = train_callable
         assert callable(acquisition_func)
@@ -57,7 +58,6 @@ class Iteration():
         self.learning_rate = learning_rate
         self.epochs = epochs
 
-        self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.acquired_tfrecords_dir = os.path.join(self.iteration_dir, 'acquired_tfrecords')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
