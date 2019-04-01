@@ -73,6 +73,8 @@ if __name__ == '__main__':
 
     catalog_loc = '/data/repos/gzreduction/data/predictions/example_panoptes_predictions.csv'
     catalog_dir = 'data/decals/prepared_catalogs/smooth_unfiltered'
+    if not os.path.isdir(catalog_dir):
+        os.mkdir(catalog_dir)
 
     catalog = pd.read_csv(catalog_loc)
     catalog = finalise_catalog(catalog, 'smooth', catalog_dir)
