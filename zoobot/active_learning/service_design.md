@@ -33,6 +33,42 @@ This will require some state to track what's going on.
 
 For simulations, we can do exactly the same except on a single filesystem and with trivial scheduling.
 
+## EC2 Instance File Structure
+
+Keep it simple: use a single EBS volume.
+
+- root (EBS volume mounted here)
+    - auth
+        - `zooniverse_login.json`
+        - `github`
+        - `github.pub`
+    - repos
+        - gz-panoptes-reduction
+            - data
+                - classifications
+        - zoobot
+            - data
+                - gz2
+                    - `gz2_classifications_and_subjects.csv`
+                    - png
+                    - shards
+                - decals
+                    - `joint_catalog_upload_cols.csv`
+                    - png
+                    - shards
+                - results
+                    - simulations
+                        - {run name}
+                    - live
+                        - {run name}
+        - shared-astro-utils
+
+
+    Under each {run name}:
+    - instructions (i.e. `instructions_dir`)
+    - iteration_{n}
+
+
 
 ## Getting and Requesting Labels
 

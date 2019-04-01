@@ -8,19 +8,26 @@ sudo chmod 777 root && cd root && \
 aws s3 sync s3://galaxy-zoo/decals/fits_native data/fits_native && \
 dvc pull -r s3 make_shards.dvc &&
 
+aws s3 cp s3://galaxy-zoo/github auth/github  && \
+aws s3 cp s3://galaxy-zoo/github.pub auth/github.pub  && \
+
+aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_native.tar
+
+
+ZOOBOT_BRANCH=production_prototype
 mkdir root && \
 sudo mount /dev/xvdb root && \
-aws s3 cp s3://galaxy-zoo/github ~/.ssh/github  && \
-aws s3 cp s3://galaxy-zoo/github.pub ~/.ssh/github.pub  && \
+cd root &&
 eval "$(ssh-agent -s)"  && \
-chmod 400 ~/.ssh/github  && \
-ssh-add ~/.ssh/github  && \
-cd root/zoobot && git pull && git checkout al-iter-arms-smooth-full && cd ../ && \
+chmod 400 auth/github  && \
+ssh-add auth/github  && \
+cd repos/zoobot && git pull && git checkout $ZOOBOT_BRANCH && cd ../ && \
 source activate tensorflow_p36 && \
-pip install -r zoobot/requirements.txt && \
-pip install -e zoobot  && \
-pip install -e shared-astro-utilities  && \
-cd zoobot && \
-sudo mount /dev/xvdc data/gz2_shards && \
+pip install -r repos/zoobot/requirements.txt && \
+pip install -e repos/zoobot  && \
+pip install -r repos/shared-astro-utilities/requirements.txt && \
+pip install -e repos/shared-astro-utilities  && \
+pip install -r repos/gz-panoptes-reduction/requirements.txt && \
+pip install -e repos/gz-panoptes-reduction  && \
 source deactivate && \
 screen -R run

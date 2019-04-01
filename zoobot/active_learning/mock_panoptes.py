@@ -7,15 +7,17 @@ import pandas as pd
 from shared_astro_utils import upload_utils, time_utils
 from zoobot.active_learning.oracle import Oracle
 
+# Oracle state must not change between iterations! (Panoptes itself can change, of course)
 
 class Panoptes(Oracle):
 
     def __init__(self, catalog_loc, login_loc, project_id):
         assert os.path.exists(catalog_loc)
+        self._catalog_loc = catalog_loc
         self._login_loc = login_loc
         self._project_id = project_id
-
         self._full_catalog = pd.read_csv(catalog_loc)  # may cause memory problems?
+        # all catalog columns will be uploaded, be careful
 
 
     def request_labels(self, subject_ids, name):
@@ -35,7 +37,6 @@ class Panoptes(Oracle):
             login_loc=self._login_loc)
         logging.info('Upload complete')
 
-
     def get_labels(self):
         """Get all recent labels from Panoptes. 
         - Download with Panoptes Python client
@@ -43,18 +44,22 @@ class Panoptes(Oracle):
         """
         raise NotImplementedError
 
+    def save(self, save_dir):
+        data = {
+            'catalog_loc': self._catalog_loc,
+            'login_loc': self._login_loc,
+            'project_id': self._project_id
+        }
+        with open(os.path.join(save_dir, 'oracle_config.json'), 'w') as f:
+            json.dump(data, f)
+
+def load_panoptes_oracle(save_dir):
+    with open(os.path.join(save_dir, 'oracle_config.json'), 'r') as f:
+        return Panoptes(**json.load(f))
 
 class PanoptesMock(Oracle):
 
     def __init__(self, oracle_loc, subjects_requested_loc):
-        # TODO needs to be moved to wherever I instantiate this class
-        # try:
-        #     shard_dir = 'data/gz2_shards/uint8_256px_smooth_n_128'
-        #     assert os.path.isdir(shard_dir)
-        # except AssertionError:
-        #     shard_dir = '/Volumes/alpha/uint8_128px_bar_n'
-        # oracle_loc = os.path.join(shard_dir, 'oracle.csv')
-        # assert os.path.isfile(oracle_loc)
         assert os.path.isfile(oracle_loc)  # must already exist
         logging.info('Using oracle loc: {}'.format(oracle_loc))
         logging.info('Using subjects requested loc: {}'.format(subjects_requested_loc))
@@ -96,9 +101,20 @@ class PanoptesMock(Oracle):
         assert len(subject_ids) == len(labels)
         return subject_ids, labels, total_votes
 
+    def save(self, save_dir):
+        data = {
+            'oracle_loc': self._oracle_loc,
+            'subjects_requested_loc': self._subjects_requested_loc,
+        }
+        with open(os.path.join(save_dir, 'oracle_config.json'), 'w') as f:
+            json.dump(data, f)
 
-# if __name__ == '__main__':
-#     # fill out subjects_requested so that we acquire many new random shards
-#     unlabelled_catalog = pd.read_csv(os.path.join(SHARD_DIR, 'unlabelled_catalog.csv'))
-#     subject_ids = list(unlabelled_catalog['id_str'].astype(str))  # entire unlabelled catalog!
-#     request_labels(subject_ids)  # will write to updated loc
+def load_panoptes_mock_oracle(save_dir):
+    with open(os.path.join(save_dir, 'oracle_config.json'), 'r') as f:
+        return PanoptesMock(**json.load(f))
+
+def load_oracle(save_dir):
+    try:
+        return load_panoptes_oracle(save_dir)
+    except KeyError:  # TODO actually wrong exception
+        return load_panoptes_mock_oracle(save_dir)

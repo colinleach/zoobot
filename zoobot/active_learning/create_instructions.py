@@ -18,7 +18,7 @@ from shared_astro_utils import object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, iterations, acquisition_utils
+from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, iterations, acquisition_utils, mock_panoptes
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 
@@ -209,7 +209,7 @@ def get_relative_loc(loc, local_image_folder):
     return os.path.join(local_image_folder, subdir, fname)
 
 
-def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
+def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panoptes):
     """
     Create a folder with all parameters that are fixed between active learning iterations.
     This is useful to read when an EC2 instance is spun up to run a new iteration.
@@ -228,6 +228,7 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
         baseline (bool): if True, use random subject acquisition prioritisation
         warm_start (bool): if True, continue training the latest estimator from any log_dir provided to a train callable
         test (bool): if True, train on tiny images for a few iterations (i.e. run a functional test)
+        panoptes (bool): if True, use Panoptes as oracle (upload subjects, download responses). Else, mock with historical responses.
     """
     # hardcoded defaults, for now
     subjects_per_iter = 128
@@ -266,6 +267,27 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
         expected_votes=expected_votes
     )
     acquisition_func_obj.save(instructions_dir)
+
+    if panoptes: # use live Panoptes oracle
+        catalog_loc = 'TODO'  # joint catalog with upload-only columns
+        login_loc = 'zooniverse_login.json'  # does not yet exist
+        project_id = '8751'
+        oracle = mock_panoptes.Panoptes(
+            catalog_loc=catalog_loc,
+            login_loc=login_loc, 
+            project_id=project_id
+        )
+    else:  # use mock Panoptes oracle
+        oracle_loc = os.path.join(instructions.shards.shard_dir, 'oracle.csv')
+        assert os.path.isfile(oracle_loc)
+        oracle_loc = 'TODO'
+        subjects_requested_loc = 'TODO'
+        oracle = mock_panoptes.PanoptesMock(
+            oracle_loc,
+            subjects_requested_loc
+        )
+    oracle.save(instructions_dir)
+
 
 
 if __name__ == '__main__':

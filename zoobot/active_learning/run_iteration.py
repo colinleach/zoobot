@@ -13,7 +13,7 @@ import git
 import numpy as np
 
 from zoobot.estimators import run_estimator
-from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions
+from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions, mock_panoptes
 
 InitialState = namedtuple(
     'InitialState',
@@ -39,7 +39,7 @@ FinalState = namedtuple(
     ]
 )
 
-def run(initial_state, instructions, train_callable, acquisition_func):
+def run(initial_state, instructions, train_callable, acquisition_func, oracle):
     """Main active learning training loop. 
     
     Learn with train_callable
@@ -53,12 +53,6 @@ def run(initial_state, instructions, train_callable, acquisition_func):
         train_callable (func): train a tf model. Arg: list of tfrecord locations
         acquisition_func (func): expecting samples of shape [n_subject, n_sample]
     """
-    # clear any leftover mocked labels awaiting collection
-    # won't do this in production
-    from zoobot.active_learning import mock_panoptes
-    if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
-        os.remove(mock_panoptes.SUBJECTS_REQUESTED)
-
     iteration = iterations.Iteration(
         iteration_dir=initial_state.iteration_dir, 
         prediction_shards=initial_state.prediction_shards,
@@ -72,7 +66,9 @@ def run(initial_state, instructions, train_callable, acquisition_func):
         initial_size=instructions.shards.size,
         learning_rate=initial_state.learning_rate,
         initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # will only warm start with --warm_start, though
-        epochs=initial_state.epochs)
+        epochs=initial_state.epochs,
+        oracle=oracle
+        )
 
     # train as usual, with saved_model being placed in estimator_dir
     logging.info('Training iteration {}'.format(initial_state.iteration_n))
@@ -163,8 +159,9 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
         instructions.use_test_mode()
         train_callable.test = True
 
+    oracle = mock_panoptes.load_oracle(instructions_dir)
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
-    final_state = run(initial_state, instructions, train_callable, acquisition_func)
+    final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
     save_final_state(final_state)
 
     # finally, tidy up by moving the log into the run directory

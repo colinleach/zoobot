@@ -27,6 +27,7 @@ class Iteration():
         initial_size,
         learning_rate,
         epochs,
+        oracle,
         initial_estimator_ckpt=None
         ):
 
@@ -57,6 +58,8 @@ class Iteration():
         self.initial_size = initial_size  # need to know what size to write new images to shards
         self.learning_rate = learning_rate
         self.epochs = epochs
+        
+        self.oracle = oracle
 
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.acquired_tfrecords_dir = os.path.join(self.iteration_dir, 'acquired_tfrecords')
@@ -102,7 +105,7 @@ class Iteration():
 
 
     def get_train_records(self):
-            return self.initial_train_tfrecords + self.get_acquired_tfrecords()
+            return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
 
     def make_predictions(self, shard_locs, initial_size):
@@ -135,7 +138,7 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels, total_votes = get_labels()
+        subject_ids, labels, total_votes = self.oracle.get_labels()
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids, )
@@ -163,7 +166,7 @@ class Iteration():
         self.train_callable(
             self.estimators_dir,
             self.get_train_records(),
-            self.eval_tfrecords,
+            self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
             self.learning_rate,
             self.epochs
         )  # could be docker container to run, save model
@@ -177,7 +180,7 @@ class Iteration():
         logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
-        request_labels(top_acquisition_ids)
+        self.oracle.request_labels(top_acquisition_ids)
 
 
     def record_train_records(self):
