@@ -11,6 +11,8 @@ dvc pull -r s3 make_shards.dvc &&
 aws s3 cp s3://galaxy-zoo/github auth/github  && \
 aws s3 cp s3://galaxy-zoo/github.pub auth/github.pub  && \
 
+dvc pull -r s3 repos/zoobot/data/gz2/gz2_classifications_and_subjects.csv
+dvc pull -r s3 repos/zoobot/data/gz2/png.tar
 aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_native.tar
 
 

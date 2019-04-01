@@ -1,0 +1,6 @@
+md5: 3d1ddd67f08500320d5d95642293e83b
+outs:
+- cache: true
+  md5: f19bc778dcb0a9167e2e3c8f1a4f5765
+  metric: false
+  path: joint_catalog_selected_cols.csv

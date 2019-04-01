@@ -53,7 +53,7 @@ Keep it simple: use a single EBS volume.
                     - png
                     - shards
                 - decals
-                    - `joint_catalog_upload_cols.csv`
+                    - `joint_catalog_selected_cols.csv`
                     - png
                     - shards
                 - results
