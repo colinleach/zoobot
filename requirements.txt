@@ -21,3 +21,4 @@ boto3
 dvc
 gitpython
 statsmodels
+panoptes-client

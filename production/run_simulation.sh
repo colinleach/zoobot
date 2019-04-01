@@ -8,9 +8,9 @@ INSTRUCTIONS_DIR=$BASE_DIR'/instructions'
 
 N_ITERATIONS=5
 
-echo $BASE_DIR
-echo $SHARD_CONFIG
-echo $INSTRUCTIONS_DIR 
+echo 'base directory: ' $BASE_DIR
+echo 'shard configuration json: ' $SHARD_CONFIG
+echo 'instructions for each iteration: ' $INSTRUCTIONS_DIR 
 echo --
 
 python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test

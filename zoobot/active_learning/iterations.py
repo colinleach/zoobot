@@ -185,25 +185,6 @@ class Iteration():
             json.dump(self.get_train_records(), f)
 
 
-def request_labels(top_acquisition_ids):
-
-
-    mock_panoptes.request_labels(top_acquisition_ids)
-
-
-def get_labels():  # should be passed in as a callable, like `train_callable`
-    try:
-        shard_dir = 'data/gz2_shards/uint8_256px_smooth_n_128'
-        assert os.path.isdir(shard_dir)
-    except AssertionError:
-        shard_dir = '/Volumes/alpha/uint8_128px_bar_n'
-    oracle_loc = os.path.join(shard_dir, 'oracle.csv')
-    logging.info('Using oracle loc: {}'.format(oracle_loc))
-    assert os.path.isfile(oracle_loc)
-
-    return mock_panoptes.get_labels(oracle_loc)
-
-
 # to be shared for consistency
 def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
     args_to_sort = np.argsort(acquisitions)[::-1]  # reverse order, highest to lowest

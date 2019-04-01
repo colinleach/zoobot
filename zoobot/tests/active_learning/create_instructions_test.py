@@ -19,34 +19,32 @@ def instructions_dir(tmpdir):
 
 # TODO move to conftest?
 @pytest.fixture(params=[{'warm_start': True}, {'warm_start': False}])
-def train_callable_obj(request):
-    return create_instructions.TrainCallable(
+def train_callable_factory(request):
+    return create_instructions.TrainCallableFactory(
         initial_size=128,
         final_size=64,
         warm_start=request.param['warm_start'],
-        eval_tfrecord_loc='some_eval.tfrecord',
         test=False
     )
 
-@pytest.fixture(params=[True, False])
-def baseline(request):
-    return request.param
+
+
 
 
 @pytest.fixture()
-def acquisition_func_obj(request, baseline):
-    return create_instructions.AcquisitionFunction(
+def acquisition_callable_factory(request, baseline):
+    return create_instructions.AcquisitionCallableFactory(
         baseline=baseline,
         expected_votes=10
     )
 
 # TrainCallable tests
-
-def test_train_callable_get(mocker, train_callable_obj):
-    """Functional test for the train callable from train_callable_obj"""
-    train_callable = train_callable_obj.get()
+def test_train_callable_get(mocker, train_callable_factory):
+    """Functional test for the train callable from train_callable_factory"""
+    train_callable = train_callable_factory.get()
     assert callable(train_callable)
 
+    # functional test investigating if train_callable really works, with run_estimator mocked
     from zoobot.estimators import run_estimator
     mocker.patch('zoobot.estimators.run_estimator.run_estimator')
     log_dir = 'log_dir'
@@ -57,43 +55,70 @@ def test_train_callable_get(mocker, train_callable_obj):
     run_config = run_estimator.run_estimator.mock_calls[0][1][0]  # first call, positional args, first arg
     assert run_config.log_dir == log_dir
     assert run_config.train_config.tfrecord_loc == train_records
-    assert run_config.eval_config.tfrecord_loc == train_callable_obj.eval_tfrecord_loc
-    assert run_config.warm_start == train_callable_obj.warm_start
+    assert run_config.eval_config.tfrecord_loc == eval_records
+    assert run_config.warm_start == train_callable_factory.warm_start
 
 
-def test_train_callable_save_load(train_callable_obj, instructions_dir):
-    train_callable_obj.save(instructions_dir)
+def test_train_callable_save_load(train_callable_factory, instructions_dir):
+    train_callable_factory.save(instructions_dir)
     loaded = create_instructions.load_train_callable(instructions_dir)
-    assert train_callable_obj.initial_size == loaded.initial_size
-    assert train_callable_obj.final_size == loaded.final_size
-    assert train_callable_obj.warm_start == loaded.warm_start
-    assert train_callable_obj.eval_tfrecord_loc == loaded.eval_tfrecord_loc
-    assert train_callable_obj.test == loaded.test
+    assert train_callable_factory.initial_size == loaded.initial_size
+    assert train_callable_factory.final_size == loaded.final_size
+    assert train_callable_factory.warm_start == loaded.warm_start
+    assert train_callable_factory.test == loaded.test
 
 
 # AcquisitionFunction tests
 
-@pytest.mark.xfail()
-def test_acquisition_func_get(acquisition_func_obj, baseline, samples):
+def test_acquisition_func_get(acquisition_callable_factory, baseline, samples):
     """Unit test, not functional test"""
-    raise NotImplementedError
-    # acq_func = acquisition_func_obj.get()
-    # if baseline:
-    #     assert acq_func == acquisition_func_obj.get_mock_acquisition_func()
-    # else:
-    #     assert acq_func != acquisition_func_obj.get_mock_acquisition_func()
-    
+    acq_func = acquisition_callable_factory.get()
+    assert callable(acq_func)
 
-def test_acquistion_func_save_load(acquisition_func_obj, instructions_dir):
-    acquisition_func_obj.save(instructions_dir)
+def test_acquistion_func_save_load(acquisition_callable_factory, instructions_dir):
+    acquisition_callable_factory.save(instructions_dir)
     loaded = create_instructions.load_acquisition_func(instructions_dir)
-    assert acquisition_func_obj.baseline == loaded.baseline
-    assert acquisition_func_obj.expected_votes == loaded.expected_votes
+    assert acquisition_callable_factory.baseline == loaded.baseline
+    assert acquisition_callable_factory.expected_votes == loaded.expected_votes
 
 
-# Instructions tests
+def test_instructions_ready(instructions):
+    assert instructions.ready()
 
-# TODO
+def test_instructions_use_test_mode(instructions):
+    instructions.use_test_mode()
+    assert instructions.shards.final_size < 128
+
+def test_instructions_save_load(instructions, instructions_dir):
+    instructions.save(instructions_dir)
+    loaded = create_instructions.load_instructions(instructions_dir)
+    assert instructions.save_dir == loaded.save_dir
+    assert instructions.subjects_per_iter == loaded.subjects_per_iter
+    assert instructions.shards_per_iter == loaded.shards_per_iter
+    assert instructions.n_samples == loaded.n_samples
+    assert instructions.db_loc == loaded.db_loc
+    # also relies on ShardConfig.save, load, tested in `make_shards_test.py`
+
+def test_main(mocker, shard_config_loc, instructions_dir, baseline, warm_start, test):
+    """Minimal unit test for correct args - individual components are tested above"""
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.Instructions', 
+        # autospec=True  # do not autospec, not sure how to also mock the shards object! TODOs
+    )
+    create_instructions.Instructions.shards = 'some_shards'
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.TrainCallableFactory', 
+        autospec=True
+    )
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.AcquisitionCallableFactory', 
+        autospec=True
+    )
+    create_instructions.main(shard_config_loc, instructions_dir, baseline, warm_start, test)
+
+
+# Functional test for running several iterations TODO?
+
     # # verify the folders appear as expected
     # for iteration_n in range(active_config.iterations):
     #     # copied to iterations_test.py

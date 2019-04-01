@@ -23,10 +23,6 @@ from zoobot.tests import TEST_EXAMPLE_DIR
 
 
 class Instructions():
-    """
-    Define and run active learning using a tensorflow estimator on pre-made shards
-    (see make_shards.py for shard creation)
-    """
 
     def __init__(
         self,
@@ -38,11 +34,13 @@ class Instructions():
         n_samples,
         **overflow_args):  # when reloading, ignore any new properties not needed for __init__
         """
-        Instructions for running each iteration, on existing shards
+        Define those active learning parameters which are fixed between iterations (train/acquire cycles).
+        Save those parameters to disk, so that EC2 instances can read them as required.
+        Also, copy the database from shard_config_loc shard dir and update paths to images if needed.
 
         Args:
-            shard_config (ShardConfig): metadata of shards, e.g. location on disk, image size, etc.
-            save_dir (str): path to save run outputs e.g. trained models, new shards
+            shard_config_loc (str): path to json of shard metadata, e.g. location on disk, image size, etc. See `make_shards.py`
+            save_dir (str): path to save run outputs e.g. trained models, new shards. NOT where instructions is saved!
             iterations (int): how many iterations to train the model (via train_callable)
             shards_per_iter (int): how many shards to find acquisition values for
             subjects_per_iter (int): how many subjects to acquire per training iteration
@@ -51,7 +49,7 @@ class Instructions():
         # important to store all input args, to be able to save and restore from disk
         self.shard_config_loc = shard_config_loc  # useful to save, so we can restore Instructions from disk
         self.shards = make_shards.load_shard_config(shard_config_loc)
-        self.save_dir = save_dir
+        self.save_dir = save_dir  # for database only, for now
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
         self.initial_estimator_ckpt = initial_estimator_ckpt
@@ -97,16 +95,36 @@ def load_instructions(save_dir):
     return Instructions(**instructons_dict)
 
 
-class TrainCallable():
-    
-    def __init__(self, initial_size, final_size, warm_start, eval_tfrecord_loc, test):
+class TrainCallableFactory():
+
+    def __init__(self, initial_size, final_size, warm_start, test):
+        """
+        Iteration (`iteration.py`) requires a callable that:
+        - takes args which (may) that change each iteration (log_dir, train_records, etc)
+        - trains a model
+
+        TrainCallableFactory creates that callable via .get().
+        TrainCallableFactory stores args which do *not* change every iteration (initial size, final_size, etc) 
+
+        Note: highly coupled to iteration.py. Refactor inside?
+        
+        Args:
+            initial_size (int): (fixed) size of galaxy images as serialized to tfrecord
+            final_size (int): (desired) size of galaxy images after input pipeline
+            warm_start (bool): If True, continue from the latest estimator in `log_dir`
+            test (bool): If True, train on tiny images for a few epochs (i.e. run a functional test)
+        """
         self.initial_size = initial_size
         self.final_size = final_size
         self.warm_start = warm_start
-        self.eval_tfrecord_loc = eval_tfrecord_loc
         self.test = test
 
     def get(self):
+        """Using the fixed params stored in self, create a train callable (see class def).
+        
+        Returns:
+            callable: callable expecting per-iteration args, training a model when called
+        """
         def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
             logging.info('Training model on: {}'.format(train_records))
             run_config = default_estimator_params.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs)
@@ -127,16 +145,37 @@ class TrainCallable():
 def load_train_callable(save_dir):
     with open(os.path.join(save_dir, 'train_callable.json'), 'r') as f:  # path must match above
         data = json.load(f)
-    return TrainCallable(**data)
+    return TrainCallableFactory(**data)
 
 
-class AcquisitionFunction():
+class AcquisitionCallableFactory():
     
     def __init__(self, baseline, expected_votes):
+        """
+        Analogous to TrainCallableFactory, but for the acquisition step following training.
+        Iteration (`iteration.py`) requires a callable that:
+        - takes args which (may) that change each iteration (here, subjects - the galaxies!)
+        - calculates a priority for acquiring those subjects (see .get())
+
+        AcquisitionCallableFactory creates that callable via .get().
+        AcquisitionCallableFactory stores args which do *not* change every iteration (baseline, expected_votes) 
+
+        Note: highly coupled to iteration.py. Refactor inside?
+
+        Args:
+            baseline (bool): if True, return random acquisition priorities
+            expected_votes (int or iteratable): expected num. of responses to question per subject
+        """
         self.baseline = baseline
         self.expected_votes = expected_votes
 
     def get(self):
+        """Using the fixed params stored in self, create the acquisition callable.
+        
+        Returns:
+            callable: acquisition callable (see __init__)
+        """
+
         if self.baseline:
             logging.critical('Using mock acquisition function, baseline test mode!')
             return self.get_mock_acquisition_func()
@@ -145,6 +184,7 @@ class AcquisitionFunction():
             return lambda x: acquisition_utils.mutual_info_acquisition_func(x, self.expected_votes)  
 
     def get_mock_acquisition_func(self):
+        """Callable will return random subject priorities. Useful for baselines"""
         logging.critical('Retrieving MOCK random acquisition function')
         return lambda samples: [np.random.rand() for n in range(len(samples))]
 
@@ -158,7 +198,7 @@ class AcquisitionFunction():
 def load_acquisition_func(save_dir):
     with open(os.path.join(save_dir, 'acquisition_function.json'), 'r') as f:  # path must match above
         data = json.load(f)
-    return AcquisitionFunction(**data)
+    return AcquisitionCallableFactory(**data)
 
 
 # this should be part of setup, so that db is modified to point to correct image folder
@@ -170,7 +210,25 @@ def get_relative_loc(loc, local_image_folder):
 
 
 def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
+    """
+    Create a folder with all parameters that are fixed between active learning iterations.
+    This is useful to read when an EC2 instance is spun up to run a new iteration.
+    See `run_iteration.py` for use.
+    
+    The parameters are split into decoupled objects:
+        - Instructions, general parameters defining how to run each active learning iteration
+        - TrainCallableFactory, defining how to create train callables (for training an estimator)
+        - AcquisitionCallableFactory, defining how to create acquisition callables (for prioritising subjects)
 
+    Baseline, warm_start and test are args. All other parameters are hard-coded here, for now. 
+
+    Args:
+        shard_config_loc (str): 
+        instructions_dir (str): directory to save the above parameters
+        baseline (bool): if True, use random subject acquisition prioritisation
+        warm_start (bool): if True, continue training the latest estimator from any log_dir provided to a train callable
+        test (bool): if True, train on tiny images for a few iterations (i.e. run a functional test)
+    """
     # hardcoded defaults, for now
     subjects_per_iter = 128
     shards_per_iter = 4
@@ -194,18 +252,16 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test):
     instructions.save(instructions_dir)
 
     # parameters that only affect train_callable
-    train_callable_obj = TrainCallable(
+    train_callable_obj = TrainCallableFactory(
         initial_size=instructions.shards.size,
         final_size=final_size,
         warm_start=warm_start,
-        # TODO remove?
-        eval_tfrecord_loc=instructions.shards.eval_tfrecord_locs(),
         test=test
     )
     train_callable_obj.save(instructions_dir)
 
     # parameters that only affect acquistion_func
-    acquisition_func_obj = AcquisitionFunction(
+    acquisition_func_obj = AcquisitionCallableFactory(
         baseline=baseline,
         expected_votes=expected_votes
     )

@@ -54,7 +54,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
 
     eval_config = input_utils.InputConfig(
         name='eval',
-        tfrecord_loc=params.eval_tfrecord_loc,
+        tfrecord_loc=eval_records,
         label_col=run_config.label_col,
         stratify=False,
         shuffle=True,

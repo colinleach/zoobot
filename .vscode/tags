@@ -1,0 +1,886 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ActiveConfig	../zoobot/active_learning/execute.py	/^class ActiveConfig():$/;"	kind:class	line:23
+BayesianModel	../zoobot/estimators/bayesian_estimator_funcs.py	/^class BayesianModel():$/;"	kind:class	line:15
+FLAGS	../zoobot/examples/convert_to_record.py	/^FLAGS = None$/;"	kind:variable	line:26
+GlobalConfig	../zoobot/settings.py	/^class GlobalConfig():$/;"	kind:class	line:1
+IRIS_TEST	../zoobot/examples/tutorials/estimator_quickstart.py	/^IRIS_TEST = "iris_test.csv"$/;"	kind:variable	line:11
+IRIS_TEST_URL	../zoobot/examples/tutorials/estimator_quickstart.py	/^IRIS_TEST_URL = "http:\/\/download.tensorflow.org\/data\/iris_test.csv"$/;"	kind:variable	line:12
+IRIS_TRAINING	../zoobot/examples/tutorials/estimator_quickstart.py	/^IRIS_TRAINING = "iris_training.csv"$/;"	kind:variable	line:8
+IRIS_TRAINING_URL	../zoobot/examples/tutorials/estimator_quickstart.py	/^IRIS_TRAINING_URL = "http:\/\/download.tensorflow.org\/data\/iris_training.csv"$/;"	kind:variable	line:9
+InputConfig	../zoobot/estimators/input_utils.py	/^class InputConfig():$/;"	kind:class	line:11
+Iteration	../zoobot/active_learning/iterations.py	/^class Iteration():$/;"	kind:class	line:11
+Model	../zoobot/active_learning/metrics.py	/^class Model():$/;"	kind:class	line:20
+N_EXAMPLES	../zoobot/tests/estimators/dummy_estimator_test.py	/^N_EXAMPLES = 2000$/;"	kind:variable	line:9
+RunEstimatorConfig	../zoobot/estimators/run_estimator.py	/^class RunEstimatorConfig():$/;"	kind:class	line:13
+SIZE	../zoobot/examples/dataset_example.py	/^SIZE = 4$/;"	kind:variable	line:8
+ShardConfig	../zoobot/active_learning/make_shards.py	/^class ShardConfig():$/;"	kind:class	line:18
+TEST_EXAMPLE_DIR	../zoobot/tests/__init__.py	/^TEST_EXAMPLE_DIR = os.path.dirname(__file__) + '\/test_examples'/;"	kind:variable	line:4
+TEST_FIGURE_DIR	../zoobot/tests/__init__.py	/^TEST_FIGURE_DIR = os.path.dirname(__file__) + '\/test_figures'$/;"	kind:variable	line:3
+W	../zoobot/examples/tutorials/getting_started.py	/^W = tf.Variable([.3], dtype=tf.float32)$/;"	kind:variable	line:43
+W_conv1	../zoobot/examples/tutorials/expert_mnist.py	/^W_conv1 = weight_variable([5, 5, 1, 32])$/;"	kind:variable	line:54
+W_conv2	../zoobot/examples/tutorials/expert_mnist.py	/^W_conv2 = weight_variable([5, 5, 32, 64])$/;"	kind:variable	line:64
+W_fc1	../zoobot/examples/tutorials/expert_mnist.py	/^W_fc1 = weight_variable([7 * 7 * 64, 1024])$/;"	kind:variable	line:71
+W_fc2	../zoobot/examples/tutorials/expert_mnist.py	/^W_fc2 = weight_variable([1024, 10])$/;"	kind:variable	line:84
+__init__	../zoobot/active_learning/execute.py	/^    def __init__($/;"	kind:member	line:30
+__init__	../zoobot/active_learning/iterations.py	/^    def __init__($/;"	kind:member	line:13
+__init__	../zoobot/active_learning/make_shards.py	/^    def __init__($/;"	kind:member	line:31
+__init__	../zoobot/active_learning/metrics.py	/^    def __init__(self, predictions, labels, name):$/;"	kind:member	line:22
+__init__	../zoobot/estimators/bayesian_estimator_funcs.py	/^    def __init__($/;"	kind:member	line:17
+__init__	../zoobot/estimators/input_utils.py	/^    def __init__($/;"	kind:member	line:13
+__init__	../zoobot/estimators/run_estimator.py	/^    def __init__($/;"	kind:member	line:15
+__init__	../zoobot/settings.py	/^    def __init__(self, ec2=False):$/;"	kind:member	line:3
+__init__.py	../zoobot/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/active_learning/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/estimators/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/examples/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/examples/tutorials/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/get_catalogs/gz2/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/legacy/embeddings/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/legacy/embeddings/chollet_128/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/legacy/illustris/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/tests/__init__.py	1;"	kind:file	line:1
+__init__.py	../zoobot/tfrecord/__init__.py	1;"	kind:file	line:1
+_bytes_feature	../zoobot/examples/convert_to_record.py	/^def _bytes_feature(value):$/;"	kind:function	line:33
+_int64_feature	../zoobot/examples/convert_to_record.py	/^def _int64_feature(value):$/;"	kind:function	line:29
+accuracy	../zoobot/examples/tutorials/expert_mnist.py	/^accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))$/;"	kind:variable	line:93
+acquisition	../zoobot/tests/active_learning/conftest.py	/^def acquisition():$/;"	kind:function	line:119
+acquisition_func	../zoobot/tests/active_learning/conftest.py	/^def acquisition_func():$/;"	kind:function	line:110
+acquisition_utils.py	../zoobot/active_learning/acquisition_utils.py	1;"	kind:file	line:1
+acquisition_vs_mean_prediction	../zoobot/active_learning/metrics.py	/^    def acquisition_vs_mean_prediction(self, row):$/;"	kind:member	line:52
+acquisition_vs_volunteer_votes	../zoobot/active_learning/metrics.py	/^    def acquisition_vs_volunteer_votes(self, row):$/;"	kind:member	line:129
+activated_at_date	../analysis/legacy/get_sloan_galaxies.py	/^    activated_at_date = activated_at_date.reindex(index, fill_value=0)$/;"	kind:variable	line:112
+activated_at_date	../analysis/legacy/get_sloan_galaxies.py	/^    activated_at_date = df['activated_at_date'].value_counts().sort_index().reset_index()$/;"	kind:variable	line:96
+activation	../zoobot/examples/spiral_model_main.py	/^    activation=tf.nn.relu)$/;"	kind:variable	line:33
+activation	../zoobot/examples/spiral_model_main.py	/^    activation=tf.nn.relu)$/;"	kind:variable	line:43
+active_config	../zoobot/tests/active_learning/conftest.py	/^def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):$/;"	kind:function	line:58
+active_config	../zoobot/tests/active_learning/conftest.py	/^def active_config(active_config):$/;"	kind:function	line:81
+active_index_loc	../zoobot/active_learning/analysis.py	/^    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)$/;"	kind:variable	line:275
+active_learning.py	../zoobot/active_learning/active_learning.py	1;"	kind:file	line:1
+active_learning_test.py	../zoobot/tests/active_learning/active_learning_test.py	1;"	kind:file	line:1
+active_log_loc	../zoobot/active_learning/analysis.py	/^    active_log_loc = find_log(args.active_dir)$/;"	kind:variable	line:278
+active_save_loc	../zoobot/active_learning/analysis.py	/^    active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')$/;"	kind:variable	line:279
+active_smooth_metrics	../zoobot/active_learning/analysis.py	/^    active_smooth_metrics = get_smooth_metrics_from_log(active_log_loc, name='active')$/;"	kind:variable	line:281
+add_catalog_to_db	../zoobot/active_learning/active_learning.py	/^def add_catalog_to_db(df, db):$/;"	kind:function	line:76
+add_labelled_subjects_to_tfrecord	../zoobot/active_learning/active_learning.py	/^def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):$/;"	kind:function	line:277
+add_labels_to_db	../zoobot/active_learning/active_learning.py	/^def add_labels_to_db(subject_ids, labels, db):$/;"	kind:function	line:339
+add_tfrecord_to_db	../zoobot/active_learning/active_learning.py	/^def add_tfrecord_to_db(tfrecord_loc, db, df):$/;"	kind:function	line:121
+add_train_record	../zoobot/active_learning/execute.py	/^    def add_train_record(self, new_record_loc):$/;"	kind:member	line:190
+analysis.py	../zoobot/active_learning/analysis.py	1;"	kind:file	line:1
+analysis_test.py	../zoobot/tests/active_learning/analysis_test.py	1;"	kind:file	line:1
+args	../run_zoobot_on_panoptes.py	/^    args = parser.parse_args()$/;"	kind:variable	line:23
+args	../zoobot/active_learning/analysis.py	/^    args = parser.parse_args()$/;"	kind:variable	line:262
+args	../zoobot/active_learning/create_panoptes_only_files.py	/^    args = parser.parse_args()$/;"	kind:variable	line:31
+args	../zoobot/active_learning/make_shards.py	/^    args = parser.parse_args()$/;"	kind:variable	line:152
+asdict	../zoobot/estimators/bayesian_estimator_funcs.py	/^    def asdict(self):$/;"	kind:member	line:70
+asdict	../zoobot/estimators/input_utils.py	/^    def asdict(self):$/;"	kind:member	line:73
+asdict	../zoobot/estimators/run_estimator.py	/^    def asdict(self):$/;"	kind:member	line:69
+assemble	../zoobot/estimators/run_estimator.py	/^    def assemble(self, train_config, eval_config, model):$/;"	kind:member	line:51
+astropy_table_to_pandas	../zoobot/shared_utilities.py	/^def astropy_table_to_pandas(table):$/;"	kind:function	line:134
+augment_images	../zoobot/estimators/input_utils.py	/^def augment_images(images, input_config):$/;"	kind:function	line:235
+author	../setup.py	/^    author="Mike Walmsley",$/;"	kind:variable	line:9
+author_email	../setup.py	/^    author_email="mike.walmsley@physics.ox.ac.uk",$/;"	kind:variable	line:10
+available_catalogs	../zoobot/legacy/illustris/make_catalog.py	/^    available_catalogs = [$/;"	kind:variable	line:43
+b	../zoobot/examples/tutorials/getting_started.py	/^b = tf.Variable([-.3], dtype=tf.float32)$/;"	kind:variable	line:44
+b_conv1	../zoobot/examples/tutorials/expert_mnist.py	/^b_conv1 = bias_variable([32])$/;"	kind:variable	line:55
+b_conv2	../zoobot/examples/tutorials/expert_mnist.py	/^b_conv2 = bias_variable([64])$/;"	kind:variable	line:65
+b_fc1	../zoobot/examples/tutorials/expert_mnist.py	/^b_fc1 = bias_variable([1024])$/;"	kind:variable	line:72
+b_fc2	../zoobot/examples/tutorials/expert_mnist.py	/^b_fc2 = bias_variable([10])$/;"	kind:variable	line:85
+base_dir	../zoobot/tests/estimators/mnist_estimator.py	/^    base_dir = os.path.join(TEST_EXAMPLE_DIR, 'mnist_shards')$/;"	kind:variable	line:12
+baseline_index_loc	../zoobot/active_learning/analysis.py	/^        baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)$/;"	kind:variable	line:285
+baseline_log_loc	../zoobot/active_learning/analysis.py	/^        baseline_log_loc = find_log(args.baseline_dir)$/;"	kind:variable	line:287
+baseline_save_loc	../zoobot/active_learning/analysis.py	/^        baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')$/;"	kind:variable	line:288
+baseline_smooth_metrics	../zoobot/active_learning/analysis.py	/^        baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')$/;"	kind:variable	line:289
+batch_of_visual_check_image	../zoobot/tests/estimators/input_utils_test.py	/^def batch_of_visual_check_image(visual_check_image):$/;"	kind:function	line:16
+batch_size	../run_zoobot_on_panoptes.py	/^        batch_size=128,$/;"	kind:variable	line:61
+batch_size	../run_zoobot_on_panoptes.py	/^        batch_size=run_config.batch_size,$/;"	kind:variable	line:103
+batch_size	../run_zoobot_on_panoptes.py	/^        batch_size=run_config.batch_size,$/;"	kind:variable	line:83
+batch_size	../zoobot/examples/dataset_example.py	/^batch_size = 8  # keeping it simple for now$/;"	kind:variable	line:15
+batch_size	../zoobot/tests/conftest.py	/^def batch_size():$/;"	kind:function	line:72
+batch_size	../zoobot/tests/estimators/dummy_estimator_test.py	/^def batch_size():$/;"	kind:function	line:24
+bayesian_classifier	../zoobot/estimators/bayesian_estimator_funcs.py	/^    def bayesian_classifier(self, features, labels, mode):$/;"	kind:member	line:205
+bayesian_estimator_funcs.py	../zoobot/estimators/bayesian_estimator_funcs.py	1;"	kind:file	line:1
+bayesian_regressor	../zoobot/estimators/bayesian_estimator_funcs.py	/^    def bayesian_regressor(self, features, labels, mode):$/;"	kind:member	line:128
+best_result_save_loc	../zoobot/active_learning/analysis.py	/^        best_result_save_loc = os.path.join(args.output_dir, 'loss_best_results_' + name + '.png')$/;"	kind:variable	line:295
+bias_variable	../zoobot/examples/tutorials/expert_mnist.py	/^def bias_variable(shape):$/;"	kind:function	line:38
+bin_prob_of_samples	../zoobot/estimators/make_predictions.py	/^def bin_prob_of_samples(samples, n_draws):$/;"	kind:function	line:84
+bin_prob_of_samples_by_k	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def bin_prob_of_samples_by_k(n_subjects, n_draws, true_p):$/;"	kind:function	line:31
+bin_probs	../zoobot/tests/estimators/make_predictions_test.py	/^def bin_probs(n_draws):$/;"	kind:function	line:25
+binomial_entropy	../zoobot/active_learning/acquisition_utils.py	/^binomial_entropy = np.vectorize(binomial_entropy)$/;"	kind:variable	line:53
+binomial_entropy	../zoobot/active_learning/acquisition_utils.py	/^def binomial_entropy(rho, n_draws):$/;"	kind:function	line:46
+binomial_likelihood	../zoobot/estimators/make_predictions.py	/^def binomial_likelihood(labels, predictions, total_votes):$/;"	kind:function	line:61
+binomial_loss	../zoobot/estimators/bayesian_estimator_funcs.py	/^def binomial_loss(labels, predictions):$/;"	kind:function	line:466
+binomial_loss_test.py	../zoobot/tests/estimators/binomial_loss_test.py	1;"	kind:file	line:1
+binomial_prob_per_k	../zoobot/estimators/make_predictions.py	/^def binomial_prob_per_k(rho, n_draws):$/;"	kind:function	line:96
+cache_table	../zoobot/shared_utilities.py	/^def cache_table(table_loc, cache_loc, useful_cols, loading_func=Table.read, kwargs=None):$/;"	kind:function	line:176
+calculate_acquistion_funcs	../zoobot/active_learning/metrics.py	/^    def calculate_acquistion_funcs(self):$/;"	kind:member	line:36
+calculate_default_metrics	../zoobot/active_learning/metrics.py	/^    def calculate_default_metrics(self):$/;"	kind:member	line:84
+capacity	../zoobot/examples/spiral_model_main.py	/^    capacity=100000,$/;"	kind:variable	line:13
+catalog	../zoobot/active_learning/make_shards.py	/^    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]$/;"	kind:variable	line:165
+catalog	../zoobot/active_learning/make_shards.py	/^    catalog = pd.read_csv(args.catalog_loc)$/;"	kind:variable	line:163
+catalog	../zoobot/tests/conftest.py	/^def catalog(label_col, id_col, unique_id):$/;"	kind:function	line:311
+catalog	../zoobot/tests/legacy/illustris/conftest.py	/^def catalog():$/;"	kind:function	line:10
+catalog_dir	../analysis/legacy/get_sloan_galaxies.py	/^    catalog_dir = '\/data\/galaxy_zoo\/gz2\/subjects'$/;"	kind:variable	line:75
+catalog_dir	../zoobot/get_catalogs/gz2/main.py	/^    catalog_dir = '\/data\/galaxy_zoo\/gz2\/catalogs'  # shared folder, for convenience$/;"	kind:variable	line:24
+catalog_loc	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^    catalog_loc = 'catalogs\/illustris_galaxies.csv'$/;"	kind:variable	line:92
+catalog_loc	../zoobot/legacy/illustris/make_catalog.py	/^    catalog_loc = 'catalogs\/illustris_galaxies.csv'$/;"	kind:variable	line:97
+catalog_metadata	../zoobot/legacy/illustris/make_catalog.py	/^    catalog_metadata = catalog_metadata.rename(columns={$/;"	kind:variable	line:78
+catalog_metadata	../zoobot/legacy/illustris/make_catalog.py	/^    catalog_metadata = pd.read_csv(os.path.join(catalog_root_dir, 'GalaxiesData.txt'), dtype={'ID': str}).drop_duplicates()$/;"	kind:variable	line:77
+catalog_random_images	../zoobot/tests/active_learning/conftest.py	/^def catalog_random_images(size, channels, fits_native_dir):$/;"	kind:function	line:89
+catalog_root_dir	../zoobot/legacy/illustris/make_catalog.py	/^    catalog_root_dir = '\/data\/onedrive\/Shared\/Illustris'$/;"	kind:variable	line:41
+catalog_to_tfrecord.py	../zoobot/tfrecord/catalog_to_tfrecord.py	1;"	kind:file	line:1
+catalog_to_tfrecord_test.py	../zoobot/tests/tfrecord_io/catalog_to_tfrecord_test.py	1;"	kind:file	line:1
+catalogs	../zoobot/legacy/illustris/make_catalog.py	/^    catalogs = [read_catalog_from_dir(catalog['dir'], name=catalog['name']) for catalog in available_catalogs]$/;"	kind:variable	line:65
+channels	../run_zoobot_on_panoptes.py	/^        channels=channels,$/;"	kind:variable	line:56
+channels	../run_zoobot_on_panoptes.py	/^        channels=run_config.channels,$/;"	kind:variable	line:106
+channels	../run_zoobot_on_panoptes.py	/^        channels=run_config.channels,$/;"	kind:variable	line:86
+channels	../run_zoobot_on_panoptes.py	/^    channels = 3$/;"	kind:variable	line:28
+channels	../zoobot/active_learning/check_uncertainty.py	/^        channels = 3$/;"	kind:variable	line:115
+channels	../zoobot/tests/conftest.py	/^def channels():$/;"	kind:function	line:23
+check_coverage_fractions	../zoobot/uncertainty/dropout_calibration.py	/^def check_coverage_fractions(predictions, true_params):$/;"	kind:function	line:41
+check_images_are_downloaded	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	/^def check_images_are_downloaded(catalog):$/;"	kind:function	line:71
+check_uncertainty.py	../zoobot/active_learning/check_uncertainty.py	1;"	kind:file	line:1
+check_uncertainty_test.py	../zoobot/tests/active_learning/check_uncertainty_test.py	1;"	kind:file	line:1
+classifications	../zoobot/get_catalogs/gz2/main.py	/^    classifications = get_classification_results(published_data_loc, nrows=nrows)$/;"	kind:variable	line:31
+classifications	../zoobot/tests/gz2/main_test.py	/^def classifications():$/;"	kind:function	line:10
+classifiers	../setup.py	/^    classifiers=[$/;"	kind:variable	line:16
+clip_img	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def clip_img(img):$/;"	kind:function	line:22
+cnn_model_fn	../zoobot/examples/mnist_estimator.py	/^def cnn_model_fn(features, labels, mode):$/;"	kind:function	line:26
+columns	../analysis/legacy/get_sloan_galaxies.py	/^        columns={$/;"	kind:variable	line:99
+columns_to_save	../analysis/predictor.py	/^columns_to_save = [$/;"	kind:variable	line:6
+columns_to_save	../gz2_to_tfrecord.py	/^        columns_to_save = ['t04_spiral_a08_spiral_count',$/;"	kind:variable	line:9
+columns_to_save	../zoobot/tests/conftest.py	/^def columns_to_save(label_col, id_col):$/;"	kind:function	line:296
+compare_binomial_and_abs_error	../zoobot/active_learning/metrics.py	/^    def compare_binomial_and_abs_error(self, save_dir):$/;"	kind:member	line:109
+compare_loss_over_time	../zoobot/active_learning/analysis.py	/^def compare_loss_over_time(active_metrics, baseline_metrics, save_loc, title=None):$/;"	kind:function	line:168
+compare_metrics	../zoobot/active_learning/analysis.py	/^def compare_metrics(all_metrics, save_loc, title=None):$/;"	kind:function	line:206
+compare_model_errors	../zoobot/active_learning/check_uncertainty.py	/^def compare_model_errors(model_a, model_b, save_dir):$/;"	kind:function	line:21
+compare_models	../zoobot/active_learning/check_uncertainty.py	/^def compare_models(model_a, model_b):$/;"	kind:function	line:43
+comparison_save_loc	../zoobot/active_learning/analysis.py	/^        comparison_save_loc = os.path.join(args.output_dir, 'loss_comparison_' + name + '.png')$/;"	kind:variable	line:292
+config	../zoobot/legacy/embeddings/visualise_embedding.py	/^    config = projector.ProjectorConfig()$/;"	kind:variable	line:112
+conftest.py	../zoobot/tests/active_learning/conftest.py	1;"	kind:file	line:1
+conftest.py	../zoobot/tests/conftest.py	1;"	kind:file	line:1
+conftest.py	../zoobot/tests/legacy/illustris/conftest.py	1;"	kind:file	line:1
+conftest.py	../zoobot/tests/uncertainty/conftest.py	1;"	kind:file	line:1
+conv1	../zoobot/examples/spiral_model_main.py	/^conv1 = tf.layers.conv2d($/;"	kind:variable	line:28
+conv1_filters	../run_zoobot_on_panoptes.py	/^        conv1_filters=32,$/;"	kind:variable	line:113
+conv1_kernel	../run_zoobot_on_panoptes.py	/^        conv1_kernel=3,$/;"	kind:variable	line:114
+conv2	../zoobot/examples/spiral_model_main.py	/^conv2 = tf.layers.conv2d($/;"	kind:variable	line:38
+conv2_filters	../run_zoobot_on_panoptes.py	/^        conv2_filters=64,$/;"	kind:variable	line:115
+conv2_kernel	../run_zoobot_on_panoptes.py	/^        conv2_kernel=3,$/;"	kind:variable	line:116
+conv2d	../zoobot/examples/tutorials/expert_mnist.py	/^def conv2d(x, W):$/;"	kind:function	line:44
+conv3_filters	../run_zoobot_on_panoptes.py	/^        conv3_filters=128,$/;"	kind:variable	line:117
+conv3_kernel	../run_zoobot_on_panoptes.py	/^        conv3_kernel=3,$/;"	kind:variable	line:118
+convert_to	../zoobot/examples/convert_to_record.py	/^def convert_to(data_set, name):$/;"	kind:function	line:37
+convert_to_record.py	../zoobot/examples/convert_to_record.py	1;"	kind:file	line:1
+copy	../zoobot/estimators/input_utils.py	/^    def copy(self):$/;"	kind:member	line:77
+correct_prediction	../zoobot/examples/tutorials/expert_mnist.py	/^correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))$/;"	kind:variable	line:92
+coverage_fraction	../zoobot/uncertainty/dropout_calibration.py	/^def coverage_fraction(predictions, true_params, alpha):$/;"	kind:function	line:54
+create_db	../zoobot/active_learning/active_learning.py	/^def create_db(catalog, db_loc):$/;"	kind:function	line:26
+create_panoptes_only_files.py	../zoobot/active_learning/create_panoptes_only_files.py	1;"	kind:file	line:1
+create_subject_manifest	../analysis/legacy/get_sloan_galaxies.py	/^def create_subject_manifest(subject_manifest_loc, survey_tag, max_subjects=None):$/;"	kind:function	line:20
+create_tfrecord.py	../zoobot/tfrecord/create_tfrecord.py	1;"	kind:file	line:1
+create_tfrecord_test.py	../zoobot/tests/tfrecord_io/create_tfrecord_test.py	1;"	kind:file	line:1
+cross_entropy	../zoobot/examples/tutorials/expert_mnist.py	/^cross_entropy = tf.reduce_mean($/;"	kind:variable	line:89
+current_date	../zoobot/shared_utilities.py	/^def current_date():$/;"	kind:function	line:199
+current_time	../zoobot/shared_utilities.py	/^def current_time():$/;"	kind:function	line:195
+data	../zoobot/examples/dataset_example.py	/^data = tf.constant([1. for n in range(90)] + [0. for n in range(10)])$/;"	kind:variable	line:17
+dataset	../zoobot/examples/dataset_example.py	/^dataset = dataset.repeat(10)$/;"	kind:variable	line:26
+dataset	../zoobot/examples/dataset_example.py	/^dataset = dataset.shuffle(buffer_size=10000)$/;"	kind:variable	line:24
+dataset	../zoobot/examples/dataset_example.py	/^dataset = tf.data.Dataset.from_tensor_slices($/;"	kind:variable	line:19
+dataset_example.py	../zoobot/examples/dataset_example.py	1;"	kind:file	line:1
+db_loc	../zoobot/tests/active_learning/conftest.py	/^def db_loc(tmpdir):$/;"	kind:function	line:105
+default	../zoobot/examples/convert_to_record.py	/^        default='\/tmp\/data',$/;"	kind:variable	line:85
+default	../zoobot/examples/convert_to_record.py	/^        default=5000,$/;"	kind:variable	line:91
+default_estimator_params.py	../zoobot/active_learning/default_estimator_params.py	1;"	kind:file	line:1
+default_four_layer_architecture	../zoobot/estimators/estimator_params.py	/^def default_four_layer_architecture():$/;"	kind:function	line:59
+default_params	../zoobot/estimators/estimator_params.py	/^def default_params():$/;"	kind:function	line:7
+default_three_layer_architecture	../zoobot/estimators/estimator_params.py	/^def default_three_layer_architecture():$/;"	kind:function	line:25
+delta_acquisition_vs_mean_prediction	../zoobot/active_learning/metrics.py	/^    def delta_acquisition_vs_mean_prediction(self, row):$/;"	kind:member	line:72
+dense	../zoobot/examples/spiral_model_main.py	/^dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)$/;"	kind:variable	line:47
+dense1	../zoobot/legacy/embeddings/visualise_embedding.py	/^dense1 = graph.get_tensor_by_name('model\/layer4\/dense1\/kernel:0')$/;"	kind:variable	line:22
+dense1_dropout	../run_zoobot_on_panoptes.py	/^        dense1_dropout=0.5,$/;"	kind:variable	line:120
+dense1_units	../run_zoobot_on_panoptes.py	/^        dense1_units=128,$/;"	kind:variable	line:119
+dense_to_multiclass_prediction	../zoobot/estimators/bayesian_estimator_funcs.py	/^def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):$/;"	kind:function	line:393
+dense_to_regression	../zoobot/estimators/bayesian_estimator_funcs.py	/^def dense_to_regression(dense1, labels, dropout_on, dropout_rate):$/;"	kind:function	line:428
+dense_values	../zoobot/legacy/embeddings/visualise_embedding.py	/^dense_values = np.loadtxt('{}\/temp_dense_values.txt'.format(log_dir))$/;"	kind:variable	line:95
+dense_variable	../zoobot/legacy/embeddings/visualise_embedding.py	/^dense_variable = tf.Variable(initial_value=dense_values, dtype=tf.float32, name='dense')$/;"	kind:variable	line:96
+description	../setup.py	/^    description="Active learning for Galaxy Zoo",$/;"	kind:variable	line:11
+df	../analysis/legacy/get_sloan_galaxies.py	/^    df = df[df['abs_r_mag'] > -50]$/;"	kind:variable	line:85
+df	../analysis/legacy/get_sloan_galaxies.py	/^    df = df[df['petrorad_50_r'] < 40]$/;"	kind:variable	line:89
+df	../analysis/legacy/get_sloan_galaxies.py	/^    df = pd.read_csv(subject_manifest_loc)$/;"	kind:variable	line:82
+df	../analysis/predictor.py	/^df = pd.read_csv(df_loc, usecols=columns_to_save + ['fits_loc', 'png_loc', 'png_ready'], dtype={'fits_loc': str}, nrows=50)$/;"	kind:variable	line:29
+df	../gz2_to_tfrecord.py	/^        df = pd.read_csv('\/data\/galaxy_zoo\/gz2\/subjects\/all_labels_downloaded.csv',$/;"	kind:variable	line:17
+df	../zoobot/active_learning/create_panoptes_only_files.py	/^    df = pd.read_csv($/;"	kind:variable	line:36
+df	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^    df = df.drop_duplicates(subset=['id', 'name', 'camera'])$/;"	kind:variable	line:96
+df	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^    df = df[(df['name'] != 'minor_merger')]$/;"	kind:variable	line:108
+df	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^    df = pd.read_csv(catalog_loc)$/;"	kind:variable	line:93
+df	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^    df = remove_known_galaxies_from_random_sample(df)$/;"	kind:variable	line:99
+df	../zoobot/update_catalog_fits_loc.py	/^df = pd.read_csv($/;"	kind:variable	line:35
+df_loc	../analysis/predictor.py	/^df_loc = '\/data\/repos\/galaxy-zoo-panoptes\/reduction\/data\/output\/panoptes_predictions_with_catalog.csv'$/;"	kind:variable	line:28
+df_loc	../zoobot/active_learning/create_panoptes_only_files.py	/^    df_loc = args.old_catalog_loc$/;"	kind:variable	line:33
+dir_of_this_file	../zoobot/active_learning/make_shards.py	/^    dir_of_this_file = os.path.dirname(os.path.realpath(__file__))$/;"	kind:variable	line:172
+discrete_coverage.py	../zoobot/uncertainty/discrete_coverage.py	1;"	kind:file	line:1
+discrete_coverage_test.py	../zoobot/tests/uncertainty/discrete_coverage_test.py	1;"	kind:file	line:1
+distribution_entropy	../zoobot/active_learning/acquisition_utils.py	/^def distribution_entropy(probabilities):$/;"	kind:function	line:14
+download_gz_from_aws.py	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	1;"	kind:file	line:1
+download_images	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	/^def download_images(galaxy, overwrite, max_attempts=5, pbar=None):$/;"	kind:function	line:41
+download_png_threaded	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	/^def download_png_threaded(catalog, png_dir, overwrite=False):$/;"	kind:function	line:11
+download_to_fits	../zoobot/tests/mnist.py	/^def download_to_fits():$/;"	kind:function	line:13
+dr2_style_rgb	../zoobot/tfrecord/image_utils.py	/^def dr2_style_rgb(imgs, bands, mnmx=None, arcsinh=None, scales=None, desaturate=False):$/;"	kind:function	line:7
+dropout	../zoobot/examples/spiral_model_main.py	/^dropout = tf.layers.dropout($/;"	kind:variable	line:48
+dropout_calibration.py	../zoobot/uncertainty/dropout_calibration.py	1;"	kind:file	line:1
+dropout_calibration_test.py	../zoobot/tests/uncertainty/dropout_calibration_test.py	1;"	kind:file	line:1
+dtype	../zoobot/active_learning/create_panoptes_only_files.py	/^        dtype={'id_str': str, 'label': float},$/;"	kind:variable	line:38
+dtype	../zoobot/update_catalog_fits_loc.py	/^    dtype={'id_loc': str, 'label': float},$/;"	kind:variable	line:37
+dtypes	../zoobot/tests/estimators/mnist_estimator.py	/^    dtypes = {'id_str': str, 'label': int}$/;"	kind:variable	line:21
+dummy_column_estimator.py	../zoobot/estimators/dummy_column_estimator.py	1;"	kind:file	line:1
+dummy_estimator_test.py	../zoobot/tests/estimators/dummy_estimator_test.py	1;"	kind:file	line:1
+dummy_image_estimator.py	../zoobot/estimators/dummy_image_estimator.py	1;"	kind:file	line:1
+dummy_image_estimator_test.py	../zoobot/tests/estimators/dummy_image_estimator_test.py	1;"	kind:file	line:1
+dummy_input	../zoobot/tests/estimators/run_estimator_test.py	/^    def dummy_input(input_config=None):$/;"	kind:function	line:154
+dummy_model_fn	../zoobot/estimators/dummy_column_estimator.py	/^def dummy_model_fn($/;"	kind:function	line:4
+dummy_model_fn	../zoobot/estimators/dummy_image_estimator.py	/^def dummy_model_fn($/;"	kind:function	line:5
+dummy_save	../zoobot/tests/estimators/run_estimator_test.py	/^    def dummy_save(estimator, params, epoch_n, serving_input_receiver_fn):$/;"	kind:function	line:163
+early_stopper	../zoobot/estimators/run_estimator.py	/^def early_stopper(loss_history, window):$/;"	kind:function	line:283
+early_stopping_window	../run_zoobot_on_panoptes.py	/^        early_stopping_window=10,$/;"	kind:variable	line:63
+ec2	../run_zoobot_on_panoptes.py	/^    ec2 = args.ec2$/;"	kind:variable	line:25
+embedding	../zoobot/legacy/embeddings/visualise_embedding.py	/^    embedding = config.embeddings.add()$/;"	kind:variable	line:115
+empty_shard_db	../zoobot/tests/active_learning/active_learning_test.py	/^def empty_shard_db():$/;"	kind:function	line:52
+ensure_images_have_batch_dimension	../zoobot/estimators/input_utils.py	/^def ensure_images_have_batch_dimension(images):$/;"	kind:function	line:374
+epochs	../run_zoobot_on_panoptes.py	/^        epochs=1500,  # for debugging, min is 1$/;"	kind:variable	line:58
+estimator	../zoobot/tests/estimators/dummy_estimator_test.py	/^def estimator(features, batch_size):$/;"	kind:function	line:62
+estimator	../zoobot/tests/estimators/dummy_image_estimator_test.py	/^def estimator(batch_size, size):$/;"	kind:function	line:11
+estimator_funcs.py	../zoobot/estimators/estimator_funcs.py	1;"	kind:file	line:1
+estimator_params.py	../zoobot/estimators/estimator_params.py	1;"	kind:file	line:1
+estimator_quickstart.py	../zoobot/examples/tutorials/estimator_quickstart.py	1;"	kind:file	line:1
+estimator_wrapper	../zoobot/estimators/bayesian_estimator_funcs.py	/^def estimator_wrapper(features, labels, mode, params):$/;"	kind:function	line:8
+estimators_dir	../zoobot/tests/active_learning/conftest.py	/^def estimators_dir(tmpdir):$/;"	kind:function	line:148
+eval_config	../run_zoobot_on_panoptes.py	/^    eval_config = input_utils.InputConfig($/;"	kind:variable	line:90
+eval_input	../zoobot/estimators/run_estimator.py	/^def eval_input(input_config):$/;"	kind:function	line:78
+eval_input_fn	../zoobot/tests/conftest.py	/^def eval_input_fn(random_features, random_labels, batch_size):$/;"	kind:function	line:93
+eval_input_fn	../zoobot/tests/estimators/dummy_estimator_test.py	/^def eval_input_fn(features, labels, batch_size):$/;"	kind:function	line:41
+eval_log_entry	../zoobot/tests/active_learning/analysis_test.py	/^def eval_log_entry():$/;"	kind:function	line:33
+eval_steps	../run_zoobot_on_panoptes.py	/^        eval_steps=3,$/;"	kind:variable	line:60
+evaluate_discrete_coverage	../zoobot/uncertainty/discrete_coverage.py	/^def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):$/;"	kind:function	line:10
+example_classification_data	../zoobot/tests/gz2/get_classifications_test.py	/^def example_classification_data():$/;"	kind:function	line:15
+example_data	../zoobot/tests/estimators/run_estimator_test.py	/^def example_data(size, true_image_values, false_image_values):$/;"	kind:function	line:25
+example_tfrecords	../zoobot/tests/estimators/run_estimator_test.py	/^def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):$/;"	kind:function	line:63
+execute.py	../zoobot/active_learning/execute.py	1;"	kind:file	line:1
+execute_active_learning	../zoobot/active_learning/execute.py	/^def execute_active_learning(shard_config_loc, run_dir, baseline=False, test=False, warm_start=False):$/;"	kind:function	line:220
+execute_test.py	../zoobot/tests/active_learning/execute_test.py	1;"	kind:file	line:1
+expected_binomial_entropy	../zoobot/active_learning/acquisition_utils.py	/^def expected_binomial_entropy(binomial_probs_per_sample):$/;"	kind:function	line:56
+expert_mnist.py	../zoobot/examples/tutorials/expert_mnist.py	1;"	kind:file	line:1
+export_dir	../analysis/predictor.py	/^export_dir = '\/Data\/repos\/zoobot\/zoobot\/runs\/chollet_panoptes_featured_bayesian_temp28\/1526488263'$/;"	kind:variable	line:48
+extra_data_feature_spec	../zoobot/tests/tfrecord_io/create_tfrecord_test.py	/^def extra_data_feature_spec(size, channels):$/;"	kind:function	line:14
+false_image_values	../zoobot/examples/dataset_example.py	/^false_image_values = true_image_values * -1.$/;"	kind:variable	line:10
+false_image_values	../zoobot/tests/conftest.py	/^def false_image_values():$/;"	kind:function	line:118
+false_image_values	../zoobot/tests/estimators/run_estimator_test.py	/^def false_image_values():$/;"	kind:function	line:20
+feature_spec	../zoobot/active_learning/check_uncertainty.py	/^        feature_spec = read_tfrecord.matrix_label_feature_spec(size=size, channels=channels, float_label=True)$/;"	kind:variable	line:116
+features	../zoobot/tests/estimators/dummy_estimator_test.py	/^def features():$/;"	kind:function	line:13
+features	../zoobot/tests/estimators/run_estimator_test.py	/^def features(n_examples):$/;"	kind:function	line:115
+fig	../analysis/legacy/get_sloan_galaxies.py	/^    fig = plt.gcf().autofmt_xdate()$/;"	kind:variable	line:119
+filemode	../run_zoobot_on_panoptes.py	/^        filemode='w',$/;"	kind:variable	line:45
+filemode	../zoobot/active_learning/make_shards.py	/^        filemode='w',$/;"	kind:variable	line:157
+filemode	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        filemode='w',$/;"	kind:variable	line:89
+filemode	../zoobot/legacy/illustris/make_catalog.py	/^        filemode='w',$/;"	kind:variable	line:38
+filemode	../zoobot/tests/active_learning/active_learning_test.py	/^        filemode='w',$/;"	kind:variable	line:26
+filemode	../zoobot/tests/estimators/mnist_estimator.py	/^        filemode='w',$/;"	kind:variable	line:16
+filename	../run_zoobot_on_panoptes.py	/^        filename=run_name + '.log',$/;"	kind:variable	line:43
+filename	../zoobot/active_learning/make_shards.py	/^        filename=log_loc,$/;"	kind:variable	line:156
+filename	../zoobot/examples/spiral_model_main.py	/^filename = '\/data\/galaxy_zoo\/gz2\/tfrecord\/spiral_28.tfrecord'$/;"	kind:variable	line:8
+filename	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        filename='illustris_to_tfrecord.log',$/;"	kind:variable	line:87
+filename	../zoobot/legacy/illustris/make_catalog.py	/^        filename='make_catalog.log',$/;"	kind:variable	line:36
+filename	../zoobot/tests/active_learning/active_learning_test.py	/^        filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),$/;"	kind:variable	line:25
+filename	../zoobot/tests/estimators/mnist_estimator.py	/^        filename='{}\/make_mnist_shards_{}.log'.format(base_dir, time.time()),$/;"	kind:variable	line:15
+filename_to_dict	../zoobot/legacy/illustris/make_catalog.py	/^def filename_to_dict(filename):$/;"	kind:function	line:7
+fill_mode	../run_zoobot_on_panoptes.py	/^        fill_mode='wrap',$/;"	kind:variable	line:102
+fill_mode	../run_zoobot_on_panoptes.py	/^        fill_mode='wrap',$/;"	kind:variable	line:82
+filled_shard_db	../zoobot/tests/active_learning/active_learning_test.py	/^def filled_shard_db(empty_shard_db):$/;"	kind:function	line:89
+filled_shard_db_with_labels	../zoobot/tests/active_learning/active_learning_test.py	/^def filled_shard_db_with_labels(filled_shard_db):$/;"	kind:function	line:196
+filters	../zoobot/examples/spiral_model_main.py	/^    filters=32,$/;"	kind:variable	line:30
+filters	../zoobot/examples/spiral_model_main.py	/^    filters=64,$/;"	kind:variable	line:40
+final_size	../run_zoobot_on_panoptes.py	/^        final_size=final_size,$/;"	kind:variable	line:55
+final_size	../run_zoobot_on_panoptes.py	/^        final_size=run_config.final_size,$/;"	kind:variable	line:105
+final_size	../run_zoobot_on_panoptes.py	/^        final_size=run_config.final_size,$/;"	kind:variable	line:85
+final_size	../run_zoobot_on_panoptes.py	/^    final_size = 64$/;"	kind:variable	line:29
+find_log	../zoobot/active_learning/analysis.py	/^def find_log(directory):$/;"	kind:function	line:202
+fits_are_identical	../zoobot/shared_utilities.py	/^def fits_are_identical(fits_a_loc, fits_b_loc):$/;"	kind:function	line:162
+fits_loc	../zoobot/tests/legacy/illustris/conftest.py	/^def fits_loc():$/;"	kind:function	line:56
+fits_native_dir	../zoobot/tests/conftest.py	/^def fits_native_dir(tmpdir):$/;"	kind:function	line:337
+flat	../zoobot/legacy/embeddings/visualise_embedding.py	/^flat = graph.get_tensor_by_name('model\/layer2\/flat:0')  # my own typo, is actually layer 3$/;"	kind:variable	line:23
+flat_values	../zoobot/legacy/embeddings/visualise_embedding.py	/^flat_values = np.loadtxt('{}\/temp_flat_values.txt'.format(log_dir))$/;"	kind:variable	line:89
+flat_variable	../zoobot/legacy/embeddings/visualise_embedding.py	/^flat_variable = tf.Variable(initial_value=flat_values, dtype=tf.float32, name='flat')$/;"	kind:variable	line:90
+float_list_to_feature	../zoobot/tfrecord/create_tfrecord.py	/^def float_list_to_feature(floats_to_save):$/;"	kind:function	line:94
+float_to_feature	../zoobot/tfrecord/create_tfrecord.py	/^def float_to_feature(float_to_save):$/;"	kind:function	line:89
+force_new	../analysis/legacy/get_sloan_galaxies.py	/^    force_new = False$/;"	kind:variable	line:73
+format	../run_zoobot_on_panoptes.py	/^        format='%(asctime)s %(message)s',$/;"	kind:variable	line:44
+format	../zoobot/active_learning/make_shards.py	/^        format='%(asctime)s %(message)s',$/;"	kind:variable	line:158
+format	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        format='%(levelname)s:%(message)s',$/;"	kind:variable	line:88
+format	../zoobot/legacy/illustris/make_catalog.py	/^        format='%(levelname)s:%(message)s',$/;"	kind:variable	line:37
+format	../zoobot/tests/active_learning/active_learning_test.py	/^        format='%(asctime)s %(message)s',$/;"	kind:variable	line:27
+format	../zoobot/tests/estimators/mnist_estimator.py	/^        format='%(asctime)s %(message)s',$/;"	kind:variable	line:17
+four_layer_binary_classifier	../zoobot/estimators/estimator_funcs.py	/^def four_layer_binary_classifier(features, labels, mode, params):$/;"	kind:function	line:6
+four_layer_cnn	../zoobot/estimators/estimator_funcs.py	/^def four_layer_cnn(features, labels, mode, params):$/;"	kind:function	line:44
+full_catalog	../zoobot/legacy/illustris/make_catalog.py	/^    full_catalog = pd.concat(catalogs)$/;"	kind:variable	line:68
+full_catalog_with_metadata	../zoobot/legacy/illustris/make_catalog.py	/^    full_catalog_with_metadata = pd.merge($/;"	kind:variable	line:91
+galaxies_to_predict	../analysis/predictor.py	/^galaxies_to_predict = df[:1].apply(serialise_row, axis=1)$/;"	kind:variable	line:44
+gc	../run_zoobot_on_panoptes.py	/^    gc = GlobalConfig(ec2)$/;"	kind:variable	line:26
+generalised_loss	../zoobot/estimators/run_estimator.py	/^def generalised_loss(loss_history):$/;"	kind:function	line:279
+geometric_augmentation	../run_zoobot_on_panoptes.py	/^        geometric_augmentation=True,$/;"	kind:variable	line:79
+geometric_augmentation	../run_zoobot_on_panoptes.py	/^        geometric_augmentation=True,$/;"	kind:variable	line:99
+geometric_augmentation	../zoobot/estimators/input_utils.py	/^def geometric_augmentation(images, max_zoom, final_size):$/;"	kind:function	line:281
+get_all_shard_locs	../zoobot/active_learning/active_learning.py	/^def get_all_shard_locs(db):$/;"	kind:function	line:378
+get_aws_loc	../zoobot/legacy/prn/prn_to_tfrecord.py	/^def get_aws_loc(subject_row):$/;"	kind:function	line:25
+get_batch	../zoobot/estimators/input_utils.py	/^def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):$/;"	kind:function	line:112
+get_batch	../zoobot/examples/queue_example.py	/^get_batch = simple_shuffle_batch(input, capacity=20)$/;"	kind:variable	line:32
+get_classification_results	../zoobot/get_catalogs/gz2/get_classifications.py	/^def get_classification_results(published_data_loc, nrows=None):$/;"	kind:function	line:4
+get_classifications.py	../zoobot/get_catalogs/gz2/get_classifications.py	1;"	kind:file	line:1
+get_classifications_test.py	../zoobot/tests/gz2/get_classifications_test.py	1;"	kind:file	line:1
+get_eval_metric_ops	../zoobot/estimators/bayesian_estimator_funcs.py	/^def get_eval_metric_ops(self, labels, predictions):$/;"	kind:function	line:497
+get_eval_metric_ops	../zoobot/estimators/estimator_funcs.py	/^def get_eval_metric_ops(labels, predictions):$/;"	kind:function	line:152
+get_image_mask	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def get_image_mask(img):$/;"	kind:function	line:14
+get_images_from_batch	../zoobot/estimators/input_utils.py	/^def get_images_from_batch(batch, size, channels, summary=False):$/;"	kind:function	line:124
+get_input	../zoobot/estimators/input_utils.py	/^def get_input(config):$/;"	kind:function	line:81
+get_jpg_loc	../zoobot/legacy/prn/prn_to_tfrecord.py	/^def get_jpg_loc(subject_row):$/;"	kind:function	line:20
+get_labels	../zoobot/active_learning/mock_panoptes.py	/^def get_labels(subject_ids):$/;"	kind:function	line:8
+get_labels_and_images	../zoobot/get_catalogs/gz2/main.py	/^def get_labels_and_images(classifications, subject_manifest, png_dir, output_loc, overwrite):$/;"	kind:function	line:9
+get_labels_from_batch	../zoobot/estimators/input_utils.py	/^def get_labels_from_batch(batch, noisy_labels):$/;"	kind:function	line:136
+get_latest_checkpoint_dir	../zoobot/active_learning/active_learning.py	/^def get_latest_checkpoint_dir(base_dir):$/;"	kind:function	line:333
+get_latest_model	../zoobot/active_learning/iterations.py	/^    def get_latest_model(self):$/;"	kind:member	line:44
+get_metrics_from_log	../zoobot/active_learning/analysis.py	/^def get_metrics_from_log(log_loc):$/;"	kind:function	line:47
+get_most_recent_iteration_loc	../zoobot/active_learning/execute.py	/^    def get_most_recent_iteration_loc(self):$/;"	kind:member	line:203
+get_png_loc	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	/^def get_png_loc(png_dir, galaxy):$/;"	kind:function	line:37
+get_run_config	../zoobot/active_learning/default_estimator_params.py	/^def get_run_config(active_config):$/;"	kind:function	line:12
+get_samples_of_subjects	../zoobot/estimators/make_predictions.py	/^def get_samples_of_subjects(model, subjects, n_samples):$/;"	kind:function	line:33
+get_scalar_prediction	../zoobot/estimators/bayesian_estimator_funcs.py	/^def get_scalar_prediction(prediction):$/;"	kind:function	line:424
+get_sloan_galaxies.py	../analysis/legacy/get_sloan_galaxies.py	1;"	kind:file	line:1
+get_smooth_metrics_from_log	../zoobot/active_learning/analysis.py	/^def get_smooth_metrics_from_log(log_loc, name=None):$/;"	kind:function	line:238
+get_top_acquisitions	../zoobot/active_learning/active_learning.py	/^def get_top_acquisitions(db, n_subjects=1000, shard_loc=None):$/;"	kind:function	line:202
+get_train_records	../zoobot/active_learning/execute.py	/^    def get_train_records(self):$/;"	kind:member	line:182
+getting_started.py	../zoobot/examples/tutorials/getting_started.py	1;"	kind:file	line:1
+graph	../zoobot/legacy/embeddings/visualise_embedding.py	/^graph = tf.get_default_graph()$/;"	kind:variable	line:18
+graph_to_import	../zoobot/legacy/embeddings/visualise_embedding.py	/^graph_to_import = '\/Data\/repos\/zoobot\/runs\/chollet_128_triple\/model.ckpt-15901.meta'$/;"	kind:variable	line:14
+grid_search_objective_function	../zoobot/legacy/illustris/learn_mergers.py	/^    def grid_search_objective_function(**params):$/;"	kind:function	line:94
+grid_search_on_illustris	../zoobot/legacy/illustris/learn_mergers.py	/^def grid_search_on_illustris():$/;"	kind:function	line:76
+gz2_to_tfrecord.py	../gz2_to_tfrecord.py	1;"	kind:file	line:1
+h_conv1	../zoobot/examples/tutorials/expert_mnist.py	/^h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)$/;"	kind:variable	line:61
+h_conv2	../zoobot/examples/tutorials/expert_mnist.py	/^h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)$/;"	kind:variable	line:67
+h_fc1	../zoobot/examples/tutorials/expert_mnist.py	/^h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)$/;"	kind:variable	line:77
+h_fc1_drop	../zoobot/examples/tutorials/expert_mnist.py	/^h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)$/;"	kind:variable	line:82
+h_pool1	../zoobot/examples/tutorials/expert_mnist.py	/^h_pool1 = max_pool_2x2(h_conv1)$/;"	kind:variable	line:62
+h_pool2	../zoobot/examples/tutorials/expert_mnist.py	/^h_pool2 = max_pool_2x2(h_conv2)$/;"	kind:variable	line:68
+h_pool2_flat	../zoobot/examples/tutorials/expert_mnist.py	/^h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])$/;"	kind:variable	line:75
+help	../run_zoobot_on_panoptes.py	/^                    help='Running on EC2?')$/;"	kind:variable	line:22
+help	../zoobot/active_learning/analysis.py	/^                    help='')$/;"	kind:variable	line:252
+help	../zoobot/active_learning/analysis.py	/^                    help='')$/;"	kind:variable	line:254
+help	../zoobot/active_learning/analysis.py	/^                    help='')$/;"	kind:variable	line:256
+help	../zoobot/active_learning/analysis.py	/^                    help='')$/;"	kind:variable	line:258
+help	../zoobot/active_learning/analysis.py	/^                    help='')$/;"	kind:variable	line:260
+help	../zoobot/active_learning/create_panoptes_only_files.py	/^                    help='Directory into which to place shard directory')$/;"	kind:variable	line:29
+help	../zoobot/active_learning/create_panoptes_only_files.py	/^                    help='Oldlocation of fits files')$/;"	kind:variable	line:27
+help	../zoobot/active_learning/create_panoptes_only_files.py	/^                    help='Path to csv catalog of Panoptes labels and fits_loc')$/;"	kind:variable	line:23
+help	../zoobot/active_learning/create_panoptes_only_files.py	/^                    help='Path to csv catalog of Panoptes labels and fits_loc')$/;"	kind:variable	line:25
+help	../zoobot/active_learning/make_shards.py	/^                    help='Directory into which to place shard directory')$/;"	kind:variable	line:149
+help	../zoobot/active_learning/make_shards.py	/^                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')$/;"	kind:variable	line:151
+help	../zoobot/examples/convert_to_record.py	/^        help='Directory to download data files and write the converted result'$/;"	kind:variable	line:86
+how	../zoobot/legacy/illustris/make_catalog.py	/^        how='inner')$/;"	kind:variable	line:95
+id_col	../zoobot/tests/conftest.py	/^def id_col():$/;"	kind:function	line:291
+illustris_to_tfrecord.py	../zoobot/legacy/illustris/illustris_to_tfrecord.py	1;"	kind:file	line:1
+illustris_to_tfrecord_test.py	../zoobot/tests/legacy/illustris/illustris_to_tfrecord_test.py	1;"	kind:file	line:1
+image_dim	../run_zoobot_on_panoptes.py	/^        image_dim=run_config.final_size  # not initial size$/;"	kind:variable	line:124
+image_utils.py	../zoobot/tfrecord/image_utils.py	1;"	kind:file	line:1
+images_to_sprite	../zoobot/legacy/embeddings/chollet_128/make_sprites.py	/^def images_to_sprite(images, labels=None):$/;"	kind:function	line:4
+index	../analysis/legacy/get_sloan_galaxies.py	/^    index = pd.date_range(start=df['activated_at_date'].min(), end=df['activated_at_date'].max())$/;"	kind:variable	line:107
+init	../zoobot/examples/spiral_model_main.py	/^init = tf.global_variables_initializer()$/;"	kind:variable	line:17
+init	../zoobot/examples/spiral_model_main.py	/^init = tf.initialize_all_variables()$/;"	kind:variable	line:61
+init	../zoobot/examples/tutorials/getting_started.py	/^init = tf.global_variables_initializer()$/;"	kind:variable	line:61
+initial	../zoobot/active_learning/analysis.py	/^    initial = args.initial$/;"	kind:variable	line:266
+initial_estimator_ckpt	../zoobot/tests/active_learning/iterations_test.py	/^def initial_estimator_ckpt(tmpdir):$/;"	kind:function	line:11
+initial_size	../run_zoobot_on_panoptes.py	/^        initial_size=initial_size,$/;"	kind:variable	line:54
+initial_size	../run_zoobot_on_panoptes.py	/^        initial_size=run_config.initial_size,$/;"	kind:variable	line:104
+initial_size	../run_zoobot_on_panoptes.py	/^        initial_size=run_config.initial_size,$/;"	kind:variable	line:84
+initial_size	../run_zoobot_on_panoptes.py	/^    initial_size = 128$/;"	kind:variable	line:27
+inplace	../analysis/legacy/get_sloan_galaxies.py	/^        inplace=True,$/;"	kind:variable	line:98
+input	../zoobot/examples/queue_example.py	/^input = input.make_one_shot_iterator().get_next()$/;"	kind:variable	line:29
+input	../zoobot/examples/queue_example.py	/^input = tf.constant(list(range(100)))$/;"	kind:variable	line:27
+input	../zoobot/examples/queue_example.py	/^input = tf.data.Dataset.from_tensor_slices(input)$/;"	kind:variable	line:28
+input_function_callable	../zoobot/tests/conftest.py	/^    def input_function_callable(features, labels, batch_size):  # normal args, not fixtures$/;"	kind:function	line:78
+input_layer	../zoobot/examples/spiral_model_main.py	/^input_layer = tf.reduce_mean(square_images, axis=3, keep_dims=True)$/;"	kind:variable	line:23
+input_to_dense	../zoobot/estimators/bayesian_estimator_funcs.py	/^def input_to_dense(features, mode, model):$/;"	kind:function	line:255
+input_utils.py	../zoobot/estimators/input_utils.py	1;"	kind:file	line:1
+input_utils_test.py	../zoobot/tests/estimators/input_utils_test.py	1;"	kind:file	line:1
+inputs	../zoobot/examples/spiral_model_main.py	/^    inputs=input_layer,$/;"	kind:variable	line:29
+inputs	../zoobot/examples/spiral_model_main.py	/^    inputs=pool1,$/;"	kind:variable	line:39
+int_to_feature	../zoobot/tfrecord/create_tfrecord.py	/^def int_to_feature(int_to_save):$/;"	kind:function	line:84
+is_eval_log_entry	../zoobot/active_learning/analysis.py	/^def is_eval_log_entry(line):$/;"	kind:function	line:98
+is_iteration_split	../zoobot/active_learning/analysis.py	/^def is_iteration_split(line):$/;"	kind:function	line:66
+is_ready_to_train	../zoobot/estimators/run_estimator.py	/^    def is_ready_to_train(self):$/;"	kind:member	line:58
+iteration_split_entry	../zoobot/tests/active_learning/analysis_test.py	/^def iteration_split_entry():$/;"	kind:function	line:38
+iterations.py	../zoobot/active_learning/iterations.py	1;"	kind:file	line:1
+iterations_test.py	../zoobot/tests/active_learning/iterations_test.py	1;"	kind:file	line:1
+keep_prob	../zoobot/examples/tutorials/expert_mnist.py	/^keep_prob = tf.placeholder(tf.float32)$/;"	kind:variable	line:80
+kernel_size	../zoobot/examples/spiral_model_main.py	/^    kernel_size=[5, 5],$/;"	kind:variable	line:31
+kernel_size	../zoobot/examples/spiral_model_main.py	/^    kernel_size=[5, 5],$/;"	kind:variable	line:41
+known_subject	../zoobot/tests/active_learning/active_learning_test.py	/^def known_subject(known_subject):$/;"	kind:function	line:40
+label_col	../gz2_to_tfrecord.py	/^        label_col = 't04_spiral_a08_spiral_weighted_fraction'$/;"	kind:variable	line:24
+label_col	../run_zoobot_on_panoptes.py	/^        label_col='label',$/;"	kind:variable	line:57
+label_col	../run_zoobot_on_panoptes.py	/^        label_col=run_config.label_col,$/;"	kind:variable	line:73
+label_col	../run_zoobot_on_panoptes.py	/^        label_col=run_config.label_col,$/;"	kind:variable	line:93
+label_col	../zoobot/tests/conftest.py	/^def label_col():$/;"	kind:function	line:286
+labelled_catalog	../zoobot/active_learning/make_shards.py	/^    labelled_catalog = catalog[:8960]  # for initial training data$/;"	kind:variable	line:177
+labelled_catalog	../zoobot/tests/active_learning/conftest.py	/^def labelled_catalog(catalog_random_images):$/;"	kind:function	line:15
+labelled_catalog	../zoobot/tests/estimators/mnist_estimator.py	/^    labelled_catalog = pd.read_csv(os.path.join(TEST_EXAMPLE_DIR, 'mnist_catalog_train.csv'), dtype=dtypes)$/;"	kind:variable	line:22
+labels	../zoobot/examples/dataset_example.py	/^labels = tf.constant([1 for n in range(90)] + [0 for n in range(10)])$/;"	kind:variable	line:18
+labels	../zoobot/tests/estimators/dummy_estimator_test.py	/^def labels():$/;"	kind:function	line:19
+labels	../zoobot/tests/estimators/run_estimator_test.py	/^def labels(request, n_examples):$/;"	kind:function	line:130
+labels_loc	../zoobot/get_catalogs/gz2/main.py	/^    labels_loc = '{}\/basic_regression_labels.csv'.format(catalog_dir)  # will place catalog of file list and labels here$/;"	kind:variable	line:27
+learn_mergers.py	../zoobot/legacy/illustris/learn_mergers.py	1;"	kind:file	line:1
+learning_rate	../run_zoobot_on_panoptes.py	/^        learning_rate=0.001,$/;"	kind:variable	line:111
+level	../run_zoobot_on_panoptes.py	/^        level=logging.INFO)$/;"	kind:variable	line:46
+level	../zoobot/active_learning/make_shards.py	/^        level=logging.DEBUG$/;"	kind:variable	line:159
+level	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        level=logging.DEBUG)$/;"	kind:variable	line:90
+level	../zoobot/legacy/illustris/make_catalog.py	/^        level=logging.INFO)$/;"	kind:variable	line:39
+level	../zoobot/tests/active_learning/active_learning_test.py	/^        level=logging.INFO)$/;"	kind:variable	line:28
+level	../zoobot/tests/estimators/mnist_estimator.py	/^        level=logging.DEBUG$/;"	kind:variable	line:18
+linear_model	../zoobot/examples/tutorials/getting_started.py	/^linear_model = W*x + b$/;"	kind:variable	line:47
+load_batches_with_id_str	../zoobot/estimators/input_utils.py	/^def load_batches_with_id_str(config):$/;"	kind:function	line:178
+load_batches_with_labels	../zoobot/estimators/input_utils.py	/^def load_batches_with_labels(config):$/;"	kind:function	line:148
+load_batches_without_labels	../zoobot/estimators/input_utils.py	/^def load_batches_without_labels(config):$/;"	kind:function	line:171
+load_current_subjects	../zoobot/shared_utilities.py	/^def load_current_subjects(df, workflow=None, subject_set=None, save_loc=None):$/;"	kind:function	line:203
+load_dataset	../zoobot/tfrecord/tfrecord_io.py	/^def load_dataset(example_loc, feature_spec, num_parallel_calls=1):$/;"	kind:function	line:10
+load_decals_as_pil	../zoobot/tfrecord/catalog_to_tfrecord.py	/^def load_decals_as_pil(subject):$/;"	kind:function	line:19
+load_examples_from_tfrecord	../zoobot/tfrecord/read_tfrecord.py	/^def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None):$/;"	kind:function	line:12
+load_illustris_as_pil	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def load_illustris_as_pil(subject):  # should be dict with 'fits_loc' component$/;"	kind:function	line:35
+load_png_as_pil	../zoobot/tfrecord/catalog_to_tfrecord.py	/^def load_png_as_pil(subject):$/;"	kind:function	line:103
+load_predictor	../zoobot/estimators/make_predictions.py	/^def load_predictor(predictor_loc):$/;"	kind:function	line:12
+load_shard_config	../zoobot/active_learning/make_shards.py	/^def load_shard_config(shard_config_loc):$/;"	kind:function	line:129
+load_shardindex	../zoobot/tests/active_learning/active_learning_test.py	/^def load_shardindex(db):$/;"	kind:function	line:234
+log	../zoobot/estimators/run_estimator.py	/^    def log(self):$/;"	kind:member	line:62
+log_dir	../run_zoobot_on_panoptes.py	/^        log_dir = 'results\/{}'.format(run_name),$/;"	kind:variable	line:66
+log_dir	../zoobot/legacy/embeddings/visualise_embedding.py	/^    log_dir = '\/data\/repos\/zoobot\/embeddings\/chollet_128'$/;"	kind:variable	line:72
+log_dir	../zoobot/tests/estimators/run_estimator_test.py	/^def log_dir(tmpdir):$/;"	kind:function	line:47
+log_freq	../run_zoobot_on_panoptes.py	/^        log_freq=10,$/;"	kind:variable	line:123
+log_loc	../zoobot/active_learning/make_shards.py	/^    log_loc = 'make_shards_{}.log'.format(time.time())$/;"	kind:variable	line:154
+log_loc	../zoobot/tests/active_learning/analysis_test.py	/^def log_loc():$/;"	kind:function	line:28
+logging_hooks	../zoobot/estimators/bayesian_estimator_funcs.py	/^def logging_hooks(model_config):$/;"	kind:function	line:504
+logits	../zoobot/examples/spiral_model_main.py	/^logits = tf.layers.dense(inputs=dropout, units=2)$/;"	kind:variable	line:51
+long_description	../setup.py	/^    long_description = fh.read()$/;"	kind:variable	line:4
+long_description	../setup.py	/^    long_description=long_description,$/;"	kind:variable	line:12
+long_description_content_type	../setup.py	/^    long_description_content_type="text\/markdown",$/;"	kind:variable	line:13
+loss	../zoobot/examples/spiral_model_main.py	/^loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)$/;"	kind:variable	line:53
+loss	../zoobot/examples/tutorials/getting_started.py	/^loss = tf.reduce_sum(tf.square(linear_model - y)) # sum of the squares$/;"	kind:variable	line:51
+loss_instability	../zoobot/estimators/run_estimator.py	/^def loss_instability(loss_history, window):$/;"	kind:function	line:275
+loss_mean	../zoobot/examples/spiral_model_main.py	/^loss_mean = tf.reduce_mean(loss)$/;"	kind:variable	line:56
+main	../zoobot/examples/convert_to_record.py	/^def main(unused_argv):$/;"	kind:function	line:67
+main	../zoobot/examples/mnist_estimator.py	/^def main(unused_argv):$/;"	kind:function	line:125
+main	../zoobot/examples/spiral_model_estimator.py	/^def main(unused_argv):$/;"	kind:function	line:72
+main	../zoobot/examples/tutorials/estimator_quickstart.py	/^def main():$/;"	kind:function	line:15
+main	../zoobot/legacy/prn/prn_to_tfrecord.py	/^def main():$/;"	kind:function	line:35
+main.py	../zoobot/get_catalogs/gz2/main.py	1;"	kind:file	line:1
+main_estimator	../zoobot/estimators/bayesian_estimator_funcs.py	/^    def main_estimator(self, features, labels, mode):$/;"	kind:member	line:75
+main_test.py	../zoobot/tests/gz2/main_test.py	1;"	kind:file	line:1
+make_catalog.py	../zoobot/legacy/illustris/make_catalog.py	1;"	kind:file	line:1
+make_catalog_test.py	../zoobot/tests/legacy/illustris/make_catalog_test.py	1;"	kind:file	line:1
+make_database_and_shards	../zoobot/active_learning/make_shards.py	/^def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):$/;"	kind:function	line:135
+make_labels_noisy	../zoobot/estimators/input_utils.py	/^def make_labels_noisy(labels):$/;"	kind:function	line:102
+make_predictions	../zoobot/active_learning/iterations.py	/^    def make_predictions(self, shard_locs, initial_size):$/;"	kind:member	line:36
+make_predictions.py	../zoobot/estimators/make_predictions.py	1;"	kind:file	line:1
+make_predictions_on_tfrecord	../zoobot/active_learning/active_learning.py	/^def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_shard_size=10000):$/;"	kind:function	line:146
+make_predictions_test.py	../zoobot/tests/estimators/make_predictions_test.py	1;"	kind:file	line:1
+make_shards.py	../zoobot/active_learning/make_shards.py	1;"	kind:file	line:1
+make_shards_test.py	../zoobot/tests/active_learning/make_shards_test.py	1;"	kind:file	line:1
+make_sprites.py	../zoobot/legacy/embeddings/chollet_128/make_sprites.py	1;"	kind:file	line:1
+make_sprites_test.py	../zoobot/tests/legacy/make_sprites_test.py	1;"	kind:file	line:1
+mask_background	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def mask_background(img):$/;"	kind:function	line:18
+match_galaxies_to_catalog_pandas	../zoobot/shared_utilities.py	/^def match_galaxies_to_catalog_pandas(galaxies, catalog, matching_radius=10 * u.arcsec,$/;"	kind:function	line:110
+match_galaxies_to_catalog_table	../zoobot/shared_utilities.py	/^def match_galaxies_to_catalog_table(galaxies, catalog, matching_radius=10 * u.arcsec,$/;"	kind:function	line:86
+matrix_feature_spec	../zoobot/tfrecord/read_tfrecord.py	/^def matrix_feature_spec(size, channels):  # used for predict mode$/;"	kind:function	line:36
+matrix_id_feature_spec	../zoobot/tfrecord/read_tfrecord.py	/^def matrix_id_feature_spec(size, channels):$/;"	kind:function	line:51
+matrix_label_feature_spec	../zoobot/tfrecord/read_tfrecord.py	/^def matrix_label_feature_spec(size, channels, float_label=True):$/;"	kind:function	line:41
+matrix_label_id_feature_spec	../zoobot/tfrecord/read_tfrecord.py	/^def matrix_label_id_feature_spec(size, channels):$/;"	kind:function	line:58
+max_pool_2x2	../zoobot/examples/tutorials/expert_mnist.py	/^def max_pool_2x2(x):$/;"	kind:function	line:49
+max_sadness	../run_zoobot_on_panoptes.py	/^        max_sadness=4.,$/;"	kind:variable	line:64
+max_zoom	../run_zoobot_on_panoptes.py	/^        max_zoom=1.2,$/;"	kind:variable	line:101
+max_zoom	../run_zoobot_on_panoptes.py	/^        max_zoom=1.2,$/;"	kind:variable	line:81
+metrics.py	../zoobot/active_learning/metrics.py	1;"	kind:file	line:1
+metrics_test.py	../zoobot/tests/active_learning/metrics_test.py	1;"	kind:file	line:1
+min_after_dequeue	../zoobot/examples/spiral_model_main.py	/^    min_after_dequeue=1000)$/;"	kind:variable	line:14
+min_epochs	../run_zoobot_on_panoptes.py	/^        min_epochs=1000,  # don't stop early automatically, wait for me$/;"	kind:variable	line:62
+mnist	../zoobot/examples/tutorials/expert_mnist.py	/^mnist = input_data.read_data_sets('MNIST_data', one_hot=True)$/;"	kind:variable	line:4
+mnist.py	../zoobot/tests/mnist.py	1;"	kind:file	line:1
+mnist_estimator.py	../zoobot/examples/mnist_estimator.py	1;"	kind:file	line:1
+mnist_estimator.py	../zoobot/tests/estimators/mnist_estimator.py	1;"	kind:file	line:1
+mock_acquisition_func	../zoobot/active_learning/execute.py	/^        def mock_acquisition_func(samples):$/;"	kind:function	line:271
+mock_acquisition_func	../zoobot/tests/active_learning/conftest.py	/^    def mock_acquisition_func(samples):$/;"	kind:function	line:113
+mock_get_labels	../zoobot/tests/active_learning/execute_test.py	/^    def mock_get_labels(subject_ids):  $/;"	kind:function	line:49
+mock_get_latest_checkpoint	../zoobot/tests/active_learning/iterations_test.py	/^    def mock_get_latest_checkpoint(base_dir):$/;"	kind:function	line:50
+mock_get_latest_model	../zoobot/tests/active_learning/iterations_test.py	/^    def mock_get_latest_model(self):$/;"	kind:function	line:65
+mock_get_samples_of_subjects	../zoobot/tests/active_learning/conftest.py	/^def mock_get_samples_of_subjects(model, subjects, n_samples):$/;"	kind:function	line:128
+mock_load_predictor	../zoobot/tests/active_learning/execute_test.py	/^    def mock_load_predictor(loc):$/;"	kind:function	line:43
+mock_load_predictor	../zoobot/tests/active_learning/iterations_test.py	/^    def mock_load_predictor(predictor_loc):$/;"	kind:function	line:54
+mock_make_predictions_on_tfrecord	../zoobot/tests/active_learning/iterations_test.py	/^    def mock_make_predictions_on_tfrecord(shard_locs, predictor, initial_size, n_samples):$/;"	kind:function	line:69
+mock_panoptes.py	../zoobot/active_learning/mock_panoptes.py	1;"	kind:file	line:1
+mock_panoptes_test.py	../zoobot/tests/active_learning/mock_panoptes_test.py	1;"	kind:file	line:1
+mock_read_csv	../zoobot/tests/active_learning/mock_panoptes_test.py	/^    def mock_read_csv(oracle_loc, usecols, dtype):$/;"	kind:function	line:10
+model	../run_zoobot_on_panoptes.py	/^    model = bayesian_estimator_funcs.BayesianModel($/;"	kind:variable	line:110
+model	../zoobot/active_learning/check_uncertainty.py	/^        model = make_predictions.load_predictor(predictor_loc)$/;"	kind:variable	line:112
+model	../zoobot/examples/spiral_model_estimator.py	/^def model(features, labels, mode):$/;"	kind:function	line:5
+model	../zoobot/tests/active_learning/metrics_test.py	/^def model(samples):$/;"	kind:function	line:8
+model	../zoobot/tests/estimators/run_estimator_test.py	/^def model(request, size):$/;"	kind:function	line:84
+mutual_info_acquisition_func	../zoobot/active_learning/acquisition_utils.py	/^def mutual_info_acquisition_func(samples):$/;"	kind:function	line:62
+n_draws	../zoobot/tests/estimators/make_predictions_test.py	/^def n_draws():$/;"	kind:function	line:20
+n_draws	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def n_draws():$/;"	kind:function	line:18
+n_examples	../zoobot/tests/conftest.py	/^def n_examples():$/;"	kind:function	line:41
+n_examples	../zoobot/tests/estimators/run_estimator_test.py	/^def n_examples():$/;"	kind:function	line:110
+n_false_examples	../zoobot/examples/dataset_example.py	/^n_false_examples = 120$/;"	kind:variable	line:13
+n_samples	../zoobot/tests/uncertainty/conftest.py	/^def n_samples():$/;"	kind:function	line:16
+n_samples	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def n_samples(request):$/;"	kind:function	line:19
+n_subjects	../zoobot/tests/uncertainty/conftest.py	/^def n_subjects():$/;"	kind:function	line:11
+n_subjects	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def n_subjects():$/;"	kind:function	line:14
+n_true_examples	../zoobot/examples/dataset_example.py	/^n_true_examples = 40$/;"	kind:variable	line:12
+name	../run_zoobot_on_panoptes.py	/^        name='eval',$/;"	kind:variable	line:91
+name	../run_zoobot_on_panoptes.py	/^        name='train',$/;"	kind:variable	line:71
+name	../setup.py	/^    name="zoobot",$/;"	kind:variable	line:7
+name	../zoobot/active_learning/analysis.py	/^    name = '{}init_{}per'.format(initial, per_iter)$/;"	kind:variable	line:269
+new_fits_dir	../zoobot/active_learning/create_panoptes_only_files.py	/^    new_fits_dir = args.new_fits_dir$/;"	kind:variable	line:43
+new_iteration	../zoobot/tests/active_learning/iterations_test.py	/^def new_iteration(tmpdir, initial_estimator_ckpt):$/;"	kind:function	line:16
+new_predictions	../zoobot/active_learning/check_uncertainty.py	/^        new_predictions = False$/;"	kind:variable	line:129
+new_tfrecords	../run_zoobot_on_panoptes.py	/^    new_tfrecords = False$/;"	kind:variable	line:48
+noisy_labels	../run_zoobot_on_panoptes.py	/^        noisy_labels=False$/;"	kind:variable	line:107
+noisy_labels	../run_zoobot_on_panoptes.py	/^        noisy_labels=False$/;"	kind:variable	line:87
+nonlinear_map	../zoobot/tfrecord/image_utils.py	/^def nonlinear_map(x, arcsinh=1.):$/;"	kind:function	line:103
+normalise	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def normalise(img):$/;"	kind:function	line:27
+nrows	../analysis/legacy/get_sloan_galaxies.py	/^    nrows = None$/;"	kind:variable	line:71
+nrows	../gz2_to_tfrecord.py	/^                         nrows=None)$/;"	kind:variable	line:19
+nrows	../zoobot/get_catalogs/gz2/main.py	/^    nrows = None$/;"	kind:variable	line:21
+old_dir_chars	../zoobot/active_learning/create_panoptes_only_files.py	/^    old_dir_chars = len(old_fits_dir)$/;"	kind:variable	line:47
+old_fits_dir	../zoobot/active_learning/create_panoptes_only_files.py	/^    old_fits_dir = args.old_fits_dir$/;"	kind:variable	line:42
+on	../zoobot/legacy/illustris/make_catalog.py	/^        on='id',$/;"	kind:variable	line:94
+optimizer	../run_zoobot_on_panoptes.py	/^        optimizer=tf.train.AdamOptimizer,$/;"	kind:variable	line:112
+optimizer	../zoobot/examples/tutorials/getting_started.py	/^optimizer = tf.train.GradientDescentOptimizer(0.01)$/;"	kind:variable	line:54
+output_loc	../zoobot/get_catalogs/gz2/main.py	/^    output_loc = '{}\/basic_regression_labels_downloaded.csv'.format(catalog_dir)  # includes png_ready etc.$/;"	kind:variable	line:28
+output_loc	../zoobot/tests/gz2/main_test.py	/^def output_loc(tmpdir):$/;"	kind:function	line:51
+overwrite	../zoobot/get_catalogs/gz2/main.py	/^    overwrite = True$/;"	kind:variable	line:22
+packages	../setup.py	/^    packages=setuptools.find_packages(),$/;"	kind:variable	line:15
+padding	../zoobot/examples/spiral_model_main.py	/^    padding="same",$/;"	kind:variable	line:32
+padding	../zoobot/examples/spiral_model_main.py	/^    padding="same",$/;"	kind:variable	line:42
+panoptes_to_tfrecord.py	../panoptes_to_tfrecord.py	1;"	kind:file	line:1
+params	../zoobot/estimators/estimator_params.py	/^    params = default_params()$/;"	kind:variable	line:100
+params	../zoobot/legacy/embeddings/visualise_embedding.py	/^params = {}$/;"	kind:variable	line:27
+params	../zoobot/tests/active_learning/conftest.py	/^    params=[$/;"	kind:variable	line:48
+parse_eval_log_entry	../zoobot/active_learning/analysis.py	/^def parse_eval_log_entry(line):$/;"	kind:function	line:70
+parsed_binary_example	../zoobot/tests/conftest.py	/^def parsed_binary_example(parsed_example):$/;"	kind:function	line:66
+parsed_example	../zoobot/tests/conftest.py	/^def parsed_example(visual_check_image_data):$/;"	kind:function	line:57
+parser	../run_zoobot_on_panoptes.py	/^    parser = argparse.ArgumentParser(description='Run Zoobot on basic panoptes split')$/;"	kind:variable	line:20
+parser	../zoobot/active_learning/analysis.py	/^    parser = argparse.ArgumentParser(description='Analyse active learning')$/;"	kind:variable	line:250
+parser	../zoobot/active_learning/create_panoptes_only_files.py	/^    parser = argparse.ArgumentParser(description='Copy labelled fits')$/;"	kind:variable	line:21
+parser	../zoobot/active_learning/make_shards.py	/^    parser = argparse.ArgumentParser(description='Make shards')$/;"	kind:variable	line:147
+parser	../zoobot/examples/convert_to_record.py	/^    parser = argparse.ArgumentParser()$/;"	kind:variable	line:81
+penalty_if_not_probability	../zoobot/estimators/bayesian_estimator_funcs.py	/^def penalty_if_not_probability(predictions):$/;"	kind:function	line:485
+per_iter	../zoobot/active_learning/analysis.py	/^    per_iter = args.per_iter$/;"	kind:variable	line:267
+photographic_augmentation	../run_zoobot_on_panoptes.py	/^        photographic_augmentation=True,$/;"	kind:variable	line:100
+photographic_augmentation	../run_zoobot_on_panoptes.py	/^        photographic_augmentation=True,$/;"	kind:variable	line:80
+photographic_augmentation	../zoobot/estimators/input_utils.py	/^def photographic_augmentation(images, max_brightness_delta, contrast_range):$/;"	kind:function	line:348
+plot_coverage_df	../zoobot/uncertainty/discrete_coverage.py	/^def plot_coverage_df(df, save_loc):$/;"	kind:function	line:37
+plot_log_metrics	../zoobot/active_learning/analysis.py	/^def plot_log_metrics(metrics_list, save_loc, title=None):$/;"	kind:function	line:134
+png_dir	../zoobot/get_catalogs/gz2/main.py	/^    png_dir = '\/Volumes\/alpha\/gz2\/png'  # will place downloaded png here (5GB or so)$/;"	kind:variable	line:29
+png_dir	../zoobot/tests/gz2/main_test.py	/^def png_dir(tmpdir):$/;"	kind:function	line:46
+png_downloaded_correctly	../zoobot/get_catalogs/gz2/download_gz_from_aws.py	/^def png_downloaded_correctly(png_loc):$/;"	kind:function	line:63
+pool1	../zoobot/examples/spiral_model_main.py	/^pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)$/;"	kind:variable	line:36
+pool2	../zoobot/examples/spiral_model_main.py	/^pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)$/;"	kind:variable	line:44
+pool2_flat	../zoobot/examples/spiral_model_main.py	/^pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])$/;"	kind:variable	line:46
+predict_dropout	../run_zoobot_on_panoptes.py	/^        predict_dropout=0.5,  # change this to calibrate$/;"	kind:variable	line:121
+predict_fn	../analysis/predictor.py	/^predict_fn = predictor.from_saved_model(export_dir)$/;"	kind:variable	line:49
+predict_input_func	../zoobot/estimators/input_utils.py	/^def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):$/;"	kind:function	line:382
+predictions	../analysis/predictor.py	/^predictions = predict_fn({'examples': galaxies_to_predict})$/;"	kind:variable	line:50
+predictions	../analysis/read_predictions.py	/^        predictions = list(map(lambda x: ast.literal_eval(x.strip())['prediction'], f.readlines()))$/;"	kind:variable	line:13
+predictions	../zoobot/tests/estimators/make_predictions_test.py	/^def predictions():$/;"	kind:function	line:15
+predictions	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def predictions(typical_vote_frac, typical_scatter, n_subjects, n_samples):$/;"	kind:function	line:17
+predictions_loc	../zoobot/update_catalog_fits_loc.py	/^predictions_loc = '\/home\/ubuntu\/root\/zoobot\/data\/panoptes_predictions_selected.csv'$/;"	kind:variable	line:34
+predictive_binomial_entropy	../zoobot/active_learning/acquisition_utils.py	/^def predictive_binomial_entropy(binomial_probs_per_sample):$/;"	kind:function	line:31
+predictor	../zoobot/tests/conftest.py	/^def predictor():$/;"	kind:function	line:281
+predictor.py	../analysis/predictor.py	1;"	kind:file	line:1
+predictor_loc	../zoobot/active_learning/check_uncertainty.py	/^        predictor_loc = os.path.join('\/data\/repos\/zoobot\/results', predictor_name)$/;"	kind:variable	line:109
+predictor_model_loc	../zoobot/tests/conftest.py	/^def predictor_model_loc():$/;"	kind:function	line:276
+predictor_names	../zoobot/active_learning/check_uncertainty.py	/^    predictor_names = ['five_conv_fractions']$/;"	kind:variable	line:103
+prepare_run_folders	../zoobot/active_learning/execute.py	/^    def prepare_run_folders(self):$/;"	kind:member	line:81
+prepare_shards	../zoobot/active_learning/make_shards.py	/^    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction=0.1):$/;"	kind:member	line:66
+preprocess_batch	../zoobot/estimators/input_utils.py	/^def preprocess_batch(batch_images, config):$/;"	kind:function	line:185
+preprocess_img	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def preprocess_img(img):$/;"	kind:function	line:31
+prn_to_tfrecord.py	../zoobot/legacy/prn/prn_to_tfrecord.py	1;"	kind:file	line:1
+published_data	../zoobot/tests/gz2/get_classifications_test.py	/^def published_data(example_classification_data):$/;"	kind:function	line:66
+published_data_loc	../zoobot/get_catalogs/gz2/main.py	/^    published_data_loc = '{}\/gz2_hart16.csv'.format(catalog_dir)  # volunteer labels$/;"	kind:variable	line:25
+published_data_loc	../zoobot/tests/gz2/get_classifications_test.py	/^def published_data_loc(tmpdir):$/;"	kind:function	line:10
+queue_example.py	../zoobot/examples/queue_example.py	1;"	kind:file	line:1
+random_crop_random_size	../zoobot/estimators/input_utils.py	/^def random_crop_random_size(im, max_zoom):$/;"	kind:function	line:342
+random_features	../zoobot/tests/conftest.py	/^def random_features(n_examples, size, channels):$/;"	kind:function	line:46
+random_labels	../zoobot/tests/conftest.py	/^def random_labels(n_examples):$/;"	kind:function	line:52
+random_rotation	../zoobot/estimators/input_utils.py	/^def random_rotation(im):$/;"	kind:function	line:334
+read_catalog_from_dir	../zoobot/legacy/illustris/make_catalog.py	/^def read_catalog_from_dir(dir, name):$/;"	kind:function	line:20
+read_predictions.py	../analysis/read_predictions.py	1;"	kind:file	line:1
+read_tfrecord.py	../zoobot/tfrecord/read_tfrecord.py	1;"	kind:file	line:1
+read_tfrecord_test.py	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	1;"	kind:file	line:1
+ready	../zoobot/active_learning/execute.py	/^    def ready(self):$/;"	kind:member	line:102
+ready	../zoobot/active_learning/make_shards.py	/^    def ready(self):$/;"	kind:member	line:108
+regression	../run_zoobot_on_panoptes.py	/^        regression=True,  # important!$/;"	kind:variable	line:122
+regression	../run_zoobot_on_panoptes.py	/^        regression=True,$/;"	kind:variable	line:78
+regression	../run_zoobot_on_panoptes.py	/^        regression=True,$/;"	kind:variable	line:98
+remove_known_galaxies_from_random_sample	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def remove_known_galaxies_from_random_sample(df):$/;"	kind:function	line:71
+repeat	../run_zoobot_on_panoptes.py	/^        repeat=False,$/;"	kind:variable	line:96
+repeat	../run_zoobot_on_panoptes.py	/^        repeat=True,$/;"	kind:variable	line:76
+repo	../zoobot/active_learning/make_shards.py	/^    repo = git.Repo(search_parent_directories=True)$/;"	kind:variable	line:191
+restart_estimator	../zoobot/estimators/warm_start.py	/^def restart_estimator(config):$/;"	kind:function	line:9
+result	../zoobot/examples/dataset_example.py	/^result = dataset.make_one_shot_iterator().get_next()$/;"	kind:variable	line:27
+results	../zoobot/active_learning/check_uncertainty.py	/^            results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=100)$/;"	kind:variable	line:131
+results	../zoobot/active_learning/check_uncertainty.py	/^            results = np.loadtxt(results_loc)$/;"	kind:variable	line:135
+results_loc	../zoobot/active_learning/check_uncertainty.py	/^        results_loc = os.path.join(save_dir, 'results.txt')$/;"	kind:variable	line:127
+row_to_serialized_example	../zoobot/tfrecord/catalog_to_tfrecord.py	/^def row_to_serialized_example(row, img_size, columns_to_save, source, load_fits_as_pil):$/;"	kind:function	line:78
+run	../zoobot/active_learning/execute.py	/^    def run(self, train_callable, acquisition_func):$/;"	kind:member	line:115
+run_active_learning_test.py	../zoobot/tests/active_learning/run_active_learning_test.py	1;"	kind:file	line:1
+run_config	../run_zoobot_on_panoptes.py	/^    run_config = run_estimator.RunEstimatorConfig($/;"	kind:variable	line:53
+run_config	../zoobot/tests/estimators/run_estimator_test.py	/^def run_config(size, log_dir):$/;"	kind:function	line:96
+run_estimator	../zoobot/estimators/run_estimator.py	/^def run_estimator(config):$/;"	kind:function	line:88
+run_estimator.py	../zoobot/estimators/run_estimator.py	1;"	kind:file	line:1
+run_estimator_test.py	../zoobot/tests/estimators/run_estimator_test.py	1;"	kind:file	line:1
+run_name	../run_zoobot_on_panoptes.py	/^    run_name = 'nonnoisy_labels_bin_loss'$/;"	kind:variable	line:40
+run_zoobot_on_panoptes.py	../run_zoobot_on_panoptes.py	1;"	kind:file	line:1
+sample_statistics.py	../zoobot/uncertainty/sample_statistics.py	1;"	kind:file	line:1
+sample_statistics_test.py	../zoobot/tests/uncertainty/sample_statistics_test.py	1;"	kind:file	line:1
+sample_variance	../zoobot/active_learning/acquisition_utils.py	/^def sample_variance(samples):$/;"	kind:function	line:71
+samples	../zoobot/tests/active_learning/conftest.py	/^def samples(subjects):$/;"	kind:function	line:143
+samples	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def samples(samples_mean, samples_scale):$/;"	kind:function	line:24
+samples_mean	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def samples_mean():$/;"	kind:function	line:9
+samples_scale	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def samples_scale():$/;"	kind:function	line:14
+samples_to_interval	../zoobot/uncertainty/sample_statistics.py	/^def samples_to_interval(samples, alpha=0.05):$/;"	kind:function	line:19
+samples_to_posterior	../zoobot/uncertainty/sample_statistics.py	/^def samples_to_posterior(samples):$/;"	kind:function	line:11
+save_acquisition_examples	../zoobot/active_learning/acquisition_utils.py	/^def save_acquisition_examples(subjects, acq_values, acq_string, save_dir):$/;"	kind:function	line:85
+save_acquisition_to_db	../zoobot/active_learning/active_learning.py	/^def save_acquisition_to_db(subject_id, acquisition, db): $/;"	kind:function	line:181
+save_dir	../zoobot/active_learning/check_uncertainty.py	/^        save_dir = 'analysis\/uncertainty\/al-binomial\/{}'.format(predictor_name)$/;"	kind:variable	line:123
+save_freq	../run_zoobot_on_panoptes.py	/^        save_freq=25$/;"	kind:variable	line:67
+save_labels_as_metadata	../zoobot/legacy/embeddings/visualise_embedding.py	/^def save_labels_as_metadata(labels, save_loc):$/;"	kind:function	line:43
+save_metrics	../zoobot/active_learning/check_uncertainty.py	/^def save_metrics(results, subjects, labels, save_dir):$/;"	kind:function	line:53
+save_metrics	../zoobot/active_learning/iterations.py	/^    def save_metrics(self, samples, subjects):$/;"	kind:member	line:50
+save_model	../zoobot/estimators/run_estimator.py	/^def save_model(estimator, config, epoch_n, serving_input_receiver_fn):$/;"	kind:function	line:287
+save_model	../zoobot/estimators/warm_start.py	/^def save_model(estimator, config, epoch_n, serving_input_receiver_fn):$/;"	kind:function	line:40
+save_panoptes_to_tfrecord	../panoptes_to_tfrecord.py	/^def save_panoptes_to_tfrecord(catalog_loc, tfrecord_dir):$/;"	kind:function	line:9
+saver	../zoobot/legacy/embeddings/visualise_embedding.py	/^    saver = tf.train.Saver($/;"	kind:variable	line:105
+saver	../zoobot/legacy/embeddings/visualise_embedding.py	/^saver = tf.train.import_meta_graph(graph_to_import)$/;"	kind:variable	line:17
+serialise_row	../analysis/predictor.py	/^def serialise_row(row):$/;"	kind:function	line:35
+serialize_image_example	../zoobot/tfrecord/create_tfrecord.py	/^def serialize_image_example(matrix, **extra_kwargs):$/;"	kind:function	line:7
+serialized_matrix_id_example	../zoobot/tests/conftest.py	/^def serialized_matrix_id_example(size, channels, unique_id):$/;"	kind:function	line:156
+serialized_matrix_label_example	../zoobot/tests/conftest.py	/^def serialized_matrix_label_example(size, channels):$/;"	kind:function	line:148
+serialized_matrix_label_id_example	../zoobot/tests/conftest.py	/^def serialized_matrix_label_id_example(size, channels, unique_id):$/;"	kind:function	line:164
+serving_input_receiver_fn_image	../zoobot/estimators/run_estimator.py	/^    def serving_input_receiver_fn_image():$/;"	kind:function	line:175
+serving_input_receiver_fn_image	../zoobot/estimators/warm_start.py	/^    def serving_input_receiver_fn_image():$/;"	kind:function	line:11
+sess	../zoobot/examples/spiral_model_main.py	/^sess = tf.Session()$/;"	kind:variable	line:16
+sess	../zoobot/examples/spiral_model_main.py	/^sess = tf.Session()$/;"	kind:variable	line:60
+sess	../zoobot/examples/tutorials/getting_started.py	/^sess = tf.Session()$/;"	kind:variable	line:62
+set_stratify_probs_from_csv	../zoobot/estimators/input_utils.py	/^    def set_stratify_probs_from_csv(self, csv_loc):$/;"	kind:member	line:67
+settings.py	../zoobot/settings.py	1;"	kind:file	line:1
+setup.py	../setup.py	1;"	kind:file	line:1
+sha	../zoobot/active_learning/make_shards.py	/^    sha = repo.head.object.hexsha$/;"	kind:variable	line:192
+shard_config	../zoobot/active_learning/make_shards.py	/^    shard_config = ShardConfig(shard_dir=args.shard_dir)  $/;"	kind:variable	line:182
+shard_config	../zoobot/tests/active_learning/conftest.py	/^def shard_config(tmpdir, size, channels):$/;"	kind:function	line:30
+shard_config	../zoobot/tests/estimators/mnist_estimator.py	/^    shard_config = make_shards.ShardConfig(base_dir=base_dir) $/;"	kind:variable	line:25
+shard_config_ready	../zoobot/tests/active_learning/conftest.py	/^def shard_config_ready(shard_config, labelled_catalog, unlabelled_catalog):$/;"	kind:function	line:40
+shard_locs	../zoobot/tests/conftest.py	/^def shard_locs(tfrecord_dir, size, channels):  # write shards dynamically when called$/;"	kind:function	line:193
+shared_utilities.py	../zoobot/shared_utilities.py	1;"	kind:file	line:1
+show_acquisition_vs_label	../zoobot/active_learning/metrics.py	/^    def show_acquisition_vs_label(self, save_dir):$/;"	kind:member	line:121
+show_acquisitions_vs_predictions	../zoobot/active_learning/metrics.py	/^    def show_acquisitions_vs_predictions(self, save_dir):$/;"	kind:member	line:42
+show_coverage	../zoobot/active_learning/metrics.py	/^    def show_coverage(self, save_dir):$/;"	kind:member	line:146
+show_example	../zoobot/tfrecord/read_tfrecord.py	/^def show_example(example, size, channels, ax, show_label=False):  # modifies ax inplace$/;"	kind:function	line:87
+show_examples	../zoobot/tfrecord/read_tfrecord.py	/^def show_examples(examples, size, channels):$/;"	kind:function	line:77
+show_subjects_by_iteration	../zoobot/active_learning/analysis.py	/^def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, save_loc):$/;"	kind:function	line:23
+shuffle	../run_zoobot_on_panoptes.py	/^        shuffle=True,$/;"	kind:variable	line:75
+shuffle	../run_zoobot_on_panoptes.py	/^        shuffle=True,$/;"	kind:variable	line:95
+simple_shuffle_batch	../zoobot/examples/queue_example.py	/^def simple_shuffle_batch(source, capacity, batch_size=10):$/;"	kind:function	line:4
+single_label	../zoobot/tests/estimators/binomial_loss_test.py	/^def single_label():$/;"	kind:function	line:21
+single_prediction	../zoobot/tests/estimators/binomial_loss_test.py	/^def single_prediction():$/;"	kind:function	line:26
+size	../zoobot/active_learning/check_uncertainty.py	/^        size = 128$/;"	kind:variable	line:114
+size	../zoobot/tests/conftest.py	/^def size():$/;"	kind:function	line:18
+smooth_loss	../zoobot/active_learning/analysis.py	/^def smooth_loss(metrics_list):$/;"	kind:function	line:111
+softmax	../zoobot/legacy/embeddings/visualise_embedding.py	/^softmax = graph.get_tensor_by_name('softmax_tensor:0')$/;"	kind:variable	line:25
+softmax_values	../zoobot/legacy/embeddings/visualise_embedding.py	/^softmax_values = np.loadtxt('{}\/temp_softmax_values.txt'.format(log_dir))$/;"	kind:variable	line:92
+softmax_variable	../zoobot/legacy/embeddings/visualise_embedding.py	/^softmax_variable = tf.Variable(initial_value=softmax_values, dtype=tf.float32, name='softmax')$/;"	kind:variable	line:93
+sort_images_by_labels	../zoobot/legacy/embeddings/chollet_128/make_sprites.py	/^def sort_images_by_labels(images, labels):$/;"	kind:function	line:42
+spiral_model_estimator.py	../zoobot/examples/spiral_model_estimator.py	1;"	kind:file	line:1
+spiral_model_main.py	../zoobot/examples/spiral_model_main.py	1;"	kind:file	line:1
+split_by_iter	../zoobot/active_learning/analysis.py	/^def split_by_iter(df):$/;"	kind:function	line:234
+split_carefully	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^def split_carefully(df, label_col, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):$/;"	kind:function	line:40
+split_json_str_to_columns	../zoobot/shared_utilities.py	/^def split_json_str_to_columns(input_df, json_column_name):$/;"	kind:function	line:233
+sprite	../zoobot/legacy/embeddings/visualise_embedding.py	/^    sprite = images_to_sprite(features['x'], labels)$/;"	kind:variable	line:86
+square_images	../zoobot/examples/spiral_model_main.py	/^square_images = images.reshape([-1, 28, 28, 3])$/;"	kind:variable	line:22
+str_to_feature	../zoobot/tfrecord/create_tfrecord.py	/^def str_to_feature(str_to_save):$/;"	kind:function	line:77
+stratified_data	../zoobot/tests/conftest.py	/^def stratified_data(true_image_values, false_image_values, size, channels):$/;"	kind:function	line:124
+stratified_tfrecord_locs	../zoobot/tests/conftest.py	/^def stratified_tfrecord_locs(tfrecord_dir, stratified_data):$/;"	kind:function	line:173
+stratify	../run_zoobot_on_panoptes.py	/^        stratify=False,$/;"	kind:variable	line:74
+stratify	../run_zoobot_on_panoptes.py	/^        stratify=False,$/;"	kind:variable	line:94
+stratify_images	../zoobot/estimators/input_utils.py	/^def stratify_images(image, label, batch_size, init_probs):$/;"	kind:function	line:207
+stratify_probs	../run_zoobot_on_panoptes.py	/^        stratify_probs=None,$/;"	kind:variable	line:77
+stratify_probs	../run_zoobot_on_panoptes.py	/^        stratify_probs=None,$/;"	kind:variable	line:97
+subject	../zoobot/tests/legacy/illustris/conftest.py	/^def subject(fits_loc):$/;"	kind:function	line:61
+subject_manifest	../zoobot/get_catalogs/gz2/main.py	/^    subject_manifest = pd.read_csv(subject_manifest_loc, nrows=nrows)$/;"	kind:variable	line:34
+subject_manifest	../zoobot/tests/gz2/main_test.py	/^def subject_manifest():$/;"	kind:function	line:29
+subject_manifest_loc	../analysis/legacy/get_sloan_galaxies.py	/^    subject_manifest_loc = '{}\/{}_subjects.csv'.format(catalog_dir, survey_tag)$/;"	kind:variable	line:76
+subject_manifest_loc	../zoobot/get_catalogs/gz2/main.py	/^    subject_manifest_loc = '{}\/galaxyzoo2_sandor.csv'.format(catalog_dir)  # subjects on AWS$/;"	kind:variable	line:26
+subjects	../zoobot/tests/active_learning/conftest.py	/^def subjects(size):$/;"	kind:function	line:124
+survey_tag	../analysis/legacy/get_sloan_galaxies.py	/^    survey_tag = 'sloan'$/;"	kind:variable	line:72
+target_dir	../zoobot/active_learning/create_panoptes_only_files.py	/^        target_dir = os.path.dirname(row['fits_loc'])$/;"	kind:variable	line:57
+target_dir	../zoobot/update_catalog_fits_loc.py	/^target_dir = '\/home\/ubuntu\/root\/zoobot\/data\/fits_native'$/;"	kind:variable	line:43
+test_add_labelled_subjects_to_tfrecord	../zoobot/tests/active_learning/active_learning_test.py	/^def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):$/;"	kind:function	line:367
+test_add_labels_to_db	../zoobot/tests/active_learning/active_learning_test.py	/^def test_add_labels_to_db(filled_shard_db):$/;"	kind:function	line:378
+test_add_tfrecord_to_db	../zoobot/tests/active_learning/active_learning_test.py	/^def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog):  # bad loc$/;"	kind:function	line:289
+test_all_augmentations_on_batch	../zoobot/tests/estimators/input_utils_test.py	/^def test_all_augmentations_on_batch(batch_of_visual_check_image):$/;"	kind:function	line:89
+test_binomial_entropy	../zoobot/tests/estimators/make_predictions_test.py	/^def test_binomial_entropy():$/;"	kind:function	line:88
+test_binomial_entropy_vectorized	../zoobot/tests/estimators/make_predictions_test.py	/^def test_binomial_entropy_vectorized():$/;"	kind:function	line:95
+test_binomial_loss_1D	../zoobot/tests/estimators/binomial_loss_test.py	/^def test_binomial_loss_1D(single_label, single_prediction):$/;"	kind:function	line:30
+test_binomial_loss_1D_plot	../zoobot/tests/estimators/binomial_loss_test.py	/^def test_binomial_loss_1D_plot():$/;"	kind:function	line:38
+test_binomial_prob_per_k	../zoobot/tests/estimators/make_predictions_test.py	/^def test_binomial_prob_per_k(n_draws):$/;"	kind:function	line:45
+test_check_coverage_fractions	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def test_check_coverage_fractions(predictions, true_params):$/;"	kind:function	line:33
+test_coverage_fraction	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def test_coverage_fraction(predictions, true_params):$/;"	kind:function	line:26
+test_dir	../zoobot/tests/active_learning/active_learning_test.py	/^def test_dir(tmpdir):$/;"	kind:function	line:47
+test_eval	../zoobot/tests/estimators/dummy_estimator_test.py	/^def test_eval(estimator, features, labels, batch_size):$/;"	kind:function	line:94
+test_eval	../zoobot/tests/estimators/dummy_image_estimator_test.py	/^def test_eval(estimator, train_input_fn, random_features, random_labels, batch_size):$/;"	kind:function	line:33
+test_evaluate_discrete_coverage	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):$/;"	kind:function	line:43
+test_expected_binomial_entropy	../zoobot/tests/estimators/make_predictions_test.py	/^def test_expected_binomial_entropy(bin_probs):$/;"	kind:function	line:60
+test_geometric_augmentations_on_image	../zoobot/tests/estimators/input_utils_test.py	/^def test_geometric_augmentations_on_image(visual_check_image):$/;"	kind:function	line:24
+test_get_all_shard_locs	../zoobot/tests/active_learning/active_learning_test.py	/^def test_get_all_shard_locs(filled_shard_db):$/;"	kind:function	line:407
+test_get_classification_results	../zoobot/tests/gz2/get_classifications_test.py	/^def test_get_classification_results(published_data, published_data_loc):$/;"	kind:function	line:84
+test_get_labels	../zoobot/tests/active_learning/mock_panoptes_test.py	/^def test_get_labels(monkeypatch):$/;"	kind:function	line:8
+test_get_labels_and_images	../zoobot/tests/gz2/main_test.py	/^def test_get_labels_and_images(classifications, subject_manifest, png_dir, output_loc):$/;"	kind:function	line:55
+test_get_latest_checkpoint_dir	../zoobot/tests/active_learning/active_learning_test.py	/^def test_get_latest_checkpoint_dir(estimators_dir):$/;"	kind:function	line:410
+test_get_latest_model	../zoobot/tests/active_learning/iterations_test.py	/^def test_get_latest_model(monkeypatch, new_iteration):$/;"	kind:function	line:49
+test_get_metrics_from_log	../zoobot/tests/active_learning/analysis_test.py	/^def test_get_metrics_from_log(log_loc):$/;"	kind:function	line:56
+test_get_samples_of_subjects	../zoobot/tests/estimators/make_predictions_test.py	/^def test_get_samples_of_subjects(predictor, parsed_example):$/;"	kind:function	line:37
+test_get_top_acquisitions	../zoobot/tests/active_learning/active_learning_test.py	/^def test_get_top_acquisitions(filled_shard_db):$/;"	kind:function	line:362
+test_get_top_acquisitions_any_shard	../zoobot/tests/active_learning/active_learning_test.py	/^def test_get_top_acquisitions_any_shard(filled_shard_db):$/;"	kind:function	line:357
+test_init	../zoobot/tests/active_learning/iterations_test.py	/^def test_init(tmpdir, initial_estimator_ckpt):$/;"	kind:function	line:27
+test_is_eval_log_entry	../zoobot/tests/active_learning/analysis_test.py	/^def test_is_eval_log_entry(eval_log_entry):$/;"	kind:function	line:46
+test_is_iteration_split_entry	../zoobot/tests/active_learning/analysis_test.py	/^def test_is_iteration_split_entry(iteration_split_entry):$/;"	kind:function	line:42
+test_load_examples_from_tfrecord	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_load_examples_from_tfrecord(tfrecord_matrix_float_loc, size, channels):$/;"	kind:function	line:27
+test_load_examples_from_tfrecord_all	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_load_examples_from_tfrecord_all(tfrecord_matrix_float_loc, size, channels):$/;"	kind:function	line:41
+test_load_predictor	../zoobot/tests/estimators/make_predictions_test.py	/^def test_load_predictor(predictor_model_loc):$/;"	kind:function	line:32
+test_loc	../gz2_to_tfrecord.py	/^        test_loc = 'data\/gz2_spiral_{}_test.tfrecord'.format(size)$/;"	kind:variable	line:22
+test_loc	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        test_loc = 'tfrecord\/illustris_no-minor_s{}_rescaled_test.tfrecord'.format(img_size)$/;"	kind:variable	line:112
+test_make_database_and_shards	../zoobot/tests/active_learning/make_shards_test.py	/^def test_make_database_and_shards(catalog, db_loc, size, channels, tfrecord_dir):$/;"	kind:function	line:27
+test_make_predictions	../zoobot/tests/active_learning/iterations_test.py	/^def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):$/;"	kind:function	line:64
+test_make_predictions_on_tfrecord	../zoobot/tests/active_learning/active_learning_test.py	/^def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size):$/;"	kind:function	line:316
+test_matrix_label_feature_spec	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_matrix_label_feature_spec(size, channels, serialized_matrix_label_example):$/;"	kind:function	line:14
+test_matrix_label_id_feature_spec	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_matrix_label_id_feature_spec(size, channels, serialized_matrix_id_example):$/;"	kind:function	line:20
+test_model_init	../zoobot/tests/active_learning/metrics_test.py	/^def test_model_init(samples):$/;"	kind:function	line:12
+test_mutual_info_acquisition_func	../zoobot/tests/estimators/make_predictions_test.py	/^def test_mutual_info_acquisition_func(monkeypatch):$/;"	kind:function	line:109
+test_parse_eval_log_entry	../zoobot/tests/active_learning/analysis_test.py	/^def test_parse_eval_log_entry(eval_log_entry):$/;"	kind:function	line:50
+test_photometric_augmentations_on_image	../zoobot/tests/estimators/input_utils_test.py	/^def test_photometric_augmentations_on_image(visual_check_image):$/;"	kind:function	line:42
+test_predict	../zoobot/tests/estimators/dummy_estimator_test.py	/^def test_predict(estimator, features, labels, batch_size):$/;"	kind:function	line:87
+test_predict	../zoobot/tests/estimators/dummy_image_estimator_test.py	/^def test_predict(estimator, train_input_fn, eval_input_fn, random_features, random_labels, batch_size):$/;"	kind:function	line:27
+test_predict_input_func_subbatch_no_labels	../zoobot/tests/estimators/input_utils_test.py	/^def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):$/;"	kind:function	line:150
+test_predict_input_func_subbatch_with_labels	../zoobot/tests/estimators/input_utils_test.py	/^def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_float_loc, size):$/;"	kind:function	line:127
+test_predict_input_func_with_id	../zoobot/tests/estimators/input_utils_test.py	/^def test_predict_input_func_with_id(shard_locs, size):$/;"	kind:function	line:140
+test_predictive_and_expected_entropy_functional	../zoobot/tests/estimators/make_predictions_test.py	/^def test_predictive_and_expected_entropy_functional():$/;"	kind:function	line:66
+test_predictive_binomial_entropy	../zoobot/tests/estimators/make_predictions_test.py	/^def test_predictive_binomial_entropy(bin_probs):$/;"	kind:function	line:53
+test_prepare_run_folders	../zoobot/tests/active_learning/execute_test.py	/^def test_prepare_run_folders(active_config):$/;"	kind:function	line:15
+test_prepare_shards	../zoobot/tests/active_learning/make_shards_test.py	/^def test_prepare_shards(shard_config, labelled_catalog, unlabelled_catalog):$/;"	kind:function	line:13
+test_record_acquisitions_on_predictions	../zoobot/tests/active_learning/active_learning_test.py	/^def test_record_acquisitions_on_predictions(subjects, samples, filled_shard_db, acquisition_func):$/;"	kind:function	line:335
+test_repeated_geometric_augmentations_on_image	../zoobot/tests/estimators/input_utils_test.py	/^def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image):$/;"	kind:function	line:61
+test_repeated_photometric_augmentations_on_image	../zoobot/tests/estimators/input_utils_test.py	/^def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image):$/;"	kind:function	line:75
+test_run	../zoobot/tests/active_learning/execute_test.py	/^def test_run(active_config, tmpdir, monkeypatch, catalog_random_images, tfrecord_dir, acquisition_func):$/;"	kind:function	line:33
+test_run_experiment	../zoobot/tests/estimators/run_estimator_test.py	/^def test_run_experiment($/;"	kind:function	line:143
+test_samples_to_interval	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def test_samples_to_interval(samples, samples_mean, samples_scale):$/;"	kind:function	line:36
+test_samples_to_posterior	../zoobot/tests/uncertainty/sample_statistics_test.py	/^def test_samples_to_posterior(samples, samples_mean, samples_scale):$/;"	kind:function	line:28
+test_save_acquisition_to_db	../zoobot/tests/active_learning/active_learning_test.py	/^def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):$/;"	kind:function	line:303
+test_serialize_image_example	../zoobot/tests/tfrecord_io/create_tfrecord_test.py	/^def test_serialize_image_example(visual_check_image_data, size, channels):$/;"	kind:function	line:24
+test_serialize_image_example_extra_data	../zoobot/tests/tfrecord_io/create_tfrecord_test.py	/^def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_feature_spec):$/;"	kind:function	line:37
+test_show_acquisitions_vs_predictions	../zoobot/tests/active_learning/metrics_test.py	/^def test_show_acquisitions_vs_predictions(model):$/;"	kind:function	line:18
+test_show_example	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_show_example(parsed_example, size, channels):$/;"	kind:function	line:55
+test_show_examples	../zoobot/tests/tfrecord_io/read_tfrecord_test.py	/^def test_show_examples(parsed_example, size, channels):$/;"	kind:function	line:61
+test_show_subjects_by_iteration	../zoobot/tests/active_learning/analysis_test.py	/^def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):$/;"	kind:function	line:21
+test_tfrecord_loc	../run_zoobot_on_panoptes.py	/^        test_tfrecord_loc = '\/data\/repos\/zoobot\/data\/basic_split\/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)$/;"	kind:variable	line:36
+test_tfrecord_loc	../run_zoobot_on_panoptes.py	/^        test_tfrecord_loc = '\/home\/ubuntu\/root\/zoobot\/data\/basic_split\/panoptes_featured_s{}_lfloat_test.tfrecord'.format(initial_size)$/;"	kind:variable	line:33
+test_training	../zoobot/tests/estimators/dummy_estimator_test.py	/^def test_training(estimator, features, labels, batch_size):$/;"	kind:function	line:79
+test_training	../zoobot/tests/estimators/dummy_image_estimator_test.py	/^def test_training(estimator, train_input_fn, random_features, random_labels, batch_size):$/;"	kind:function	line:19
+test_visualise_calibration	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def test_visualise_calibration():$/;"	kind:function	line:40
+test_visualise_calibration_meaningful	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def test_visualise_calibration_meaningful(predictions, true_params):$/;"	kind:function	line:47
+test_write_and_load	../zoobot/tests/active_learning/make_shards_test.py	/^def test_write_and_load(shard_config, tmpdir):$/;"	kind:function	line:19
+test_write_catalog_to_tfrecord_shards	../zoobot/tests/active_learning/active_learning_test.py	/^def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, columns_to_save, tfrecord_dir):$/;"	kind:function	line:211
+test_write_catalog_to_train_test_records	../zoobot/tests/tfrecord_io/catalog_to_tfrecord_test.py	/^def test_write_catalog_to_train_test_records(catalog, tfrecord_dir, label_col, size, columns_to_save):$/;"	kind:function	line:10
+test_write_image_df_to_tfrecord	../zoobot/tests/tfrecord_io/catalog_to_tfrecord_test.py	/^def test_write_image_df_to_tfrecord(tfrecord_dir, size, channels):$/;"	kind:function	line:19
+tf_version_check.py	../analysis/tf_version_check.py	1;"	kind:file	line:1
+tfrecord_dir	../zoobot/tests/conftest.py	/^def tfrecord_dir(tmpdir):$/;"	kind:function	line:143
+tfrecord_dir	../zoobot/tests/estimators/run_estimator_test.py	/^def tfrecord_dir(tmpdir):$/;"	kind:function	line:42
+tfrecord_index_loc	../zoobot/tests/active_learning/analysis_test.py	/^def tfrecord_index_loc(tfrecord_dir, tfrecord_matrix_float_loc):$/;"	kind:function	line:15
+tfrecord_io.py	../zoobot/tfrecord/tfrecord_io.py	1;"	kind:file	line:1
+tfrecord_loc	../run_zoobot_on_panoptes.py	/^        tfrecord_loc=test_tfrecord_loc,$/;"	kind:variable	line:92
+tfrecord_loc	../run_zoobot_on_panoptes.py	/^        tfrecord_loc=train_tfrecord_loc,$/;"	kind:variable	line:72
+tfrecord_loc	../zoobot/active_learning/check_uncertainty.py	/^        tfrecord_loc = '\/data\/repos\/zoobot\/data\/basic_split\/panoptes_featured_s128_lfloat_test.tfrecord'$/;"	kind:variable	line:118
+tfrecord_matrix_float_loc	../zoobot/tests/conftest.py	/^def tfrecord_matrix_float_loc(tfrecord_dir, size, channels):  # write shards dynamically when called$/;"	kind:function	line:238
+tfrecord_matrix_id_loc	../zoobot/tests/conftest.py	/^def tfrecord_matrix_id_loc(tfrecord_dir, size, channels):  # write shards dynamically when called$/;"	kind:function	line:257
+tfrecord_matrix_loc	../zoobot/tests/conftest.py	/^def tfrecord_matrix_loc(tfrecord_dir, size, channels):  # write shards dynamically when called$/;"	kind:function	line:221
+tfrecord_test_loc	../zoobot/tests/estimators/run_estimator_test.py	/^def tfrecord_test_loc(tfrecord_dir):$/;"	kind:function	line:57
+tfrecord_train_loc	../zoobot/tests/estimators/run_estimator_test.py	/^def tfrecord_train_loc(tfrecord_dir):$/;"	kind:function	line:52
+three_layer_cnn	../zoobot/estimators/estimator_funcs.py	/^def three_layer_cnn(features, labels, mode, params):$/;"	kind:function	line:173
+title	../zoobot/active_learning/analysis.py	/^    title = 'Initial: {}. Per iter: {}. From scratch.'.format(initial, per_iter)$/;"	kind:variable	line:268
+to_dict	../zoobot/active_learning/make_shards.py	/^    def to_dict(self):$/;"	kind:member	line:119
+train	../zoobot/examples/tutorials/getting_started.py	/^train = optimizer.minimize(loss)$/;"	kind:variable	line:55
+train_callable	../zoobot/active_learning/execute.py	/^    def train_callable(log_dir, train_records):$/;"	kind:function	line:264
+train_callable	../zoobot/tests/active_learning/execute_test.py	/^    def train_callable(estimators_dir, train_tfrecord_locs):$/;"	kind:function	line:37
+train_config	../run_zoobot_on_panoptes.py	/^    train_config = input_utils.InputConfig($/;"	kind:variable	line:70
+train_input	../zoobot/estimators/run_estimator.py	/^def train_input(input_config):$/;"	kind:function	line:74
+train_input_fn	../zoobot/tests/conftest.py	/^def train_input_fn():$/;"	kind:function	line:77
+train_input_fn	../zoobot/tests/estimators/dummy_estimator_test.py	/^def train_input_fn(features, labels, batch_size):$/;"	kind:function	line:29
+train_loc	../gz2_to_tfrecord.py	/^        train_loc = 'data\/gz2_spiral_{}_train.tfrecord'.format(size)$/;"	kind:variable	line:21
+train_loc	../zoobot/legacy/illustris/illustris_to_tfrecord.py	/^        train_loc = 'tfrecord\/illustris_no-minor_s{}_rescaled_train.tfrecord'.format(img_size)$/;"	kind:variable	line:111
+train_on_illustris	../zoobot/legacy/illustris/learn_mergers.py	/^def train_on_illustris(custom_params):$/;"	kind:function	line:15
+train_op	../zoobot/examples/spiral_model_main.py	/^train_op = tf.train.AdamOptimizer().minimize(loss)$/;"	kind:variable	line:58
+train_step	../zoobot/examples/tutorials/expert_mnist.py	/^train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)$/;"	kind:variable	line:91
+train_steps	../run_zoobot_on_panoptes.py	/^        train_steps=30,$/;"	kind:variable	line:59
+train_test_fraction	../zoobot/active_learning/make_shards.py	/^        train_test_fraction=0.67)$/;"	kind:variable	line:186
+train_tfrecord_loc	../run_zoobot_on_panoptes.py	/^        train_tfrecord_loc = '\/data\/repos\/zoobot\/data\/basic_split\/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)$/;"	kind:variable	line:35
+train_tfrecord_loc	../run_zoobot_on_panoptes.py	/^        train_tfrecord_loc = '\/home\/ubuntu\/root\/zoobot\/data\/basic_split\/panoptes_featured_s{}_lfloat_train.tfrecord'.format(initial_size)$/;"	kind:variable	line:32
+true_image_values	../zoobot/examples/dataset_example.py	/^true_image_values = 3.$/;"	kind:variable	line:9
+true_image_values	../zoobot/tests/conftest.py	/^def true_image_values():$/;"	kind:function	line:113
+true_image_values	../zoobot/tests/estimators/run_estimator_test.py	/^def true_image_values():$/;"	kind:function	line:15
+true_p	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def true_p(n_subjects):$/;"	kind:function	line:22
+true_params	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def true_params(typical_vote_frac, typical_scatter, n_subjects):$/;"	kind:function	line:22
+truth	../analysis/read_predictions.py	/^        truth = list(map(lambda x: float(x.strip()), f.readlines()))$/;"	kind:variable	line:10
+type	../zoobot/examples/convert_to_record.py	/^        type=int,$/;"	kind:variable	line:90
+type	../zoobot/examples/convert_to_record.py	/^        type=str,$/;"	kind:variable	line:84
+typical_scatter	../zoobot/tests/uncertainty/dropout_calibration_test.py	/^def typical_scatter():$/;"	kind:function	line:12
+typical_vote_frac	../zoobot/tests/uncertainty/conftest.py	/^def typical_vote_frac():$/;"	kind:function	line:6
+unique_id	../zoobot/tests/conftest.py	/^def unique_id():  # not currently used$/;"	kind:function	line:305
+unknown_subject	../zoobot/tests/active_learning/active_learning_test.py	/^def unknown_subject(size, channels):$/;"	kind:function	line:32
+unlabelled_catalog	../zoobot/active_learning/make_shards.py	/^    unlabelled_catalog = catalog[8960:]  # for new data$/;"	kind:variable	line:178
+unlabelled_catalog	../zoobot/tests/active_learning/conftest.py	/^def unlabelled_catalog(catalog_random_images):$/;"	kind:function	line:23
+unlabelled_catalog	../zoobot/tests/estimators/mnist_estimator.py	/^    unlabelled_catalog = pd.read_csv(os.path.join(TEST_EXAMPLE_DIR, 'mnist_catalog_test.csv'), dtype=dtypes)$/;"	kind:variable	line:23
+update_catalog_fits_loc.py	../zoobot/update_catalog_fits_loc.py	1;"	kind:file	line:1
+usecols	../gz2_to_tfrecord.py	/^                         usecols=columns_to_save + ['png_loc', 'png_ready'],$/;"	kind:variable	line:18
+value_to_feature	../zoobot/tfrecord/create_tfrecord.py	/^def value_to_feature(value):$/;"	kind:function	line:55
+variables_to_import	../zoobot/legacy/embeddings/visualise_embedding.py	/^variables_to_import = '\/data\/repos\/zoobot\/runs\/chollet_128_triple\/'$/;"	kind:variable	line:15
+verify_catalog_matches_shards	../zoobot/tests/active_learning/active_learning_test.py	/^def verify_catalog_matches_shards(catalog, db, size, channels):$/;"	kind:function	line:266
+verify_db_matches_catalog	../zoobot/tests/active_learning/active_learning_test.py	/^def verify_db_matches_catalog(catalog, db):$/;"	kind:function	line:218
+verify_db_matches_shards	../zoobot/tests/active_learning/active_learning_test.py	/^def verify_db_matches_shards(db, size, channels):$/;"	kind:function	line:251
+version	../setup.py	/^    version="0.0.1",$/;"	kind:variable	line:8
+view_samples	../zoobot/estimators/make_predictions.py	/^def view_samples(scores, labels, annotate=False):$/;"	kind:function	line:110
+visual_check_image	../zoobot/tests/conftest.py	/^def visual_check_image(visual_check_image_data):$/;"	kind:function	line:36
+visual_check_image_data	../zoobot/tests/conftest.py	/^def visual_check_image_data(size):$/;"	kind:function	line:28
+visualise_calibration	../zoobot/uncertainty/dropout_calibration.py	/^def visualise_calibration(alpha_eval, coverage_at_alpha, save_loc):$/;"	kind:function	line:12
+visualise_embedding.py	../zoobot/legacy/embeddings/visualise_embedding.py	1;"	kind:file	line:1
+volunteer_votes	../zoobot/tests/uncertainty/discrete_coverage_test.py	/^def volunteer_votes(true_p, n_draws):$/;"	kind:function	line:26
+warm_start.py	../zoobot/estimators/warm_start.py	1;"	kind:file	line:1
+weight_variable	../zoobot/examples/tutorials/expert_mnist.py	/^def weight_variable(shape):$/;"	kind:function	line:32
+write	../zoobot/active_learning/make_shards.py	/^    def write(self):$/;"	kind:member	line:124
+write_catalog_to_tfrecord_shards	../zoobot/active_learning/active_learning.py	/^def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size=1000):$/;"	kind:function	line:94
+write_catalog_to_train_test_tfrecords	../zoobot/tfrecord/catalog_to_tfrecord.py	/^def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, columns_to_save, train_test_fraction=0.8):$/;"	kind:function	line:45
+write_image_df_to_tfrecord	../zoobot/tfrecord/catalog_to_tfrecord.py	/^def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, append=False, source='fits', load_fits_as_pil=load_decals_as_pil):$/;"	kind:function	line:62
+write_train_records_index	../zoobot/active_learning/execute.py	/^    def write_train_records_index(self, train_records):$/;"	kind:member	line:197
+x	../zoobot/examples/tutorials/expert_mnist.py	/^x = tf.placeholder(tf.float32, shape=[None, 784])$/;"	kind:variable	line:8
+x	../zoobot/examples/tutorials/getting_started.py	/^x = tf.placeholder(tf.float32)$/;"	kind:variable	line:46
+x_image	../zoobot/examples/tutorials/expert_mnist.py	/^x_image = tf.reshape(x, [-1, 28, 28, 1])$/;"	kind:variable	line:58
+x_train	../zoobot/examples/tutorials/getting_started.py	/^x_train = [1, 2, 3, 4]$/;"	kind:variable	line:58
+y	../zoobot/examples/tutorials/getting_started.py	/^y = tf.placeholder(tf.float32)$/;"	kind:variable	line:48
+y_	../zoobot/examples/tutorials/expert_mnist.py	/^y_ = tf.placeholder(tf.float32, shape=[None, 10])$/;"	kind:variable	line:9
+y_conv	../zoobot/examples/tutorials/expert_mnist.py	/^y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2$/;"	kind:variable	line:87
+y_train	../zoobot/examples/tutorials/getting_started.py	/^y_train = [0, -1, -2, -3]$/;"	kind:variable	line:59
