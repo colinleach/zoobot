@@ -31,13 +31,14 @@ def shuffle(df):
 def define_labels(catalog, question):
     catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
     if question == 'smooth':
-        catalog['label'] = catalog['smooth-or-featured_smooth_count']
+        # print(catalog.columns.values)
+        catalog['label'] = catalog['smooth-or-featured_smooth']
     elif question == 'bar':
         catalog['total_votes'] = catalog['bar_total-votes']
         try:
-            catalog['label'] = catalog['bar_weak_count']  # DECALS
+            catalog['label'] = catalog['bar_weak']  # DECALS
         except KeyError:
-            catalog['label'] = catalog['bar_yes_count']  # GZ2
+            catalog['label'] = catalog['bar_yes']  # GZ2
     else:
         raise ValueError('question {} not understood'.format(question))
     return catalog

@@ -36,6 +36,7 @@ def tweak_previous_decals_classifications(catalog_loc, save_loc):
     catalog['id_str'] = catalog['subject_id'].astype(str)
     catalog.to_csv(save_loc, index=False)
 
+# TODO decals predictions need to be joined with the joint catalog to work out where the files are. I should think carefully about the best place for this to happen.
 
 def tweak_previous_gz2_classifications(catalog_loc, save_loc):
     usecols = [
@@ -56,18 +57,22 @@ def tweak_previous_gz2_classifications(catalog_loc, save_loc):
     catalog = catalog[catalog['sample'] == 'original']
     # make label and total_votes columns consistent with decals
     catalog = catalog.rename(index=str, columns={
-        't01_smooth_or_features_a01_smooth_count': 'smooth-or-featured_smooth_count',
-        't01_smooth_or_features_a02_features_or_disk_count': 'smooth-or-featured_featured-or-disk_count',
-        't01_smooth_or_features_a03_star_or_artifact_count': 'smooth-or-featured_artifact_count',
-        't03_bar_a06_bar_count': 'bar_yes_count',  # note that these won't match because DECALS uses strong/weak/none
-        't03_bar_a07_no_bar_count': 'bar_no_count'  # while GZ2 used yes/no
+        't01_smooth_or_features_a01_smooth_count': 'smooth-or-featured_smooth',
+        't01_smooth_or_features_a02_features_or_disk_count': 'smooth-or-featured_featured-or-disk',
+        't01_smooth_or_features_a03_star_or_artifact_count': 'smooth-or-featured_artifact',
+        't03_bar_a06_bar_count': 'bar_yes',  # note that these won't match because DECALS uses strong/weak/none
+        't03_bar_a07_no_bar_count': 'bar_no'  # while GZ2 used yes/no
         }
     )
-    catalog['smooth-or-featured_total-votes'] = catalog['smooth-or-featured_smooth_count'] + catalog['smooth-or-featured_featured-or-disk_count'] + catalog['smooth-or-featured_artifact_count']
-    catalog['bar_total-votes'] = catalog['bar_yes_count'] + catalog['bar_no_count']
+    catalog['smooth-or-featured_total-votes'] = catalog['smooth-or-featured_smooth'] + catalog['smooth-or-featured_featured-or-disk'] + catalog['smooth-or-featured_artifact']
+    catalog['bar_total-votes'] = catalog['bar_yes'] + catalog['bar_no']
     catalog['id_str'] = catalog['id'].astype(str)
     catalog.to_csv(save_loc, index=False)
 
+
+def shuffle(df):
+    # THIS IS CRUCIAL. GZ catalog is not properly shuffled, and featured-ness changes systematically
+    return df.sample(len(df)).reset_index()
 
 if __name__ == '__main__':
     # assume run from repo root
