@@ -192,6 +192,9 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
 
 if __name__ == '__main__':
 
+    # only responsible for making the shards. 
+    # Assumes catalogs are shuffled and have id_str, file_loc, label, total_votes columns
+
     parser = argparse.ArgumentParser(description='Make shards')
     # to create for GZ2, see zoobot/get_catalogs/gz2
     # to create for DECALS, see github/zooniverse/decals and apply zoobot/active_learning/make_decals_catalog to `joint_catalog_for_upload`
@@ -203,9 +206,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--eval-size', dest='eval_size', type=str,
             help='Path to csv catalog of previous labels and file_loc, for shards')
-
-    parser.add_argument('--mode', dest='mode', type=str,
-            help='Predict smooth or bar?')
 
     # Write catalog to shards (tfrecords as catalog chunks) here for use in active learning
     parser.add_argument('--shard_dir', dest='shard_dir', type=str,
@@ -221,22 +221,9 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
+    # TODO folder strategy is a bit messed up before/after shards
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
     unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
-
-    # correct file paths
-    for catalog in [labelled_catalog, unlabelled_catalog]:
-        catalog['file_loc'] = '/root/repos/zoobot/' + catalog['png_loc']  # now expects this to point to png loc relative to repo root
-        assert all(loc for loc in catalog['file_loc'])
-        del catalog['png_loc']  # else may load this by default
-        print(catalog['file_loc'].sample(5))
-
-    # is this needed?
-    # catalog['id_str'] = catalog['subject_id'].astype(str)  # needed to crossmatch later
-
-    # only allow certain classifications to be included, according to shared science logic
-    assert args.mode == 'smooth' or args.mode == 'bar'
-    labelled_catalog = mock_panoptes.filter_classifications(labelled_catalog, args.mode)
 
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = (len(labelled_catalog) - args.eval_size)/len(labelled_catalog)  # always eval on random 2500 galaxies

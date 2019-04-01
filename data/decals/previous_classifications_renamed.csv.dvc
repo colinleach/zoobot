@@ -1,0 +1,8 @@
+md5: 11ac8c9ef6fedf75df74ddb87d010a42
+outs:
+- cache: true
+  md5: ef5d96ff7fa9628856a2fcaca0647097
+  metric: false
+  path: data/decals/previous_classifications_renamed.csv
+  persist: false
+wdir: ../..
