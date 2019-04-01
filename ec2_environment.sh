@@ -13,6 +13,8 @@ aws s3 cp s3://galaxy-zoo/github.pub auth/github.pub  && \
 
 dvc pull -r s3 repos/zoobot/data/gz2/gz2_classifications_and_subjects.csv
 dvc pull -r s3 repos/zoobot/data/gz2/png.tar
+
+dvc pull -r s3 data/decals/joint_catalog_selected_cols.csv.dvc
 aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_native.tar
 
 

@@ -303,6 +303,8 @@ if __name__ == '__main__':
                     help='After each iteration, continue training the same model')
     parser.add_argument('--test', dest='test', action='store_true', default=False,
                     help='Minimal training')
+    parser.add_argument('--panoptes', dest='panoptes', action='store_true', default=False,
+                    help='Use live uploads and responses')
     args = parser.parse_args()
 
     log_loc = 'create_instructions_{}.log'.format(time.time())
@@ -315,5 +317,4 @@ if __name__ == '__main__':
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-    main(args.shard_config_loc, args.instructions_dir, args.baseline, args.warm_start, args.test)
-
+    main(args.shard_config_loc, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)

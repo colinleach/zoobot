@@ -1,9 +1,9 @@
 #!/bin/bash
 set +e  # stop if error
 
-BASE_DIR='/Volumes/alpha/production_prototype'
+BASE_DIR='/root/repos/zoobot/results/production_prototype'
 
-SHARD_CONFIG='/Volumes/alpha/for_philipp/gz2_uint8_256px_smooth_20ktrain_2keval_30ktotal/shard_config.json'
+SHARD_CONFIG='/root/repos/zoobot/shards/gz2_uint8_256px_smooth_20ktrain_2keval_30ktotal/shard_config.json'
 INSTRUCTIONS_DIR=$BASE_DIR'/instructions'
 
 N_ITERATIONS=5
@@ -13,7 +13,7 @@ echo 'shard configuration json: ' $SHARD_CONFIG
 echo 'instructions for each iteration: ' $INSTRUCTIONS_DIR 
 echo --
 
-python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test
+python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test --panoptes
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then
