@@ -8,15 +8,13 @@ def finalise_catalog(catalog, question, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = filter_classifications(catalog, question)
     catalog = define_labels(catalog, question)
-    catalog = specify_file_locs(catalog)
     make_oracle(catalog, save_dir)
     return catalog
 
 
 def filter_classifications(catalog, question):
-    if question == 'smooth':  # artificially enforce as simple test case
-        catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    elif question == 'bar':  # filter to at least a bit featured
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 37]  # must be retired 
+    if question == 'bar':  # filter to at least a bit featured
         catalog = catalog[catalog['bar_total-votes'] > 10]  
     else:
         raise ValueError('question {} not understood'.format(question))

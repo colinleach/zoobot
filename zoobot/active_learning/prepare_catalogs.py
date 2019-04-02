@@ -23,6 +23,7 @@ def tweak_joint_catalog(catalog_loc, save_loc):
     df['png_loc'] = df['local_png_loc'].apply(lambda x: 'data/' + x.lstrip('/Volumes/alpha'))  # change to be inside data folder, specified relative to repo root
     print(df.iloc[0]['png_loc'])
     print('Galaxies: {}'.format(len(df)))
+        catalog = specify_file_locs(catalog)
     df.to_csv(save_loc, index=False)
 
 
