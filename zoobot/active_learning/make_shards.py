@@ -105,6 +105,7 @@ class ShardConfig():
             print('More eval subjects than training subjects - is this intended?')
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
+
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
             active_learning.write_catalog_to_tfrecord_shards(
                 df,
@@ -208,7 +209,7 @@ if __name__ == '__main__':
             help='Path to csv catalog of previous labels and file_loc, for shards')
 
     # Write catalog to shards (tfrecords as catalog chunks) here for use in active learning
-    parser.add_argument('--shard_dir', dest='shard_dir', type=str,
+    parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
 
     args = parser.parse_args()
@@ -228,7 +229,8 @@ if __name__ == '__main__':
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = (len(labelled_catalog) - args.eval_size)/len(labelled_catalog)  # always eval on random 2500 galaxies
 
-    shard_config = ShardConfig(shard_dir=args.shard_dir)  
+    shard_config = ShardConfig(shard_dir=args.shard_dir)
+
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,

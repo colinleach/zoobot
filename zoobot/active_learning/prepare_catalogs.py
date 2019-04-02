@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from astropy.table import Table
 
+
 def tweak_joint_catalog(catalog_loc, save_loc):
     """rename and resave a few joint catalog columns, to make uploading easier"""
     joint_catalog_table = Table.read(catalog_loc)
@@ -14,6 +15,7 @@ def tweak_joint_catalog(catalog_loc, save_loc):
     for str_col in ['iauname', 'png_loc', 'fits_loc']:
         df[str_col] = df[str_col].apply(lambda x: x.decode('utf-8'))
     df['nsa_version'] = 'v1_0_0'
+    df['id_str'] = df['iauname']  # not the subject id! We want unique per galaxy, not per subject
     df = df.rename(index=str, columns={
         'fits_loc': 'local_fits_loc',
         'png_loc': 'local_png_loc',
@@ -23,8 +25,8 @@ def tweak_joint_catalog(catalog_loc, save_loc):
     df['png_loc'] = df['local_png_loc'].apply(lambda x: 'data/' + x.lstrip('/Volumes/alpha'))  # change to be inside data folder, specified relative to repo root
     print(df.iloc[0]['png_loc'])
     print('Galaxies: {}'.format(len(df)))
-        catalog = specify_file_locs(catalog)
-    df.to_csv(save_loc, index=False)
+    catalog = specify_file_locs(catalog)
+    return catalog
 
 
 """Logic to turn GZ2 or DECALS previous outputs into shared-schema catalogs (labelled or otherwise) for AL"""
@@ -34,10 +36,10 @@ def tweak_previous_decals_classifications(catalog_loc, save_loc):
     # create a labelled catalog to use when starting all iterations
     # this will be used to make the first training shard
     catalog = pd.read_csv(catalog_loc)
-    catalog['id_str'] = catalog['subject_id'].astype(str)
+    # catalog['id_str'] = catalog['subject_id'].astype(str)
+    catalog['id_str'] = catalog['iauname']
     catalog.to_csv(save_loc, index=False)
 
-# TODO decals predictions need to be joined with the joint catalog to work out where the files are. I should think carefully about the best place for this to happen.
 
 def tweak_previous_gz2_classifications(catalog_loc, save_loc):
     usecols = [
