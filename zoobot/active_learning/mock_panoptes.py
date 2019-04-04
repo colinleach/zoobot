@@ -35,7 +35,7 @@ class Panoptes(Oracle):
             subject_ids ([type]): [description]
         """
         selected_catalog = self._full_catalog[self._full_catalog['id_str'].isin(subject_ids)]  # getting really messy with this...
-        selected_catalog['retirement_limit'] = retirement
+        selected_catalog['#retirement_limit'] = retirement
         logging.info('Uploading {} subjects to {}'.format(len(subject_ids), name))
         manifest = upload_utils.create_manifest_from_catalog(selected_catalog)
         upload_utils.upload_manifest_to_galaxy_zoo(
