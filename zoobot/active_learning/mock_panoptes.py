@@ -28,20 +28,20 @@ class Panoptes(Oracle):
         # 'TODO' for last id as of last major reduction, 2nd April 2019
         self.question = question  # e.g. 'smooth', 'bar'
 
-    def request_labels(self, subject_ids, name):
+    def request_labels(self, subject_ids, name, retirement):
         """Upload subjects with ids matching subject_ids to Panoptes project
         
         Args:
             subject_ids ([type]): [description]
         """
-        selected_catalog = self._full_catalog[self._full_catalog['subject_id'].isin(subject_ids)]
-        subject_set_name = '{}_{}_{}'.format(time_utils.current_date(), time.time(), name)
-        logging.info('Uploading {} subjects: {}'.format(len(subject_ids), name))
+        selected_catalog = self._full_catalog[self._full_catalog['id_str'].isin(subject_ids)]  # getting really messy with this...
+        selected_catalog['retirement_limit'] = retirement
+        logging.info('Uploading {} subjects to {}'.format(len(subject_ids), name))
         manifest = upload_utils.create_manifest_from_catalog(selected_catalog)
         upload_utils.upload_manifest_to_galaxy_zoo(
-            subject_set_name=subject_set_name,
+            subject_set_name=name,
             manifest=manifest,
-            galaxy_zoo_id=self._project_id,
+            project_id=self._project_id,
             login_loc=self._login_loc)
         logging.info('Upload complete')
 
@@ -99,7 +99,7 @@ class Panoptes(Oracle):
             gzreduction.schemas.dr5_schema,
             reduced_save_loc=None,
             predictions_save_loc=predictions_loc
-        )
+    )
 
         tweaked_predictions_loc = os.path.join(preprocessed_dir, 'tweaked_predictions.csv')
         prepare_catalogs.tweak_previous_decals_classifications(predictions_loc, tweaked_predictions_loc)
