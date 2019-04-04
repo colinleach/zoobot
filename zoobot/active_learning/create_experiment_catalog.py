@@ -42,14 +42,6 @@ def define_labels(catalog, question):
     return catalog
 
 
-def specify_file_locs(catalog):
-    catalog['file_loc'] = '/root/repos/zoobot/' + catalog['png_loc']  # now expects this to point to png loc relative to repo root
-    assert all(loc for loc in catalog['file_loc'])
-    del catalog['png_loc']  # else may load this by default
-    print(catalog['file_loc'].sample(5))
-    return catalog
-
-
 def make_oracle(catalog, save_dir):  # move out of shard dir - allow oracle to be in a different directory, probably experiment directory
     # save catalog for PanoptesMock to return
     catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(save_dir, 'oracle.csv'), index=False)
