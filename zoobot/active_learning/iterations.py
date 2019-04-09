@@ -63,6 +63,7 @@ class Iteration():
 
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.acquired_tfrecords_dir = os.path.join(self.iteration_dir, 'acquired_tfrecords')
+        self.labels_dir = os.path.join(self.iteration_dir, 'acquired_labels')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
@@ -138,7 +139,7 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels, total_votes = self.oracle.get_labels()
+        subject_ids, labels, total_votes = self.oracle.get_labels(self.labels_dir)  # labels_dir used as working directory for reduction pipeline, useful to record for later inspection
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids, )

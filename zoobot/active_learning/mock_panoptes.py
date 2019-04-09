@@ -16,11 +16,12 @@ from zoobot.active_learning import prepare_catalogs, create_experiment_catalog
 
 class Panoptes(Oracle):
 
-    def __init__(self, catalog_loc, login_loc, project_id, last_id, question):
+    def __init__(self, catalog_loc, login_loc, project_id, workflow_id, last_id, question):
         assert os.path.exists(catalog_loc)
         self._catalog_loc = catalog_loc
         self._login_loc = login_loc
         self._project_id = project_id
+        self._workflow_id = workflow_id
         self._full_catalog = pd.read_csv(catalog_loc)  # e.g. joint catalog with file locs
         # all catalog columns will be uploaded, be careful
         self.last_id = last_id  # ignore classifications before this id
@@ -45,14 +46,16 @@ class Panoptes(Oracle):
             login_loc=self._login_loc)
         logging.info('Upload complete')
 
-    def get_labels(self):
+    def get_labels(self, working_dir):
         """Get all recent labels from Panoptes. 
-        - Download with Panoptes Python client
-        - Aggregate with GZ Reduction Spark routine
+        - (Download with Panoptes Python client
+        - Aggregate with GZ Reduction Spark routine)
         """
-         # TODO call reduction pipeline from here
-
-        classifications = pd.read_csv(tweaked_predictions_loc)
+        classifications = gzreduction.get_latest.execute_reduction(
+            workflow_id=self._workflow_id,
+            working_dir=working_dir,
+            last_id=self.last_id
+        )
         classifications = create_experiment_catalog.filter_classifications(classifications, self.question)  # for retired
         classifications = create_experiment_catalog.define_labels(classifications, self.question)
         return classifications['id_str'].values, classifications['label'].values, classifications['total_votes'].values

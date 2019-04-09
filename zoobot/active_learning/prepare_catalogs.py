@@ -6,35 +6,51 @@ import pandas as pd
 from astropy.table import Table
 
 
-# def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
-
-#     catalog = Table.read(catalog_loc).to_pandas()
-#     # conversion messes up strings into bytes
-#     for str_col in ['iauname', 'png_loc', 'fits_loc']:
-#         catalog[str_col] = catalog[str_col].apply(lambda x: x.decode('utf-8'))
-
-#     catalog['nsa_version'] = 'v1_0_0'
-#     catalog['id_str'] = catalog['iauname']  # not the subject id! We want unique per galaxy, not per subject
-#     catalog = catalog.rename(index=str, columns={
-#         'fits_loc': 'local_fits_loc',
-#         'png_loc': 'local_png_loc',
-#         'z': 'redshift'
-#     })
-
-#     catalog['png_loc'] = df['local_png_loc'].apply(lambda x: 'data/' + x.lstrip('/Volumes/alpha'))  # change to be inside data folder, specified relative to repo root
-#     print(df.iloc[0]['png_loc'])
-#     print('Galaxies: {}'.format(len(df)))
-#     catalog = specify_file_locs(catalog)
+def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
+    """Convert zooniverse/decals joint catalog for active learning and join to previous classifications
     
-#     classifications = pd.read_csv(classifications_loc)
-#     # create a labelled catalog to use when starting all iterations
-#     # this will be used to make the first training shard
-#     # catalog['id_str'] = catalog['subject_id'].astype(str)
-#     # catalog['id_str'] = catalog['iauname']
-#     df = pd.merge(catalog, classifications, how='inner', on=TODO)
-#     # r
-#     assert not any(df['id_str'].duplicated())
-#     return df
+    Args:
+        catalog_loc ([type]): [description]
+        classifications_loc ([type]): [description]
+        save_loc ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+
+
+    catalog = Table.read(catalog_loc).to_pandas()
+    # conversion messes up strings into bytes
+    for str_col in ['iauname', 'png_loc', 'fits_loc']:
+        catalog[str_col] = catalog[str_col].apply(lambda x: x.decode('utf-8'))
+
+    # rename columns for convenience (could move this to DECALS repo)
+    catalog['nsa_version'] = 'v1_0_0'
+    catalog = catalog.rename(index=str, columns={
+        'fits_loc': 'local_fits_loc',
+        'png_loc': 'local_png_loc',
+        'z': 'redshift'
+    })
+
+    catalog['png_loc'] = catalog['local_png_loc'].apply(lambda x: 'data/' + x.lstrip('/Volumes/alpha'))  # change to be inside data folder, specified relative to repo root
+    print(catalog.iloc[0]['png_loc'])
+    print('Galaxies: {}'.format(len(catalog)))
+    catalog = specify_file_locs(catalog)
+    
+    classifications = pd.read_csv(classifications_loc)
+    # create a labelled catalog to use when starting all iterations
+    # this will be used to make the first training shard
+    # catalog['id_str'] = catalog['subject_id'].astype(str)
+    # catalog['id_str'] = catalog['iauname']
+    df = pd.merge(catalog, classifications, how='left', on='iauname')  # many rows will have None
+
+    if any(df['iauname'].duplicated()):
+        print('Duplicated:')
+        counts = df['iauname'].value_counts()
+        print(counts[counts > 1])
+        raise ValueError
+
+    df.to_csv(save_loc, index=False)
 
 
 def create_gz2_master_catalog(catalog_loc, save_loc):
@@ -91,21 +107,23 @@ def shuffle(df):
 
 if __name__ == '__main__':
     # assume run from repo root
+    # local only, upload the results with dvc. 
 
-    # local only, upload the results with dvc. Agnostic of which question to answer
-    # tweak_joint_catalog(
-    #     catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
-    #     save_loc='data/decals/joint_catalog_selected_cols.csv'
-    # )
-    # tweak_previous_decals_classifications(
-    #     catalog_loc='/data/repos/gzreduction/data/predictions/example_panoptes_predictions.csv',  # will change this TODO
-    #     save_loc='data/decals/previous_classifications_renamed.csv'
-    # )
-    create_gz2_master_catalog(
-        catalog_loc='data/gz2/gz2_classifications_and_subjects.csv',
-        save_loc='data/gz2/gz2_master_catalog.csv'
+    # should run full reduction first and place in classifications_loc
+    # see mwalmsley/gzreduction/get_latest.py
+
+    create_decals_master_catalog(
+        catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
+        classifications_loc='data/decals/classifications/classifications.csv',
+        save_loc='data/decals/decals_master_catalog.csv'
     )
+
+    # create_gz2_master_catalog(
+    #     catalog_loc='data/gz2/gz2_classifications_and_subjects.csv',
+    #     save_loc='data/gz2/gz2_master_catalog.csv'
+    # )
     # remember to add to dvc and push to s3
 
+    # Agnostic of which question to answer
     # later, run finalise_catalog to apply filters and specify the question to solve
     # this is considered part of the shards, and results are saved to the shards directory
