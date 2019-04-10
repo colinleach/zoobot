@@ -3,39 +3,87 @@
 ## Aims
 
 Run active learning daily on Galaxy Zoo.
+Read this alongside the [service diagrams](https://www.lucidchart.com/documents/view/3af59d25-f169-4963-be7d-3218ef37f3aa).
 
-## State
+## Local Preparation
 
-For now, let's assume that everything is happening on the same file system. This is the simplest thing to implement.
+### 1. Classifications
 
-Each service block will take immutable folders as input, and produce immutable folders as output.
+The bulk of previous classifications should already be reduced, so that each active learning iteration will only need to pull new classifications from the last full reduction.
 
-There are three types of folder expected to change often:
-- `{shards_name}` for shards to load, and an oracle for simulations (`mock_panoptes.py` should give raw classifications, not reduced)
-- `instructions` to define how each iteration should run (no longer in-memory)
-- `{iteration_name}` containing the results of each iteration (including new label reduction subfolder)
+Run [mwalmsley/gz-panoptes-reduction/get_latest.py](github.com/mwalmsley/gz-panoptes-reduction/get_latest.py) to execute a full reduction. See the instructions there.
 
-We also need a few static folders and files:
-- `{survey_png_dir}` with the image files
-- `{survey}_reduced_classifications.csv` with reduced classifications *prior to any active learning*, for making shards
+Classifications should be placed under `zoobot/data/decals/classifications/classifications.csv`.
 
-We can then run active learning with these stateless files:
+You need to run this periodically to prevent the gradual accumulation of classifications from slowing down each iteration. Make sure this is up-to-date before creating new master catalogs (below).
+
+<!-- **Be careful to:**
+- Do not wipe the working directory if it has major previous classifications -->
+
+### 2. Master Catalogs
+
+[zooniverse/decals](github.com/zooniverse/decals) or [mwalmsley/gz-panoptes-reduction/gz2](github.com/mwalmsley/gz-panoptes-reduction/gz2) provide catalogs of png image locations. 
+`prepare_catalogs.py` tweaks these (for DECALS, joins with previous classifications) to create 'master catalogs' of all image locations and classifications to-date.
+These are at `data/{survey}/{survey}_master_catalog.csv`.
+
+## Ad Hoc Catalog Preparation
+
+The master catalogs are generic. `define_experiment.py` takes a master catalog, defines the task to predict (i.e. creates the `label` and `id_str` columns), applies any ad-hoc changes, and splits into labelled (retired) and unlabelled (not retired) catalogs.
+
+The labelled catalog is then further split into `mock_labelled.csv` and `mock_unlabelled.csv` for simulations, and `oracle.csv` is created to record the known-but-hidden labels for `mock_unlabelled.csv`.
+
+These are at `data/{survey}/prepared_catalogs/{catalog name}`
+
+## Shards
+
+The labelled and unlabelled catalogs (whether 'real' or mock) are 
+- split (labelled only)
+- converted to tfrecords
+- indexed in an sqlite database
+
+The ShardConfig object tracks this process, and is written to disk as json so that later scripts know where the new shards are and how they were created.
+
+## Execution
+
+By now, you should have:
+- labelled and unlabelled catalogs of images
+- shards created using those catalogs
+
+Run active learning using these two scripts:
 - `create_instructions.py` to create `instructions` from command line args and sensible hard-coded values
 - `run_iteration.py`to run an iteration, with `instructions` and an `{iteration_name}` as input and a new `{iteration_name}` as output
 
-For production, we schedule:
-- Spin up an EC2 instance with our filesystem and environment
+Each script takes immutable folders as input, and produce immutable folders as output.
+
+You will need an EC2 instance for GPU power. See 'EC2 Configuration'.
+
+For simulations, run `run_simulation.sh` on an EC2 instance. This:
+- Calls `create_instructions.py` once
+- Loops over `run_iteration.py`
+
+For production, we manually run `create_instructions.py` `run_iteration.py` to get started. 
+Then, on a schedule:
+- Spin up a new EC2 instance (preserving the file system from last run)
 - Run `run_iteration.py` with the previous (latest?) `{iteration_name}` as an input directory.
-- Save the new filesystem to S3
+- Spin down
 
-I need to ask Adam how to best achieve this. 
-This will require some state to track what's going on.
+## EC2 Configuration
 
-For simulations, we can do exactly the same except on a single filesystem and with trivial scheduling.
+Setting up the EC2 instance is a manual, one-step process. 
+The key commands are in `ec2_environment.sh`
+
+The AMI defines the software configuration for the instance. 
+Starting from the AWS DL AMI, requirements are installed from each repo.
+These are saved under the root disk (75GB), and fixed in a snapshot.
+
+To load the data and previous state, mount the volume `working_volume`. 
+See `ec2_environment.sh` for more.
+
+I may schedule spinning up and running an iteration with a shell script.
 
 ## EC2 Instance File Structure
 
-Keep it simple: use a single EBS volume.
+For now, keep it simple: all state is preserved on a single EBS volume called `working_volume`.
 
 - root (EBS volume mounted here)
     - auth
@@ -54,20 +102,19 @@ Keep it simple: use a single EBS volume.
                 - decals
                     - `joint_catalog_selected_cols.csv`
                     - `decals_master_catalog.csv`
-                    - png
+                    - png_native
                     - shards
-                - results
+                        - {shard name}
+                - experiments
                     - simulations
-                        - {run name}
+                        - {experiment name}
                     - live
-                        - {run name}
+                        - {experiment name}
         - shared-astro-utils
 
-
-    Under each {run name}:
-    - instructions (i.e. `instructions_dir`)
-    - iteration_{n}
-
+Under each {experiment name}:
+- instructions (i.e. `instructions_dir`)
+- iteration_{n}
 
 
 ## Getting and Requesting Labels

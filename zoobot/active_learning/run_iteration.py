@@ -159,7 +159,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
         instructions.use_test_mode()
         train_callable.test = True
 
-    oracle = mock_panoptes.load_oracle(instructions_dir)
+    oracle = mock_panoptes.load_oracle(instructions_dir)  # decoupled whether real or simulated
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
     final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
     save_final_state(final_state)
@@ -183,9 +183,7 @@ if __name__ == '__main__':
                     help='Directory with previously-executed iteration from which to begin (if provided)')
     parser.add_argument('--test', dest='test', action='store_true', default=False,
                     help='Only do a minimal iteration to verify that everything works')
-
     args = parser.parse_args()
-
 
     log_loc = 'create_instructions_{}.log'.format(time.time())
 

@@ -203,10 +203,10 @@ def load_acquisition_func(save_dir):
 
 # this should be part of setup, so that db is modified to point to correct image folder
 # TODO apply this to db after copying
-def get_relative_loc(loc, local_image_folder):
-    fname = os.path.basename(loc)
-    subdir = os.path.basename(os.path.dirname(loc))
-    return os.path.join(local_image_folder, subdir, fname)
+# def get_relative_loc(loc, local_image_folder):
+#     fname = os.path.basename(loc)
+#     subdir = os.path.basename(os.path.dirname(loc))
+#     return os.path.join(local_image_folder, subdir, fname)
 
 
 def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panoptes):
@@ -269,25 +269,22 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
     acquisition_func_obj.save(instructions_dir)
 
     if panoptes: # use live Panoptes oracle
-        catalog_loc = 'TODO'  # joint catalog with upload-only columns
-        login_loc = 'zooniverse_login.json'  # does not yet exist
-        project_id = '8751'
         oracle = mock_panoptes.Panoptes(
-            catalog_loc=catalog_loc,
-            login_loc=login_loc, 
-            project_id=project_id
+            catalog_loc='data/decals/prepared_catalogs/smooth_unfiltered/unlabelled_catalog.csv',
+            login_loc='zooniverse_login.json', 
+            project_id='8751',
+            workflow_id='9816',
+            last_id='117640575',
+            question='smooth'  # SMOOTH MODE
         )
     else:  # use mock Panoptes oracle
-        oracle_loc = os.path.join(instructions.shards.shard_dir, 'oracle.csv')
+        oracle_loc = 'data/decals/prepared_catalogs/smooth_unfiltered/simulation_context/oracle.csv'
         assert os.path.isfile(oracle_loc)
-        oracle_loc = 'TODO'
-        subjects_requested_loc = 'TODO'
         oracle = mock_panoptes.PanoptesMock(
-            oracle_loc,
-            subjects_requested_loc
+            oracle_loc=oracle_loc,
+            subjects_requested_loc=os.path.join(instructions_dir, 'subjects_requested.json')
         )
     oracle.save(instructions_dir)
-
 
 
 if __name__ == '__main__':
@@ -318,3 +315,5 @@ if __name__ == '__main__':
     logging.getLogger().addHandler(logging.StreamHandler())
 
     main(args.shard_config_loc, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
+
+    # see run_simulation.sh for example use 

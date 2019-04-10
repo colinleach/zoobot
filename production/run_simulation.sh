@@ -1,14 +1,17 @@
 #!/bin/bash
 set +e  # stop if error
 
-BASE_DIR='/root/repos/zoobot/results/production_prototype'
+SHARD_NAME=smooth_unfiltered
+EXPERIMENT_NAME=smooth_unfiltered_test
 
-SHARD_CONFIG='/root/repos/zoobot/shards/gz2_uint8_256px_smooth_20ktrain_2keval_30ktotal/shard_config.json'
-INSTRUCTIONS_DIR=$BASE_DIR'/instructions'
+EXPERIMENT_DIR=/root/repos/zoobot/data/results/simulations/$EXPERIMENT_NAME
+
+SHARD_CONFIG=/root/repos/zoobot/data/decals/shards/'$SHARD_NAME'/shard_config.json
+INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
 
 N_ITERATIONS=5
 
-echo 'base directory: ' $BASE_DIR
+echo 'base directory: ' $EXPERIMENT_DIR
 echo 'shard configuration json: ' $SHARD_CONFIG
 echo 'instructions for each iteration: ' $INSTRUCTIONS_DIR 
 echo --
@@ -26,13 +29,13 @@ THIS_ITERATION=0
 
 while [ $THIS_ITERATION -lt $N_ITERATIONS ]
 do  
-    THIS_ITERATION_DIR=$BASE_DIR'/iteration_'$THIS_ITERATION
+    THIS_ITERATION_DIR=$EXPERIMENT_DIR/iteration_$THIS_ITERATION
 
     if [ $THIS_ITERATION -eq "0" ]
     then
         PREVIOUS_ITERATION_DIR=""
     else
-        PREVIOUS_ITERATION_DIR=$BASE_DIR'/iteration_'$PREVIOUS_ITERATION
+        PREVIOUS_ITERATION_DIR=$EXPERIMENT_DIR/iteration_$PREVIOUS_ITERATION
 
     fi
 

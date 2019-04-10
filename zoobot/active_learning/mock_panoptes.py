@@ -17,7 +17,7 @@ from zoobot.active_learning import prepare_catalogs, define_experiment
 class Panoptes(Oracle):
 
     def __init__(self, catalog_loc, login_loc, project_id, workflow_id, last_id, question):
-        assert os.path.exists(catalog_loc)
+        assert os.path.exists(catalog_loc)  # in principle, should only need unlabelled galaxies
         self._catalog_loc = catalog_loc
         self._login_loc = login_loc
         self._project_id = project_id
@@ -25,7 +25,7 @@ class Panoptes(Oracle):
         self._full_catalog = pd.read_csv(catalog_loc)  # e.g. joint catalog with file locs
         # all catalog columns will be uploaded, be careful
         self.last_id = last_id  # ignore classifications before this id
-        # '91178981' for first DECALS classification, bad idea - >2 million responses!
+        # '91178981' for first DECALS classification, bad idea - >1 million responses!
         # 'TODO' for last id as of last major reduction, 2nd April 2019
         self.question = question  # e.g. 'smooth', 'bar'
 
@@ -84,13 +84,13 @@ class PanoptesMock(Oracle):
         self._oracle_loc = oracle_loc
         self._subjects_requested_loc = subjects_requested_loc
 
-    def request_labels(self, subject_ids, name):
+    def request_labels(self, subject_ids, name, retirement):
         logging.info('Pretending to upload {} subjects: {}'.format(len(subject_ids), name))
         assert len(set(subject_ids)) == len(subject_ids)  # must be unique
         with open(self._subjects_requested_loc, 'w') as f:
             json.dump(subject_ids, f)
 
-    def get_labels(self):
+    def get_labels(self, working_dir):
         # oracle.csv is created by make_shards.py, contains label and id_str pairs of vote fractions
         if not os.path.isfile(self._subjects_requested_loc):
             logging.warning(
