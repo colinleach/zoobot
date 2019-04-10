@@ -18,14 +18,15 @@ dvc pull -r s3 data/decals/joint_catalog_selected_cols.csv.dvc
 aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_native.tar
 
 
-ZOOBOT_BRANCH=production_prototype
-mkdir root && \
+ZOOBOT_BRANCH=production-prototype
 sudo mount /dev/xvdb root && \
 cd root &&
 eval "$(ssh-agent -s)"  && \
 chmod 400 auth/github  && \
 ssh-add auth/github  && \
-cd repos/zoobot && git pull && git checkout $ZOOBOT_BRANCH && cd ../ && \
+cd repos/zoobot && git fetch --all && git pull && git checkout $ZOOBOT_BRANCH && cd ../ && \
+cd gz-panoptes-reduction && git pull && cd ../
+cd shared-astro-utilities && git pull && cd ../
 source activate tensorflow_p36 && \
 pip install -r repos/zoobot/requirements.txt && \
 pip install -e repos/zoobot  && \

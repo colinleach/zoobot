@@ -229,7 +229,7 @@ if __name__ == '__main__':
     unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
 
     # in memory for now, but will be serialized for later/logs
-    train_test_fraction = (len(labelled_catalog) - args.eval_size)/len(labelled_catalog)  # always eval on random 2500 galaxies
+    train_test_fraction = (len(labelled_catalog) - int(args.eval_size))/len(labelled_catalog)  # always eval on random 2500 galaxies
 
     shard_config = ShardConfig(shard_dir=args.shard_dir)
 
@@ -244,3 +244,6 @@ if __name__ == '__main__':
     repo = git.Repo(search_parent_directories=True)
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.shard_dir, '{}.log'.format(sha)))
+
+
+    # e.g. python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/smooth_unfiltered/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/smooth_unfiltered/labelled_catalog.csv --eval-size=512 --shard-dir=data/decals/shards/smooth_unfiltered

@@ -44,8 +44,7 @@ Keep it simple: use a single EBS volume.
         - `github.pub`
     - repos
         - gz-panoptes-reduction
-            - data
-                - classifications
+            - data (use GZ2 reduction in here for GZ2 master catalog)
         - zoobot
             - data
                 - gz2
@@ -54,6 +53,7 @@ Keep it simple: use a single EBS volume.
                     - shards
                 - decals
                     - `joint_catalog_selected_cols.csv`
+                    - `decals_master_catalog.csv`
                     - png
                     - shards
                 - results
