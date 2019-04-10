@@ -6,11 +6,21 @@ import pandas as pd
 
 """Shared logic to refine catalogs"""
 
-def experiment_catalog(catalog, question, save_dir):
+def get_experiment_catalogs(catalog, question, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
     catalog = define_labels(catalog, question)
-    return catalog
+    labelled, unlabelled = split_labelled_and_unlabelled(catalog, question)
+    return catalog, labelled, unlabelled
+
+
+def split_labelled_and_unlabelled(catalog, question):
+    retired = catalog.apply(subject_is_retired, axis=1)
+    labelled = catalog[retired]
+    if question == 'bar':
+        labelled = labelled.query('bar_total-votes' < 10)
+    unlabelled= catalog[~retired]
+    return labelled, unlabelled
 
 
 def shuffle(df):
@@ -27,7 +37,7 @@ def define_identifiers(catalog):
 
 
 def subject_is_retired(subject):
-    return subject['smooth-or-featured_total-votes'] > 1 # TODO 37  
+    return subject['smooth-or-featured_total-votes'] > 1 # TODO !!temporary until first big reduction! Will be 37ish 
 
 
 def define_labels(catalog, question):
@@ -45,26 +55,17 @@ def define_labels(catalog, question):
     return catalog
 
 
-def save_catalog(catalog, save_dir):
-    retired = catalog.apply(subject_is_retired, axis=1)
-    labelled_catalog = catalog[retired]
-    unlabelled_catalog = catalog[~retired]
 
-    labelled_catalog.to_csv(os.path.join(save_dir, 'labelled_catalog.csv'), index=False)
-    unlabelled_catalog.to_csv(os.path.join(save_dir, 'unlabelled_catalog.csv'), index=False)
-    catalog.to_csv(os.path.join(save_dir, 'full_catalog.csv'), index=False)
-
-
-def save_mock_catalog(catalog, save_dir, train_size=256, eval_size=2500):
-    # given a (historical) catalog, pretend split into labelled and unlabelled
+def get_mock_catalogs(labelled_catalog, save_dir, train_size=256, eval_size=2500):
+    # given a (historical) labelled catalog, pretend split into labelled and unlabelled
+    assert not any(pd.isnull(labelled_catalog['label']))
+    oracle = labelled_catalog[['id_str', 'total_votes', 'label']]
     labelled_size = train_size + eval_size
-    labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
-    unlabelled_catalog = catalog[labelled_size:]  # for pool
-    del unlabelled_catalog['label']
+    mock_labelled = labelled_catalog[:labelled_size]  # for training and eval. Could do basic split on these!
+    mock_unlabelled = labelled_catalog[labelled_size:]  # for pool
+    del mock_unlabelled['label']
+    return mock_labelled, mock_unlabelled, oracle
 
-    labelled_catalog.to_csv(os.path.join(save_dir, 'labelled_catalog.csv'), index=False)
-    labelled_catalog[['id_str', 'total_votes', 'label']].to_csv(os.path.join(save_dir, 'oracle.csv'), index=False)
-    unlabelled_catalog.to_csv(os.path.join(save_dir, 'unlabelled_catalog.csv'), index=False)
 
 
 if __name__ == '__main__':
@@ -72,23 +73,27 @@ if __name__ == '__main__':
     name = 'smooth_unfiltered'
     question = 'smooth'
 
-    master_catalog_loc = 'data/decals/decals_master_catalog.csv'
+    master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # currently with all galaxies but only a few classifications
     catalog_dir = 'data/decals/prepared_catalogs/{}'.format(name)
     if os.path.isdir(catalog_dir):
         shutil.rmtree(catalog_dir)
     os.mkdir(catalog_dir)
 
     master_catalog = pd.read_csv(master_catalog_loc)
-    catalog = experiment_catalog(master_catalog, question, catalog_dir)
+    catalog, labelled, unlabelled = get_experiment_catalogs(master_catalog, question, catalog_dir)
 
     # ad hoc filtering here
     catalog = catalog[:10000]
-    if question == 'bar':  # filter to at least a bit featured
-        catalog = catalog[catalog['bar_total-votes'] > 10]  
 
-    save_catalog(catalog, catalog_dir)
+    labelled.to_csv(os.path.join(catalog_dir, 'labelled_catalog.csv'), index=False)
+    unlabelled.to_csv(os.path.join(catalog_dir, 'unlabelled_catalog.csv'), index=False)
+    catalog.to_csv(os.path.join(catalog_dir, 'full_catalog.csv'), index=False)
 
     simulation_dir = os.path.join(catalog_dir, 'simulation_context')
     if not os.path.isdir(simulation_dir):
         os.mkdir(simulation_dir)
-    save_mock_catalog(catalog, simulation_dir)
+    mock_labelled, mock_unlabelled, oracle = get_mock_catalogs(labelled, simulation_dir)
+
+    mock_labelled.to_csv(os.path.join(simulation_dir, 'labelled_catalog.csv'), index=False)
+    oracle.to_csv(os.path.join(simulation_dir, 'oracle.csv'), index=False)
+    mock_unlabelled.to_csv(os.path.join(simulation_dir, 'unlabelled_catalog.csv'), index=False)

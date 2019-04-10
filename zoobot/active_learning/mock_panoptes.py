@@ -10,7 +10,7 @@ from shared_astro_utils import upload_utils, time_utils
 import gzreduction
 
 from zoobot.active_learning.oracle import Oracle
-from zoobot.active_learning import prepare_catalogs, create_experiment_catalog
+from zoobot.active_learning import prepare_catalogs, define_experiment
 
 # Oracle state must not change between iterations! (Panoptes itself can change, of course)
 
@@ -51,15 +51,16 @@ class Panoptes(Oracle):
         - (Download with Panoptes Python client
         - Aggregate with GZ Reduction Spark routine)
         """
+        # Run GZ Reduction to get all new classifications
         classifications = gzreduction.get_latest.execute_reduction(
             workflow_id=self._workflow_id,
             working_dir=working_dir,
             last_id=self.last_id
         )
-        classifications = create_experiment_catalog.filter_classifications(classifications, self.question)  # for retired
-        classifications = create_experiment_catalog.define_labels(classifications, self.question)
-        return classifications['id_str'].values, classifications['label'].values, classifications['total_votes'].values
-        
+        # only galaxies newly labelled since last_id
+        labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
+        return labelled['id_str'].values, labelled['label'].values, labelled['total_votes'].values
+
 
     def save(self, save_dir):
         data = {

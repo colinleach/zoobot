@@ -1,3 +1,5 @@
+"""No knowledge of oracle allowed!
+"""
 import argparse
 import os
 import shutil

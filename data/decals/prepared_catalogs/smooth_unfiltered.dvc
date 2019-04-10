@@ -1,0 +1,8 @@
+md5: be33c8cc6d0512d5f9ca2a01db147a67
+outs:
+- cache: true
+  md5: 8a519043b4e106aec14f66e4b5009ebe.dir
+  metric: false
+  path: prepared_catalogs/smooth_unfiltered
+  persist: false
+wdir: ..
