@@ -34,7 +34,8 @@ class Iteration():
         self.iteration_dir = iteration_dir
 
         # shards should be unique, or everything falls apart.
-        assert len(prediction_shards) == len(set(prediction_shards))
+        if not len(prediction_shards) == len(set(prediction_shards)):
+            raise ValueError('Warning: duplicate prediction shards! {}'.format(prediction_shards))
         self.prediction_shards = prediction_shards
         
         for (tfrecords, attr) in [
