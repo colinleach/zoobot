@@ -66,14 +66,12 @@ class Panoptes(Oracle):
         data = {
             'catalog_loc': self._catalog_loc,
             'login_loc': self._login_loc,
-            'project_id': self._project_id
+            'project_id': self._project_id,
+            'workflow_id': self.last_id,
+            'question': self.question
         }
         with open(os.path.join(save_dir, 'oracle_config.json'), 'w') as f:
             json.dump(data, f)
-
-def load_panoptes_oracle(save_dir):
-    with open(os.path.join(save_dir, 'oracle_config.json'), 'r') as f:
-        return Panoptes(**json.load(f))
 
 class PanoptesMock(Oracle):
 
@@ -126,6 +124,11 @@ class PanoptesMock(Oracle):
         }
         with open(os.path.join(save_dir, 'oracle_config.json'), 'w') as f:
             json.dump(data, f)
+
+
+def load_panoptes_oracle(save_dir):
+    with open(os.path.join(save_dir, 'oracle_config.json'), 'r') as f:
+        return Panoptes(**json.load(f))
 
 def load_panoptes_mock_oracle(save_dir):
     with open(os.path.join(save_dir, 'oracle_config.json'), 'r') as f:

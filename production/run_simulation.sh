@@ -16,7 +16,7 @@ echo 'shard configuration json: ' $SHARD_CONFIG
 echo 'instructions for each iteration: ' $INSTRUCTIONS_DIR 
 echo --
 
-python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test --panoptes
+python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then
