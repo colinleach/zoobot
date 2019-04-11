@@ -107,7 +107,7 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             epochs=get_epochs(this_iteration_n)  # duplication
         )
     else:
-        with open(os.path.join(previous_iteration_dir, 'final_state.json'), 'r') as f:
+        with open(os.path.join(previous_iteration_dir, 'final_state.json'), 'r') as f:  # coupled to saving of final state
             previous_final_state = FinalState(**json.load(f))
             this_iteration_n = previous_final_state.iteration_n + 1
             initial_state = InitialState(
@@ -123,8 +123,8 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
     return initial_state
 
 
-def save_final_state(final_state):
-    with open(os.path.join(final_state.iteration_dir, 'final_state.json')) as f:
+def save_final_state(final_state, save_dir):
+    with open(os.path.join(save_dir, 'final_state.json')) as f:
         json.dump(final_state, f)
 
 
@@ -162,7 +162,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
     oracle = mock_panoptes.load_oracle(instructions_dir)  # decoupled whether real or simulated
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
     final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
-    save_final_state(final_state)
+    save_final_state(final_state, this_iteration_dir)
 
     # finally, tidy up by moving the log into the run directory
     # could not be create here because run directory did not exist at start of script
