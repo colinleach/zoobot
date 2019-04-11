@@ -40,16 +40,23 @@ def subject_is_retired(subject):
     return subject['smooth-or-featured_total-votes'] > 1 # TODO !!temporary until first big reduction! Will be 37ish 
 
 
+def if_not_null_make_int(value):
+    if pd.isnull(value):
+        return value
+    else:
+        return int(value)
+
+
 def define_labels(catalog, question):
-    catalog['total_votes'] = catalog['smooth-or-featured_total-votes']
+    catalog['total_votes'] = catalog['smooth-or-featured_total-votes'].apply(if_not_null_make_int)
     if question == 'smooth':
-        catalog['label'] = catalog['smooth-or-featured_smooth']
+        catalog['label'] = catalog['smooth-or-featured_smooth'].apply(if_not_null_make_int)
     elif question == 'bar':
-        catalog['total_votes'] = catalog['bar_total-votes']
+        catalog['total_votes'] = catalog['bar_total-votes'].apply(if_not_null_make_int)
         try:
-            catalog['label'] = catalog['bar_weak']  # DECALS
+            catalog['label'] = catalog['bar_weak'].apply(if_not_null_make_int)  # DECALS
         except KeyError:
-            catalog['label'] = catalog['bar_yes']  # GZ2
+            catalog['label'] = catalog['bar_yes'].apply(if_not_null_make_int)  # GZ2
     else:
         raise ValueError('question {} not understood'.format(question))
     return catalog
@@ -83,7 +90,7 @@ if __name__ == '__main__':
     catalog, labelled, unlabelled = get_experiment_catalogs(master_catalog, question, catalog_dir)
 
     # ad hoc filtering here
-    catalog = catalog[:10000]
+    catalog = catalog[:20000]
 
     labelled.to_csv(os.path.join(catalog_dir, 'labelled_catalog.csv'), index=False)
     unlabelled.to_csv(os.path.join(catalog_dir, 'unlabelled_catalog.csv'), index=False)
