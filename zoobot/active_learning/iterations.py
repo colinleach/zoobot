@@ -182,7 +182,7 @@ class Iteration():
         logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
-        self.oracle.request_labels(top_acquisition_ids)
+        self.oracle.request_labels(top_acquisition_ids, name='priority', retirement=40)
 
 
     def record_train_records(self):
