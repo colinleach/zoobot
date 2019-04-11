@@ -90,7 +90,7 @@ class ShardConfig():
         os.mkdir(self.eval_dir)
 
         # check that file paths resolve correctly
-        print(labelled_catalog['file_loc'][:3])
+        print(labelled_catalog['file_loc'][:3].values)
         check_no_missing_files(labelled_catalog['file_loc'])
         check_no_missing_files(unlabelled_catalog['file_loc'])
 
@@ -234,9 +234,11 @@ if __name__ == '__main__':
     # TODO folder strategy is a bit messed up before/after shards
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
     unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
+    logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = (len(labelled_catalog) - int(args.eval_size))/len(labelled_catalog)  # always eval on random 2500 galaxies
+    logging.info('Train test fraction: {}'.format(train_test_fraction))
 
     shard_config = ShardConfig(shard_dir=args.shard_dir)
 
