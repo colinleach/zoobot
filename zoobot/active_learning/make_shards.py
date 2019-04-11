@@ -75,6 +75,13 @@ class ShardConfig():
             if loc.endswith('.tfrecord')]
 
 
+    def check_no_missing_files(locs):
+        locs_exist = os.path.isfile(path) for path in labelled_catalog['file_loc']
+        if not all(locs_exist):
+            raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_exist), locs[locs_exist][0]))
+
+
+
     def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction):
         """[summary]
         
@@ -91,8 +98,8 @@ class ShardConfig():
 
         # check that file paths resolve correctly
         print(labelled_catalog['file_loc'][:3])
-        assert all(os.path.isfile(path) for path in labelled_catalog['file_loc'])
-        assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
+        check_no_missing_files(labelled_catalog['file_loc'])
+        check_no_missing_files(unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
         logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
