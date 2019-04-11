@@ -232,7 +232,7 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
     """
     # hardcoded defaults, for now
     subjects_per_iter = 128
-    shards_per_iter = 4
+    shards_per_iter = 1  # will be 4
     final_size = 128  # for both modes
     if baseline:
         n_samples = 2
