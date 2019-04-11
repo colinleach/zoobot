@@ -124,7 +124,7 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
 
 
 def save_final_state(final_state, save_dir):
-    with open(os.path.join(save_dir, 'final_state.json')) as f:
+    with open(os.path.join(save_dir, 'final_state.json'), 'w') as f:
         json.dump(final_state, f)
 
 
