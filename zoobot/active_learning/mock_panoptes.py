@@ -134,5 +134,5 @@ def load_panoptes_mock_oracle(save_dir):
 def load_oracle(save_dir):
     try:
         return load_panoptes_oracle(save_dir)
-    except KeyError:  # TODO actually wrong exception
+    except TypeError:  # will have different args for init
         return load_panoptes_mock_oracle(save_dir)
