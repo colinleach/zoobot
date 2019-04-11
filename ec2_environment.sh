@@ -31,8 +31,8 @@ eval "$(ssh-agent -s)"  && \
 chmod 400 auth/github  && \
 ssh-add auth/github  && \
 cd repos/zoobot && git fetch --all && git pull && git checkout $ZOOBOT_BRANCH && cd ../ && \
-cd gz-panoptes-reduction && git pull && cd ../
-cd shared-astro-utilities && git pull && cd ../
+cd gz-panoptes-reduction && git pull && cd ../ && \
+cd shared-astro-utilities && git pull && cd ../../ && \
 source activate tensorflow_p36 && \
 pip install -r repos/zoobot/requirements.txt && \
 pip install -e repos/zoobot  && \

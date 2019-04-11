@@ -20,17 +20,6 @@ from zoobot.estimators import run_estimator
 from zoobot.estimators import make_predictions
 from zoobot.tfrecord import read_tfrecord
 
-try:
-    LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
-    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
-except AssertionError:
-    try:
-        LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
-        assert os.path.isdir(LOCAL_IMAGE_FOLDER)
-    except AssertionError:
-        logging.critical('active_learning.py - no such local image folder: {}'.format(LOCAL_IMAGE_FOLDER))
-
-
 
 def create_db(catalog, db_loc):
     """Instantiate sqlite database at db_loc with the following tables:

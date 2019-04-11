@@ -90,6 +90,7 @@ class ShardConfig():
         os.mkdir(self.eval_dir)
 
         # check that file paths resolve correctly
+        print(labelled_catalog['file_loc'][:3])
         assert all(os.path.isfile(path) for path in labelled_catalog['file_loc'])
         assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
 
