@@ -9,8 +9,8 @@ import pandas as pd
 def get_experiment_catalogs(catalog, question, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
-    catalog = define_labels(catalog, question)
     labelled, unlabelled = split_labelled_and_unlabelled(catalog, question)
+    labelled = define_labels(labelled, question)
     return catalog, labelled, unlabelled
 
 
@@ -59,6 +59,7 @@ def define_labels(catalog, question):
             catalog['label'] = catalog['bar_yes'].apply(if_not_null_make_int)  # GZ2
     else:
         raise ValueError('question {} not understood'.format(question))
+
     return catalog
 
 
