@@ -197,7 +197,7 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
 def check_no_missing_files(locs):
     locs_missing = [not os.path.isfile(path) for path in locs]
     if any(locs_missing):
-        raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_exist), locs[locs_missing][0]))
+        raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_missing), locs[locs_missing][0]))
 
 
 if __name__ == '__main__':
