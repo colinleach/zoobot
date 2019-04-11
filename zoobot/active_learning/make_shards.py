@@ -75,13 +75,6 @@ class ShardConfig():
             if loc.endswith('.tfrecord')]
 
 
-    def check_no_missing_files(locs):
-        locs_exist = [os.path.isfile(path) for path in labelled_catalog['file_loc']]
-        if not all(locs_exist):
-            raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_exist), locs[locs_exist][0]))
-
-
-
     def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction):
         """[summary]
         
@@ -199,6 +192,12 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
         shard_dir,
         shard_size
     )
+
+
+def check_no_missing_files(locs):
+    locs_exist = [os.path.isfile(path) for path in locs]
+    if not all(locs_exist):
+        raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_exist), locs[locs_exist][0]))
 
 
 if __name__ == '__main__':
