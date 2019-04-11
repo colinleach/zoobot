@@ -76,7 +76,7 @@ class ShardConfig():
 
 
     def check_no_missing_files(locs):
-        locs_exist = os.path.isfile(path) for path in labelled_catalog['file_loc']
+        locs_exist = [os.path.isfile(path) for path in labelled_catalog['file_loc']]
         if not all(locs_exist):
             raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_exist), locs[locs_exist][0]))
 
