@@ -4,9 +4,9 @@ set +e  # stop if error
 SHARD_NAME=smooth_unfiltered
 EXPERIMENT_NAME=smooth_unfiltered_test
 
-EXPERIMENT_DIR=/home/ec2-user/root/repos/zoobot/data/results/simulations/$EXPERIMENT_NAME
+EXPERIMENT_DIR='/home/ec2-user/root/repos/zoobot/data/results/simulations/'$EXPERIMENT_NAME
 
-SHARD_CONFIG=/home/ec2-user/root/repos/zoobot/data/decals/shards/'$SHARD_NAME'/shard_config.json
+SHARD_CONFIG='/home/ec2-user/root/repos/zoobot/data/decals/shards/'$SHARD_NAME'/shard_config.json'
 INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
 
 N_ITERATIONS=5
@@ -29,13 +29,13 @@ THIS_ITERATION=0
 
 while [ $THIS_ITERATION -lt $N_ITERATIONS ]
 do  
-    THIS_ITERATION_DIR=$EXPERIMENT_DIR/iteration_$THIS_ITERATION
+    THIS_ITERATION_DIR=$EXPERIMENT_DIR'/iteration_'$THIS_ITERATION
 
     if [ $THIS_ITERATION -eq "0" ]
     then
         PREVIOUS_ITERATION_DIR=""
     else
-        PREVIOUS_ITERATION_DIR=$EXPERIMENT_DIR/iteration_$PREVIOUS_ITERATION
+        PREVIOUS_ITERATION_DIR=$EXPERIMENT_DIR'/iteration_'$PREVIOUS_ITERATION
 
     fi
 
