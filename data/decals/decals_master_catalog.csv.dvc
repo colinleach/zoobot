@@ -1,8 +1,8 @@
-md5: 869b374fba8ba8127bb8bb28f6f1e546
+md5: f8274151bcd31404e84eceaf31daf1b4
 outs:
 - cache: true
-  md5: c7e426128eaa0cc97087cbca975e08c6
+  md5: 166432693f77775a67b8a6ff05f14093
   metric: false
-  path: decals_master_catalog.csv
+  path: data/decals/decals_master_catalog.csv
   persist: false
-wdir: .
+wdir: ../..
