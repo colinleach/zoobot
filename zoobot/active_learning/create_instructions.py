@@ -74,7 +74,7 @@ class Instructions():
     def use_test_mode(self):
         """Override for speed, to see if everything works as intended"""
         self.subjects_per_iter = 256
-        self.shards_per_iter = 2
+        self.shards_per_iter = 1  # TODO should be 2
         self.shards.final_size = 32
 
     def to_dict(self):
