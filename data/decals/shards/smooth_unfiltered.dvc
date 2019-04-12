@@ -2,12 +2,12 @@ cmd: python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals
   --unlabelled-catalog=data/decals/prepared_catalogs/smooth_unfiltered/labelled_catalog.csv
   --eval-size=12 --shard-dir=data/decals/shards/smooth_unfiltered
 deps:
-- md5: e7c74377837f764969ed8af14564ade4
+- md5: a303e50ed546bdf642af0b554c3cd790
   path: data/decals/prepared_catalogs/smooth_unfiltered.dvc
-md5: ea98d6e6c8aca7a756db2c1050303f0c
+md5: c133de527237dee2faa2763b157a1eab
 outs:
 - cache: true
-  md5: 9344f921bcf29f955a56f0fec2acfe9c.dir
+  md5: d87fdf17ce7bc28d26046cecce2af634.dir
   metric: false
   path: data/decals/shards/smooth_unfiltered
   persist: false
