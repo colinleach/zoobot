@@ -48,7 +48,7 @@ def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
         print('Duplicated:')
         counts = df['iauname'].value_counts()
         print(counts[counts > 1])
-        raise ValueError
+        df = df.drop_duplicates(subset=['iauname'], keep=False)
 
     df.to_csv(save_loc, index=False)
 
@@ -107,16 +107,16 @@ def shuffle(df):
 
 if __name__ == '__main__':
     # assume run from repo root
-    # local only, upload the results with dvc. 
+    # LOCAL ONLY upload the results with dvc. 
 
     # should run full reduction first and place in classifications_loc
     # see mwalmsley/gzreduction/get_latest.py
 
-    # create_decals_master_catalog(
-    #     catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
-    #     classifications_loc='data/decals/classifications/classifications.csv',
-    #     save_loc='data/decals/decals_master_catalog.csv'
-    # )
+    create_decals_master_catalog(
+        catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
+        classifications_loc='data/decals/classifications/classifications.csv',
+        save_loc='data/decals/decals_master_catalog.csv'
+    )
 
     # create_gz2_master_catalog(
     #     catalog_loc='data/gz2/gz2_classifications_and_subjects.csv',
@@ -129,7 +129,9 @@ if __name__ == '__main__':
     # this is considered part of the shards, and results are saved to the shards directory
 
 
-    df = pd.read_csv('data/decals/decals_master_catalog.csv')
-    df['file_loc'] = df['file_loc'].apply(lambda x: '/home/ubuntu' + x)
-    print(df['file_loc'][0])
-    df.to_csv('data/decals/decals_master_catalog.csv', index=False)
+    # df = pd.read_csv('data/decals/decals_master_catalog.csv')
+    # df['file_loc'] = df['file_loc'].apply(lambda x: '/home/ubuntu' + x)
+    # print(df['file_loc'][0])
+    # df.to_csv('data/decals/decals_master_catalog.csv', index=False)
+
+    # dvc run -o data/decals/decals_master_catalog.csv -f data/decals/decals_master_catalog.csv.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py
