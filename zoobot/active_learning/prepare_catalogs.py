@@ -93,7 +93,7 @@ def specify_file_locs(df):
     Add 'file_loc' which points to pngs at expected absolute EC2 path
     Remove 'png_loc (png relative to repo root) to avoid confusion
     """
-    df['file_loc'] = '/root/repos/zoobot/' + df['png_loc']  # now expects this to point to png loc relative to repo root
+    df['file_loc'] = '/home/ec2-user/root/repos/zoobot/' + df['png_loc']  # now expects this to point to png loc relative to repo root
     assert all(loc for loc in df['file_loc'])
     del df['png_loc']  # else may load this by default
     print(df['file_loc'].sample(5))
@@ -112,11 +112,11 @@ if __name__ == '__main__':
     # should run full reduction first and place in classifications_loc
     # see mwalmsley/gzreduction/get_latest.py
 
-    create_decals_master_catalog(
-        catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
-        classifications_loc='data/decals/classifications/classifications.csv',
-        save_loc='data/decals/decals_master_catalog.csv'
-    )
+    # create_decals_master_catalog(
+    #     catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
+    #     classifications_loc='data/decals/classifications/classifications.csv',
+    #     save_loc='data/decals/decals_master_catalog.csv'
+    # )
 
     # create_gz2_master_catalog(
     #     catalog_loc='data/gz2/gz2_classifications_and_subjects.csv',
@@ -127,3 +127,9 @@ if __name__ == '__main__':
     # Agnostic of which question to answer
     # later, run finalise_catalog to apply filters and specify the question to solve
     # this is considered part of the shards, and results are saved to the shards directory
+
+
+    df = pd.read_csv('data/decals/decals_master_catalog.csv')
+    df['file_loc'] = df['file_loc'].apply(lambda x: '/home/ubuntu' + x)
+    print(df['file_loc'][0])
+    df.to_csv('data/decals/decals_master_catalog.csv', index=False)

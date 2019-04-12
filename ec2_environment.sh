@@ -26,6 +26,7 @@ aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_nat
 
 ZOOBOT_BRANCH=production-prototype
 sudo mount /dev/xvdb root && \
+sudo chown -R ubuntu root
 cd root &&
 eval "$(ssh-agent -s)"  && \
 chmod 400 auth/github  && \
