@@ -1,7 +1,11 @@
-md5: f8274151bcd31404e84eceaf31daf1b4
+cmd: python zoobot/active_learning/prepare_catalogs.py
+deps:
+- md5: 01d05e6340831e5b0003f8ff7896f68c
+  path: zoobot/active_learning/prepare_catalogs.py
+md5: 2b57d3134c445bc34478c384514090df
 outs:
 - cache: true
-  md5: 166432693f77775a67b8a6ff05f14093
+  md5: 5ccd19f0ba10bdfc3880679289f4964e
   metric: false
   path: data/decals/decals_master_catalog.csv
   persist: false
