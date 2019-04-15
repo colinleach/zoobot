@@ -124,7 +124,7 @@ def plot_samples(scores, labels, total_votes, fig, axes, alpha=0.15):
     for galaxy_n, ax in enumerate(axes):
         x = np.arange(0, total_votes[galaxy_n]+1) # inclusive
         if scores.shape[1] > 1:
-            c='g'
+            c = (0., .85, 0.)
             probability_record = []
             for score_n, score in enumerate(scores[galaxy_n]):
                 if score_n == 0: 
@@ -140,7 +140,7 @@ def plot_samples(scores, labels, total_votes, fig, axes, alpha=0.15):
             mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=total_votes[galaxy_n])
             c='k'
         ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
-        ax.axvline(labels[galaxy_n], c='r', label='Observed')
+        ax.axvline(labels[galaxy_n], c=(0.8, 0., 0.), label='Observed')
         ax.yaxis.set_visible(False)
 
 

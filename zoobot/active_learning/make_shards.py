@@ -15,7 +15,7 @@ from shared_astro_utils import matching_utils, object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, mock_panoptes
+from zoobot.active_learning import active_learning, default_estimator_params, mock_panoptes, prepare_catalogs
 from zoobot.tests import TEST_EXAMPLE_DIR
 
 
@@ -91,8 +91,8 @@ class ShardConfig():
 
         # check that file paths resolve correctly
         print(labelled_catalog['file_loc'][:3].values)
-        check_no_missing_files(labelled_catalog['file_loc'])
-        check_no_missing_files(unlabelled_catalog['file_loc'])
+        prepare_catalogs.check_no_missing_files(labelled_catalog['file_loc'])
+        prepare_catalogs.check_no_missing_files(unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
         logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
@@ -194,11 +194,6 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     )
 
 
-def check_no_missing_files(locs):
-    locs_missing = [not os.path.isfile(path) for path in locs]
-    if any(locs_missing):
-        raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_missing), locs[locs_missing][0]))
-
 
 if __name__ == '__main__':
 
@@ -253,6 +248,3 @@ if __name__ == '__main__':
     repo = git.Repo(search_parent_directories=True)
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.shard_dir, '{}.log'.format(sha)))
-
-
-    # e.g. python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/smooth_unfiltered/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/smooth_unfiltered/labelled_catalog.csv --eval-size=512 --shard-dir=data/decals/shards/smooth_unfiltered

@@ -11,10 +11,6 @@
 
 ## EC2
 
-**Create master catalog**
-
-`dvc run -o data/decals/decals_master_catalog.csv -f data/decals/decals_master_catalog.csv.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py`
-
 **Specify what you'd like to do**
 
 `master_catalog=data/decals/decals_master_catalog.csv`
@@ -24,6 +20,10 @@
 `catalog_dir=data/decals/prepared_catalogs/decals_weak_bars_launch`
 
 `shard_dir=data/decals/shards/decals_weak_bars_launch`
+
+**Create master catalog**
+
+`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py`
 
 **Define experiment (create experiment catalogs)**
 
