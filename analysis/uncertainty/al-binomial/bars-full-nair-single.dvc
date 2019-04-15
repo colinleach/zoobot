@@ -1,0 +1,8 @@
+md5: 45a5306512fe3644e51e9ca1bdd7c1fe
+outs:
+- cache: true
+  md5: f0ef8bd216d0a29627059a5e63b10cba.dir
+  metric: false
+  path: ../analysis/uncertainty/al-binomial/bars-full-nair-single
+  persist: false
+wdir: ../../../notebooks
