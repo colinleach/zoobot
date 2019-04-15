@@ -18,8 +18,8 @@ def get_experiment_catalogs(catalog, question, save_dir):
 def split_labelled_and_unlabelled(catalog, question):
     retired = catalog.apply(subject_is_retired, axis=1)
     labelled = catalog[retired]
-    if question == 'bar':
-        labelled = labelled.query('bar_total-votes' < 10)
+    if question == 'bar':  # drop galaxies with < 10 bar votes, neither labelled nor unlabelled
+        labelled = labelled[labelled['bar_total-votes'] < 10]
     unlabelled= catalog[~retired]
     return labelled, unlabelled
 
