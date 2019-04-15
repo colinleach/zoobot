@@ -30,4 +30,4 @@ if __name__ == '__main__':
             last_id=None,
             question=None
         )
-    panoptes.request_labels(unlabelled['id_str'][150:600].values, name='random', retirement=10)
+    panoptes.request_labels(unlabelled['id_str'][600:].values, name='random', retirement=3)
