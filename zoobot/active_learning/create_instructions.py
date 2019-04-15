@@ -268,9 +268,11 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
     )
     acquisition_func_obj.save(instructions_dir)
 
+    catalog_dir = 'data/decals/prepared_catalogs/decals_weak_bars_launch'
+
     if panoptes: # use live Panoptes oracle
         oracle = mock_panoptes.Panoptes(
-            catalog_loc='data/decals/prepared_catalogs/smooth_unfiltered/unlabelled_catalog.csv',
+            catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
             project_id='8751',
             workflow_id='9816',
@@ -278,7 +280,7 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
             question='smooth'  # SMOOTH MODE
         )
     else:  # use mock Panoptes oracle
-        oracle_loc = 'data/decals/prepared_catalogs/smooth_unfiltered/simulation_context/oracle.csv'
+        oracle_loc = catalog_dir + '/simulation_context/oracle.csv'
         assert os.path.isfile(oracle_loc)
         oracle = mock_panoptes.PanoptesMock(
             oracle_loc=oracle_loc,
