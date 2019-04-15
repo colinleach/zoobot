@@ -80,7 +80,7 @@ if __name__ == '__main__':
                     help='Name of experiment (save to data')
     parser.add_argument('--question', dest='question', type=str,
                     help='Question to answer: smooth or bar')
-    parser.add_argument('--save-dir', dest='name', type=str,
+    parser.add_argument('--save-dir', dest='save_dir', type=str,
                     help='Save experiment catalogs here')
     args = parser.parse_args()
     master_catalog_loc = args.master_catalog_loc
@@ -110,5 +110,5 @@ if __name__ == '__main__':
     oracle.to_csv(os.path.join(simulation_dir, 'oracle.csv'), index=False)
     mock_unlabelled.to_csv(os.path.join(simulation_dir, 'unlabelled_catalog.csv'), index=False)
 
-    
+
     # dvc run -d data/decals/decals_master_catalog.csv -d zoobot/active_learning/define_experiment.py -o data/decals/prepared_catalogs/decals_weak_bars -f data/decals/prepared_catalogs/decals_weak_bars_launch.dvc python zoobot/active_learning/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv --question=bar --save-dir=data/decals/decals_weak_bars_launch
