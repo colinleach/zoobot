@@ -124,7 +124,7 @@ def plot_samples(scores, labels, total_votes, fig, axes, alpha=0.15):
     for galaxy_n, ax in enumerate(axes):
         x = np.arange(0, total_votes[galaxy_n]+1) # inclusive
         if scores.shape[1] > 1:
-            c='g'
+            c = (0., .9, 0.)
             probability_record = []
             for score_n, score in enumerate(scores[galaxy_n]):
                 if score_n == 0: 
