@@ -87,6 +87,14 @@ def create_gz2_master_catalog(catalog_loc, save_loc):
     df = specify_file_locs(df)  # expected absolute file loc on EC2
     df.to_csv(save_loc, index=False)
 
+def get_root_loc():
+    if os.path.isdir('/home/ec2-user'):
+        return '/home/ec2-user/root'
+    elif os.path.isdir('/home/ubuntu'):
+        return '/home/ubuntu/root'
+    else:
+        raise ValueError('Cannot work out if root is under ec2-user or ubuntu')
+
 
 def specify_file_locs(df):
     """
@@ -106,6 +114,7 @@ def shuffle(df):
 
 
 if __name__ == '__main__':
+    
     # assume run from repo root
     # LOCAL ONLY upload the results with dvc. 
 
@@ -113,7 +122,7 @@ if __name__ == '__main__':
     # see mwalmsley/gzreduction/get_latest.py
 
     create_decals_master_catalog(
-        catalog_loc='/Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits',
+        catalog_loc='data/decals/disk_catalog.fits',
         classifications_loc='data/decals/classifications/classifications.csv',
         save_loc='data/decals/decals_master_catalog.csv'
     )
@@ -134,4 +143,3 @@ if __name__ == '__main__':
     # print(df['file_loc'][0])
     # df.to_csv('data/decals/decals_master_catalog.csv', index=False)
 
-    # dvc run -o data/decals/decals_master_catalog.csv -f data/decals/decals_master_catalog.csv.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py
