@@ -1,0 +1,8 @@
+md5: ca2c69bc7af2c69361d006c25740251b
+outs:
+- cache: true
+  md5: 21dc2905efc745712dde0dec25d64e34
+  metric: false
+  path: data/decals/classifications/classifications.csv
+  persist: false
+wdir: ../../..
