@@ -2,6 +2,7 @@
 import logging
 import os
 
+import numpy as np
 import pandas as pd
 from astropy.table import Table
 
@@ -85,7 +86,9 @@ def create_gz2_master_catalog(catalog_loc, save_loc):
     df['id_str'] = df['id'].astype(str)
     df['png_loc'] = df['local_png_loc'].apply(lambda x: 'data/' + x.lstrip('/Volumes/alpha'))  # change to be inside data folder, specified relative to repo root
     df = specify_file_locs(df)  # expected absolute file loc on EC2
+    assert os.path.exists
     df.to_csv(save_loc, index=False)
+
 
 def get_root_loc():
     if os.path.isdir('/home/ec2-user'):
@@ -101,11 +104,19 @@ def specify_file_locs(df):
     Add 'file_loc' which points to pngs at expected absolute EC2 path
     Remove 'png_loc (png relative to repo root) to avoid confusion
     """
-    df['file_loc'] = '/home/ec2-user/root/repos/zoobot/' + df['png_loc']  # now expects this to point to png loc relative to repo root
+    root_loc = get_root_loc()
+    df['file_loc'] = get_root_loc() + '/repos/zoobot/' + df['png_loc']  # now expects this to point to png loc relative to repo root
     assert all(loc for loc in df['file_loc'])
     del df['png_loc']  # else may load this by default
     print(df['file_loc'].sample(5))
+    check_no_missing_files(df['file_loc'])
     return df
+
+
+def check_no_missing_files(locs):
+    locs_missing = [not os.path.isfile(path) for path in locs]
+    if any(locs_missing):
+        raise ValueError('Missing {} files e.g. {}'.format(np.sum(locs_missing), locs[locs_missing][0]))
 
 
 def shuffle(df):
