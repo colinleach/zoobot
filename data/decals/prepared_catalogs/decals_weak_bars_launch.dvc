@@ -1,0 +1,15 @@
+cmd: python zoobot/active_learning/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv
+  --question=bar --save-dir=data/decals/prepared_catalogs/decals_weak_bars_launch
+deps:
+- md5: 5ccd19f0ba10bdfc3880679289f4964e
+  path: data/decals/decals_master_catalog.csv
+- md5: 11dba10fc09750f1f87b76c4dda9cdd1
+  path: zoobot/active_learning/define_experiment.py
+md5: 0618035d7bc763dd38df34211b2d8b0b
+outs:
+- cache: true
+  md5: 4eb4fae8163ed2d8ff70b7404cc4beea.dir
+  metric: false
+  path: data/decals/prepared_catalogs/decals_weak_bars_launch
+  persist: false
+wdir: ../../..
