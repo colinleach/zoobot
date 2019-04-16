@@ -20,7 +20,7 @@ echo --
 mkdir $EXPERIMENT_DIR
 mkdir $INSTRUCTIONS_DIR
 
-python zoobot/active_learning/create_instructions.py  --catalog_dir=$CATALOG_DIR --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start $TEST $PANOPTES
+python zoobot/active_learning/create_instructions.py  --catalog-dir=$CATALOG_DIR --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start $TEST $PANOPTES
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then
