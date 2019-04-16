@@ -56,6 +56,8 @@ class Panoptes(Oracle):
         - (Download with Panoptes Python client
         - Aggregate with GZ Reduction Spark routine)
         """
+        if not os.path.isdir(working_dir):
+            os.mkdir(working_dir)
         # Run GZ Reduction to get all new classifications
         classifications = execute_reduction(
             workflow_id=self._workflow_id,
