@@ -18,7 +18,7 @@ class Panoptes(Oracle):
 
     def __init__(self, catalog_loc, login_loc, project_id, workflow_id, last_id, question):
         assert os.path.exists(catalog_loc)  # in principle, should only need unlabelled galaxies
-        self._catalog_loc = catalog_loc
+        self._catalog_loc = catalog_loc  # unlabelled catalog
         self._login_loc = login_loc
         self._project_id = project_id
         self._workflow_id = workflow_id
@@ -64,9 +64,23 @@ class Panoptes(Oracle):
             working_dir=working_dir,
             last_id=self.last_id
         )
+
         # only galaxies newly labelled since last_id
-        labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
-        return labelled['id_str'].values, labelled['label'].values, labelled['total_votes'].values
+        newly_labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
+        print(newly_labelled.columns.values)  # classifications + subjects, not yet processed
+
+        define_experiment.define_identifiers(newly_labelled)  # add iauname
+        define_experiment.define_labels(newly_labelled, self.question)  # add 'label' and 'total_votes', drop low n bars
+
+        # drop any duplicated galaxies for safety
+        if any(newly_labelled['iauname'].duplicated()):  # TODO refactor out from here and master catalog
+            print('Duplicated:')
+            counts = newly_labelled['iauname'].value_counts()
+            print(counts[counts > 1])
+            newly_labelled = newly_labelled.drop_duplicates(subset=['iauname'], keep=False)
+
+
+        return newly_labelled['id_str'].values, newly_labelled['label'].values, newly_labelled['total_votes'].values
 
 
     def save(self, save_dir):
