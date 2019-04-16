@@ -46,7 +46,7 @@ def define_labels(labelled, question):
         labelled['label'] = labelled['smooth-or-featured_smooth'].astype(int)
     elif question == 'bar':
         labelled['total_votes'] = labelled['bar_total-votes'].astype(int)
-        labelled = labelled[labelled['total-votes'] > 10]  # drop anything with n < 10
+        labelled = labelled[labelled['total_votes'] > 10]  # drop anything with n < 10
         try:
             labelled['label'] = labelled['bar_weak'].astype(int)  # DECALS
         except KeyError:
