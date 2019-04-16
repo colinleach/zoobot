@@ -272,10 +272,10 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         oracle = mock_panoptes.Panoptes(
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
-            project_id='8751',
-            workflow_id='9816',
-            last_id='117640575',
-            question='smooth'  # SMOOTH MODE
+            project_id='5733',
+            workflow_id='6122',
+            last_id='159526481',
+            question='bar'  # TODO sloppy!
         )
     else:  # use mock Panoptes oracle
         oracle_loc = catalog_dir + '/simulation_context/oracle.csv'
