@@ -21,7 +21,8 @@ echo --
 #     rm -r $EXPERIMENT_DIR 
 # fi
 
-mkdir $EXPERIMENT_DIR 
+mkdir $EXPERIMENT_DIR
+mkdir $INSTRUCTIONS_DIR
 
 python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test
 RESULT=$?
