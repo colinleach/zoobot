@@ -226,8 +226,8 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    labelled_catalog = pd.read_csv(args.labelled_catalog_loc)[:20000]  # TEMP
-    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)[:20000]  # TEMP
+    labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
+    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs
