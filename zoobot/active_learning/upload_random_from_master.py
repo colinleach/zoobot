@@ -12,16 +12,17 @@ if __name__ == '__main__':
     login_loc = 'zooniverse_login.json'
     project_id = '5733'
 
-    df = pd.read_csv(master_catalog_loc, nrows=100)
+    df = pd.read_csv(master_catalog_loc)
     unlabelled = df[pd.isnull(df['smooth-or-featured_total-votes'])]
     unlabelled['id_str'] = unlabelled['iauname']  # my client expects this column
     print('{} of {} unlabelled'.format(len(unlabelled), len(df)))
 
     unlabelled['file_loc'] = unlabelled['local_png_loc']
 
+    selected = slice(0, 5000)
     with tempfile.TemporaryDirectory() as tempdir:
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
-        unlabelled.to_csv(unlabelled_loc)
+        unlabelled[selected].to_csv(unlabelled_loc)
         panoptes = mock_panoptes.Panoptes(
             catalog_loc=unlabelled_loc,
             login_loc=login_loc,
