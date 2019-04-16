@@ -1,8 +1,8 @@
 #!/bin/bash
 set +e  # stop if error
 
-SHARD_NAME=decals_weak_bars_sim  # TODO make this an arg!
-EXPERIMENT_NAME=decals_weak_bars_launch_test
+SHARD_NAME=$1 #e.g. decals_weak_bars_sim
+EXPERIMENT_NAME=$2 # e.g. decals_weak_bars_launch_test
 
 EXPERIMENT_DIR='/home/ubuntu/root/repos/zoobot/data/experiments/simulation/'$EXPERIMENT_NAME
 
