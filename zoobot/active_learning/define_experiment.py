@@ -58,7 +58,7 @@ def define_labels(labelled, question):
 
 
 
-def get_mock_catalogs(labelled_catalog, save_dir, labelled_size=15000):
+def get_mock_catalogs(labelled_catalog, save_dir, labelled_size):
     # given a (historical) labelled catalog, pretend split into labelled and unlabelled
     assert not any(pd.isnull(labelled_catalog['label']))
     oracle = labelled_catalog[['id_str', 'total_votes', 'label']]  # oracle has everything in real labelled catalog
@@ -103,7 +103,9 @@ if __name__ == '__main__':
     simulation_dir = os.path.join(save_dir, 'simulation_context')
     if not os.path.isdir(simulation_dir):
         os.mkdir(simulation_dir)
-    mock_labelled, mock_unlabelled, oracle = get_mock_catalogs(labelled, simulation_dir)
+
+    labelled_size = len(labelled) - 6000  # pretend unlabelled, to be acquired
+    mock_labelled, mock_unlabelled, oracle = get_mock_catalogs(labelled, simulation_dir, labelled_size)
 
     mock_labelled.to_csv(os.path.join(simulation_dir, 'labelled_catalog.csv'), index=False)
     oracle.to_csv(os.path.join(simulation_dir, 'oracle.csv'), index=False)
