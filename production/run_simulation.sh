@@ -1,12 +1,12 @@
 #!/bin/bash
 set +e  # stop if error
 
-SHARD_NAME=smooth_unfiltered
-EXPERIMENT_NAME=smooth_unfiltered_test
+SHARD_NAME=decals_weak_bars_launch
+EXPERIMENT_NAME=decals_weak_bars_launch_test
 
-EXPERIMENT_DIR='/home/ec2-user/root/repos/zoobot/data/experiments/simulation/'$EXPERIMENT_NAME
+EXPERIMENT_DIR='/home/ubuntu/root/repos/zoobot/data/experiments/simulation/'$EXPERIMENT_NAME
 
-SHARD_CONFIG='/home/ec2-user/root/repos/zoobot/data/decals/shards/'$SHARD_NAME'/shard_config.json'
+SHARD_CONFIG='/home/ubuntu/root/repos/zoobot/data/decals/shards/'$SHARD_NAME'/shard_config.json'
 INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
 
 N_ITERATIONS=5

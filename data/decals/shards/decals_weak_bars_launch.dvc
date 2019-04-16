@@ -1,0 +1,16 @@
+cmd: python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_weak_bars_launch/labelled_catalog.csv
+  --unlabelled-catalog=data/decals/prepared_catalogs/decals_weak_bars_launch/unlabelled_catalog.csv
+  --eval-size=5000 --shard-dir=data/decals/shards/decals_weak_bars_launch
+deps:
+- md5: cbe4f8f0fefa3414bc61681acaf4b894.dir
+  path: data/decals/prepared_catalogs/decals_weak_bars_launch
+- md5: da26c36f1bffccfa896e5b6467581d16
+  path: zoobot/active_learning/make_shards.py
+md5: 07a812ede0642b1f89db006057800357
+outs:
+- cache: true
+  md5: a2a739940604b15a79b41340507a3217.dir
+  metric: false
+  path: data/decals/shards/decals_weak_bars_launch
+  persist: false
+wdir: ../../..
