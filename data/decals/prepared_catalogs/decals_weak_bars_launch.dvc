@@ -3,12 +3,12 @@ cmd: python zoobot/active_learning/define_experiment.py --master-catalog=data/de
 deps:
 - md5: 203ca129441c2f8e52a0739e2bc70056
   path: data/decals/decals_master_catalog.csv
-- md5: 662dde634700915e86fd56302e9dee41
+- md5: c6de37686f4f9c0751a42e3a0aa32259
   path: zoobot/active_learning/define_experiment.py
-md5: 002e211c8b138f6532d926d2eceaf036
+md5: b446332fefb455359d8444b4b3ed8ff7
 outs:
 - cache: true
-  md5: f3c5a4ae8c181a904afb86752b17d3d8.dir
+  md5: fd7f4b3321c3cee1c3f2fe630a6cc30f.dir
   metric: false
   path: data/decals/prepared_catalogs/decals_weak_bars_launch
   persist: false
