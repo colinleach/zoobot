@@ -72,7 +72,7 @@ class Panoptes(Oracle):
             'catalog_loc': self._catalog_loc,
             'login_loc': self._login_loc,
             'project_id': self._project_id,
-            'workflow_id': self.workflow_id,
+            'workflow_id': self._workflow_id,
             'last_id': self.last_id,
             'question': self.question
         }
