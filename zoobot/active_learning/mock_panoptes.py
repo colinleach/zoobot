@@ -69,8 +69,8 @@ class Panoptes(Oracle):
         newly_labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
         print(newly_labelled.columns.values)  # classifications + subjects, not yet processed
 
-        define_experiment.define_identifiers(newly_labelled)  # add iauname
-        define_experiment.define_labels(newly_labelled, self.question)  # add 'label' and 'total_votes', drop low n bars
+        newly_labelled = define_experiment.define_identifiers(newly_labelled)  # add iauname
+        newly_labelled = define_experiment.define_labels(newly_labelled, self.question)  # add 'label' and 'total_votes', drop low n bars
 
         # drop any duplicated galaxies for safety
         if any(newly_labelled['iauname'].duplicated()):  # TODO refactor out from here and master catalog
