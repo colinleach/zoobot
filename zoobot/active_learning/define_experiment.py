@@ -18,8 +18,6 @@ def get_experiment_catalogs(catalog, question, save_dir):
 def split_labelled_and_unlabelled(catalog, question):
     retired = catalog.apply(subject_is_retired, axis=1)
     labelled = catalog[retired]
-    if question == 'bar':  # drop galaxies with < 10 bar votes, neither labelled nor unlabelled
-        labelled = labelled[labelled['bar_total-votes'] < 10]
     unlabelled= catalog[~retired]
     return labelled, unlabelled
 
@@ -41,20 +39,22 @@ def subject_is_retired(subject):
     return subject['smooth-or-featured_total-votes'] > 36
 
 
-def define_labels(catalog, question):
-    catalog['total_votes'] = catalog['smooth-or-featured_total-votes'].astype(int)
+def define_labels(labelled, question):
+    labelled['total_votes'] = labelled['smooth-or-featured_total-votes'].astype(int)
+    assert all(labelled['total_votes'] > 0)  # otherwise, can't be labelled! and will cause nans
     if question == 'smooth':
-        catalog['label'] = catalog['smooth-or-featured_smooth'].astype(int)
+        labelled['label'] = labelled['smooth-or-featured_smooth'].astype(int)
     elif question == 'bar':
-        catalog['total_votes'] = catalog['bar_total-votes'].astype(int)
+        labelled['total_votes'] = labelled['bar_total-votes'].astype(int)
+        labelled = labelled[labelled['total-votes'] > 10]  # drop anything with n < 10
         try:
-            catalog['label'] = catalog['bar_weak'].astype(int)  # DECALS
+            labelled['label'] = labelled['bar_weak'].astype(int)  # DECALS
         except KeyError:
-            catalog['label'] = catalog['bar_yes'].astype(int)  # GZ2
+            labelled['label'] = labelled['bar_yes'].astype(int)  # GZ2
     else:
         raise ValueError('question {} not understood'.format(question))
 
-    return catalog
+    return labelled
 
 
 

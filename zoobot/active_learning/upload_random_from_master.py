@@ -7,11 +7,12 @@ from zoobot.active_learning import mock_panoptes
 
 if __name__ == '__main__':
 
+    # careful, may technically be a different master catalog
     master_catalog_loc = 'data/decals/decals_master_catalog.csv'
     login_loc = 'zooniverse_login.json'
     project_id = '5733'
 
-    df = pd.read_csv(master_catalog_loc, nrows=10000)
+    df = pd.read_csv(master_catalog_loc, nrows=100)
     unlabelled = df[pd.isnull(df['smooth-or-featured_total-votes'])]
     unlabelled['id_str'] = unlabelled['iauname']  # my client expects this column
     print('{} of {} unlabelled'.format(len(unlabelled), len(df)))
@@ -30,4 +31,4 @@ if __name__ == '__main__':
             last_id=None,
             question=None
         )
-    panoptes.request_labels(unlabelled['id_str'][-10:].values, name='temp', retirement=3)
+    panoptes.request_labels(unlabelled['id_str'].values, name='random', retirement=3)
