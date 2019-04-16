@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pandas as pd
 from shared_astro_utils import upload_utils, time_utils
-import gzreduction
+from gzreduction.get_latest import execute_reduction  # TODO sloppy
 
 from zoobot.active_learning.oracle import Oracle
 from zoobot.active_learning import prepare_catalogs, define_experiment
@@ -57,7 +57,7 @@ class Panoptes(Oracle):
         - Aggregate with GZ Reduction Spark routine)
         """
         # Run GZ Reduction to get all new classifications
-        classifications = gzreduction.get_latest.execute_reduction(
+        classifications = execute_reduction(
             workflow_id=self._workflow_id,
             working_dir=working_dir,
             last_id=self.last_id
