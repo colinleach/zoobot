@@ -209,7 +209,7 @@ def load_acquisition_func(save_dir):
 #     return os.path.join(local_image_folder, subdir, fname)
 
 
-def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panoptes):
+def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, test, panoptes):
     """
     Create a folder with all parameters that are fixed between active learning iterations.
     This is useful to read when an EC2 instance is spun up to run a new iteration.
@@ -224,6 +224,7 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
 
     Args:
         shard_config_loc (str): 
+        catalog_dir (str):
         instructions_dir (str): directory to save the above parameters
         baseline (bool): if True, use random subject acquisition prioritisation
         warm_start (bool): if True, continue training the latest estimator from any log_dir provided to a train callable
@@ -267,9 +268,6 @@ def main(shard_config_loc, instructions_dir, baseline, warm_start, test, panopte
         expected_votes=expected_votes
     )
     acquisition_func_obj.save(instructions_dir)
-
-    catalog_dir = 'data/decals/prepared_catalogs/decals_weak_bars_launch'
-
     if panoptes: # use live Panoptes oracle
         oracle = mock_panoptes.Panoptes(
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
@@ -294,6 +292,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute active learning')
     parser.add_argument('--shard-config', dest='shard_config_loc', type=str,
                     help='Details of shards to use')
+    parser.add_argument('--catalog-dir', dest='catalog_dir', type=str,
+                    help='Details of shards to use')
+                    #  TODO add catalog loc, to here or via shard config, to know which oracle to use
     parser.add_argument('--instructions-dir', dest='instructions_dir', type=str,
                     help='Directory to save instructions')
     parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
@@ -316,6 +317,6 @@ if __name__ == '__main__':
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-    main(args.shard_config_loc, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
+    main(args.shard_config_loc, args.catalog_dir, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
 
     # see run_simulation.sh for example use 

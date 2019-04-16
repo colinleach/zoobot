@@ -1,10 +1,11 @@
 #!/bin/bash
 set +e  # stop if error
 
-SHARD_DIR=$1 #e.g. decals_weak_bars_sim
-EXPERIMENT_DIR=$2 # e.g. decals_weak_bars_launch_test
-TEST=$3
-PANOPTES=$4
+CATALOG_DIR=$1
+SHARD_DIR=$2
+EXPERIMENT_DIR=$3 
+TEST=$4  # expects --test or blank
+PANOPTES=$5  # expects --panoptes or blank
 
 SHARD_CONFIG=$SHARD_DIR'/shard_config.json'
 INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
@@ -16,15 +17,10 @@ echo 'shard configuration json: ' $SHARD_CONFIG
 echo 'instructions for each iteration: ' $INSTRUCTIONS_DIR 
 echo --
 
-# if [ -d $EXPERIMENT_DIR ];
-# then
-#     rm -r $EXPERIMENT_DIR 
-# fi
-
 mkdir $EXPERIMENT_DIR
 mkdir $INSTRUCTIONS_DIR
 
-python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start $TEST $PANOPTES
+python zoobot/active_learning/create_instructions.py  --catalog_dir=$CATALOG_DIR --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start $TEST $PANOPTES
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then
