@@ -45,4 +45,4 @@ Sim:
 
 **Run Simulation**
 
-`dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $catalog_dir $shard_dir $experiment_dir`
+`dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $catalog_dir $shard_dir $experiment_dir --test --panoptes`

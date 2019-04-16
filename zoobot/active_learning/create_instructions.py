@@ -274,7 +274,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
             login_loc='zooniverse_login.json', 
             project_id='5733',
             workflow_id='6122',
-            last_id='159526481',
+            last_id='160414882',
             question='bar'  # TODO sloppy!
         )
     else:  # use mock Panoptes oracle
