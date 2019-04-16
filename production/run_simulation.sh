@@ -3,6 +3,8 @@ set +e  # stop if error
 
 SHARD_DIR=$1 #e.g. decals_weak_bars_sim
 EXPERIMENT_DIR=$2 # e.g. decals_weak_bars_launch_test
+TEST=$3
+PANOPTES=$4
 
 SHARD_CONFIG=$SHARD_DIR'/shard_config.json'
 INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
@@ -22,7 +24,7 @@ echo --
 mkdir $EXPERIMENT_DIR
 mkdir $INSTRUCTIONS_DIR
 
-python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start --test
+python zoobot/active_learning/create_instructions.py --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --baseline --warm-start $TEST $PANOPTES
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then

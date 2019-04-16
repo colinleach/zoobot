@@ -22,6 +22,8 @@
 <!-- `shard_dir=data/decals/shards/decals_weak_bars_launch` -->
 `shard_dir=data/decals/shards/decals_weak_bars_sim`
 
+`experiment_dir=data/experiments/simulation/decals_weak_bars_launch_test`
+
 **Create master catalog**
 
 `dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py`
@@ -38,8 +40,8 @@ Real:
 
 Sim:
 
-`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/simulation_context/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/simulation_context/unlabelled_catalog.csv --eval-size=5000 --shard-dir=$shard_dir`
+`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/simulation_context/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/simulation_context/unlabelled_catalog.csv --eval-size=2500 --shard-dir=$shard_dir`
 
 ** Run Simulation**
 
-dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o data/experiments/simulation/decals_weak_bars_launch_test -f data/experiments/simulation/decals_weak_bars_launch_test.dvc ./production/run_simulation.sh
+dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $shard_dir $experiment_dir
