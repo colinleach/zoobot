@@ -67,8 +67,7 @@ class Panoptes(Oracle):
 
         # only galaxies newly labelled since last_id
         newly_labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
-        print(newly_labelled.columns.values)  # classifications + subjects, not yet processed
-
+    
         newly_labelled = define_experiment.define_identifiers(newly_labelled)  # add iauname
         newly_labelled = define_experiment.define_labels(newly_labelled, self.question)  # add 'label' and 'total_votes', drop low n bars
 
@@ -79,7 +78,7 @@ class Panoptes(Oracle):
             print(counts[counts > 1])
             newly_labelled = newly_labelled.drop_duplicates(subset=['iauname'], keep=False)
 
-
+        logging.info('Labels acquired from oracle: {}'.format(len(newly_labelled)))
         return newly_labelled['id_str'].values, newly_labelled['label'].values, newly_labelled['total_votes'].values
 
 
