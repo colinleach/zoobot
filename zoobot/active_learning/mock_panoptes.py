@@ -115,9 +115,14 @@ class PanoptesMock(Oracle):
         # return labels from the oracle, mimicking live GZ classifications
         labels = []
         id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
+        print(len(id_str_dummy_df), 'id strs in dummy df')
+        print(len(known_catalog), 'known catalog')
         matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
+        print(len(matching_df), 'matches in known catalog')
         labels = list(matching_df['label'].astype(int))
         total_votes = list(matching_df['total_votes'].astype(int))
+        print(len(labels), 'labels')
+        print(len(total_votes), 'total_votes')
         assert len(id_str_dummy_df) == len(matching_df)
         assert len(subject_ids) == len(labels)
         return subject_ids, labels, total_votes

@@ -58,11 +58,10 @@ def define_labels(labelled, question):
 
 
 
-def get_mock_catalogs(labelled_catalog, save_dir, train_size=256, eval_size=2500):
+def get_mock_catalogs(labelled_catalog, save_dir, labelled_size=15000):
     # given a (historical) labelled catalog, pretend split into labelled and unlabelled
     assert not any(pd.isnull(labelled_catalog['label']))
     oracle = labelled_catalog[['id_str', 'total_votes', 'label']]
-    labelled_size = train_size + eval_size
     mock_labelled = labelled_catalog[:labelled_size]  # for training and eval. Could do basic split on these!
     mock_unlabelled = labelled_catalog[labelled_size:]  # for pool
     del mock_unlabelled['label']
