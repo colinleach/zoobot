@@ -227,7 +227,7 @@ if __name__ == '__main__':
     )
 
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
-    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
+    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)[:30000]  # launch catalog is limited, for today at least
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs
