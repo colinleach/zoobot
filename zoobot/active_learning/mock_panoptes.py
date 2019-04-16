@@ -116,7 +116,9 @@ class PanoptesMock(Oracle):
         labels = []
         id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
         print(len(id_str_dummy_df), 'id strs in dummy df')
-        print(len(known_catalog), 'known catalog')
+        print('e.g. {}'.format(id_str_dummy_df['id_str'][:5]))
+        print(len(known_catalog), 'known catalog at', self._oracle_loc)
+        print('with ids e.g. {}'.format(known_catalog['id_str'][:5]))
         matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
         print(len(matching_df), 'matches in known catalog')
         labels = list(matching_df['label'].astype(int))
