@@ -10,7 +10,7 @@ PANOPTES=$5  # expects --panoptes or blank
 SHARD_CONFIG=$SHARD_DIR'/shard_config.json'
 INSTRUCTIONS_DIR=$EXPERIMENT_DIR/instructions
 
-N_ITERATIONS=5
+N_ITERATIONS=1
 
 echo 'base directory: ' $EXPERIMENT_DIR
 echo 'shard configuration json: ' $SHARD_CONFIG

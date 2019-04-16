@@ -143,7 +143,7 @@ def get_learning_rate(iteration_n):
 
 def get_epochs(iteration_n):
     if iteration_n == 0:
-        return 125
+        return 1000  # let's see how we do with 1 iteration only
     else:
         return 50
 
