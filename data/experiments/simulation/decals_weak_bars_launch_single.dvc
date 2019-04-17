@@ -1,0 +1,17 @@
+cmd: ./production/run_simulation.sh data/decals/prepared_catalogs/decals_weak_bars_launch
+  data/decals/shards/decals_weak_bars_launch data/experiments/simulation/decals_weak_bars_launch_single  --panoptes
+deps:
+- md5: 462675cf77755c5473fd790344c0fa96.dir
+  path: data/decals/shards/decals_weak_bars_launch
+- md5: fd7f4b3321c3cee1c3f2fe630a6cc30f.dir
+  path: data/decals/prepared_catalogs/decals_weak_bars_launch
+- md5: c6ae9ef1dc90dc316e56e6a546fd858d
+  path: production/run_simulation.sh
+md5: a3995150cf269bbb3e318d1ba6f6aa81
+outs:
+- cache: true
+  md5: 9d04ddaf14a16d2405b5efa5d3be5751.dir
+  metric: false
+  path: data/experiments/simulation/decals_weak_bars_launch_single
+  persist: false
+wdir: ../../..
