@@ -138,7 +138,7 @@ def get_prediction_shards(iteration_n, instructions):
 
 
 def get_learning_rate(iteration_n):
-    return 0.0001  # reduced from 0.001
+    return 0.001  # may be reduced to 0.0001 from 0.001 (for first bar model, but not for smooth)
 
 
 def get_epochs(iteration_n):

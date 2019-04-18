@@ -12,18 +12,22 @@
 ## EC2
 
 <!-- `shard_dir=data/decals/shards/decals_weak_bars_sim` -->
+<!-- `question=bar` -->
+<!-- `catalog_dir=data/decals/prepared_catalogs/decals_weak_bars_launch`
+`shard_dir=data/decals/shards/decals_weak_bars_launch`
+`experiment_dir=data/experiments/simulation/decals_weak_bars_launch_test` -->
 
 **Specify what you'd like to do**
 
 `master_catalog=data/decals/decals_master_catalog.csv`
 
-`question=bar`
+`question=smooth`
 
-`catalog_dir=data/decals/prepared_catalogs/decals_weak_bars_launch`
+`catalog_dir=data/decals/prepared_catalogs/decals_smooth_launch`
 
-`shard_dir=data/decals/shards/decals_weak_bars_launch`
+`shard_dir=data/decals/shards/decals_smooth_launch`
 
-`experiment_dir=data/experiments/simulation/decals_weak_bars_launch_test`
+`experiment_dir=data/experiments/simulation/decals_smooth_launch_single`
 
 **Create master catalog**
 

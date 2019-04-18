@@ -275,7 +275,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
             project_id='5733',
             workflow_id='6122',
             last_id='160414882',
-            question='bar'  # TODO sloppy!
+            question='smooth'  # TODO sloppy!
         )
     else:  # use mock Panoptes oracle
         oracle_loc = catalog_dir + '/simulation_context/oracle.csv'

@@ -24,7 +24,7 @@ def configure_designator(subject_set_chances, workflow_id, login_loc, debug=Fals
     workflow.save()
 
 
-def upload_dummy_subjects(catalog_loc, workflow_id, login_loc):
+def upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc):
     # only for testing 
 
     catalog = pd.read_csv(catalog_loc, nrows=10000)
@@ -40,7 +40,7 @@ def upload_dummy_subjects(catalog_loc, workflow_id, login_loc):
     panoptes = mock_panoptes.Panoptes(
         catalog_loc=dummy_catalog_loc,
         login_loc=login_loc,
-        project_id='8751',
+        project_id=project_id,
         # don't worry about these for now, not getting labels
         workflow_id=None,
         last_id=None,
@@ -53,16 +53,17 @@ def upload_dummy_subjects(catalog_loc, workflow_id, login_loc):
 
 if __name__ == '__main__':
 
-    workflow_id = '9816'
+    project_id = '8751'
+    workflow_id = '10582'
     login_loc = 'zooniverse_login.json'
-    catalog_loc = 'data/gz2/master_catalog.csv'
+    catalog_loc = 'data/decals/decals_master_catalog.csv'
 
-    upload_dummy_subjects(catalog_loc, workflow_id, login_loc)
+    # upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc)
 
-    # subject_set_chances = {
-    #         '73892': 0.99,  # priority TODO
-    #         '74728': 0.01  # random
-    # }
-    # configure_designator(subject_set_chances, workflow_id, login_loc)
+    subject_set_chances = {
+            '74909': 0.8,  # priority
+            '74905': 0.2  # random
+    }
+    configure_designator(subject_set_chances, workflow_id, login_loc, debug=True)
 
 
