@@ -59,10 +59,12 @@ class Panoptes(Oracle):
         if not os.path.isdir(working_dir):
             os.mkdir(working_dir)
         # Run GZ Reduction to get all new classifications
+        print('WARNING LIMITING TO 500 classifications! DEBUG ONLY')
         classifications = execute_reduction(
             workflow_id=self._workflow_id,
             working_dir=working_dir,
-            last_id=self.last_id
+            last_id=self.last_id,
+            max_classifications=500  # WARNING WARNING DEBUG VALUE TODO
         )
 
         # only galaxies newly labelled since last_id

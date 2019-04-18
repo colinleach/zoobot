@@ -53,7 +53,7 @@ Sim:
 
 **Run Live**
 
-`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir '--test' '--panoptes'`
+`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir '' '--panoptes'`
 
 instructions_dir=$experiment_dir/instructions
 previous_iteration_dir=""
