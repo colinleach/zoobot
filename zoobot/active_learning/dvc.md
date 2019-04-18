@@ -49,4 +49,15 @@ Sim:
 
 **Run Simulation**
 
-`dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $catalog_dir $shard_dir $experiment_dir --test --panoptes`
+`dvc run -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $catalog_dir $shard_dir $experiment_dir --test`
+
+**Run Live**
+
+instructions_dir=$experiment_dir/instructions
+previous_iteration=''
+this_iteration=0
+this_iteration_dir=$experiment_dir'/iteration_'$this_iteration 
+
+`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir --test ''`
+
+`dvc run -d production/run_iteration.sh -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc ./production/run_iteration.sh  $experiment_dir $instructions_dir $previous_iteration $this_iteration --test`
