@@ -61,7 +61,8 @@ class Instructions():
             os.mkdir(self.save_dir)
 
         # copy database
-        shutil.copyfile(self.shards.db_loc, self.db_loc)
+        if not os.path.exists(self.db_loc):  # may have already been copied TODO sloppy
+            shutil.copyfile(self.shards.db_loc, self.db_loc)
 
     def ready(self):
         assert self.shards.ready()  # delegate
