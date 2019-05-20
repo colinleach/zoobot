@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     create_decals_master_catalog(
         catalog_loc='data/decals/disk_catalog.fits',
-        classifications_loc='data/decals/classifications/classifications.csv',
+        classifications_loc='data/decals/classifications/streaming/classifications.csv',
         save_loc='data/decals/decals_master_catalog.csv'
     )
 
