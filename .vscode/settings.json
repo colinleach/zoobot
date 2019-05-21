@@ -1,3 +1,10 @@
 {
-    "python.pythonPath": "/data/miniconda3/envs/zoobot/bin/python"
+    "python.pythonPath": "/media/mike/Windows/linux_cache/py36/bin/python",
+    "python.testing.pyTestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pyTestEnabled": true,
+    "python.venvPath": "/media/mike/Windows/linux_cache"
 }
