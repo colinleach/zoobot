@@ -395,6 +395,7 @@ def get_latest_checkpoint_dir(base_dir):
 
 
 def add_labels_to_db(subject_ids, labels, total_votes, db):
+    # be careful: don't update any labels that might already have been written to tfrecord!
     cursor = db.cursor()
 
     for subject_n in range(len(subject_ids)):
@@ -438,6 +439,16 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             assert retrieved_label == label
             retrieved_total_votes = row[1]
             assert retrieved_total_votes == total_votes_val
+
+
+def get_labelled_subjects(db):
+     cursor.execute(
+        '''
+        SELECT id_str FROM catalog
+        WHERE label IS NOT NULL
+        '''
+     )
+     return cursor.fetchall()
 
 
 def get_all_shard_locs(db):

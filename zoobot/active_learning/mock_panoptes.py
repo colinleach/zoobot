@@ -7,12 +7,14 @@ from datetime import datetime
 
 import pandas as pd
 from shared_astro_utils import upload_utils, time_utils
-from gzreduction.get_latest import execute_reduction  # TODO sloppy
+from gzreduction.get_latest.main import Volunteers  # TODO sloppy
 
 from zoobot.active_learning.oracle import Oracle
 from zoobot.active_learning import prepare_catalogs, define_experiment
 
 # Oracle state must not change between iterations! (Panoptes itself can change, of course)
+
+# TODO define working_dir for volunteers service, copy if/else 
 
 class Panoptes(Oracle):
 
@@ -24,10 +26,22 @@ class Panoptes(Oracle):
         self._workflow_id = workflow_id
         self._full_catalog = pd.read_csv(catalog_loc)  # e.g. joint catalog with file locs
         # all catalog columns will be uploaded, be careful
-        self.last_id = last_id  # ignore classifications before this id
+        self.last_id = last_id  # ignore classifications before this id TODO REMOVE
         # '91178981' for first DECALS classification, bad idea - >1 million responses!
         # 'TODO' for last id as of last major reduction, 2nd April 2019
         self.question = question  # e.g. 'smooth', 'bar'
+
+        if os.path.isdir('/ubuntu/root'):
+            # running on EC2
+            working_dir = '/ubuntu/root/repos/zoobot/data/decals/classifications/streaming'
+        else:
+            working_dir = '/data/repos/zoobot/data/decals/classifications/streaming'
+        assert os.path.isdir(working_dir)
+        self._volunteers = Volunteers(
+            working_dir=working_dir,
+            workflow_id=self._workflow_id,
+            max_classifications=1e8
+        )
 
     def request_labels(self, subject_ids, name, retirement):
         """Upload subjects with ids matching subject_ids to Panoptes project
@@ -58,30 +72,33 @@ class Panoptes(Oracle):
         """
         if not os.path.isdir(working_dir):
             os.mkdir(working_dir)
+
         # Run GZ Reduction to get all new classifications
-        print('WARNING LIMITING TO 500 classifications! DEBUG ONLY')
-        classifications = execute_reduction(
-            workflow_id=self._workflow_id,
-            working_dir=working_dir,
-            last_id=self.last_id,
-            max_classifications=500  # WARNING WARNING DEBUG VALUE TODO
-        )
+        # print('WARNING LIMITING TO 500 classifications! DEBUG ONLY')
+        # classifications = execute_reduction(
+        #     workflow_id=self._workflow_id,
+        #     working_dir=working_dir,
+        #     last_id=self.last_id,
+        #     max_classifications=500  # WARNING WARNING DEBUG VALUE TODO
+        # )
+        # get the latest classifications
 
-        # only galaxies newly labelled since last_id
-        newly_labelled, _ = define_experiment.split_labelled_and_unlabelled(classifications, self.question)
-    
-        newly_labelled = define_experiment.define_identifiers(newly_labelled)  # add iauname
-        newly_labelled = define_experiment.define_labels(newly_labelled, self.question)  # add 'label' and 'total_votes', drop low n bars
+        all_classifications = self._volunteers.get_all_classifications()
+        # this now gets ALL (retired) labels, not just new ones - be careful when using!
 
-        # drop any duplicated galaxies for safety
-        if any(newly_labelled['iauname'].duplicated()):  # TODO refactor out from here and master catalog
+        retired, _ = define_experiment.split_retired_and_not(all_classifications, self.question)
+        retired = define_experiment.define_identifiers(retired)  # add iauname
+        retired = define_experiment.define_labels(retired, self.question)  # add 'label' and 'total_votes', drop low n bars
+
+        # drop any iauname-duplicated galaxies for safety (will already be grouped on subject_id)
+        if any(retired['iauname'].duplicated()):  # TODO refactor out from here and master catalog
             print('Duplicated:')
-            counts = newly_labelled['iauname'].value_counts()
+            counts = retired['iauname'].value_counts()
             print(counts[counts > 1])
-            newly_labelled = newly_labelled.drop_duplicates(subset=['iauname'], keep=False)
+            retired = retired.drop_duplicates(subset=['iauname'], keep=False)
 
-        logging.info('Labels acquired from oracle: {}'.format(len(newly_labelled)))
-        return newly_labelled['id_str'].values, newly_labelled['label'].values, newly_labelled['total_votes'].values
+        logging.info('Labels acquired from oracle: {}'.format(len(retired)))
+        return retired['id_str'].values, retired['label'].values, retired['total_votes'].values
 
 
     def save(self, save_dir):
