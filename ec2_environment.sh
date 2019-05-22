@@ -24,6 +24,8 @@ aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_nat
 # detach and delete 350gb volume (should remove this from the AMI)
 # attach the volume working_volume to /dev/xvdb
 
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
 ZOOBOT_BRANCH=production-prototype && \
 sudo mount /dev/xvdb root && \
 sudo chown -R ubuntu root && \
