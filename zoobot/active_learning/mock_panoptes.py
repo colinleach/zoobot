@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pandas as pd
 from shared_astro_utils import upload_utils, time_utils
-from gzreduction.get_latest.main import Volunteers  # TODO sloppy
+from gzreduction.main import Volunteers  # TODO sloppy
 
 from zoobot.active_learning.oracle import Oracle
 from zoobot.active_learning import prepare_catalogs, define_experiment

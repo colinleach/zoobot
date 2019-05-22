@@ -19,7 +19,8 @@ if __name__ == '__main__':
 
     unlabelled['file_loc'] = unlabelled['local_png_loc']
 
-    selected = slice(0, 5000)
+    # selected = slice(0, 5000)
+    selected = slice(7000, 8000)
     with tempfile.TemporaryDirectory() as tempdir:
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
         unlabelled[selected].to_csv(unlabelled_loc)
