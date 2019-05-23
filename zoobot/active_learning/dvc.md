@@ -27,7 +27,7 @@
 
 `shard_dir=data/decals/shards/decals_smooth_may`
 
-`experiment_dir=data/experiments/simulation/decals_smooth_may`
+`experiment_dir=data/experiments/decals_smooth_may`
 
 **Create master catalog** (could give command-line args)
 
@@ -63,7 +63,7 @@ Run first iteration (manually setting folders)
 
 `previous_iteration_dir=""`
 
-`this_iteration_dir=$experiment_dir'/iteration_0`
+`this_iteration_dir=$experiment_dir/iteration_0`
 <!-- 
 `dvc run -d production/run_iteration.sh -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc ./production/run_iteration.sh  $experiment_dir $instructions_dir $previous_iteration $this_iteration "--test"` -->
 

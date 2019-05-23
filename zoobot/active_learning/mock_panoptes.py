@@ -33,7 +33,7 @@ class Panoptes(Oracle):
 
         if os.path.isdir('/ubuntu/root'):
             # running on EC2
-            working_dir = '/ubuntu/root/repos/zoobot/data/decals/classifications/streaming'
+            working_dir = '/home/ubuntu/root/repos/zoobot/data/decals/classifications/streaming'
         else:
             working_dir = '/data/repos/zoobot/data/decals/classifications/streaming'
         assert os.path.isdir(working_dir)
