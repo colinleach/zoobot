@@ -442,13 +442,14 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
 
 
 def get_labelled_subjects(db):
-     cursor.execute(
+    cursor = db.cursor()
+    cursor.execute(
         '''
         SELECT id_str FROM catalog
         WHERE label IS NOT NULL
         '''
-     )
-     return cursor.fetchall()
+    )
+    return cursor.fetchall()
 
 
 def get_all_shard_locs(db):
