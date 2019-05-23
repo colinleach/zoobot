@@ -215,9 +215,9 @@ if __name__ == '__main__':
     # Write catalog to shards (tfrecords as catalog chunks) here for use in active learning
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('--max-unlabelled', dest='max-unlabelled', type=int,
+    parser.add_argument('--max-unlabelled', dest='max_unlabelled', type=int,
                     help='Max galaxies (for debugging/speed')
-    parser.add_argument('--max-labelled', dest='max-labelled', type=int,
+    parser.add_argument('--max-labelled', dest='max_labelled', type=int,
                     help='Max galaxies (for debugging/speed')
 
     args = parser.parse_args()
