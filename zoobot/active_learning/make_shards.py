@@ -215,6 +215,10 @@ if __name__ == '__main__':
     # Write catalog to shards (tfrecords as catalog chunks) here for use in active learning
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
+    parser.add_argument('--max-unlabelled', dest='max-unlabelled', type=int,
+                    help='Max galaxies (for debugging/speed')
+    parser.add_argument('--max-labelled', dest='max-labelled', type=int,
+                    help='Max galaxies (for debugging/speed')
 
     args = parser.parse_args()
 
@@ -227,7 +231,14 @@ if __name__ == '__main__':
     )
 
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
-    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)[:30000]  # launch catalog is limited, for today at least
+    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
+
+    # limit launch catalog
+    if args.max_labelled:
+        labelled_catalog = labelled_catalog[:args.max_labelled]
+    if args.max_unlabelled:  
+        unlabelled_catalog = unlabelled_catalog[:args.max_unlabelled]
+
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs

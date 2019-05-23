@@ -43,6 +43,7 @@ pip install -r repos/shared-astro-utilities/requirements.txt && \
 pip install -e repos/shared-astro-utilities  && \
 pip install -r repos/gz-panoptes-reduction/requirements.txt && \
 pip install -e repos/gz-panoptes-reduction  && \
+pip install --upgrade pyspark && \
 source deactivate && \
 screen -R run
 

@@ -23,15 +23,15 @@
 
 `question=smooth`
 
-`catalog_dir=data/decals/prepared_catalogs/decals_smooth_launch`
+`catalog_dir=data/decals/prepared_catalogs/decals_smooth_may`
 
-`shard_dir=data/decals/shards/decals_smooth_launch`
+`shard_dir=data/decals/shards/decals_smooth_may`
 
-`experiment_dir=data/experiments/simulation/decals_smooth_launch_single`
+`experiment_dir=data/experiments/simulation/decals_smooth_may`
 
-**Create master catalog**
+**Create master catalog** (could give command-line args)
 
-`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/active_learning/prepare_catalogs.py python zoobot/active_learning/prepare_catalogs.py`
+`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/active_learning/prepare_catalogs.py -d data/decals/disk_catalog.fits -d data/decals/classifications/streaming/classifications.csv python zoobot/active_learning/prepare_catalogs.py`
 
 **Define experiment (create experiment catalogs)**
 
@@ -41,7 +41,7 @@
 
 Real:
 
-`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/unlabelled_catalog.csv --eval-size=5000 --shard-dir=$shard_dir`
+`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/unlabelled_catalog.csv --eval-size=5000 --shard-dir=$shard_dir --max-labelled=15000--max-unlabelled=9000`
 
 Sim:
 
@@ -53,12 +53,18 @@ Sim:
 
 **Run Live**
 
+Create instructions
+
 `dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir '' '--panoptes'`
 
-instructions_dir=$experiment_dir/instructions
-previous_iteration_dir=""
-this_iteration_dir=$experiment_dir'/iteration_0'
+Run first iteration (manually setting folders)
+
+`instructions_dir=$experiment_dir/instructions`
+
+`previous_iteration_dir=""`
+
+`this_iteration_dir=$experiment_dir'/iteration_0`
 <!-- 
 `dvc run -d production/run_iteration.sh -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc ./production/run_iteration.sh  $experiment_dir $instructions_dir $previous_iteration $this_iteration "--test"` -->
 
-dvc run -d $shard_dir -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc python zoobot/active_learning/run_iteration.py --instructions-dir=$instructions_dir --this-iteration-dir=$this_iteration_dir --previous-iteration-dir=$previous_iteration_dir
+`dvc run -d $shard_dir -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc python zoobot/active_learning/run_iteration.py --instructions-dir=$instructions_dir --this-iteration-dir=$this_iteration_dir --previous-iteration-dir=$previous_iteration_dir`
