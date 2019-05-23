@@ -31,8 +31,8 @@ class Panoptes(Oracle):
         # 'TODO' for last id as of last major reduction, 2nd April 2019
         self.question = question  # e.g. 'smooth', 'bar'
 
-        if os.path.isdir('/ubuntu/root'):
-            # running on EC2
+        if os.path.isdir('home/ubuntu/root'):
+            logging.info('Running on AWS')
             working_dir = '/home/ubuntu/root/repos/zoobot/data/decals/classifications/streaming'
         else:
             working_dir = '/data/repos/zoobot/data/decals/classifications/streaming'
