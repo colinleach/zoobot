@@ -145,7 +145,7 @@ class Iteration():
 
          # can't allow overwriting of previous labels, as may have been written to tfrecord
         labelled_subjects = active_learning.get_labelled_subjects(self.db)
-        indices_not_yet_labelled = [n for n, x in enumerate(subject_ids) if x not in labelled_subjects]
+        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects]
         subject_ids = all_subject_ids[indices_not_yet_labelled]
         labels = all_labels[indices_not_yet_labelled]
         total_votes = all_total_votes[indices_not_yet_labelled]
