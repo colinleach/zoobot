@@ -145,14 +145,15 @@ class Iteration():
 
          # can't allow overwriting of previous labels, as may have been written to tfrecord
         labelled_subjects = active_learning.get_labelled_subjects(self.db)
-        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects]
+        all_subjects = active_learning.get_all_subjects(self.db)
+        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects and x in all_subjects]
         subject_ids = all_subject_ids[indices_not_yet_labelled]
         labels = all_labels[indices_not_yet_labelled]
         total_votes = all_total_votes[indices_not_yet_labelled]
 
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
-            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids, )
+            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,
                 db=None,
