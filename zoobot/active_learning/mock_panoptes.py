@@ -18,12 +18,12 @@ from zoobot.active_learning import prepare_catalogs, define_experiment
 
 class Panoptes(Oracle):
 
-    def __init__(self, catalog_loc, login_loc, project_id, workflow_id, last_id, question):
+    def __init__(self, catalog_loc, login_loc, project_id, workflow_ids, last_id, question):
         assert os.path.exists(catalog_loc)  # in principle, should only need unlabelled galaxies
         self._catalog_loc = catalog_loc  # unlabelled catalog
         self._login_loc = login_loc
         self._project_id = project_id
-        self._workflow_id = workflow_id
+        self._workflow_ids = workflow_ids
         self._full_catalog = pd.read_csv(catalog_loc)  # e.g. joint catalog with file locs
         # all catalog columns will be uploaded, be careful
         self.last_id = last_id  # ignore classifications before this id TODO REMOVE
@@ -39,7 +39,7 @@ class Panoptes(Oracle):
         assert os.path.isdir(working_dir)
         self._volunteers = Volunteers(
             working_dir=working_dir,
-            workflow_id=self._workflow_id,
+            workflow_ids=self._workflow_id,
             max_classifications=1e8
         )
 

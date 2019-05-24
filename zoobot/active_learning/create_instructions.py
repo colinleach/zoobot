@@ -274,7 +274,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
             project_id='5733',
-            workflow_id='6122',
+            workflow_ids=['6122', '10582'],
             last_id='160414882',  # TODO remove
             question='smooth'  # TODO sloppy!
         )
