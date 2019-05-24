@@ -290,7 +290,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Execute active learning')
+    parser = argparse.ArgumentParser(description='Create instructions')
     parser.add_argument('--shard-config', dest='shard_config_loc', type=str,
                     help='Details of shards to use')
     parser.add_argument('--catalog-dir', dest='catalog_dir', type=str,
@@ -317,6 +317,8 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
     logging.getLogger().addHandler(logging.StreamHandler())
+
+    logging.warning('Baseline: {}'.format(args.baseline))
 
     main(args.shard_config_loc, args.catalog_dir, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
 

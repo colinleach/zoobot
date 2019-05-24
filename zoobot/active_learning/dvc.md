@@ -56,7 +56,7 @@ Sim:
 
 Create instructions
 
-`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir '' '--panoptes'`
+`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir --test --panoptes`
 
 Run first iteration (manually setting folders)
 

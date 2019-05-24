@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/media/mike/Windows/linux_cache/py36/bin/python",
+    "python.pythonPath": "/data/miniconda3/envs/zoobot/bin/python",
     "python.testing.pyTestArgs": [
         "."
     ],
