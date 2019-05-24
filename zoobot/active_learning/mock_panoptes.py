@@ -39,7 +39,7 @@ class Panoptes(Oracle):
         assert os.path.isdir(working_dir)
         self._volunteers = Volunteers(
             working_dir=working_dir,
-            workflow_ids=self._workflow_id,
+            workflow_ids=self._workflow_ids,
             max_classifications=1e8
         )
 
