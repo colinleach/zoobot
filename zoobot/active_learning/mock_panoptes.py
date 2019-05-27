@@ -73,16 +73,6 @@ class Panoptes(Oracle):
         if not os.path.isdir(working_dir):
             os.mkdir(working_dir)
 
-        # Run GZ Reduction to get all new classifications
-        # print('WARNING LIMITING TO 500 classifications! DEBUG ONLY')
-        # classifications = execute_reduction(
-        #     workflow_id=self._workflow_id,
-        #     working_dir=working_dir,
-        #     last_id=self.last_id,
-        #     max_classifications=500  # WARNING WARNING DEBUG VALUE TODO
-        # )
-        # get the latest classifications
-
         all_classifications = self._volunteers.get_all_classifications()
         # this now gets ALL (retired) labels, not just new ones - be careful when using!
 
@@ -97,7 +87,7 @@ class Panoptes(Oracle):
             print(counts[counts > 1])
             retired = retired.drop_duplicates(subset=['iauname'], keep=False)
 
-        logging.info('Labels acquired from oracle: {}'.format(len(retired)))
+        logging.info('Labels acquired from oracle (including old): {}'.format(len(retired)))
         return retired['id_str'].values, retired['label'].values, retired['total_votes'].values
 
 

@@ -400,8 +400,13 @@ def get_latest_checkpoint_dir(base_dir):
 
 def add_labels_to_db(subject_ids, labels, total_votes, db):
     # be careful: don't update any labels that might already have been written to tfrecord!
-    cursor = db.cursor()
+    logging.info('Adding new labels for {} subjects to db'.format(len(subject_ids)))
+    logging.debug('Example subject ids: {}'.format(subject_ids[:3]))
+    logging.debug('Example labels: {}'.format(labels[:3]))
+    logging.debug('Example total_votes: {}'.format(total_votes[:3]))
+    assert len(subject_ids) == len(labels) == len(total_votes)
 
+    cursor = db.cursor()
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         total_votes_val = total_votes[subject_n]
@@ -468,7 +473,8 @@ def get_labelled_subjects(db):
         WHERE label IS NOT NULL
         '''
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    return [x[0] for x in result]  # id_strs
 
 def get_all_subjects(db):
     cursor = db.cursor()
