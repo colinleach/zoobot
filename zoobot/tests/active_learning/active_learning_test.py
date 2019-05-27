@@ -425,7 +425,7 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, fille
 def test_subject_is_labelled(filled_shard_db_with_partial_labels):
     id_strs = ['some_hash', 'some_other_hash', 'yet_another_hash']
     labelled_ids = [active_learning.subject_is_labelled(id_str, filled_shard_db_with_partial_labels) for id_str in id_strs]
-    labelled_ids == [True, False, False]
+    assert labelled_ids == [True, False, False]
 
 
 def test_subject_is_labelled_missing_subject(filled_shard_db_with_partial_labels):
