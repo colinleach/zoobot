@@ -236,10 +236,13 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
 
     # exclude subjects with labels in db
     logging.debug('Filtering for unlabelled subjects')
-    unlabelled_subjects = [
-        subject for subject in subjects
-        if subject_is_unlabelled(subject['id_str'], db)
-    ]
+    if db_fully_labelled(db):
+        unlabelled_subjects = []
+    else:
+        unlabelled_subjects = [
+            subject for subject in subjects
+            if not subject_is_labelled(subject['id_str'], db)
+        ]
     logging.debug('Loaded {} unlabelled subjects from {} of size {}'.format(
         len(unlabelled_subjects),
         tfrecords_batch_locs,
@@ -278,15 +281,12 @@ def save_acquisition_to_db(subject_id, acquisition, db):
     db.commit()
 
 
-def subject_is_unlabelled(id_str, db):
-    """Get the subject ids of up to `n_subjects`:
-        1. Without labels (required for later training)
-        1. With the highest acquisition values, up to the first `n_subjects`
+def subject_is_labelled(id_str: str, db):
+    """Get the subject with subject_id
 
     Args:
+        id_str (str): subject_id to search for
         db (sqlite3.Connection): database with `acquisitions` table to read acquisition
-        n_subjects (int, optional): Defaults to 1000. Max subject ids to return.
-        shard_loc (str, optional): Defaults to None. Get top subjects from only this shard.
 
     Raises:
         ValueError: all subjects in `db.catalog` have labels
@@ -295,20 +295,8 @@ def subject_is_unlabelled(id_str, db):
     Returns:
         list: ordered list (descending) of subject id strings with highest acquisition values
     """
+    # find the subject(s) with id_str in db
     cursor = db.cursor()
-    # check that at least 1 subject has no label
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        WHERE label IS NULL
-        '''
-    )
-    unlabelled_subject = cursor.fetchone()
-    if unlabelled_subject is None:
-        logging.critical('WARNING - shard appears to be completely labelled')
-        return True
-
-    # find subject in db.catalog
     cursor.execute(
         '''
         SELECT id_str, label
@@ -322,10 +310,25 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
-    return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
+    return matching_subjects[0][1] is None
+
+
+def db_fully_labelled(db):
+    # check that at least one subject has no label
+    cursor = db.cursor()
+    cursor.execute(
+        '''
+        SELECT id_str FROM catalog
+        WHERE label IS NULL
+        '''
+    )
+    unlabelled_subject = cursor.fetchone()
+    if unlabelled_subject is None:
+        logging.critical('WARNING - shard appears to be completely labelled')
+        return True
 
 # bad name, actually gets all table columns
-def get_file_loc_df_from_db(db, subject_ids):
+def get_file_loc_df_from_db(db, subject_ids: list):
     """
     Look up the file_loc and label in db for the subjects with ids in `subject_ids`
     df will include the image_loc stored at `db.catalog.file_loc`
@@ -378,6 +381,7 @@ def get_file_loc_df_from_db(db, subject_ids):
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    # must only be called with subject_ids that are all labelled, else will raise error
     assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     df = get_file_loc_df_from_db(db, subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
@@ -409,6 +413,21 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
         assert isinstance(label, int)
         assert isinstance(label, int)
         assert isinstance(subject_id, str)
+
+        # check not already labelled, else raise a manual error (see below)
+        cursor.execute(
+            '''
+            SELECT id_str, label FROM catalog
+            WHERE id_str = (:subject_id) AND label is NOT NULL
+            ''',
+            (subject_id,)
+        )
+        if cursor.fetchone() is not None:
+            raise ValueError(
+                'Trying to set label {} for already-labelled subject {}'.format(label, subject_id)
+            )
+
+        # set the label (this won't raise an automatic error if already exists!)
         cursor.execute(
             '''
             UPDATE catalog

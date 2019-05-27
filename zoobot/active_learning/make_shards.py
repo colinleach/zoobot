@@ -109,6 +109,8 @@ class ShardConfig():
         train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
         eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
 
+        # training and eval galaxies are labelled and should never be read by db
+        # just write them directly as shards, don't enter into db
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
             active_learning.write_catalog_to_tfrecord_shards(
                 df,
@@ -119,6 +121,7 @@ class ShardConfig():
                 shard_size=self.shard_size
             )
 
+        # unlabelled galaxies should be written to db as well as to shards
         make_database_and_shards(
             unlabelled_catalog, 
             self.db_loc, 
