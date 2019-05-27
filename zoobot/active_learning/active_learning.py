@@ -508,7 +508,8 @@ def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
 
     all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
     logging.info('all_subject_ids, {}'.format(all_subject_ids[:3]))
-    logging.info('all_subjects, {}'.format(all_subjects[:3]))
+    logging.info('all_subjects, {}, of {}'.format(all_subjects[:3], len(all_subjects)))
+    logging.info('matched: {}'.format(set(all_subject_ids).intersection(all_subjects)))
     found_in_db = [x in all_subjects for x in all_subject_ids]
     assert found_in_db  # should always be some galaxies not in train or eval, even if labelled
     logging.info('Oracle-labelled subjects in db: {}'.format(sum(found_in_db)))

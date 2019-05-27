@@ -150,20 +150,21 @@ class Iteration():
             all_total_votes
         )
         if len(subject_ids) > 0:
+            # record in db
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
+            # write to disk
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,
-                db=None,
+                db=None,  # don't record again in db as simply a fixed train record
                 img_size=self.initial_size,
                 columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=self.acquired_tfrecords_dir,
                 shard_size=4096  # hardcoded, awkward TODO
             )
-            # self.acquired_tfrecord = os.path.join(self.acquired_tfrecords_dir, 'acquired_shard.tfrecord')
-            # active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
         else: 
             logging.warning('No new subjects acquired - does this make sense?')
+        assert not active_learning.db_fully_labelled(self.db)
 
         """
         Callable should expect 
