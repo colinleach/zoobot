@@ -504,7 +504,10 @@ def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
     # TODO wrap oracle subject as namedtuple?
 
     all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
+    logging.info('all_subject_ids, {}'.format(all_subject_ids[:3]))
+    logging.info('all_subjects, {}'.format(all_subjects[:3]))
     possible_to_label = [x in all_subjects for x in all_subject_ids]
+    assert possible_to_label  # should always be some galaxies not in train or eval, even if labelled
     logging.info('Possible to label: {}'.format(sum(possible_to_label)))
 
     labelled_subjects = get_labelled_subjects(db)
