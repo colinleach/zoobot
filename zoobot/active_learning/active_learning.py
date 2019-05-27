@@ -229,12 +229,12 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
 
     # tfrecord will have encoded to bytes, need to decode
     logging.debug('Constructing subjects from loaded data')
-    subjects = [
+    subjects = (
         {'matrix': image, 'id_str': id_str.decode('utf-8')} 
         for image, id_str in zip(images, id_str_bytes)
-    ]  # was generator expression - needed?
+    )  # generator expression to minimise memory
+    # logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
     del images  # free memory
-    logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
 
     # exclude subjects with labels in db
     logging.info('Filtering for unlabelled subjects')
