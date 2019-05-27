@@ -142,7 +142,12 @@ class Iteration():
     def run(self):
         all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
          # can't allow overwriting of previous labels, as may have been written to tfrecord
-        subject_ids, labels, total_votes = active_learning.filter_for_new_only(all_subject_ids, all_labels, all_total_votes)
+        subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+            self.db,
+            all_subject_ids, 
+            all_labels,
+            all_total_votes
+        )
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
