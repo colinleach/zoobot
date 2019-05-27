@@ -235,20 +235,20 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     del images  # free memory
 
     # exclude subjects with labels in db
-    logging.debug('Filtering for unlabelled subjects')
+    logging.info('Filtering for unlabelled subjects')
     if db_fully_labelled(db):
         logging.critical('All subjects are labelled - stop running active learning!')
         exit(0)
-    else:
-        unlabelled_subjects = [
-            subject for subject in subjects
-            if not subject_is_labelled(subject['id_str'], db)
-        ]
-    logging.debug('Loaded {} unlabelled subjects from {} of size {}'.format(
+    unlabelled_subjects = [
+        subject for subject in subjects
+        if not subject_is_labelled(subject['id_str'], db)
+    ]
+    logging.info('Loaded {} unlabelled subjects from {} of size {}'.format(
         len(unlabelled_subjects),
         tfrecords_batch_locs,
          size)
         )
+    assert unlabelled_subjects
     del subjects  # free memory
 
     # make predictions on only those subjects

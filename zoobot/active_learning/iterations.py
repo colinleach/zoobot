@@ -70,13 +70,14 @@ class Iteration():
         os.mkdir(self.iteration_dir)
         os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
+        # TODO have a test that verifies new folder structure?
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
         assert os.path.isfile(initial_db_loc)
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
+        assert not active_learning.db_fully_labelled(self.db)
 
-        # TODO have a test that verifies new folder structure
         self.initial_estimator_ckpt = initial_estimator_ckpt
         
         src = self.initial_estimator_ckpt
