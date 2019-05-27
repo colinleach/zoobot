@@ -185,13 +185,13 @@ if __name__ == '__main__':
                     help='Only do a minimal iteration to verify that everything works')
     args = parser.parse_args()
 
-    log_loc = 'create_instructions_{}.log'.format(time.time())
+    log_loc = 'run_iteration_{}.log'.format(time.time())
 
     logging.basicConfig(
         filename=log_loc,
         filemode='w',
         format='%(asctime)s %(message)s',
-        level=logging.INFO
+        level=logging.DEBUG
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
