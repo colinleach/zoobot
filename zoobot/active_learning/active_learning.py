@@ -213,6 +213,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
         list: unlabelled subjects of form [{id_str: .., matrix: ..}, ..]
         np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
     """
+    logging.info('Predicting on {}'.format(tfrecords_batch_locs))
     batch_images, _, batch_id_str = input_utils.predict_input_func(
                 tfrecords_batch_locs,
                 n_galaxies=max_images,
@@ -228,11 +229,12 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
 
     # tfrecord will have encoded to bytes, need to decode
     logging.debug('Constructing subjects from loaded data')
-    subjects = (
+    subjects = [
         {'matrix': image, 'id_str': id_st.decode('utf-8')} 
         for image, id_st in zip(images, id_str_bytes)
-    )
+    ]  # was generator expression - needed?
     del images  # free memory
+    logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
 
     # exclude subjects with labels in db
     logging.info('Filtering for unlabelled subjects')
@@ -516,7 +518,7 @@ def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
 
     labelled_subjects = get_all_subjects(db, labelled=True)
     not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
-    logging.info('Not yet labelled: {}'.format(sum(not_yet_labelled)))
+    logging.info('Not yet labelled (or maybe not matched): {}'.format(sum(not_yet_labelled)))
 
     # lists can't be boolean indexed, so convert to old-fashioned numeric index...
     indices = np.array([n for n in range(len(all_subject_ids))])
