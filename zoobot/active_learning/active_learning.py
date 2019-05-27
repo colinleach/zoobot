@@ -483,7 +483,8 @@ def get_all_subjects(db):
         SELECT id_str FROM catalog
         '''
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    return [x[0] for x in result]  # id_strs
 
 
 def get_all_shard_locs(db):

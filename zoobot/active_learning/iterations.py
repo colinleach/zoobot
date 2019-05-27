@@ -141,7 +141,7 @@ class Iteration():
 
     def filter_for_new_only(self, all_subject_ids, all_labels, all_total_votes):
         # TODO needs test
-        # TODO wrap subject in class?
+        # TODO wrap oracle subject as namedtuple?
 
         all_subjects = active_learning.get_all_subjects(self.db)  # strictly, all sharded subjects - ignore train/eval catalog entries
         possible_to_label = [x in all_subjects for x in all_subject_ids]
