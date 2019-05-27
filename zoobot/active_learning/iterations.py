@@ -159,7 +159,7 @@ class Iteration():
         logging.info(
             'Galaxies to newly label: {} of {}'.format(sum(safe_to_label), len(all_subject_ids))
         )
-        indices_safe_to_label = indices(safe_to_label)
+        indices_safe_to_label = indices[safe_to_label]
 
         return all_subject_ids[indices_safe_to_label], all_labels[indices_safe_to_label], all_total_votes[indices_safe_to_label]
 

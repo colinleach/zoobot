@@ -314,7 +314,7 @@ if __name__ == '__main__':
         filename=log_loc,
         filemode='w',
         format='%(asctime)s %(message)s',
-        level=logging.DEBUG
+        level=logging.INFO
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
