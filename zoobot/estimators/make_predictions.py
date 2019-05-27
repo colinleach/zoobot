@@ -43,6 +43,7 @@ def get_samples_of_images(model, images, n_samples):
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
     assert isinstance(images, np.ndarray)
+    assert len(images) > 0
     results = np.zeros((len(images), n_samples))
     # make predictions batch-wise to avoid out-of-memory issues
     min_image = 0

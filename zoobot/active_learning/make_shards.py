@@ -236,11 +236,11 @@ if __name__ == '__main__':
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
     unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
 
-    # limit launch catalog
+    # limit catalogs to random subsets
     if args.max_labelled:
-        labelled_catalog = labelled_catalog[:args.max_labelled]
+        labelled_catalog = labelled_catalog.sample(len(labelled_catalog))[:args.max_labelled]
     if args.max_unlabelled:  
-        unlabelled_catalog = unlabelled_catalog[:args.max_unlabelled]
+        unlabelled_catalog = unlabelled_catalog.sample(len(unlabelled_catalog))[:args.max_unlabelled]
 
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 

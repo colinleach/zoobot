@@ -215,7 +215,6 @@ def make_db(db, rows):
 @pytest.fixture()
 def filled_shard_db_with_partial_labels(filled_shard_db):
     # some_hash is labelled, some_other_hash and yet_another_hash are unlabelled but exist
-    db = filled_shard_db
     rows = [
         {
             'id_str': 'some_hash',
@@ -233,7 +232,7 @@ def filled_shard_db_with_partial_labels(filled_shard_db):
             'total_votes': None
         }
     ]
-    db = make_db(db, rows)
+    db = make_db(filled_shard_db, rows)
     # trust but verify
     cursor = db.cursor()
     cursor.execute(
@@ -249,7 +248,6 @@ def filled_shard_db_with_partial_labels(filled_shard_db):
 @pytest.fixture()
 def filled_shard_db_with_labels(filled_shard_db):
     # all subjects labelled
-    db = filled_shard_db
     rows = [
         {
             'id_str': 'some_hash',
@@ -267,7 +265,7 @@ def filled_shard_db_with_labels(filled_shard_db):
             'total_votes': 1
         }
     ]
-    db = make_db(db, rows)
+    db = make_db(filled_shard_db, rows)
     # trust but verify
     cursor = db.cursor()
     cursor.execute(
@@ -479,15 +477,25 @@ def test_add_labels_to_db(filled_shard_db):
         assert results[0][0] == subject['label']
 
 
-def test_get_labelled_subjects(filled_shard_db_with_partial_labels):
-    subjects = active_learning.get_labelled_subjects(filled_shard_db_with_partial_labels)
-    assert subjects == ['some_hash']
+# def test_get_all_subjects(filled_shard_db_with_partial_labels):
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
+#     assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
 
+# def test_get_all_subjects_labelled(filled_shard_db_with_partial_labels):
+#     cursor = filled_shard_db_with_partial_labels.cursor()
+#     cursor.execute(
+#             '''
+#             SELECT id_str FROM catalog
+#             '''
+#         )
+#     result = cursor.fetchall()
+#     assert False
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=True)
+#     assert subjects == ['some_hash']
 
-def test_get_all_subjects(filled_shard_db_with_partial_labels):
-    subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
-    assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
-    
+# def test_get_all_subjects_unlabelled(filled_shard_db_with_partial_labels):
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=False)
+#     assert subjects == ['some_other_hash', 'yet_another_hash']
 
 def test_add_labels_to_db_already_labelled_should_fail(filled_shard_db_with_partial_labels):
     subjects = [
@@ -512,7 +520,6 @@ def test_get_latest_checkpoint_dir(estimators_dir):
     latest_ckpt = active_learning.get_latest_checkpoint_dir(estimators_dir)
     assert os.path.split(latest_ckpt)[-1] == '157003'
 
-
 def test_filter_for_new_only(filled_shard_db_with_partial_labels):
     all_subject_ids = ['some_hash', 'some_other_hash']  
     all_labels = [1, 4]
@@ -526,3 +533,12 @@ def test_filter_for_new_only(filled_shard_db_with_partial_labels):
     assert subject_ids == ['some_other_hash']
     assert labels == [4]
     assert total_votes == [4]
+
+def test_db_fully_labelled_empty(filled_shard_db):
+    assert not active_learning.db_fully_labelled(filled_shard_db)
+
+def test_db_fully_labelled_partial(filled_shard_db_with_partial_labels):
+    assert not active_learning.db_fully_labelled(filled_shard_db_with_partial_labels)
+
+def test_db_fully_labelled_full(filled_shard_db_with_labels):
+    assert active_learning.db_fully_labelled(filled_shard_db_with_labels)

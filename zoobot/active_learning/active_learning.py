@@ -237,7 +237,8 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     # exclude subjects with labels in db
     logging.debug('Filtering for unlabelled subjects')
     if db_fully_labelled(db):
-        unlabelled_subjects = []
+        logging.critical('All subjects are labelled - stop running active learning!')
+        exit(0)
     else:
         unlabelled_subjects = [
             subject for subject in subjects
@@ -315,17 +316,11 @@ def subject_is_labelled(id_str: str, db):
 
 def db_fully_labelled(db):
     # check that at least one subject has no label
-    cursor = db.cursor()
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        WHERE label IS NULL
-        '''
-    )
-    unlabelled_subject = cursor.fetchone()
-    if unlabelled_subject is None:
-        logging.critical('WARNING - shard appears to be completely labelled')
+    if not get_all_subjects(db, labelled=True):
+        logging.warning('Shard appears to be completely labelled')
         return True
+    else:
+        return False  # technically, None is considered False, but this is type-consistent
 
 # bad name, actually gets all table columns
 def get_file_loc_df_from_db(db, subject_ids: list):
@@ -465,26 +460,34 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             assert retrieved_total_votes == total_votes_val
 
 
-def get_labelled_subjects(db):
+def get_all_subjects(db, labelled=None):
     cursor = db.cursor()
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        WHERE label IS NOT NULL
-        '''
-    )
+    if labelled:
+        cursor.execute(
+            '''
+            SELECT id_str, label FROM catalog
+            WHERE label IS NOT NULL
+            '''
+        )
+    if labelled == False:  # explicitly not None
+        cursor.execute(
+            '''
+            SELECT id_str FROM catalog
+            WHERE label IS NULL
+            '''
+        )
+    else:
+        cursor.execute(
+            '''
+            SELECT id_str FROM catalog
+            '''
+        )
     result = cursor.fetchall()
-    return [x[0] for x in result]  # id_strs
-
-def get_all_subjects(db):
-    cursor = db.cursor()
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        '''
-    )
-    result = cursor.fetchall()
-    return [x[0] for x in result]  # id_strs
+    # assert False
+    if result:
+        return [x[0] for x in result]  # id_strs
+    else:
+        return []
 
 
 def get_all_shard_locs(db):
@@ -506,17 +509,17 @@ def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
     all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
     logging.info('all_subject_ids, {}'.format(all_subject_ids[:3]))
     logging.info('all_subjects, {}'.format(all_subjects[:3]))
-    possible_to_label = [x in all_subjects for x in all_subject_ids]
-    assert possible_to_label  # should always be some galaxies not in train or eval, even if labelled
-    logging.info('Possible to label: {}'.format(sum(possible_to_label)))
+    found_in_db = [x in all_subjects for x in all_subject_ids]
+    assert found_in_db  # should always be some galaxies not in train or eval, even if labelled
+    logging.info('Oracle-labelled subjects in db: {}'.format(sum(found_in_db)))
 
-    labelled_subjects = get_labelled_subjects(db)
+    labelled_subjects = get_all_subjects(db, labelled=True)
     not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
     logging.info('Not yet labelled: {}'.format(sum(not_yet_labelled)))
 
     # lists can't be boolean indexed, so convert to old-fashioned numeric index...
     indices = np.array([n for n in range(len(all_subject_ids))])
-    safe_to_label = np.array(possible_to_label) & np.array(not_yet_labelled)
+    safe_to_label = np.array(found_in_db) & np.array(not_yet_labelled)
     indices_safe_to_label = indices[safe_to_label]
     if sum(safe_to_label) == len(all_subject_ids):
         logging.warning('All oracle labels identified as new - does this make sense?')
