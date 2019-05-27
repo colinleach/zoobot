@@ -312,9 +312,9 @@ def subject_is_labelled(id_str: str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
-    logging.info(matching_subjects)
-    logging.info(matching_subjects[0][1])
-    return matching_subjects[0][1] is None
+    # logging.debug(matching_subjects)
+    # logging.debug(matching_subjects[0][1])
+    return matching_subjects[0][1] is not None
 
 
 def db_fully_labelled(db):
