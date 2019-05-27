@@ -230,8 +230,8 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     # tfrecord will have encoded to bytes, need to decode
     logging.debug('Constructing subjects from loaded data')
     subjects = [
-        {'matrix': image, 'id_str': id_st.decode('utf-8')} 
-        for image, id_st in zip(images, id_str_bytes)
+        {'matrix': image, 'id_str': id_str.decode('utf-8')} 
+        for image, id_str in zip(images, id_str_bytes)
     ]  # was generator expression - needed?
     del images  # free memory
     logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
@@ -289,14 +289,13 @@ def subject_is_labelled(id_str: str, db):
 
     Args:
         id_str (str): subject_id to search for
-        db (sqlite3.Connection): database with `acquisitions` table to read acquisition
+        db (sqlite3.Connection): database with `catalog` table to read labels
 
     Raises:
         ValueError: all subjects in `db.catalog` have labels
-        IndexError: if no top subjects are found, optionally looking only in shard_loc
 
     Returns:
-        list: ordered list (descending) of subject id strings with highest acquisition values
+        bool: subject with id_str is labelled
     """
     # find the subject(s) with id_str in db
     cursor = db.cursor()
@@ -313,6 +312,8 @@ def subject_is_labelled(id_str: str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
+    logging.info(matching_subjects)
+    logging.info(matching_subjects[0][1])
     return matching_subjects[0][1] is None
 
 
