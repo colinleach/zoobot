@@ -145,21 +145,21 @@ class Iteration():
 
         all_subjects = active_learning.get_all_subjects(self.db)  # strictly, all sharded subjects - ignore train/eval catalog entries
         possible_to_label = [x in all_subjects for x in all_subject_ids]
-        logging.info('Possible to label: {}'.format(len(possible_to_label)))
+        logging.info('Possible to label: {}'.format(sum(possible_to_label)))
 
         labelled_subjects = active_learning.get_labelled_subjects(self.db)
         not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
-        logging.info('Not yet labelled: {}'.format(len(not_yet_labelled)))
+        logging.info('Not yet labelled: {}'.format(sum(not_yet_labelled)))
 
         # lists can't be boolean indexed, so convert to old-fashioned numeric index
         indices = np.array([n for n in range(len(all_subject_ids))])
         safe_to_label = np.array(possible_to_label) & np.array(not_yet_labelled)
+        indices_safe_to_label = indices[safe_to_label]
         if sum(safe_to_label) == len(all_subject_ids):
             logging.warning('All oracle labels identified as new - does this make sense?')
         logging.info(
-            'Galaxies to newly label: {} of {}'.format(sum(safe_to_label), len(all_subject_ids))
+            'Galaxies to newly label: {} of {}'.format(len(indices_safe_to_label), len(all_subject_ids))
         )
-        indices_safe_to_label = indices[safe_to_label]
 
         return all_subject_ids[indices_safe_to_label], all_labels[indices_safe_to_label], all_total_votes[indices_safe_to_label]
 
