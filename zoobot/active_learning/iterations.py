@@ -139,35 +139,10 @@ class Iteration():
         metrics.save_iteration_state(self.iteration_dir, subjects, samples, acquisitions)
 
 
-    def filter_for_new_only(self, all_subject_ids, all_labels, all_total_votes):
-        # TODO needs test
-        # TODO wrap oracle subject as namedtuple?
-
-        all_subjects = active_learning.get_all_subjects(self.db)  # strictly, all sharded subjects - ignore train/eval catalog entries
-        possible_to_label = [x in all_subjects for x in all_subject_ids]
-        logging.info('Possible to label: {}'.format(sum(possible_to_label)))
-
-        labelled_subjects = active_learning.get_labelled_subjects(self.db)
-        not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
-        logging.info('Not yet labelled: {}'.format(sum(not_yet_labelled)))
-
-        # lists can't be boolean indexed, so convert to old-fashioned numeric index
-        indices = np.array([n for n in range(len(all_subject_ids))])
-        safe_to_label = np.array(possible_to_label) & np.array(not_yet_labelled)
-        indices_safe_to_label = indices[safe_to_label]
-        if sum(safe_to_label) == len(all_subject_ids):
-            logging.warning('All oracle labels identified as new - does this make sense?')
-        logging.info(
-            'Galaxies to newly label: {} of {}'.format(len(indices_safe_to_label), len(all_subject_ids))
-        )
-
-        return all_subject_ids[indices_safe_to_label], all_labels[indices_safe_to_label], all_total_votes[indices_safe_to_label]
-
-
     def run(self):
         all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
          # can't allow overwriting of previous labels, as may have been written to tfrecord
-        subject_ids, labels, total_votes = self.filter_for_new_only(all_subject_ids, all_labels, all_total_votes)
+        subject_ids, labels, total_votes = active_learning.filter_for_new_only(all_subject_ids, all_labels, all_total_votes)
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)

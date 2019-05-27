@@ -481,8 +481,13 @@ def test_add_labels_to_db(filled_shard_db):
 
 def test_get_labelled_subjects(filled_shard_db_with_partial_labels):
     subjects = active_learning.get_labelled_subjects(filled_shard_db_with_partial_labels)
-    assert subjects == [('some_hash',)]
+    assert subjects == ['some_hash']
 
+
+def test_get_all_subjects(filled_shard_db_with_partial_labels):
+    subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
+    assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
+    
 
 def test_add_labels_to_db_already_labelled_should_fail(filled_shard_db_with_partial_labels):
     subjects = [
@@ -506,3 +511,18 @@ def test_get_all_shard_locs(filled_shard_db):
 def test_get_latest_checkpoint_dir(estimators_dir):
     latest_ckpt = active_learning.get_latest_checkpoint_dir(estimators_dir)
     assert os.path.split(latest_ckpt)[-1] == '157003'
+
+
+def test_filter_for_new_only(filled_shard_db_with_partial_labels):
+    all_subject_ids = ['some_hash', 'some_other_hash']  
+    all_labels = [1, 4]
+    total_votes = [2, 4]
+    subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+        filled_shard_db_with_partial_labels, # some_hash already has a label in this db
+        all_subject_ids,
+        all_labels,
+        total_votes
+    )
+    assert subject_ids == ['some_other_hash']
+    assert labels == [4]
+    assert total_votes == [4]

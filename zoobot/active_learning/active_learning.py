@@ -497,3 +497,31 @@ def get_all_shard_locs(db):
         '''
     )
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
+
+
+def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
+    # TODO needs test
+    # TODO wrap oracle subject as namedtuple?
+
+    all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
+    possible_to_label = [x in all_subjects for x in all_subject_ids]
+    logging.info('Possible to label: {}'.format(sum(possible_to_label)))
+
+    labelled_subjects = get_labelled_subjects(db)
+    not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
+    logging.info('Not yet labelled: {}'.format(sum(not_yet_labelled)))
+
+    # lists can't be boolean indexed, so convert to old-fashioned numeric index...
+    indices = np.array([n for n in range(len(all_subject_ids))])
+    safe_to_label = np.array(possible_to_label) & np.array(not_yet_labelled)
+    indices_safe_to_label = indices[safe_to_label]
+    if sum(safe_to_label) == len(all_subject_ids):
+        logging.warning('All oracle labels identified as new - does this make sense?')
+    logging.info(
+        'Galaxies to newly label: {} of {}'.format(len(indices_safe_to_label), len(all_subject_ids))
+    )
+    # ...then use list comprehension to select with numeric index
+    safe_subject_ids = [all_subject_ids[i] for i in indices_safe_to_label]
+    safe_labels = [all_labels[i] for i in indices_safe_to_label]
+    safe_total_votes = [all_total_votes[i] for i in indices_safe_to_label]
+    return safe_subject_ids, safe_labels, safe_total_votes
