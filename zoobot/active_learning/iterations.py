@@ -139,17 +139,26 @@ class Iteration():
         metrics.save_iteration_state(self.iteration_dir, subjects, samples, acquisitions)
 
 
+    def filter_for_new_only(self, all_subject_ids, all_labels, all_total_votes):
+        # TODO needs test
+        # TODO wrap subject in class?
+        labelled_subjects = active_learning.get_labelled_subjects(self.db)
+        all_subjects = active_learning.get_all_subjects(self.db)
+        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects and x in all_subjects]
+        if sum(indices_not_yet_labelled) == len(all_subject_ids):
+            logging.warning('All oracle labels identified as new - does this make sense?')
+        logging.debug(
+            'Galaxies to newly label: {} of {}'.format(sum(indices_not_yet_labelled), len(all_subject_ids))
+        )
+        return all_subject_ids[indices_not_yet_labelled], all_labels[indices_not_yet_labelled], all_total_votes[indices_not_yet_labelled]
+
+
     def run(self):
          # labels_dir used as working directory for reduction pipeline, useful to record for later inspection TODO not any more...
         all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
 
          # can't allow overwriting of previous labels, as may have been written to tfrecord
-        labelled_subjects = active_learning.get_labelled_subjects(self.db)
-        all_subjects = active_learning.get_all_subjects(self.db)
-        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects and x in all_subjects]
-        subject_ids = all_subject_ids[indices_not_yet_labelled]
-        labels = all_labels[indices_not_yet_labelled]
-        total_votes = all_total_votes[indices_not_yet_labelled]
+        subject_ids, labels, total_votes = self.filter_for_new_only(all_subject_ids, all_labels, all_total_votes)
 
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
