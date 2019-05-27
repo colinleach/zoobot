@@ -142,24 +142,32 @@ class Iteration():
     def filter_for_new_only(self, all_subject_ids, all_labels, all_total_votes):
         # TODO needs test
         # TODO wrap subject in class?
+
+        all_subjects = active_learning.get_all_subjects(self.db)  # strictly, all sharded subjects - ignore train/eval catalog entries
+        possible_to_label = [x in all_subjects for x in all_subject_ids]
+        logging.info('Possible to label: {}'.format(len(possible_to_label)))
+
         labelled_subjects = active_learning.get_labelled_subjects(self.db)
-        all_subjects = active_learning.get_all_subjects(self.db)
-        indices_not_yet_labelled = [n for n, x in enumerate(all_subject_ids) if x not in labelled_subjects and x in all_subjects]
-        if sum(indices_not_yet_labelled) == len(all_subject_ids):
+        not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
+        logging.info('Not yet labelled: {}'.format(len(not_yet_labelled)))
+
+        # lists can't be boolean indexed, so convert to old-fashioned numeric index
+        indices = np.array([n for n in range(len(all_subject_ids))])
+        safe_to_label = np.array(possible_to_label) & np.array(not_yet_labelled)
+        if sum(safe_to_label) == len(all_subject_ids):
             logging.warning('All oracle labels identified as new - does this make sense?')
-        logging.debug(
-            'Galaxies to newly label: {} of {}'.format(sum(indices_not_yet_labelled), len(all_subject_ids))
+        logging.info(
+            'Galaxies to newly label: {} of {}'.format(sum(safe_to_label), len(all_subject_ids))
         )
-        return all_subject_ids[indices_not_yet_labelled], all_labels[indices_not_yet_labelled], all_total_votes[indices_not_yet_labelled]
+        indices_safe_to_label = indices(safe_to_label)
+
+        return all_subject_ids[indices_safe_to_label], all_labels[indices_safe_to_label], all_total_votes[indices_safe_to_label]
 
 
     def run(self):
-         # labels_dir used as working directory for reduction pipeline, useful to record for later inspection TODO not any more...
         all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
-
          # can't allow overwriting of previous labels, as may have been written to tfrecord
         subject_ids, labels, total_votes = self.filter_for_new_only(all_subject_ids, all_labels, all_total_votes)
-
         if len(subject_ids) > 0:
             active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
@@ -173,6 +181,8 @@ class Iteration():
             )
             # self.acquired_tfrecord = os.path.join(self.acquired_tfrecords_dir, 'acquired_shard.tfrecord')
             # active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
+        else: 
+            logging.warning('No new subjects acquired - does this make sense?')
 
         """
         Callable should expect 
