@@ -56,10 +56,14 @@ Sim:
 
 Create instructions
 
-`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $instructions_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir --test --panoptes`
+`instructions_dir=$experiment_dir/instructions`
+
+`dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $experiment_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir --panoptes`
+<!-- add --test for test mode, --panoptes for real oracle/uploads -->
 
 Run first iteration (manually setting folders)
 
+`experiment_dir=data/experiments/decals_smooth_may`
 `instructions_dir=$experiment_dir/instructions`
 
 `previous_iteration_dir=""`
@@ -69,3 +73,18 @@ Run first iteration (manually setting folders)
 `dvc run -d production/run_iteration.sh -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc ./production/run_iteration.sh  $experiment_dir $instructions_dir $previous_iteration $this_iteration "--test"` -->
 
 `dvc run -d $shard_dir -d $instructions_dir -o $this_iteration_dir -f $this_iteration_dir.dvc python zoobot/active_learning/run_iteration.py --instructions-dir=$instructions_dir --this-iteration-dir=$this_iteration_dir --previous-iteration-dir=$previous_iteration_dir`
+
+And going forwards:
+
+`experiment_dir=data/experiments/decals_smooth_may`
+`instructions_dir=$experiment_dir/instructions`
+<!-- this does need to be defined! -->
+
+`iteration_n=1`
+
+`previous_iteration_dir=$experiment_dir/iteration_$(($iteration_n - 1))`
+<!-- bash uses this syntax to evaluate in math context -->
+
+`this_iteration_dir=$experiment_dir/iteration_$iteration_n`
+
+`python zoobot/active_learning/run_iteration.py --instructions-dir=$instructions_dir --this-iteration-dir=$this_iteration_dir --previous-iteration-dir=$previous_iteration_dir`

@@ -120,18 +120,20 @@ def run_estimator(config):
         An input receiver that expects an image array (batch, size, size, channels)
         """
         images = tf.placeholder(
-            dtype=tf.uint8,
+            dtype=tf.uint8, 
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
         receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect. Images as above.
+
 
         predict_config = copy.copy(config.eval_config)
         predict_config.name = 'predict'
         predict_config.shuffle = False
         predict_config.repeat = False
 
+        image_floats = tf.cast(images, tf.float32)
         new_features = input_utils.preprocess_batch(  # apply greyscale, augment, etc
-            images,
+            image_floats,
             config=config.eval_config  # using eval config setup
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)

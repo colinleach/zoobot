@@ -284,27 +284,6 @@ def augment_images(images, input_config):
     return images
 
 
-# def augment_images(images, params):
-#     if params['transform']:
-#         # images = tf.map_fn(
-#         #     lambda image: tf.py_func(
-#         #         func=functools.partial(transform_3d, params=params),
-#         #         inp=[image],
-#         #         Tout=tf.float32,
-#         #         stateful=False,
-#         #         name='augment'
-#         #     ),
-#         #     images)
-#
-#         [images] = tf.py_func(
-#                 func=functools.partial(transform_3d, params=params),
-#                 inp=[images[n] for n in range(images.shape[0])],
-#                 Tout=tf.float32,
-#                 stateful=False,
-#                 name='augment')
-#         images = tf.concat(images, axis=3)
-
-
 def geometric_augmentation(images, zoom, final_size, central):
     """
     Runs best if image is originally significantly larger than final target size
