@@ -1,4 +1,4 @@
-## Serving Custom Estimators with Tensorflow Serving
+## Serving Images to Custom Estimators with Tensorflow Serving
 
 I found Tensorflow Serving quite tricky to get my head around:
 -  There's a lot of jargon cluttering up what's going on: SignatureDef, SavedModelBuilder, profobuf, gRPC, etc.
@@ -56,7 +56,7 @@ Below, I create input instructions that expects a batch of images, does some pre
 
         # placeholder to define the graph. Will be replaced by new data.
         images = tf.placeholder(
-            dtype=tf.float32,
+            dtype=tf.uint8,  # RGB images have values in the range (0, 255)
             shape=(None, config['initial_size'], config['initial_size'] config['channels']), 
             name='images')
  
@@ -107,3 +107,24 @@ https://www.tensorflow.org/tfx/serving/api_rest
 
 
 ## 3. Run a Client to Make Requests
+
+### URL
+
+    POST http://host:port/v1/models/${MODEL_NAME}[/versions/${MODEL_VERSION}]:predict
+
+
+`/versions/${MODEL_VERSION}` is optional. If omitted, Tensorflow Serving will use the latest model.
+
+### Body
+
+    {
+    // (Optional) Serving signature to use.
+    // If unspecifed default serving signature is used.
+    "signature_name": <string>,
+
+    // Input Tensors in row format.
+    // e.g list of 2 tensors each of [1, 2] shape
+    "instances": [ [[1, 2]], [[3, 4]] ]
+    }
+
+RGB images are efficiently represented as uint8 integers (0-255). Following JSON convention, Tensorflow Serving will identify uint8 integers when written as above (without decimals or quotes).

@@ -26,7 +26,7 @@ def load_predictor(predictor_loc):
     """
     model_unwrapped = predictor.from_saved_model(predictor_loc)
     # wrap to avoid having to pass around dicts all the time
-    # expects image matrix, passes to model within dict of type {examples: matrix}
+    # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
     return lambda x: model_unwrapped({'examples': x})['prediction']
 

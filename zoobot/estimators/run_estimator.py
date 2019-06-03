@@ -120,7 +120,7 @@ def run_estimator(config):
         An input receiver that expects an image array (batch, size, size, channels)
         """
         images = tf.placeholder(
-            dtype=tf.float32,
+            dtype=tf.uint8,
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
         receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect. Images as above.
