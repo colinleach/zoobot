@@ -2,6 +2,7 @@ import logging
 import sys
 
 import tensorflow as tf
+tf.contrib.layers.l2_regularizer
 from tensorflow.python.saved_model import signature_constants
 
 

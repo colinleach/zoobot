@@ -22,3 +22,4 @@ dvc
 gitpython
 statsmodels
 panoptes-client
+requests

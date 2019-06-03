@@ -94,14 +94,24 @@ Don't try to build Tensorflow Serving yourself. It's much easier to use Docker. 
 
     docker pull tensorflow/serving
 
-When you run this image, the following command gets executed (from the [excellent official tutorial]()):
+Run the image:
+
+    docker run -p 8501:8501 \
+    --runtime=nvidia \
+    --mount type=bind,source=/path/to/my_model/,target=/models/my_model \
+    -e MODEL_NAME=my_model -t tensorflow/serving
+
+
+`--runtime=nvidia` will use your GPU (remove if no GPU)
+
+`--mount` links the source directory (your machine) to the target (Docker machine). Here, we are placing our model onto the Docker machine.
+
+ `-e` adds environmental variables to the docker machine. Tensorflow Serving uses the variables MODEL_NAME (default `model`) and MODEL_BASE_PATH (default `/models`) to know where to look for your model (on the Docker machine). 
+ 
+ When you run this image, the following command gets executed (from the [excellent official tutorial](https://www.tensorflow.org/tfx/serving/docker#running_a_serving_image)):
 
     tensorflow_model_server --port=8500 --rest_api_port=8501 --model_name=${MODEL_NAME} --model_base_path=${MODEL_BASE_PATH}/${MODEL_NAME}
 
-
-    docker run -p 8501:8501 \
-    --mount type=bind,source=/path/to/my_model/,target=/models/my_model \
-    -e MODEL_NAME=my_model -t tensorflow/serving
 
 https://www.tensorflow.org/tfx/serving/api_rest
 

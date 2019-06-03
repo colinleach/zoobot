@@ -3,6 +3,8 @@ import copy
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+tf.contrib.training.stratified_sample
+tf.contrib.image.rotate
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec, matrix_label_counts_feature_spec
