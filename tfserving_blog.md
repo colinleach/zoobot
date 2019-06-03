@@ -108,6 +108,10 @@ https://www.tensorflow.org/tfx/serving/api_rest
 
 ## 3. Run a Client to Make Requests
 
+First, check that the server is running okay
+
+GET http://host:port/v1/models/${MODEL_NAME}
+
 ### URL
 
     POST http://host:port/v1/models/${MODEL_NAME}[/versions/${MODEL_VERSION}]:predict
