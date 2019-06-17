@@ -24,7 +24,7 @@ aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_nat
 # detach and delete 350gb volume (should remove this from the AMI)
 # attach the volume working_volume to /dev/xvdb
 
-JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
 
 ZOOBOT_BRANCH=production-prototype && \
 sudo mount /dev/xvdb root && \
@@ -46,6 +46,9 @@ pip install -e repos/gz-panoptes-reduction  && \
 pip install --upgrade pyspark && \
 source deactivate && \
 screen -R run
+
+source activate tensorflow_p36
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # if storage is a concern, can make a snapshot of and then delete working_volume
 # $0.1/gb-month -> $35/month for the 350gb EBS volume, even when not attached! 

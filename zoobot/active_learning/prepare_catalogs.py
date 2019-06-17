@@ -92,9 +92,12 @@ def create_gz2_master_catalog(catalog_loc, save_loc):
 
 def get_root_loc():
     if os.path.isdir('/home/ec2-user'):
-        return '/home/ec2-user/root'
+        return '/home/ec2-user/root/repos/zoobot'
     elif os.path.isdir('/home/ubuntu'):
-        return '/home/ubuntu/root'
+        return '/home/ubuntu/root/repos/zoobot'
+    elif os.path.isdir('/data/repos'):
+        logging.critical('Local master catalog - do not use on EC2!')
+        return 'local'
     else:
         raise ValueError('Cannot work out if root is under ec2-user or ubuntu')
 
@@ -105,7 +108,10 @@ def specify_file_locs(df):
     Remove 'png_loc (png relative to repo root) to avoid confusion
     """
     root_loc = get_root_loc()
-    df['file_loc'] = get_root_loc() + '/repos/zoobot/' + df['png_loc']  # now expects this to point to png loc relative to repo root
+    if root_loc is not 'local':
+        df['file_loc'] = root_loc + '/' + df['png_loc']  # + sign to allow pandas to override
+    else:
+        df['file_loc'] = df['local_png_loc']
     assert all(loc for loc in df['file_loc'])
     del df['png_loc']  # else may load this by default
     print(df['file_loc'].sample(5))
