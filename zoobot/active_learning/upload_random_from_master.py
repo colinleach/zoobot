@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # galaxy zoo will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(0, 5000)
+    selected = slice(5000, 15000)
     name = 'random'
     retirement = 3
 
