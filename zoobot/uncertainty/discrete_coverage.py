@@ -8,30 +8,38 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import seaborn as sns
 
+from zoobot.active_learning import acquisition_utils
 
-def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
+
+def evaluate_discrete_coverage(volunteer_votes, mean_k_predictions):
     data = []
     if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
         raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
-    n_subjects = sample_probs_by_k.shape[0]
-    max_possible_k = sample_probs_by_k.shape[2]
-    mean_posterior = sample_probs_by_k.mean(axis=1)
-    for subject_n in range(n_subjects):
-        most_likely_k = mean_posterior[subject_n].argmax()
-        for max_error_in_k in range(max_possible_k + 1):  # include max_error = max_k in range
-            max_k = np.min([most_likely_k + max_error_in_k, max_possible_k])
-            min_k = np.max([most_likely_k - max_error_in_k, 0])
-            prediction = mean_posterior[subject_n, min_k:max_k+1].sum()  # include max_k in slice
+    n_subjects = len(volunteer_votes)
+    max_possible_k = 80  # don't test errors higher than this
+    # mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
+    for error_bar_width in range(max_possible_k + 1):  # include max_error = max_k in range
+        for subject_n in range(n_subjects):
+            p_of_k = mean_k_predictions[subject_n]
+            expected_k = int(np.sum(p_of_k * np.arange(len(p_of_k))))  # expected k per subject
+            # most_likely_k = p_of_k.argmax()
             actual_k = volunteer_votes[subject_n]
-            observed = float(min_k <= actual_k <= max_k)
+            # use min/max because slice (below) will fail if min_k or max_k are negative
+            max_k = np.min([expected_k + error_bar_width, len(p_of_k)])
+            min_k = np.max([expected_k - error_bar_width, 0])
+            assert min_k <= max_k
+            # warning, slice will fail if min_k or max_k are negative
+            p_k_in_error_bar = np.sum(p_of_k[min_k:max_k+1])  # include max_k in slice
+            k_in_error_bar = float(min_k <= actual_k <= max_k)
             data.append({
-                'max_state_error': max_error_in_k,
-                'prediction': prediction,
-                'observed': observed,
+                'max_state_error': error_bar_width,
+                'prediction': p_k_in_error_bar,
+                'observed': k_in_error_bar,
                 'max_k': max_k,
                 'min_k': min_k,
-                'most_likely_k': most_likely_k,
-                'actual_k': actual_k
+                'most_likely_k': expected_k,
+                'actual_k': actual_k,
+                'subject_n': subject_n
                 })
     df = pd.DataFrame(data=data)
     return df

@@ -173,9 +173,7 @@ def input_to_dense(features, mode, model):
 
     """
     input_layer = features["x"]
-    # tf.summary.image('model_input', input_layer, 1)
-    # assert input_layer.shape[3] == 1  # should be greyscale, for later science
-    tf.summary.image('model_input', input_layer, 3)
+    tf.summary.image('model_input', input_layer, input_layer.shape[-1])
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     # dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
@@ -282,7 +280,7 @@ def input_to_dense(features, mode, model):
 
     """
     Flatten tensor into a batch of vectors
-    Start with image_dim shape, 1 channel (*3 if 3 channels)
+    Start with image_dim shape. NB, does not change with channels: just alters num of first filters.
     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
     length ^ 2 to make shape 1D
     64 filters in final layer
@@ -330,6 +328,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     if labels is not None:
         tf.summary.histogram('yes_votes', labels[:, 0])
         tf.summary.histogram('total_votes', labels[:, 1])
+        tf.summary.histogram('observed_vote_fraction', labels[:, 0] / labels[:, 1])
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })

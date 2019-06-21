@@ -39,15 +39,17 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         repeat=True,
         stratify_probs=None,
         geometric_augmentation=True,
-        photographic_augmentation=False,
-        zoom=(2.4, 2.6),
+        photographic_augmentation=True,
+        zoom=(1.1, 1.3),  # SMOOTH MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
         batch_size=run_config.batch_size,
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False  # train using softmax proxy for binomial loss
+        noisy_labels=False,  # train using softmax proxy for binomial loss,
+        greyscale=True,  # both modes
+        zoom_central=False  # SMOOTH MODE
     )
 
     eval_config = input_utils.InputConfig(
@@ -60,14 +62,16 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
-        zoom=(1.7, 1.9),
+        zoom=(1.1, 1.3),  # SMOOTH MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
         batch_size=run_config.batch_size,
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False  # eval using binomial loss
+        noisy_labels=False,  # eval using binomial loss
+        greyscale=True,  # both modes
+        zoom_central=False  # SMOOTH MODE
     )
 
     model = bayesian_estimator_funcs.BayesianModel(

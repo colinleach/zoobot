@@ -31,7 +31,9 @@ class InputConfig():
             photographic_augmentation=True,
             max_brightness_delta=0.05,
             contrast_range=(0.95, 1.05),
-            noisy_labels=True
+            noisy_labels=True,
+            greyscale=True,
+            zoom_central=True
     ):
 
         self.name = name
@@ -63,6 +65,8 @@ class InputConfig():
 
         self.noisy_labels = noisy_labels
 
+        self.greyscale = greyscale
+        self.zoom_central = zoom_central
 
     def set_stratify_probs_from_csv(self, csv_loc):
         subject_df = pd.read_csv(csv_loc)
@@ -94,7 +98,10 @@ def get_input(config):
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        assert preprocessed_batch_images['x'].shape[3] == 3
+        if config.greyscale:
+            assert preprocessed_batch_images['x'].shape[3] == 1
+        else:
+            assert preprocessed_batch_images['x'].shape[3] == 3
 
         joint_batch_labels = tf.stack([batch_labels, batch_counts], axis=1)
         return preprocessed_batch_images, joint_batch_labels
@@ -204,14 +211,17 @@ def preprocess_batch(batch_images, config):
         assert len(batch_images.shape) == 4
         assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
-        # greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
-        # assert greyscale_images.shape[1] == config.initial_size
-        # assert greyscale_images.shape[2] == config.initial_size
-        # assert greyscale_images.shape[3] == 1
-        # tf.summary.image('b_greyscale', greyscale_images)
+        if config.greyscale:
+            # new channel dimension of 1
+            channel_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
+            assert channel_images.shape[1] == config.initial_size
+            assert channel_images.shape[2] == config.initial_size
+            assert channel_images.shape[3] == 1
+            tf.summary.image('b_greyscale', channel_images)
+        else:
+            channel_images = tf.identity(batch_images)
 
-        # augmented_images = augment_images(greyscale_images, config)
-        augmented_images = augment_images(batch_images, config)
+        augmented_images = augment_images(channel_images, config)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
@@ -262,7 +272,8 @@ def augment_images(images, input_config):
         images = geometric_augmentation(
             images,
             zoom=input_config.zoom,
-            final_size=input_config.final_size)
+            final_size=input_config.final_size,
+            central=input_config.zoom_central)
 
     if input_config.photographic_augmentation:
         images = photographic_augmentation(
@@ -294,7 +305,7 @@ def augment_images(images, input_config):
 #         images = tf.concat(images, axis=3)
 
 
-def geometric_augmentation(images, zoom, final_size):
+def geometric_augmentation(images, zoom, final_size, central):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -330,7 +341,7 @@ def geometric_augmentation(images, zoom, final_size):
         images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
-    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=True), images)
+    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central), images)
 
     # resize to final desired size (may match crop size)
     images = tf.image.resize_images(

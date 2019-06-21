@@ -6,9 +6,12 @@ import pandas as pd
 
 from zoobot.tests import TEST_EXAMPLE_DIR
 
-# SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
-SHARD_DIR = 'data/gz2_shards/uint8_256px_bar_n_500'
-assert os.path.isdir(SHARD_DIR)
+
+try:
+    SHARD_DIR = 'data/gz2_shards/uint8_256px_smooth_n_128'
+    assert os.path.isdir(SHARD_DIR)
+except AssertionError:
+    SHARD_DIR = '/Volumes/alpha/uint8_128px_bar_n'
 ORACLE_LOC = os.path.join(SHARD_DIR, 'oracle.csv')
 logging.info('Using oracle loc: {}'.format(ORACLE_LOC))
 assert os.path.isfile(ORACLE_LOC)

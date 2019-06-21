@@ -131,7 +131,7 @@ class ActiveConfig():
         while iteration_n < self.n_iterations:
 
             if iteration_n == 0:
-                epochs = 50  # not 125, will massively overfit the first epoch
+                epochs = 125
             else:
                 epochs = 50
 
@@ -169,10 +169,6 @@ class ActiveConfig():
 def get_train_callable(params):
 
     def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
-        # WARNING TESTING ONLY 
-        # if len(train_records) > 1:
-        #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
-        # WARNING TESTING ONLY
         logging.info('Training model on: {}'.format(train_records))
         run_config = default_estimator_params.get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs)
         if params.test: # overrides warm_start
@@ -189,13 +185,13 @@ def mock_acquisition_func(samples):
     return [np.random.rand() for n in range(len(samples))]
 
 
-def get_acquisition_func(baseline):
+def get_acquisition_func(baseline, expected_votes):
     if baseline:
         logging.critical('Using mock acquisition function, baseline test mode!')
         return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
         logging.critical('Using mutual information acquisition function')
-        return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
+        return lambda x: acquisition_utils.mutual_info_acquisition_func(x, expected_votes)  
 
 
 TrainCallableParams = namedtuple(
@@ -235,10 +231,10 @@ if __name__ == '__main__':
         shards_per_iter = 2  # temp
         final_size = 32
     else:
-        n_iterations = 24
-        subjects_per_iter = 250 # to see if performance improves at all with more images
-        shards_per_iter = 4  # needs to be <= total prediction shards, will fail loudly if so
-        final_size = 96
+        n_iterations = 25
+        subjects_per_iter = 128
+        shards_per_iter = 4
+        final_size = 128  # for both modes
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
@@ -277,7 +273,8 @@ if __name__ == '__main__':
     )
 
     train_callable = get_train_callable(train_callable_params)
-    acquisition_func = get_acquisition_func(baseline=args.baseline)
+    # TODO generalise to many classes at once, don't need to manually set expected_votes
+    acquisition_func = get_acquisition_func(baseline=args.baseline, expected_votes=40)  # IMPORTANT SMOOTH MODE
     if args.test or args.baseline:
         n_samples = 2
     else:

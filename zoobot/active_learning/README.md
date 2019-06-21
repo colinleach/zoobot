@@ -22,7 +22,7 @@ Below
 `catalog_loc=data/gz2_classifications_and_subjects.csv`
 
 EC2:
-`shard_dir=data/gz2_shards/uint8_256px_bar_n_8k`
+`shard_dir=data/gz2_shards/uint8_256px_smooth_n_128`
 OR
 `shard_dir=/Volumes/alpha/uint8_256px_bar_n`
 
@@ -55,7 +55,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir --catalog_loc=$catalog_loc`
+`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o $shard_dir -f make_shards_smooth_n_128.dvc python zoobot/active_learning/make_shards.py --shard_dir=$shard_dir --catalog_loc=$catalog_loc`
 
 ### Execution
 
@@ -65,7 +65,7 @@ Now we have the data to create shards.
 Finally, we can run the actual active learning loop. Thanks to the shard config, we can read and re-use the shards without having to recreate them each time.
 
 If you still need to acquire the data:
-`dvc pull -r s3 make_shards.dvc`
+`dvc pull -r s3 make_shards.dvc` (replace with latest shard file.dvc as appropriate)
 `aws sync s3://galaxy-zoo/decals/fits_native data/fits_native` (takes a few minutes)
 (eventually, can do dvc pull, but need to branch away from basic_split)
 
@@ -78,10 +78,10 @@ If you still need to acquire the data:
 - Stop after a specified number of iterations, moving the log into the run directory
 
 
-`dvc run -d $shard_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 OR baseline:
-`dvc run -d $shard_dir -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+`dvc run -d $shard_dir -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline --warm-start && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
 
 This will execute the simulation, upload the results (via S3 and dvc) and then terminate the instance.
 If the simulation exits with an error code, the instance will not be terminated.
