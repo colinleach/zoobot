@@ -18,6 +18,7 @@ from zoobot.tfrecord import create_tfrecord, read_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
 from zoobot.active_learning import active_learning
 from zoobot.estimators import make_predictions
+from zoobot.tests.active_learning import conftest
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -285,8 +286,8 @@ def verify_catalog_matches_shards(catalog, db, size, channels):
 
 
 
-def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog):  # bad loc
-    active_learning.add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog)
+def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog):  # bad loc
+    active_learning.add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -296,7 +297,7 @@ def test_add_tfrecord_to_db(example_tfrecord_loc, empty_shard_db, catalog):  # 
     saved_subjects = cursor.fetchall()
     for n, subject in enumerate(saved_subjects):
         assert str(subject[0]) == catalog.iloc[n]['id_str']  # strange string casting when read back
-        assert subject[1] == example_tfrecord_loc
+        assert subject[1] == tfrecord_matrix_float_loc
 
 
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
@@ -312,29 +313,32 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_record_acquisitions_on_tfrecord(filled_shard_db, acquisition_func, shard_locs, size, channels):
-    # TODO needs test for duplicate values/replace behaviour
-    shard_loc = shard_locs[0]
-    active_learning.record_acquisitions_on_tfrecord(filled_shard_db, shard_loc, size, channels, acquisition_func)
-    cursor = filled_shard_db.cursor()
-    cursor.execute(
-        '''
-        SELECT acquisition_value FROM acquisitions
-        '''
+def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size):
+    
+    monkeypatch.setattr(
+        active_learning.make_predictions,
+        'get_samples_of_subjects',
+        conftest.mock_get_samples_of_subjects
     )
-    saved_subjects = cursor.fetchall()
-    for subject in saved_subjects:
-        assert 0. < subject[0] < 1.  # doesn't actually verify value is consistent
+
+    n_samples = 10
+    subjects, samples = active_learning.make_predictions_on_tfrecord(
+        tfrecord_matrix_id_loc,
+        model=None,  # avoid this via mocking, above
+        n_samples=n_samples,
+        initial_size=size,
+        max_shard_size=10000
+    )
+    assert samples.shape == (len(subjects), n_samples)
+
+# def test_get_top_acquisitions_any_shard(filled_shard_db):
+#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
+#     assert top_ids == ['some_hash', 'some_other_hash']
 
 
-def test_get_top_acquisitions_any_shard(filled_shard_db):
-    top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
-    assert top_ids == ['some_hash', 'some_other_hash']
-
-
-def test_get_top_acquisitions(filled_shard_db):
-    top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
-    assert top_ids == ['some_hash', 'yet_another_hash']
+# def test_get_top_acquisitions(filled_shard_db):
+#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
+#     assert top_ids == ['some_hash', 'yet_another_hash']
 
 
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
@@ -352,11 +356,11 @@ def test_add_labels_to_db(filled_shard_db):
     subjects = [
         {
             'id_str': 'some_hash',
-            'label': 0
+            'label': 0.
         },
         {
             'id_str': 'yet_another_hash',
-            'label': 1
+            'label': 1.
         }
     ]
     subject_ids = [x['id_str'] for x in subjects]
@@ -379,3 +383,7 @@ def test_add_labels_to_db(filled_shard_db):
 
 def test_get_all_shard_locs(filled_shard_db):
     assert active_learning.get_all_shard_locs(filled_shard_db) == ['tfrecord_a', 'tfrecord_b']
+
+def test_get_latest_checkpoint_dir(estimators_dir):
+    latest_ckpt = active_learning.get_latest_checkpoint_dir(estimators_dir)
+    assert os.path.split(latest_ckpt)[-1] == '157003'

@@ -12,10 +12,10 @@ from zoobot.active_learning import analysis
 
 
 @pytest.fixture()
-def tfrecord_index_loc(tfrecord_dir, example_tfrecord_loc):
+def tfrecord_index_loc(tfrecord_dir, tfrecord_matrix_float_loc):
     loc = os.path.join(tfrecord_dir, 'tfrecord_index.json')
     with open(loc, 'w') as f:
-        json.dump([example_tfrecord_loc, example_tfrecord_loc], f)
+        json.dump([tfrecord_matrix_float_loc, tfrecord_matrix_float_loc], f)
     return loc
 
 def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):
@@ -26,8 +26,7 @@ def test_show_subjects_by_iteration(tfrecord_index_loc, size, channels):
 # TODO temporary, will need one in TEST_EXAMPLES
 @pytest.fixture()
 def log_loc():
-    return '/Users/mikewalmsley/repos/zoobot/zoobot/logs/execute_1536613916.8920033.log'
-    # return '/Users/mikewalmsley/repos/zoobot/zoobot/logs/bayesian_panoptes_featured_si128_sf64_l0.4_augs_both_normed_activated_wide_aws.log'
+    return os.path.join(TEST_EXAMPLE_DIR, 'active_learning_example.log')
 
 
 @pytest.fixture()

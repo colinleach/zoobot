@@ -1,0 +1,11 @@
+cmd: ' python zoobot/active_learning/execute.py --shard_config=data/shards/si128_sf64_ss4096/shard_config.json
+  --run_dir=data/runs/al_mutual'
+deps:
+- path: data/shards/si128_sf64_ss4096
+- path: zoobot/active_learning/oracle.csv
+- path: data/fits_native
+- path: zoobot
+md5: null
+outs:
+- cache: true
+  path: data/runs/al_mutual

@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import time
+import copy
 from functools import partial
 
 import numpy as np
@@ -158,58 +159,63 @@ def run_estimator(config):
 
     # logging.info('Loading from {} - if none then fresh start'.format(warm_start_from))
 
+    estimator_config = tf.estimator.RunConfig(
+        save_checkpoints_secs=5*60,  # Save checkpoints every 5 minutes (but actually much faster)
+        keep_checkpoint_max=5      # Retain the 5 most recent checkpoints (25 mins)
+    )
+
     estimator = tf.estimator.Estimator(
         model_fn=model_fn_partial,
         model_dir=config.log_dir,
-        params=config.model
-        # warm_start_from=warm_start_from,
-        # config=fast_checkpoint_config
+        params=config.model,
+        config=estimator_config
     )
 
-    # can't move out of run_estimator, uses closure to avoid passing config as argument
-    # def serving_input_receiver_fn():
-    #     """
-    #     An input receiver that expects a serialized tf.Example.
-    #     """
-    #     serialized_tf_example = tf.placeholder(dtype=tf.string,
-    #                                            name='input_example_tensor')
-    #     receiver_tensors = {'examples': serialized_tf_example}  # one or many??
-    #     feature_spec = input_utils.matrix_feature_spec(size=config.initial_size, channels=config.channels)  # no labels
-    #     features = tf.parse_example(serialized_tf_example, feature_spec)
 
-    #     images = tf.reshape(
-    #         features['matrix'],
-    #         [-1, config.initial_size, config.initial_size,
-    #          config.channels])
-
-    #     new_features = input_utils.preprocess_batch(
-    #         images,
-    #         config=config.eval_config
-    #     )
-    #     return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
-
-    
     def serving_input_receiver_fn_image():
         """
-        An input receiver that expects an image array
+        An input receiver that expects an image array (batch, size, size, channels)
         """
         images = tf.placeholder(
             dtype=tf.float32,
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
-        receiver_tensors = {'examples': images}
+        receiver_tensors = {'examples': images}  # dict of tensors the predictor will expect
 
-        new_features = input_utils.preprocess_batch(
+        predict_config = copy.copy(config.eval_config)
+        predict_config.name = 'predict'
+        predict_config.shuffle = False
+        predict_config.repeat = False
+
+        new_features = input_utils.preprocess_batch(  # apply greyscale, augment, etc
             images,
-            config=config.eval_config
+            config=config.eval_config  # using eval config setup
         )
         return tf.estimator.export.ServingInputReceiver(new_features, receiver_tensors)
 
 
+    # def serving_input_receiver_fn_record():
+    #     """
+    #     An input receiver that expects an image array (batch, size, size, channels)
+    #     Doesn't work as tf doesn't allow graph to be set using placeholder for dataset tfrecord loc
+    #     """
+    #     record = tf.placeholder(
+    #         dtype=tf.string,
+    #         shape=(1), 
+    #         name='record')
+    #     receiver_tensors = {'examples': record}  # dict of tensors the predictor will expect
+
+    #     predict_config = copy.copy(config.eval_config)
+    #     predict_config.repeat = False
+    #     predict_config.name = 'predict'
+    #     predict_config.tfrecord_loc = record
+    #     preprocessed_batch_features, batch_labels = input_utils.get_input(predict_config)
+    #     return tf.estimator.export.ServingInputReceiver(preprocessed_batch_features, receiver_tensors)
+
     train_input_partial = partial(train_input, input_config=config.train_config)
     eval_input_partial = partial(eval_input, input_config=config.eval_config)
 
-    train_logging, eval_logging, _ = config.model.logging_hooks
+    train_logging, eval_logging, predict_logging = config.model.logging_hooks
 
     eval_loss_history = []
     epoch_n = 0
@@ -233,15 +239,7 @@ def run_estimator(config):
         )
         eval_loss_history.append(eval_metrics['loss'])
 
-        # predictions = estimator.predict(
-        #     eval_input_partial,
-        #     hooks=predict_logging
-        # )
-        # prediction_rows = list(predictions)
-        # logging.debug('Predictions ({}): '.format(len(prediction_rows)))
-        # for row in prediction_rows[:10]:
-        #     logging.info(row)
-
+        
         if (epoch_n % config.save_freq == 0) or (epoch_n == config.epochs):
             save_model(estimator, config, epoch_n, serving_input_receiver_fn_image)
 
@@ -256,6 +254,18 @@ def run_estimator(config):
 
         logging.info('End epoch {}'.format(epoch_n))
         epoch_n += 1
+
+    # logging.info('Making final predictions')
+    # with open('predictions_no_pred_dropout.txt', 'w') as f:
+    #     predictions = estimator.predict(
+    #         predict_input_func,
+    #         hooks=predict_logging
+    #     )
+    #     prediction_rows = list(predictions)
+    #     logging.info('Predictions ({}): '.format(len(prediction_rows)))
+    #     for row in prediction_rows:
+    #         # logging.info(row)
+    #         f.write('{}\n'.format(row))
 
     logging.info('All epochs completed - finishing gracefully')
 
@@ -290,6 +300,3 @@ def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
     estimator.export_savedmodel(
         export_dir_base=config.log_dir,
         serving_input_receiver_fn=serving_input_receiver_fn)
-
-
-# run_dir=run_si128_sf64_its10_label512_shards1_baseline

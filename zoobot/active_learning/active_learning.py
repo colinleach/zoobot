@@ -44,7 +44,7 @@ def create_db(catalog, db_loc):
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT DEFAULT NULL,
+            label FLOAT DEFAULT NULL,
             fits_loc STRING)
         '''
     )
@@ -142,31 +142,40 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
     db.commit()
 
 
-def record_acquisitions_on_tfrecord(db, tfrecord_loc, size, channels, acquisition_func):
-    """For every subject in tfrecord, get the acq. func value and save to db
-    Records acq. func. value on all examples, even labelled ones.
-    Acquisition func 
-    Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
-    
-    Args:
-        db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
-        tfrecord_loc (str): disk path to tfrecord. Loaded tfrecord must fit in memory.
-        size (int): height/width dimension of each image matrix to load from tfrecord
-        channels (int): channels of each image matrix to load from tfrecord
-        acquisition_func (callable): expecting list of image matrices, returning list of scalars
-    """
-    subjects = read_tfrecord.load_examples_from_tfrecord(
-        [tfrecord_loc],
-        read_tfrecord.matrix_id_feature_spec(size, channels)
+# probably better to move to make_predictions itself
+def make_predictions_on_tfrecord(tfrecord_locs, model, n_samples, initial_size, max_shard_size=10000):
+    images, _, id_str = input_utils.predict_input_func(
+        tfrecord_locs,  # TODO verify this is happy with lists
+        n_galaxies=max_shard_size, 
+        initial_size=initial_size, 
+        mode='id_str'
     )
-    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_loc, size))
-    # acq func expects a list of matrices
-    subjects_data = [x['matrix'].reshape(size, size, channels) for x in subjects]
-    acquisitions = acquisition_func(subjects_data)  # returns list of acquisition values
+    with tf.Session() as sess:
+        images, id_str_bytes = sess.run([images, id_str])
+    # tfrecord will have encoded to bytes, need to decode
+    subjects = [{'matrix': image, 'id_str': id_st.decode('utf-8')} for image, id_st in zip(images, id_str_bytes)]    
+    logging.debug('Loaded {} subjects from {} of size {}'.format(len(subjects), tfrecord_locs, initial_size))
+    # make predictions
+    samples = make_predictions.get_samples_of_subjects(model, subjects, n_samples)
+    return subjects, samples
 
-    for subject, acquisition in zip(subjects, acquisitions):
-        subject_id = subject['id_str'].decode('utf-8')  # tfrecord will have encoded to bytes
-        save_acquisition_to_db(subject_id, acquisition, db)
+
+# def record_acquisitions_on_predictions(subjects, acquisitions, db, acquisition_func):
+#     """For every subject in tfrecord, get the acq. func value and save to db
+#     Records acq. func. value on all examples, even labelled ones.
+#     Acquisition func 
+#     Note: Could cross-ref with db to skip predicting on labelled examples, but still need to load
+    
+#     Args:
+#         subjects (list): of form [{'matrix': np.array, 'id_str':'some_name}]
+#         samples (np.array): of form [n_subjects, n_samples], where index must match subjects above
+#         db (sqlite3.Connection): database with `acquisitions` table to record aqf. func. value
+#         acquisition_func (callable): expecting list of image matrices, returning list of scalars
+#     """
+
+#     # record acquisitions to db
+#     for subject, acquisition in zip(subjects, acquisitions):
+#         save_acquisition_to_db(subject['id_str'], float(acquisition), db)
 
 
 def save_acquisition_to_db(subject_id, acquisition, db): 
@@ -283,6 +292,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
     """
 
     logging.info('Adding {} subjects  (e.g. {}) to new tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
+    assert len(subject_ids) > 0
     assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     cursor = db.cursor()
 
@@ -307,7 +317,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': int(subject[1]),
+            'label': float(subject[1]),
             'fits_loc': str(subject[2])
         })
 
@@ -322,29 +332,22 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
 
 
 def get_latest_checkpoint_dir(base_dir):
-        saved_models = os.listdir(base_dir)  # subfolders
+        saved_models = list(filter(lambda x: x.startswith('15'), os.listdir(base_dir)))  # subfolders with timestamps
         saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
-        return os.path.join(base_dir, saved_models[-1])  # the subfolder with the most recent time
+        return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
 def add_labels_to_db(subject_ids, labels, db):
     cursor = db.cursor()
-
-    cursor.execute(
-        '''
-        SELECT * FROM catalog
-        LIMIT 50
-        '''
-    )
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        if isinstance(label, np.int64):
-            label = int(label)
-        assert isinstance(label, int)
+        if isinstance(label, np.float32):
+            label = float(label)
+        assert isinstance(label, float)
         assert isinstance(subject_id, str)
 
         cursor.execute(
@@ -378,6 +381,7 @@ def get_all_shard_locs(db):
     cursor.execute(
         '''
         SELECT DISTINCT tfrecord FROM shardindex
+        
         ORDER BY tfrecord ASC
         '''
     )

@@ -25,13 +25,6 @@ def channels():
 
 
 @pytest.fixture()
-def example_tfrecord_loc():
-    loc = os.path.join(TEST_EXAMPLE_DIR, 'panoptes_featured_s28_l0.4_test.tfrecord')
-    assert os.path.exists(loc)
-    return loc
-
-
-@pytest.fixture()
 def visual_check_image_data(size):
     # actual image used for visual checks
     image = Image.open(os.path.join(TEST_EXAMPLE_DIR, 'example_b.png'))
@@ -64,8 +57,15 @@ def random_labels(n_examples):
 def parsed_example(visual_check_image_data):
     return {
         'matrix': np.array(visual_check_image_data).flatten(),  # Parsed matrix is a 1D vector, needs reshaping
-        'label': 1
+        'label': 1.
     }
+
+
+
+@pytest.fixture()
+def parsed_binary_example(parsed_example):
+    parsed_example['label'] = 1
+    return parsed_example
 
 
 @pytest.fixture()
@@ -148,7 +148,7 @@ def tfrecord_dir(tmpdir):
 def serialized_matrix_label_example(size, channels):
     return create_tfrecord.serialize_image_example(
         matrix=np.random.rand(size, size, channels),
-        label=1
+        label=1.
         )
 
 
@@ -164,7 +164,7 @@ def serialized_matrix_id_example(size, channels, unique_id):
 def serialized_matrix_label_id_example(size, channels, unique_id):
     return create_tfrecord.serialize_image_example(
         matrix=np.random.rand(size, size, channels),
-        label=1,
+        label=1.,
         id_str=unique_id
         )
 
@@ -215,8 +215,65 @@ def shard_locs(tfrecord_dir, size, channels):  # write shards dynamically when c
     return tfrecord_locs  # of form [train_loc, test_loc]
 
 
+
+
 @pytest.fixture()
-def predictor_model_loc():  # not yet on github
+def tfrecord_matrix_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
+
+    tfrecord_loc = os.path.join(tfrecord_dir, 's28_matrix_0.tfrecord')
+    if os.path.exists(tfrecord_loc):
+        os.remove(tfrecord_loc)
+        
+    examples = [{'matrix': np.random.rand(size, size, channels)} for n in range(128)]
+
+    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    for example in examples:  # depends on tfrecord.create_tfrecord
+        writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix']))
+    writer.close()
+
+    return tfrecord_loc
+
+
+@pytest.fixture()
+def tfrecord_matrix_float_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
+
+    tfrecord_loc = os.path.join(tfrecord_dir, 's28_matrix_float_0.tfrecord')
+    if os.path.exists(tfrecord_loc):
+        os.remove(tfrecord_loc)
+        
+    # monotonic labels, to check shuffling
+    examples = [{'matrix': np.random.rand(size, size, channels), 'label': (n / 128.)} for n in range(128)]
+
+    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    for example in examples:  # depends on tfrecord.create_tfrecord
+        writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], label=example['label']))
+    writer.close()
+
+    return tfrecord_loc
+
+
+# may be duplicate with shard fixture
+@pytest.fixture()
+def tfrecord_matrix_id_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
+
+    tfrecord_loc = os.path.join(tfrecord_dir, 's28_matrix_float_0.tfrecord')
+    if os.path.exists(tfrecord_loc):
+        os.remove(tfrecord_loc)
+        
+    # monotonic labels, to check shuffling
+    examples = [{'matrix': np.random.rand(size, size, channels), 'id_str': '{}'.format(n)} for n in range(128)]
+
+    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    for example in examples:  # depends on tfrecord.create_tfrecord
+        writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], id_str=example['id_str']))
+    writer.close()
+
+    return tfrecord_loc
+
+
+
+@pytest.fixture()
+def predictor_model_loc():
     return os.path.join(TEST_EXAMPLE_DIR, 'example_saved_model/1530286779')
 
 
@@ -254,7 +311,7 @@ def unique_id():  # not currently used
 def catalog(label_col, id_col, unique_id):
 
     zoo1 = {
-        label_col: 1,
+        label_col: 1.,
         'ra': 12.0,
         'dec': -1.0,
         'png_loc': '{}/example_a.png'.format(TEST_EXAMPLE_DIR),
@@ -263,7 +320,7 @@ def catalog(label_col, id_col, unique_id):
     }
 
     zoo2 = {
-        label_col: 0,
+        label_col: 0.,
         'ra': 15.0,
         'dec': -1.0,
         'png_loc': '{}/example_b.png'.format(TEST_EXAMPLE_DIR),
@@ -279,40 +336,3 @@ def catalog(label_col, id_col, unique_id):
 @pytest.fixture()
 def fits_native_dir(tmpdir):
     return tmpdir.mkdir('fits_native').strpath
-
-@pytest.fixture
-def catalog_random_images(size, channels, fits_native_dir):
-    assert os.path.exists(fits_native_dir)
-    n_subjects = 64
-    id_strings = [str(n) for n in range(n_subjects)]
-    matrices = np.random.rand(n_subjects, size, size, channels)
-    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
-    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
-    for matrix, loc in zip(matrices, fits_locs):  # write to fits
-        hdu = fits.PrimaryHDU(matrix)
-        hdu.writeto(loc, overwrite=True)
-        assert os.path.isfile(loc)
-    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
-    return catalog
-
-
-@pytest.fixture()
-def db_loc(tmpdir):
-    return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
-
-
-@pytest.fixture()
-def acquisition_func():
-    # Converts loaded subjects to acquisition scores. Here, takes the mean.
-    # Must return float, not np.float32, else db will be confused and write as bytes
-    def mock_acquisition_callable(matrix_list):
-        assert isinstance(matrix_list, list)
-        assert all([isinstance(x, np.ndarray) for x in matrix_list])
-        assert all([x.shape[0] == x.shape[1] for x in matrix_list])
-        return [float(x.mean()) for x in matrix_list]
-    return mock_acquisition_callable
-
-
-@pytest.fixture()
-def acquisition():
-    return np.random.rand()
