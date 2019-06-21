@@ -1,4 +1,3 @@
-
 import os
 import logging
 import itertools
@@ -13,7 +12,7 @@ import git
 import numpy as np
 
 from zoobot.estimators import run_estimator
-from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions, mock_panoptes
+from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions, oracles
 
 InitialState = namedtuple(
     'InitialState',
@@ -159,7 +158,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
         instructions.use_test_mode()
         train_callable.test = True
 
-    oracle = mock_panoptes.load_oracle(instructions_dir)  # decoupled whether real or simulated
+    oracle = oracles.load_oracle(instructions_dir)  # decoupled whether real or simulated
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
     final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
     save_final_state(final_state, this_iteration_dir)

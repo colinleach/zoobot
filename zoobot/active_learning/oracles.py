@@ -39,7 +39,7 @@ class Panoptes(Oracle):
         self.question = question  # e.g. 'smooth', 'bar'
 
         if os.path.isdir('/home/ubuntu/root'):
-            print('Running on AWS')
+            logging.info('Running on AWS')
             working_dir = '/home/ubuntu/root/repos/zoobot/data/decals/classifications/streaming'
         else:
             working_dir = '/data/repos/zoobot/data/decals/classifications/streaming'

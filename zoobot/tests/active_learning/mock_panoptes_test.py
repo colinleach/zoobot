@@ -5,7 +5,7 @@ import json
 
 import pandas as pd
 
-from zoobot.active_learning import mock_panoptes
+from zoobot.active_learning import oracles
 
 
 @pytest.fixture()
@@ -65,13 +65,13 @@ def subjects_requested_loc(tmpdir, previously_requested_subjects, previously_req
 
 @pytest.fixture()
 def panoptes_mock(oracle_loc, subjects_requested_loc):
-    return mock_panoptes.PanoptesMock(
+    return oracles.PanoptesMock(
         oracle_loc=oracle_loc,
         subjects_requested_loc=subjects_requested_loc)
 
 def test_panoptes_mock_with_bad_oracle_loc(oracle_loc, subjects_requested_loc):
     with pytest.raises(AssertionError):
-        mock_panoptes.PanoptesMock('broken_oracle_loc', subjects_requested_loc)
+        oracles.PanoptesMock('broken_oracle_loc', subjects_requested_loc)
 
 def test_request_labels(panoptes_mock, subjects_to_request):
     panoptes_mock.request_labels(subjects_to_request, 'dummy_name')
@@ -138,7 +138,7 @@ def catalog_loc(tmpdir):
 
 @pytest.fixture()
 def panoptes(catalog_loc):
-    return mock_panoptes.Panoptes(
+    return oracles.Panoptes(
         catalog_loc=catalog_loc,
         login_loc='some_login.txt',
         project_id='1234')

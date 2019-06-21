@@ -7,6 +7,7 @@ import sqlite3
 import time
 import json
 from collections import namedtuple
+from typing import List
 
 import tensorflow as tf
 import pandas as pd
@@ -38,36 +39,27 @@ def create_db(catalog, db_loc):
 
     cursor = db.cursor()
 
+    # columns [i.e. catalog columns, usually including labels] are stored as json-serialized dicts 
     cursor.execute(
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT DEFAULT NULL,
-            total_votes INT DEFAULT NULL,
+            labels STRING DEFAULT NULL,
             file_loc STRING)
         '''
     )
     db.commit()
 
-    # no longer used
+    # no longer used - but leave as it may prove useful
     cursor.execute(
         '''
-        CREATE TABLE shardindex(
+        CREATE TABLE shards(
             id_str STRING PRIMARY KEY,
-            tfrecord TEXT)
+            tfrecord_loc TEXT)
         '''
     )
     db.commit()
 
-    # no longer used
-    cursor.execute(
-        '''
-        CREATE TABLE acquisitions(
-            id_str STRING PRIMARY KEY,
-            acquisition_value FLOAT)
-        '''
-    )
-    db.commit()
 
     add_catalog_to_db(catalog, db)  # does NOT add labels, labels are unknown at this point
 
@@ -86,7 +78,7 @@ def add_catalog_to_db(df, db):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, total_votes, file_loc) VALUES(?,NULL,NULL,?)''',
+        INSERT INTO catalog(id_str, labels, total_votes, file_loc) VALUES(?,NULL,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -160,7 +152,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_
     Args:
         tfrecord_locs (list): paths to tfrecords to load
         model (function): callable returning [batch, n_samples] predictions
-        db (sqlite3): database of galaxies, with id_str and label columns. Not modified.
+        db (sqlite3): database of galaxies, with id_str and labels columns. Not modified.
         n_samples (int): number of MC dropout samples to calculate (i.e. n forward passes)
         size (int): size of saved images
         max_images (int, optional): Defaults to 10000. Load no more than this many images per record
@@ -204,7 +196,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     Args:
         tfrecords_batch_locs (list): paths to tfrecords to load
         model (function): callable returning [batch, samples] predictions
-        db (sqlite3): database of galaxies, with id_str and label columns. Not modified.
+        db (sqlite3): database of galaxies, with id_str and labels columns. Not modified.
         n_samples (int): number of MC dropout samples to calculate (i.e. n forward passes)
         size (int): size of saved images
         max_images (int, optional): Defaults to 10000. Load no more than this many images per record
@@ -301,7 +293,7 @@ def subject_is_labelled(id_str: str, db):
     cursor = db.cursor()
     cursor.execute(
         '''
-        SELECT id_str, label
+        SELECT id_str, labels
         FROM catalog
         WHERE id_str IS (:id_str)
         ''',
@@ -318,28 +310,28 @@ def subject_is_labelled(id_str: str, db):
 
 
 def db_fully_labelled(db):
-    # check that at least one subject has no label
-    if not get_all_subjects(db, labelled=True):
+    # check that at least one subject has no labels
+    if not len(get_all_subjects(db, labelled=False)):
         logging.warning('Shard appears to be completely labelled')
         return True
     else:
         return False  # technically, None is considered False, but this is type-consistent
 
 # bad name, actually gets all table columns
-def get_file_loc_df_from_db(db, subject_ids: list):
+def get_subject_df_from_db(db, subject_ids: list):
     """
-    Look up the file_loc and label in db for the subjects with ids in `subject_ids`
+    Look up the file_loc and labels in db for the subjects with ids in `subject_ids`
     df will include the image_loc stored at `db.catalog.file_loc`
-    df will include the label stored under `db.catalog.label`
+    df will include the labels stored under `db.catalog.labels`
     Useful for creating additional training tfrecords during active learning
     
     Args:
-        db (sqlite3.Connection): database with `db.catalog` table to get subject image and label
+        db (sqlite3.Connection): database with `db.catalog` table to get subject image and labels
         subject_ids (list): of subject ids matching `db.catalog.id_str` values
     
     Raises:
         IndexError: No matches found to an id in `subject_ids` within db.catalog.id_str
-        ValueError: Subject with an id in `subject_ids` has null label (code error in this func.)
+        ValueError: Subject with an id in `subject_ids` has null labels (code error in this func.)
     """
     assert len(subject_ids) > 0
     cursor = db.cursor()
@@ -351,7 +343,7 @@ def get_file_loc_df_from_db(db, subject_ids: list):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, total_votes, file_loc FROM catalog
+            SELECT id_str, labels, file_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -359,34 +351,34 @@ def get_file_loc_df_from_db(db, subject_ids: list):
         # namedtuple would allow better type checking
         subject = cursor.fetchone()  # TODO ensure distinct
         if subject is None:
-            raise IndexError('Fatal: top ids not found in catalog or label missing!')
+            raise IndexError('Fatal: top ids not found in catalog or labels missing!')
 
         if subject[1] is None:
-            raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
-        assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
+            raise ValueError('Fatal: {} missing labels in db!'.format(subject_id))
+        assert os.path.isfile(str(subject[2]))  # check that image path is correct
         # add subject data to df
-        rows.append({
+        subject_data = {
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': int(subject[1]),
-            'total_votes': int(subject[2]),
-            'file_loc': str(subject[3])  # db must contain accurate path to image
-        })
-        assert os.path.isfile(str(subject[3]))  # check that image path is correct
+            'labels': json.loads(subject[1]),
+            'file_loc': str(subject[2])  # db must contain accurate path to image
+        }
+        subject_data.update(**json.loads(subject[1]))
+        rows.append(subject_data)
 
     top_subject_df = pd.DataFrame(data=rows)
     assert len(top_subject_df) == len(subject_ids)
     return top_subject_df
 
 
-def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size, columns_to_save):
     # must only be called with subject_ids that are all labelled, else will raise error
     assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
-    df = get_file_loc_df_from_db(db, subject_ids)
+    df = get_subject_df_from_db(db, subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
         df,
         tfrecord_loc,
         size,
-        columns_to_save=['id_str', 'label', 'total_votes'],
+        columns_to_save=columns_to_save,
         reader=catalog_to_tfrecord.get_reader(df['file_loc']))
 
 
@@ -396,51 +388,44 @@ def get_latest_checkpoint_dir(base_dir):
     return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
-def add_labels_to_db(subject_ids, labels, total_votes, db):
+def add_labels_to_db(subject_ids: List, all_labels: List, db):
     # be careful: don't update any labels that might already have been written to tfrecord!
     logging.info('Adding new labels for {} subjects to db'.format(len(subject_ids)))
     logging.debug('Example subject ids: {}'.format(subject_ids[:3]))
-    logging.debug('Example labels: {}'.format(labels[:3]))
-    logging.debug('Example total_votes: {}'.format(total_votes[:3]))
-    assert len(subject_ids) == len(labels) == len(total_votes)
+    logging.debug('Example labels: {}'.format(all_labels[:3]))
+    assert len(subject_ids) == len(all_labels)
 
     cursor = db.cursor()
     for subject_n in range(len(subject_ids)):
-        label = labels[subject_n]
-        total_votes_val = total_votes[subject_n]
+        labels = all_labels[subject_n]
         subject_id = subject_ids[subject_n]
 
-        # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        label = int(label)
-        total_votes_val = int(total_votes_val)
-        assert isinstance(label, int)
-        assert isinstance(label, int)
         assert isinstance(subject_id, str)
-
+        labels_str = json.dumps(labels)
+        
         # check not already labelled, else raise a manual error (see below)
         cursor.execute(
             '''
-            SELECT id_str, label FROM catalog
-            WHERE id_str = (:subject_id) AND label is NOT NULL
+            SELECT id_str, labels FROM catalog
+            WHERE id_str = (:subject_id) AND labels is NOT NULL
             ''',
             (subject_id,)
         )
         if cursor.fetchone() is not None:
             raise ValueError(
-                'Trying to set label {} for already-labelled subject {}'.format(label, subject_id)
+                'Trying to set labels {} for already-labelled subject {}'.format(labels, subject_id)
             )
 
         # set the label (this won't raise an automatic error if already exists!)
         cursor.execute(
             '''
             UPDATE catalog
-            SET label = (:label), total_votes = (:total_votes)
+            SET labels = (:labels_str)
             WHERE id_str = (:subject_id)
             ''',
             {
-                'label': label,
-                'subject_id': subject_id,
-                'total_votes': total_votes_val
+                'labels_str': labels_str,
+                'subject_id': subject_id
             }
         )
         db.commit()
@@ -449,7 +434,7 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             # check labels really have been added, and not as byte string
             cursor.execute(
                 '''
-                SELECT label, total_votes FROM catalog
+                SELECT labels FROM catalog
                 WHERE id_str = (:subject_id)
                 LIMIT 1
                 ''',
@@ -457,10 +442,8 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             )
             row = cursor.fetchone()
             assert row is not None
-            retrieved_label = row[0]
-            assert retrieved_label == label
-            retrieved_total_votes = row[1]
-            assert retrieved_total_votes == total_votes_val
+            retrieved_labels = row[0]
+            assert retrieved_labels == labels_str
 
 
 def get_all_subjects(db, labelled=None):
@@ -468,15 +451,15 @@ def get_all_subjects(db, labelled=None):
     if labelled:
         cursor.execute(
             '''
-            SELECT id_str, label FROM catalog
-            WHERE label IS NOT NULL
+            SELECT id_str, labels FROM catalog
+            WHERE labels IS NOT NULL
             '''
         )
-    if labelled == False:  # explicitly not None
+    elif labelled == False:  # explicitly not None
         cursor.execute(
             '''
             SELECT id_str FROM catalog
-            WHERE label IS NULL
+            WHERE labels IS NULL
             '''
         )
     else:
@@ -486,7 +469,6 @@ def get_all_subjects(db, labelled=None):
             '''
         )
     result = cursor.fetchall()
-    # assert False
     if result:
         return [x[0] for x in result]  # id_strs
     else:
@@ -505,8 +487,7 @@ def get_all_shard_locs(db):
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
 
 
-def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
-    # TODO needs test
+def filter_for_new_only(db, all_subject_ids: List, all_labels: List):
     # TODO wrap oracle subject as namedtuple?
 
     all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
@@ -533,5 +514,4 @@ def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
     # ...then use list comprehension to select with numeric index
     safe_subject_ids = [all_subject_ids[i] for i in indices_safe_to_label]
     safe_labels = [all_labels[i] for i in indices_safe_to_label]
-    safe_total_votes = [all_total_votes[i] for i in indices_safe_to_label]
-    return safe_subject_ids, safe_labels, safe_total_votes
+    return safe_subject_ids, safe_labels

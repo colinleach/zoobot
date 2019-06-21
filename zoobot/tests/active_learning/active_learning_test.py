@@ -51,8 +51,7 @@ def empty_shard_db():
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label INT DEFAULT NULL,
-            total_votes INT DEFAULT NULL,
+            labels STRING DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -63,15 +62,6 @@ def empty_shard_db():
         CREATE TABLE shardindex(
             id_str STRING PRIMARY KEY,
             tfrecord TEXT)
-        '''
-    )
-    db.commit()
-
-    cursor.execute(
-        '''
-        CREATE TABLE acquisitions(
-            id_str STRING PRIMARY KEY,
-            acquisition_value FLOAT)
         '''
     )
     db.commit()
@@ -109,17 +99,6 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
     db.commit()
     cursor.execute(
         '''
-        INSERT INTO acquisitions(id_str, acquisition_value)
-                  VALUES(:id_str, :acquisition_value)
-        ''',
-        {
-            'id_str': 'some_hash',
-            'acquisition_value': 0.9
-        }
-    )
-    db.commit()
-    cursor.execute(
-        '''
         INSERT INTO shardindex(id_str, tfrecord)
                   VALUES(:id_str, :tfrecord)
         ''',
@@ -138,16 +117,6 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
         {
             'id_str': 'some_other_hash',
             'file_loc': file_loc_of_image
-        }
-    )
-    cursor.execute(
-        '''
-        INSERT INTO acquisitions(id_str, acquisition_value)
-                  VALUES(:id_str, :acquisition_value)
-        ''',
-        {
-            'id_str': 'some_other_hash',
-            'acquisition_value': 0.3
         }
     )
     db.commit()
@@ -173,16 +142,6 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
             'file_loc': file_loc_of_image
         }
     )
-    cursor.execute(
-        '''
-        INSERT INTO acquisitions(id_str, acquisition_value)
-                  VALUES(:id_str, :acquisition_value)
-        ''',
-        {
-            'id_str': 'yet_another_hash',
-            'acquisition_value': 0.1
-        }
-    )
     db.commit()
     cursor.execute(
         '''
@@ -203,10 +162,10 @@ def make_db(db, rows):
     for row in rows:
         cursor.execute(
             '''
-            UPDATE catalog SET label = ?, total_votes = ?
+            UPDATE catalog SET labels = ?
             WHERE id_str = ?
             ''',
-            (row['label'], row['total_votes'], row['id_str'])
+            (row['labels'], row['id_str'])
         )
         db.commit()
     return db
@@ -218,18 +177,15 @@ def filled_shard_db_with_partial_labels(filled_shard_db):
     rows = [
         {
             'id_str': 'some_hash',
-            'label': 1,
-            'total_votes': 2
+            'labels': json.dumps({'column': 1})
          },
          {
             'id_str': 'some_other_hash',
-            'label': None,
-            'total_votes': None
+            'labels': None
         },
         {
             'id_str': 'yet_another_hash',
-            'label': None,
-            'total_votes': None
+            'labels': None
         }
     ]
     db = make_db(filled_shard_db, rows)
@@ -237,11 +193,11 @@ def filled_shard_db_with_partial_labels(filled_shard_db):
     cursor = db.cursor()
     cursor.execute(
         '''
-        SELECT id_str, label, total_votes FROM catalog
+        SELECT id_str, labels FROM catalog
         '''
     )
     catalog = cursor.fetchall()
-    assert catalog == [('some_hash', 1, 2), ('some_other_hash', None, None), ('yet_another_hash', None, None)]
+    assert catalog == [('some_hash', json.dumps({'column': 1})), ('some_other_hash', None), ('yet_another_hash', None)]
     return db
 
 
@@ -251,18 +207,15 @@ def filled_shard_db_with_labels(filled_shard_db):
     rows = [
         {
             'id_str': 'some_hash',
-            'label': 1,
-            'total_votes': 2
+            'labels': json.dumps({'column': 1})
          },
          {
             'id_str': 'some_other_hash',
-            'label': 1,
-            'total_votes': 1
+            'labels': json.dumps({'column': 1})
         },
         {
             'id_str': 'yet_another_hash',
-            'label': 1,
-            'total_votes': 1
+            'labels': json.dumps({'column': 1})
         }
     ]
     db = make_db(filled_shard_db, rows)
@@ -270,11 +223,11 @@ def filled_shard_db_with_labels(filled_shard_db):
     cursor = db.cursor()
     cursor.execute(
         '''
-        SELECT id_str, label, total_votes FROM catalog
+        SELECT id_str, labels FROM catalog
         '''
     )
     catalog = cursor.fetchall()
-    assert catalog == [('some_hash', 1, 2), ('some_other_hash', 1, 1), ('yet_another_hash', 1, 1)]
+    assert catalog == [('some_hash', json.dumps({'column': 1})), ('some_other_hash', json.dumps({'column': 1})), ('yet_another_hash', json.dumps({'column': 1}))]
     return db
 
 
@@ -378,17 +331,17 @@ def test_add_tfrecord_to_db(tfrecord_matrix_ints_loc, empty_shard_db, unlabelled
         assert subject[1] == tfrecord_matrix_ints_loc
 
 
-def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
-    active_learning.save_acquisition_to_db(unknown_subject['id_str'], acquisition, empty_shard_db)
-    cursor = empty_shard_db.cursor()
-    cursor.execute(
-        '''
-        SELECT id_str, acquisition_value FROM acquisitions
-        '''
-    )
-    saved_subject = cursor.fetchone()
-    assert saved_subject[0] == unknown_subject['id_str']
-    assert np.isclose(saved_subject[1], acquisition)
+# def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
+#     active_learning.save_acquisition_to_db(unknown_subject['id_str'], acquisition, empty_shard_db)
+#     cursor = empty_shard_db.cursor()
+#     cursor.execute(
+#         '''
+#         SELECT id_str, acquisition_value FROM acquisitions
+#         '''
+#     )
+#     saved_subject = cursor.fetchone()
+#     assert saved_subject[0] == unknown_subject['id_str']
+#     assert np.isclose(saved_subject[1], acquisition)
 
 
 def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, filled_shard_db, size):
@@ -436,7 +389,7 @@ def test_subject_is_labelled_missing_subject(filled_shard_db_with_partial_labels
 def test_add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, tfrecord_dir, size, channels):
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')  # place images here
     subject_ids = ['some_hash', 'yet_another_hash']
-    active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size)
+    active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size, ['id_str', 'column'])
 
     # open up the new record and check
     subjects = read_tfrecord.load_examples_from_tfrecord([tfrecord_loc], read_tfrecord.matrix_id_feature_spec(size, channels))
@@ -449,68 +402,55 @@ def test_add_labels_to_db(filled_shard_db):
     subjects = [
         {
             'id_str': 'some_hash',
-            'label': 0,
-            'total_votes': 0
+            'labels': {'column': 1}
         },
         {
             'id_str': 'yet_another_hash',
-            'label': 1,
-            'total_votes': 1
+            'labels': {'column': 1}
         }
     ]
     subject_ids = [x['id_str'] for x in subjects]
-    labels = [x['label'] for x in subjects]
-    total_votes = [x['total_votes'] for x in subjects]
-    active_learning.add_labels_to_db(subject_ids, labels, total_votes, filled_shard_db)
+    labels = [x['labels'] for x in subjects]
+    active_learning.add_labels_to_db(subject_ids, labels, filled_shard_db)
     # read db, check labels match
     cursor = filled_shard_db.cursor()
     for subject in subjects:
         cursor.execute(
             '''
-            SELECT label FROM catalog
+            SELECT labels FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject['id_str'],)
         )
         results = list(cursor.fetchall())
         assert len(results) == 1
-        assert results[0][0] == subject['label']
+        assert results[0][0] == json.dumps(subject['labels'])
 
 
-# def test_get_all_subjects(filled_shard_db_with_partial_labels):
-#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
-#     assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
+def test_get_all_subjects(filled_shard_db_with_partial_labels):
+    subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
+    assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
 
-# def test_get_all_subjects_labelled(filled_shard_db_with_partial_labels):
-#     cursor = filled_shard_db_with_partial_labels.cursor()
-#     cursor.execute(
-#             '''
-#             SELECT id_str FROM catalog
-#             '''
-#         )
-#     result = cursor.fetchall()
-#     assert False
-#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=True)
-#     assert subjects == ['some_hash']
+def test_get_all_subjects_labelled(filled_shard_db_with_partial_labels):
+    subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=True)
+    assert subjects == ['some_hash']
 
-# def test_get_all_subjects_unlabelled(filled_shard_db_with_partial_labels):
-#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=False)
-#     assert subjects == ['some_other_hash', 'yet_another_hash']
+def test_get_all_subjects_unlabelled(filled_shard_db_with_partial_labels):
+    subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=False)
+    assert subjects == ['some_other_hash', 'yet_another_hash']
 
 def test_add_labels_to_db_already_labelled_should_fail(filled_shard_db_with_partial_labels):
     subjects = [
         {
             'id_str': 'some_hash',
-            'label': 0,
-            'total_votes': 0
+            'labels': json.dumps({'column': 1})
         }
     ]
     subject_ids = [x['id_str'] for x in subjects]
-    labels = [x['label'] for x in subjects]
-    total_votes = [x['total_votes'] for x in subjects]
+    labels = [x['labels'] for x in subjects]
     with pytest.raises(ValueError):
         active_learning.add_labels_to_db(
-            subject_ids, labels, total_votes, filled_shard_db_with_partial_labels)
+            subject_ids, labels, filled_shard_db_with_partial_labels)
 
 
 def test_get_all_shard_locs(filled_shard_db):
@@ -522,17 +462,15 @@ def test_get_latest_checkpoint_dir(estimators_dir):
 
 def test_filter_for_new_only(filled_shard_db_with_partial_labels):
     all_subject_ids = ['some_hash', 'some_other_hash']  
-    all_labels = [1, 4]
-    total_votes = [2, 4]
-    subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+    all_labels = [{'column': 1}, {'column': 4}]
+
+    subject_ids, labels = active_learning.filter_for_new_only(
         filled_shard_db_with_partial_labels, # some_hash already has a label in this db
         all_subject_ids,
-        all_labels,
-        total_votes
+        all_labels
     )
     assert subject_ids == ['some_other_hash']
-    assert labels == [4]
-    assert total_votes == [4]
+    assert labels == [{'column': 4}]
 
 def test_db_fully_labelled_empty(filled_shard_db):
     assert not active_learning.db_fully_labelled(filled_shard_db)

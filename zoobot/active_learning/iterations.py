@@ -7,7 +7,6 @@ import sqlite3
 import numpy as np
 
 from zoobot.estimators import make_predictions
-from zoobot.active_learning import mock_panoptes
 from zoobot.active_learning import active_learning, metrics, acquisition_utils
 
 

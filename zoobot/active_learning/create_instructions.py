@@ -16,7 +16,7 @@ import numpy as np
 from shared_astro_utils import object_utils
 
 from zoobot.estimators import run_estimator
-from zoobot.active_learning import default_estimator_params, make_shards, acquisition_utils, mock_panoptes
+from zoobot.active_learning import default_estimator_params, make_shards, acquisition_utils, oracles
 
 
 class Instructions():
@@ -267,7 +267,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     )
     acquisition_func_obj.save(instructions_dir)
     if panoptes: # use live Panoptes oracle
-        oracle = mock_panoptes.Panoptes(
+        oracle = oracles.Panoptes(
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
             project_id='5733',
@@ -278,7 +278,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     else:  # use mock Panoptes oracle
         oracle_loc = catalog_dir + '/simulation_context/oracle.csv'
         assert os.path.isfile(oracle_loc)
-        oracle = mock_panoptes.PanoptesMock(
+        oracle = oracles.PanoptesMock(
             oracle_loc=oracle_loc,
             subjects_requested_loc=os.path.join(instructions_dir, 'subjects_requested.json')
         )
