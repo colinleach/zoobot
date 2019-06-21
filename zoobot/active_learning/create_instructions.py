@@ -1,25 +1,22 @@
+"""Control what each active learning iteration will do. 
+    Active learning parameters are expected (e.g. n subjects per iteration)
+    Science parameters should not be included here!
+    Oracle parameters (e.g. which zooniverse project) are okay
+"""
 import argparse
 import os
 import shutil
 import logging
 import json
 import time
-import sqlite3
 import json
-import subprocess
-import itertools
-from collections import namedtuple
 
 import numpy as np
-import pandas as pd
-import git
 
 from shared_astro_utils import object_utils
 
-from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, iterations, acquisition_utils, mock_panoptes
-from zoobot.tests import TEST_EXAMPLE_DIR
+from zoobot.estimators import run_estimator
+from zoobot.active_learning import default_estimator_params, make_shards, acquisition_utils, mock_panoptes
 
 
 class Instructions():

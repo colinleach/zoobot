@@ -11,12 +11,11 @@ import numpy as np
 import pandas as pd
 import git
 
-from shared_astro_utils import matching_utils, object_utils
+from shared_astro_utils import object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, mock_panoptes, prepare_catalogs
-from zoobot.tests import TEST_EXAMPLE_DIR
+from zoobot.science_logic import prepare_catalogs
+from zoobot.active_learning import active_learning
 
 
 class ShardConfig():
@@ -153,7 +152,7 @@ class ShardConfig():
             json.dump(self.to_dict(), f)
 
 
-def load_shard_config(shard_config_loc):
+def load_shard_config(shard_config_loc: str):
     # shards to use
     shard_config = load_shard_config_naive(shard_config_loc)
     # update shard paths in case shard dir was moved since creation
