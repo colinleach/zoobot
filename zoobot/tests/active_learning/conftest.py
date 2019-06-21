@@ -7,24 +7,57 @@ import json
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from astropy.io import fits
 from zoobot.active_learning import make_shards, execute
 
 
+@pytest.fixture()
+def n_subjects():
+    return 256
+
+
+@pytest.fixture()
+def id_strs(n_subjects):
+    return [str(n) for n in range(n_subjects)]
+
+
+@pytest.fixture(params=['png_loc', 'fits_loc'])
+def file_col(request):
+    return request.param
+
+
 @pytest.fixture
-def catalog_random_images(size, channels, fits_native_dir):
-    assert os.path.exists(fits_native_dir)
-    n_subjects = 256
-    id_strings = [str(n) for n in range(n_subjects)]
+def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir, png_native_dir, file_col):
+    """Construct labelled/unlabelled catalogs for testing active learning"""
+    
+    
+    assert os.path.isdir(fits_native_dir)
+    assert os.path.isdir(png_native_dir)
     matrices = np.random.rand(n_subjects, size, size, channels)
-    relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
-    fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
-    for matrix, loc in zip(matrices, fits_locs):  # write to fits
-        hdu = fits.PrimaryHDU(matrix)
-        hdu.writeto(loc, overwrite=True)
-        assert os.path.isfile(loc)
-    catalog = pd.DataFrame(data={'id_str': id_strings, 'fits_loc': fits_locs})
+    some_feature = np.random.rand(n_subjects)
+
+    catalog = pd.DataFrame(data={'id_str': id_strs, 'some_feature': some_feature})
+
+    if file_col == 'fits_loc':
+        relative_fits_locs = ['random_{}.fits'.format(n) for n in range(n_subjects)]
+        fits_locs = list(map(lambda rel_loc: os.path.join(fits_native_dir, rel_loc), relative_fits_locs))
+        for matrix, loc in zip(matrices, fits_locs):  # write to fits
+            hdu = fits.PrimaryHDU(matrix)
+            hdu.writeto(loc, overwrite=True)
+            assert os.path.isfile(loc)
+        catalog['file_loc'] = fits_locs
+
+    if file_col == 'png_loc':
+        relative_png_locs = ['random_{}.png'.format(n) for n in range(n_subjects)]
+        png_locs = list(map(lambda rel_loc: os.path.join(png_native_dir, rel_loc), relative_png_locs))
+        for matrix, loc in zip(matrices, png_locs):  # write to fits
+            rgb_matrix = (matrix * 256).astype(np.uint8)
+            Image.fromarray(rgb_matrix, mode='RGB').save(loc)
+            assert os.path.isfile(loc)
+        catalog['file_loc'] = png_locs
+
     return catalog
 
 
@@ -87,7 +120,7 @@ def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
     config = execute.ActiveConfig(
         shard_config_ready, 
         run_dir=tmpdir.mkdir('run_dir').strpath,
-        iterations=3,  # 1st is only the initial cycle
+        n_iterations=3,  # 1st is only the initial cycle
         shards_per_iter=2,
         subjects_per_iter=10,
         initial_estimator_ckpt=initial_estimator_ckpt
@@ -116,7 +149,7 @@ def mock_acquisition_func(samples):
     return samples.mean(axis=1)  # sort by mean prediction (here, mean of each subject)
 
 
-def mock_train_callable(estimators_dir, train_tfrecord_locs):
+def mock_train_callable(estimators_dir, train_tfrecord_locs, eval_tfrecord_locs, learning_rate, epochs):
     # pretend to save a model in subdirectory of estimator_dir
     assert os.path.isdir(estimators_dir)
     subdir_loc = os.path.join(estimators_dir, str(time.time()))
@@ -131,27 +164,32 @@ def acquisition():
 
 
 @pytest.fixture()
-def subjects(size):
-    return [{'matrix': np.random.rand(size, size, 3), 'id_str': 'id_' + str(n)} for n in range(128)]
+def acquisitions(subjects):
+    return list(np.random.rand(len(subjects)))
 
 
-def mock_get_samples_of_subjects(model, subjects, n_samples):
-    # predict the mean of subject, 10 times
-    assert isinstance(subjects, list)
-    example_subject = subjects[0]
-    assert isinstance(example_subject, dict)
-    assert 'matrix' in example_subject.keys()
+@pytest.fixture()
+def images(n_subjects, size):
+    return np.random.rand(n_subjects, size, size, 3)
+
+
+@pytest.fixture()
+def subjects(size, images):
+    return [{'matrix': images[n], 'id_str': 'id_' + str(n)} for n in range(len(images))]
+
+
+def mock_get_samples_of_images(model, images, n_samples):
+    # predict the mean of image batch, 10 times
+    assert isinstance(images, np.ndarray)
+    assert len(images.shape) == 4
     assert isinstance(n_samples, int)
-
-    response = []
-    for subject in subjects:
-        response.append([np.mean(subject['matrix'])] * n_samples)
+    response = [[np.mean(images[n])] * 10 for n in range(len(images))]
     return np.array(response)
 
 
 @pytest.fixture()
-def samples(subjects):
-    return mock_get_samples_of_subjects(model=None, subjects=subjects, n_samples=10)
+def samples(images):
+    return mock_get_samples_of_images(model=None, images=images, n_samples=10)
 
 
 @pytest.fixture()

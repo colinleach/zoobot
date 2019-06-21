@@ -20,13 +20,6 @@ from zoobot.active_learning import active_learning
 from zoobot.estimators import make_predictions
 from zoobot.tests.active_learning import conftest
 
-if __name__ == '__main__':
-    logging.basicConfig(
-        filename=os.path.join(TEST_EXAMPLE_DIR, 'active_learning_test.log'),
-        filemode='w',
-        format='%(asctime)s %(message)s',
-        level=logging.INFO)
-
 
 @pytest.fixture()
 def unknown_subject(size, channels):
@@ -59,7 +52,7 @@ def empty_shard_db():
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
             label INT DEFAULT NULL,
-            fits_loc STRING)
+            file_loc STRING)
         '''
     )
     db.commit()
@@ -84,20 +77,32 @@ def empty_shard_db():
     return db
 
 
+@pytest.fixture(params=['fits', 'png'])
+def file_loc_of_image(request):
+    if request.param == 'fits':
+        loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+    elif request.param == 'png':
+        loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.png')
+    else:
+        raise ValueError(request.param)
+    assert os.path.isfile(loc)
+    return loc
+
 
 @pytest.fixture()
-def filled_shard_db(empty_shard_db):
+def filled_shard_db(empty_shard_db, file_loc_of_image):
     db = empty_shard_db
     cursor = db.cursor()
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
         ''',
         {
             'id_str': 'some_hash',
-            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+            'file_loc': file_loc_of_image,
+            'label': 1.  # already labelled!
         }
     )
     db.commit()
@@ -126,12 +131,12 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
         ''',
         {
             'id_str': 'some_other_hash',
-            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+            'file_loc': file_loc_of_image
         }
     )
     cursor.execute(
@@ -159,12 +164,12 @@ def filled_shard_db(empty_shard_db):
 
     cursor.execute(
         '''
-        INSERT INTO catalog(id_str, fits_loc)
-                  VALUES(:id_str, :fits_loc)
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
         ''',
         {
             'id_str': 'yet_another_hash',
-            'fits_loc': os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+            'file_loc': file_loc_of_image
         }
     )
     cursor.execute(
@@ -208,27 +213,34 @@ def filled_shard_db_with_labels(filled_shard_db):
     return db
 
 
-def test_write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, channels, columns_to_save, tfrecord_dir):
-    active_learning.write_catalog_to_tfrecord_shards(catalog, empty_shard_db, size, columns_to_save, tfrecord_dir, shard_size=15)
+def test_write_catalog_to_tfrecord_shards(unlabelled_catalog, empty_shard_db, size, channels, tfrecord_dir):
+    columns_to_save = ['id_str', 'some_feature']
+    active_learning.write_catalog_to_tfrecord_shards(
+        unlabelled_catalog,
+        empty_shard_db,
+        size,
+        columns_to_save,
+        tfrecord_dir,
+        shard_size=15)
     # verify_db_matches_catalog(catalog, empty_shard_db, 'id_str', label_col)
     verify_db_matches_shards(empty_shard_db, size, channels)
-    verify_catalog_matches_shards(catalog, empty_shard_db, size, channels)
+    verify_catalog_matches_shards(unlabelled_catalog, empty_shard_db, size, channels)
 
 
-def verify_db_matches_catalog(catalog, db):
+def verify_db_matches_catalog(labelled_catalog, db):
      # db should contain the catalog in 'catalog' table
     cursor = db.cursor()
     cursor.execute(
         '''
-        SELECT id_str, label FROM catalog
+        SELECT id_str, file_loc FROM catalog
         '''
     )
     catalog_entries = cursor.fetchall()
     for entry in catalog_entries:
         recovered_id = str(entry[0])
-        recovered_label = entry[1]
-        expected_label = catalog[catalog['id_str'] == recovered_id].squeeze()['label']
-        assert recovered_label == expected_label
+        recovered_loc = entry[1]
+        expected_loc = labelled_catalog[labelled_catalog['id_str'] == recovered_id].squeeze()['file_loc']
+        assert recovered_loc == expected_loc
 
 
 def load_shardindex(db):
@@ -263,14 +275,14 @@ def verify_db_matches_shards(db, size, channels):
         assert expected_shard_ids == actual_shard_ids
 
 
-def verify_catalog_matches_shards(catalog, db, size, channels):
+def verify_catalog_matches_shards(unlabelled_catalog, db, size, channels):
     from collections import Counter
     # TODO why do I need to import Counter here?! Surely it should be script scoped...
     shardindex = load_shardindex(db)
     tfrecord_locs = shardindex['tfrecord'].unique()
     # check that every catalog id is in exactly one shard
-    assert not any(catalog['id_str'].duplicated())  # catalog must be unique to start with
-    catalog_ids = Counter(catalog['id_str'])  # all 1's
+    assert not any(unlabelled_catalog['id_str'].duplicated())  # catalog must be unique to start with
+    catalog_ids = Counter(unlabelled_catalog['id_str'])  # all 1's
     shard_ids = Counter()
 
     for tfrecord_loc in tfrecord_locs:
@@ -286,8 +298,8 @@ def verify_catalog_matches_shards(catalog, db, size, channels):
 
 
 
-def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog):  # bad loc
-    active_learning.add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog)
+def test_add_tfrecord_to_db(tfrecord_matrix_ints_loc, empty_shard_db, unlabelled_catalog):  # bad loc
+    active_learning.add_tfrecord_to_db(tfrecord_matrix_ints_loc, empty_shard_db, unlabelled_catalog)
     cursor = empty_shard_db.cursor()
     cursor.execute(
         '''
@@ -296,8 +308,8 @@ def test_add_tfrecord_to_db(tfrecord_matrix_float_loc, empty_shard_db, catalog):
     )
     saved_subjects = cursor.fetchall()
     for n, subject in enumerate(saved_subjects):
-        assert str(subject[0]) == catalog.iloc[n]['id_str']  # strange string casting when read back
-        assert subject[1] == tfrecord_matrix_float_loc
+        assert str(subject[0]) == unlabelled_catalog.iloc[n]['id_str']  # strange string casting when read back
+        assert subject[1] == tfrecord_matrix_ints_loc
 
 
 def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
@@ -313,35 +325,51 @@ def test_save_acquisition_to_db(unknown_subject, acquisition, empty_shard_db):
     assert np.isclose(saved_subject[1], acquisition)
 
 
-def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, size):
+def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, filled_shard_db, size):
     
     monkeypatch.setattr(
         active_learning.make_predictions,
-        'get_samples_of_subjects',
-        conftest.mock_get_samples_of_subjects
+        'get_samples_of_images',
+        conftest.mock_get_samples_of_images
+    )
+
+    MAX_ID_STR = 64
+    def mock_subject_is_unlabelled(id_str, db):
+        return int(id_str) > MAX_ID_STR
+    monkeypatch.setattr(
+        active_learning,
+        'subject_is_unlabelled',
+        mock_subject_is_unlabelled
     )
 
     n_samples = 10
+    model = None  # avoid this via mocking, above
     subjects, samples = active_learning.make_predictions_on_tfrecord(
-        tfrecord_matrix_id_loc,
-        model=None,  # avoid this via mocking, above
+        [tfrecord_matrix_id_loc],
+        model,  
+        filled_shard_db,
         n_samples=n_samples,
-        initial_size=size,
-        max_shard_size=10000
+        size=size,
+        max_images=20000
     )
     assert samples.shape == (len(subjects), n_samples)
-
-# def test_get_top_acquisitions_any_shard(filled_shard_db):
-#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2)
-#     assert top_ids == ['some_hash', 'some_other_hash']
+    assert [int(subject['id_str']) > MAX_ID_STR for subject in subjects]  # no labelled subjects 
 
 
-# def test_get_top_acquisitions(filled_shard_db):
-#     top_ids = active_learning.get_top_acquisitions(filled_shard_db, n_subjects=2, shard_loc='tfrecord_a')
-#     assert top_ids == ['some_hash', 'yet_another_hash']
+def test_subject_is_unlabelled(filled_shard_db):
+    id_strs = ['some_hash', 'some_other_hash', 'yet_another_hash']
+    labelled_ids = [active_learning.subject_is_unlabelled(id_str, filled_shard_db) for id_str in id_strs]
+    labelled_ids == [True, False, False]
+
+    with pytest.raises(ValueError):
+        active_learning.subject_is_unlabelled('missing_subject', filled_shard_db)
+
+
 
 
 def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
+    # e.g. root image directory is tests, with images in subdirectory test_examples
+    monkeypatch.setattr(active_learning, 'LOCAL_IMAGE_FOLDER', os.path.dirname(TEST_EXAMPLE_DIR))
     tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
     subject_ids = ['some_hash', 'yet_another_hash']
     active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size)

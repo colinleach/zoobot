@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -25,37 +27,33 @@ def load_predictor(predictor_loc):
     # wrap to avoid having to pass around dicts all the time
     # expects image matrix, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
-    # TODO stop flipping, regression problem
-
     return lambda x: model_unwrapped({'examples': x})['prediction']
 
 
-def get_samples_of_subjects(model, subjects, n_samples):
+def get_samples_of_images(model, images, n_samples):
     """Get many model predictions on each subject
 
     Args:
-        model (function): callable mapping parsed subjects to class scores
-        subjects (list): subject matrices on which to make a prediction
-        n_samples (int): number of samples (i.e. model calls) to calculate per subject
+        model (function): callable mapping images (parsed subject matrices) to class scores
+        images (np.ndarray): batch of subject matrices on which to make a prediction
+        n_samples (int): number of samples (i.e. model calls) to calculate per image
 
     Returns:
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
-    results = np.zeros((len(subjects), n_samples))
-    for sample_n in range(n_samples):
-        results[:, sample_n] = model(subjects)
+    assert isinstance(images, np.ndarray)
+    results = np.zeros((len(images), n_samples))
+    # make predictions batch-wise to avoid out-of-memory issues
+    min_image = 0
+    batch_size = 1000  # fits comfortably on K80
+    logging.info('Making predictions on {} images, {} samples'.format(len(images), n_samples))
+    while min_image < len(images):
+        for sample_n in range(n_samples):
+            image_slice = slice(min_image, min_image + batch_size)
+            results[image_slice, sample_n] = model(images[image_slice])
+        min_image += batch_size
+    logging.info('Predictions complete')
     return results
-
-    # for nth_run in range(n_samples):  # for each desired sample,
-    #     results[:, nth_run] = model(subjects)  # predict once on every example
-    # return results
-
-
-# def get_samples_of_tfrecord(model, tfrecord, n_samples):
-#     samples = []
-#     for n in range(n_samples):
-#         samples.append(model(tfrecord))
-#     return np.array(samples)
 
 
 def binomial_likelihood(labels, predictions, total_votes):
@@ -109,31 +107,40 @@ def binomial_prob_per_k(rho, n_draws):
     return bin_probs
 
 
-def view_samples(scores, labels, annotate=False):
+def plot_samples(scores, labels, fig, axes):
+    x = np.arange(0, 41)
+    for galaxy_n, ax in enumerate(axes):
+        if scores.shape[1] > 1:
+            c='g'
+            probability_record = []
+            for score_n, score in enumerate(scores[galaxy_n]):
+                if score_n == 0: 
+                    name = 'Model Posteriors'
+                else:
+                    name = None
+                probs = binomial_prob_per_k(score, n_draws=40)
+                probability_record.append(probs)
+                ax.plot(x, probs, 'k', alpha=0.15, label=name)
+            probability_record = np.array(probability_record)
+            mean_posterior = probability_record.mean(axis=0)
+        else:
+            mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=40)
+            c='k'
+        ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
+        ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
+        ax.yaxis.set_visible(False)
+
+
+def view_samples(scores, labels, annotate=False, display_width=5):
     """For many subjects, view the distribution of scores and labels for that subject
 
-    Args:
+    Args:\
         scores (np.array): class scores, of shape (n_subjects, n_samples)
         labels (np.array): class labels, of shape (n_subjects)
     """
     assert len(labels) == len(scores) > 1
-    fig, axes = plt.subplots(nrows=len(labels), figsize=(4, len(labels)), sharey=True)
-
-    x = np.arange(0, 41)
-    for galaxy_n, ax in enumerate(axes):
-        probability_record = []
-        for score_n, score in enumerate(scores[galaxy_n]):
-            if score_n == 0: 
-                name = 'Model Posteriors'
-            else:
-                name = None
-            probs = binomial_prob_per_k(score, n_draws=40)
-            probability_record.append(probs)
-            ax.plot(x, probs, 'k', alpha=0.2, label=name)
-        probability_record = np.array(probability_record)
-        ax.plot(x, probability_record.mean(axis=0), c='g', label='Posterior')
-        ax.axvline(labels[galaxy_n] * 40, c='r', label='Observed')
-        ax.yaxis.set_visible(False)
+    fig, axes = plt.subplots(nrows=len(labels), figsize=(len(labels) / display_width, len(labels)), sharex=True)
+    plot_samples(scores, labels, fig, axes)
 
     axes[0].legend(
         loc='lower center', 

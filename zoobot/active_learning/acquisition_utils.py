@@ -82,23 +82,38 @@ def sample_variance(samples):
     return np.apply_along_axis(statistics.variance, arr=samples, axis=1)
 
 
-def save_acquisition_examples(subject_data, acq_values, acq_string, save_dir):
+def show_acquisitions_from_tfrecords(tfrecord_locs, predictions, acq_string, save_dir):
     """[summary]
     
     Args:
-        subject_data (np.array): of form [n_subjects, height, width, channels]. NOT a list.
+        tfrecord_locs ([type]): [description]
+        predictions ([type]): [description]
+        acq_string ([type]): [description]
+        save_dir ([type]): [description]
+    """
+    raise NotImplementedError
+    # subjects = get_subjects_from_tfrecords_by_id_str(tfrecord_locs, id_strs)
+    # images = [subject['matrix'] for subject in subjects]
+    # save_acquisition_examples(images, predictions.acq_values, acq_string, save_dir)
+
+
+def save_acquisition_examples(images, acq_values, acq_string, save_dir):
+    """[summary]
+    
+    Args:
+        images (np.array): of form [n_subjects, height, width, channels]. NOT a list.
         acq_values ([type]): [description]
         acq_string ([type]): [description]
         save_dir ([type]): [description]
     """
-
-
+    assert isinstance(images, np.ndarray)
+    assert isinstance(acq_values, np.ndarray)
     # show galaxies with max/min variance, or top/bottom 20% of variance (more representative)
-    sorted_galaxies = subject_data[acq_values.argsort()]
+    sorted_galaxies = images[acq_values.argsort()]
     min_gals = sorted_galaxies
     max_gals = sorted_galaxies[::-1]  # reverse
-    low_galaxies = sorted_galaxies[:int(len(subject_data)/5.)]
-    high_galaxies = sorted_galaxies[int(-len(subject_data)/5.):]
+    low_galaxies = sorted_galaxies[:int(len(images)/5.)]
+    high_galaxies = sorted_galaxies[int(-len(images)/5.):]
     np.random.shuffle(low_galaxies)   # inplace
     np.random.shuffle(high_galaxies)  # inplace
 

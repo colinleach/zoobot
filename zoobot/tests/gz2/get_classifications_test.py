@@ -78,7 +78,10 @@ def published_data(example_classification_data):
         }
     zoo2.update(example_classification_data)
 
-    return pd.DataFrame([zoo1, zoo2])
+    df = pd.DataFrame([zoo1, zoo2])
+    df['total_votes'] = 2
+    df['total_classifications'] = 3
+    return df
 
 
 def test_get_classification_results(published_data, published_data_loc):

@@ -10,13 +10,14 @@ import matplotlib.gridspec as gridspec
 import seaborn as sns
 from sklearn import metrics
 import tensorflow as tf
+import pandas as pd
 
 from zoobot.estimators import make_predictions, bayesian_estimator_funcs
 from zoobot.tfrecord import read_tfrecord
 from zoobot.uncertainty import discrete_coverage
 from zoobot.estimators import input_utils
 from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.active_learning import metrics, acquisition_utils
+from zoobot.active_learning import metrics, acquisition_utils, simulated_metrics
 
 
 def compare_model_errors(model_a, model_b, save_dir):
@@ -50,19 +51,19 @@ def compare_models(model_a, model_b):
     logging.info('{} mean binomial loss: {}'.format(model_b.name, model_b.mean_bin_loss))
 
 
-def calculate_predictions(tfrecord_loc, n_galaxies):
+def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name):
     size = 128
     n_samples = 30
-    subjects_g, labels_g, _ = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='labels')  # tf graph
+    images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='id_str')  # tf graph
     with tf.Session() as sess:
-        subjects, labels = sess.run([subjects_g, labels_g])
-    predictor_loc = os.path.join(results_dir, args.model_name)
+        images, id_strs = sess.run([images_g, id_str_g])
+    predictor_loc = os.path.join(results_dir, model_name)
     model = make_predictions.load_predictor(predictor_loc)
-    results = make_predictions.get_samples_of_subjects(model, subjects, n_samples=n_samples)
-    return subjects, labels, results
+    results = make_predictions.get_samples_of_images(model, images, n_samples=n_samples)
+    return images, id_strs, results
 
 
-def save_metrics(subjects, labels, results, save_dir, name, mse_comparison=False):
+def save_metrics(subjects, labels, state, save_dir, name, mse_comparison=False):
     """Describe the performance of prediction results with paper-quality figures.
     
     Args:
@@ -72,19 +73,26 @@ def save_metrics(subjects, labels, results, save_dir, name, mse_comparison=False
         save_dir (str): directory into which to save figures of metrics
     """
     sns.set(context='paper', font_scale=1.5)
-    save_sample_distributions(results, labels, save_dir)
+    save_sample_distributions(state.samples, labels, save_dir)
 
-    model = metrics.Model(results, labels, name=name)
+    model = metrics.Model(state, name=name)
+    model.show_mutual_info_vs_predictions(save_dir)
+    acquisition_utils.save_acquisition_examples(
+        subjects, model.mutual_info, 'mutual_info', save_dir
+    )
 
-    model.show_coverage(save_dir)
-    model.compare_binomial_and_abs_error(save_dir)
-    model.show_acquisition_vs_label(save_dir)
-    model.show_acquisitions_vs_predictions(save_dir)
-    acquisition_utils.save_acquisition_examples(subjects, model.mutual_info, 'mutual_info', save_dir)
+    # add in catalog details for more metrics
+    catalog = pd.DataFrame('data/panoptes_predictions_selected.csv')
+    sim_model = simulated_metrics.SimulatedModel(model, catalog)
 
-    compare_with_baseline(model)
-    if mse_comparison:
-        compare_with_mse(model)
+    sim_model.show_coverage(save_dir)
+    sim_model.compare_binomial_and_abs_error(save_dir)
+    sim_model.show_acquisition_vs_label(save_dir)
+
+
+    # compare_with_baseline(model)
+    # if mse_comparison:
+    #     compare_with_mse(model)
 
 
 def save_sample_distributions(samples, labels, save_dir):
@@ -111,66 +119,68 @@ def compare_with_mse(model):
     compare_model_errors(model, mse_model, save_dir)
 
 
-if __name__ == '__main__':
-    """
-    tfrecord_loc=data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
-    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -o analysis/uncertainty/al-binomial/five_conv_mse -f mse_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=five_conv_mse --new_predictions=True
-    latest_model=five_conv_fractions
-    dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -d analysis/uncertainty/al-binomial/five_conv_mse -o analysis/uncertainty/al-binomial/$latest_model -f latest_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=$latest_model
-    """
-    parser = argparse.ArgumentParser(description='Update Model Metrics for Basic Split')
-    parser.add_argument(
-        '--tfrecord_loc',
-        dest='tfrecord_loc',
-        type=str,
-        help='Basic split test tfrecord')
-    parser.add_argument(
-        '--model_name',
-        dest='model_name',
-        type=str,
-        help='Model to make predictions with, under results/[model_name]',
-        default='five_conv_fractions')
-    parser.add_argument(
-        '--mse_comparison',
-        dest='mse_comparison',
-        type=bool,
-        help='Compare with MSE model?',
-        default=False)
-    parser.add_argument(
-        '--new_predictions',
-        dest='new_predictions',
-        type=bool,
-        help='Make new predictions?',
-        default=False)
-    parser.add_argument(
-        '--n_galaxies',
-        dest='n_galaxies',
-        type=int,
-        help='Make new predictions on n_galaxies',
-        default=1024)
-    args = parser.parse_args()
+# if __name__ == '__main__':
+#     """
+#     tfrecord_loc=data/basic_split/panoptes_featured_s128_lfloat_test.tfrecord
+#     dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -o analysis/uncertainty/al-binomial/five_conv_mse -f mse_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=five_conv_mse --new_predictions=True
+#     latest_model=five_conv_fractions
+#     dvc run -d zoobot/active_learning/check_uncertainty.py -d $tfrecord_loc -d analysis/uncertainty/al-binomial/five_conv_mse -o analysis/uncertainty/al-binomial/$latest_model -f latest_metrics.dvc  python zoobot/active_learning/check_uncertainty.py --tfrecord_loc=$tfrecord_loc --model_name=$latest_model
+#     """
+#     parser = argparse.ArgumentParser(description='Update Model Metrics for Basic Split')
+#     parser.add_argument(
+#         '--tfrecord_loc',
+#         dest='tfrecord_loc',
+#         type=str,
+#         help='Basic split test tfrecord')
+#     parser.add_argument(
+#         '--model_name',
+#         dest='model_name',
+#         type=str,
+#         help='Model to make predictions with, under results/[model_name]',
+#         default='five_conv_fractions')
+#     parser.add_argument(
+#         '--mse_comparison',
+#         dest='mse_comparison',
+#         type=bool,
+#         help='Compare with MSE model?',
+#         default=False)
+#     parser.add_argument(
+#         '--new_predictions',
+#         dest='new_predictions',
+#         type=bool,
+#         help='Make new predictions?',
+#         default=False)
+#     parser.add_argument(
+#         '--n_galaxies',
+#         dest='n_galaxies',
+#         type=int,
+#         help='Make new predictions on n_galaxies',
+#         default=1024)
+#     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+#     logging.basicConfig(level=logging.INFO)
 
-    results_dir = 'results'
+#     results_dir = 'results'
 
-    save_dir = 'analysis/uncertainty/al-binomial/{}'.format(args.model_name)
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+#     save_dir = 'analysis/uncertainty/al-binomial/{}'.format(args.model_name)
+#     if not os.path.exists(save_dir):
+#         os.mkdir(save_dir)
 
-    subjects_loc = os.path.join(save_dir, 'subjects.npy')
-    labels_loc = os.path.join(save_dir, 'labels.npy')
-    samples_loc = os.path.join(save_dir, 'samples.npy')
+#     subjects_loc = os.path.join(save_dir, 'subjects.npy')
+#     labels_loc = os.path.join(save_dir, 'labels.npy')
 
-    if args.new_predictions:
-        subjects, labels, samples = calculate_predictions(args.tfrecord_loc, args.n_galaxies)
-        np.save(subjects_loc, subjects)
-        np.save(labels_loc, labels)
-        np.save(samples_loc, samples)
-    else:
-        assert all(os.path.exists(loc) for loc in [subjects_loc, labels_loc, samples_loc])
-        subjects = np.load(subjects_loc)
-        labels = np.load(labels_loc)
-        samples = np.load(samples_loc)
 
-    save_metrics(subjects, labels, samples, save_dir, args.model_name, mse_comparison=args.mse_comparison)
+
+#     if args.new_predictions:
+#         subjects, labels, samples = calculate_predictions(args.tfrecord_loc, args.n_galaxies, )
+#         np.save(subjects_loc, subjects)
+#         np.save(labels_loc, labels)
+#         metrics.save_iteration_state(save_dir, subjects, samples, acquisitions=None)
+
+#     else:
+#         assert all(os.path.exists(loc) for loc in [subjects_loc, labels_loc])
+#         subjects = np.load(subjects_loc)
+#         labels = np.load(labels_loc)
+#         state = metrics.load_iteration_state(save_dir)
+
+#     save_metrics(subjects, labels, state, save_dir, args.model_name, mse_comparison=args.mse_comparison)

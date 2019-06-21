@@ -25,13 +25,13 @@ def evaluate_discrete_coverage(volunteer_votes, sample_probs_by_k):
             actual_k = volunteer_votes[subject_n]
             observed = float(min_k <= actual_k <= max_k)
             data.append({
-                    'max_state_error': max_error_in_k,
-                    'prediction': prediction,
-                    'observed': observed,
-                    'max_k': max_k,
-                    'min_k': min_k,
-                    'most_likely_k': most_likely_k,
-                    'actual_k': actual_k
+                'max_state_error': max_error_in_k,
+                'prediction': prediction,
+                'observed': observed,
+                'max_k': max_k,
+                'min_k': min_k,
+                'most_likely_k': most_likely_k,
+                'actual_k': actual_k
                 })
     df = pd.DataFrame(data=data)
     return df
@@ -61,28 +61,12 @@ def plot_coverage_df(df, ax):
     for col in cols_to_plot:
         sns.lineplot(data=df, x='max_state_error', y=col, ax=ax)
     legend_mapping = {
-        'prediction': 'Prediction',
-        'observed': 'Empirical',
+        'prediction': 'Model Expects',
+        'observed': 'Actual',
         'prediction_calibrated': 'Calibrated Prediction'
     }
     ax.legend([legend_mapping[col] for col in cols_to_plot])
-    ax.set_xlabel('Max Vote Error')
-    ax.set_ylabel('Probability Within Max Error')
+    ax.set_xlabel('Max Allowed Vote Error')
+    ax.set_ylabel('Frequency Within Max Error')
     ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))  # must expect 'x' kw arg
 
-    # TODO axis formatter for ints only
-# print('Calibrated tidal predictions: {}. Non-tidal: {}'.format(np.sum(test_df['prediction'] > 0.5), np.sum(test_df['prediction'] < 0.5)))
-    # print('Calibrated tidal truth: {}. Non-tidal: {}'.format(np.sum(test_df['true_label'] > 0.5), np.sum(test_df['true_label'] < 0.5)))
-
-if __name__ == '__main__':
-    samples = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/samples.npy')
-    labels = np.load('/home/mike/repos/zoobot/analysis/uncertainty/al-binomial/five_conv_fractions/labels.npy')
-    import os
-    from zoobot.active_learning import metrics
-    from zoobot.tests import TEST_FIGURE_DIR
-    model = metrics.Model(samples, labels, 'five_conv_fractions')
-    fig, ax = plt.subplots()
-    ax.hist(model.abs_error)
-    fig.savefig('temp.png')
-    exit(0)
-    model.show_coverage(save_dir=TEST_FIGURE_DIR)

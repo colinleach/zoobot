@@ -31,8 +31,8 @@ class ShardConfig():
     def __init__(
         self,
         shard_dir,  # to hold a new folder, named after the shard config 
-        inital_size=128,
-        final_size=64,  # TODO consider refactoring this into execute.py
+        inital_size=256,
+        final_size=128,  # TODO consider refactoring this into execute.py
         shard_size=4096,
         **overflow_args  # TODO review removing this
         ):
@@ -53,14 +53,24 @@ class ShardConfig():
         self.db_loc = os.path.join(self.shard_dir, 'static_shard_db.db')  # record shard contents
 
         # paths for fixed tfrecords for initial training and (permanent) evaluation
-        self.train_tfrecord_loc = os.path.join(self.shard_dir, 'initial_train.tfrecord') 
-        self.eval_tfrecord_loc = os.path.join(self.shard_dir, 'eval.tfrecord')
+        self.train_dir = os.path.join(self.shard_dir, 'train_shards') 
+        self.eval_dir = os.path.join(self.shard_dir, 'eval_shards')
 
         # paths for catalogs. Used to look up .fits locations during active learning.
         self.labelled_catalog_loc = os.path.join(self.shard_dir, 'labelled_catalog.csv')
         self.unlabelled_catalog_loc = os.path.join(self.shard_dir, 'unlabelled_catalog.csv')
 
         self.config_save_loc = os.path.join(self.shard_dir, 'shard_config.json')
+
+
+    def train_tfrecord_locs(self):
+        return [os.path.join(self.train_dir, loc) for loc in os.listdir(self.train_dir)
+            if loc.endswith('.tfrecord')]
+
+
+    def eval_tfrecord_locs(self):
+        return [os.path.join(self.eval_dir, loc) for loc in os.listdir(self.eval_dir)
+            if loc.endswith('.tfrecord')]
 
 
     def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction=0.1):
@@ -75,14 +85,30 @@ class ShardConfig():
         if os.path.isdir(self.shard_dir):
             shutil.rmtree(self.shard_dir)  # always fresh
         os.mkdir(self.shard_dir)
+        os.mkdir(self.train_dir)
+        os.mkdir(self.eval_dir)
 
-        # check that fits_loc columns resolve correctly
-        assert os.path.isfile(labelled_catalog['fits_loc'].iloc[0])
-        assert os.path.isfile(unlabelled_catalog['fits_loc'].iloc[0])
+        # check that file paths resolve correctly
+        assert all(os.path.isfile(path) for path in labelled_catalog['file_loc'])
+        assert all(os.path.isfile(path) for path in unlabelled_catalog['file_loc'])
 
         # assume the catalog is true, don't modify halfway through
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
+
+        # save train/test split into training and eval shards
+        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=0.8)
+        train_df.to_csv(os.path.join(self.train_dir, 'train_df.csv'))
+        eval_df.to_csv(os.path.join(self.eval_dir, 'eval_df.csv'))
+        for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
+            active_learning.write_catalog_to_tfrecord_shards(
+                df,
+                db=None,
+                img_size=self.initial_size,
+                columns_to_save=['id_str', 'label'],
+                save_dir=save_dir,
+                shard_size=self.shard_size
+            )
 
         make_database_and_shards(
             unlabelled_catalog, 
@@ -90,14 +116,6 @@ class ShardConfig():
             self.initial_size, 
             self.shard_dir, 
             self.shard_size)
-
-        catalog_to_tfrecord.write_catalog_to_train_test_tfrecords(
-            labelled_catalog, 
-            self.train_tfrecord_loc, 
-            self.eval_tfrecord_loc, 
-            self.initial_size, 
-            ['id_str', 'label'], 
-            train_test_fraction=train_test_fraction)
 
         assert self.ready()
 
@@ -107,8 +125,8 @@ class ShardConfig():
 
     def ready(self):
         assert os.path.isdir(self.shard_dir)
-        assert os.path.isfile(self.train_tfrecord_loc)
-        assert os.path.isfile(self.eval_tfrecord_loc)
+        assert os.path.isdir(self.train_dir)
+        assert os.path.isdir(self.eval_dir)
         assert os.path.isfile(self.db_loc)
         assert os.path.isfile(self.labelled_catalog_loc)
         assert os.path.isfile(self.unlabelled_catalog_loc)
@@ -118,7 +136,10 @@ class ShardConfig():
     # TODO move to shared utilities
     def to_dict(self):
         excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
-        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
+        # TODO use dict comprehension
+        return dict(
+            [(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys]
+            )
 
     
     def write(self):
@@ -138,7 +159,14 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     # set up db and shards using unknown catalog data
     db = active_learning.create_db(catalog, db_loc)
     columns_to_save = ['id_str']
-    active_learning.write_catalog_to_tfrecord_shards(catalog, db, size, columns_to_save, shard_dir, shard_size=shard_size)
+    active_learning.write_catalog_to_tfrecord_shards(
+        catalog,
+        db,
+        size,
+        columns_to_save,
+        shard_dir,
+        shard_size
+    )
 
 
 if __name__ == '__main__':
@@ -147,8 +175,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('--shard_dir', dest='shard_dir', type=str,
                     help='Directory into which to place shard directory')
-    parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
-                    help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
+    # parser.add_argument('--catalog_loc', dest='catalog_loc', type=str,
+    #                 help='Path to csv catalog of Panoptes labels and fits_loc, for shards')
     args = parser.parse_args()
 
     log_loc = 'make_shards_{}.log'.format(time.time())
@@ -159,23 +187,70 @@ if __name__ == '__main__':
         level=logging.DEBUG
     )
 
-    # in memory for now, but will be saved to csv
-    catalog = pd.read_csv(args.catalog_loc)
+
+    # needs update
+    columns_to_save = [
+        't01_smooth_or_features_a01_smooth_count',
+        't01_smooth_or_features_a01_smooth_weighted_fraction',  # annoyingly, I only saved the weighted fractions. Should be quite similar, I hope.
+        't01_smooth_or_features_a02_features_or_disk_count',
+        't01_smooth_or_features_a03_star_or_artifact_count',
+        'id',
+        'ra',
+        'dec'
+    ]
+
+    
+    catalog_loc = '/data/galaxy_zoo/gz2/catalogs/basic_regression_labels_downloaded.csv'
+
+    # only exists if zoobot/get_catalogs/gz2 instructions have been followed
+    catalog = pd.read_csv(catalog_loc,
+                        usecols=columns_to_save + ['png_loc', 'png_ready'],
+                        nrows=None)
+
+    # # in memory for now, but will be saved to csv
+    # catalog = pd.read_csv(args.catalog_loc, usecols=columns_to_save)
+
+
     # 40 votes required, for accurate binomial statistics
-    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
-    catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
-    catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
+    # catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]
+    # catalog['label'] = catalog['smooth-or-featured_smooth_fraction']  # float, 0. for featured
+
+    # previous catalog didn't include total classifications/votes, so we'll need to work around that for now
+    catalog['smooth-or-featured_total-votes'] = catalog['t01_smooth_or_features_a01_smooth_count'] + catalog['t01_smooth_or_features_a02_features_or_disk_count'] + catalog['t01_smooth_or_features_a03_star_or_artifact_count']
+    catalog = catalog[catalog['smooth-or-featured_total-votes'] > 36]  # >36 votes required, gives low count uncertainty
+
+    # for consistency
+    catalog['id_str'] = catalog['id'].astype(str)
+
+    catalog['label'] = catalog['t01_smooth_or_features_a01_smooth_weighted_fraction']
+
+    catalog['file_loc'] = catalog['png_loc']  # active learning will load from png by default
+
+    # catalog['id_str'] = catalog['subject_id'].astype(str)  # useful to crossmatch later
 
     # temporary hacks for mocking panoptes
     # save catalog for mock_panoptes.py to return (now added to git)
     # TODO a bit hacky, as only coincidentally the same
     dir_of_this_file = os.path.dirname(os.path.realpath(__file__))
-    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle.csv'), index=False)
+    catalog[['id_str', 'label']].to_csv(os.path.join(dir_of_this_file, 'oracle_gz2.csv'), index=False)
+
+    # with basic split, we do 80% train/test split
+    # here, use 80% also but with 5*1024 pool held back as oracle (should be big enough)
+    # select 1024 new training images
+    # verify model is nearly as good as basic split (only missing about 4k images)
+    # verify that can add thAese images to training pool without breaking everything!
+    # may need to disable interleave, and instead make dataset of joined tfrecords (starting with new ones?)
+
+    # print(len(catalog))
+    # exit(0)
 
     # of 18k (exactly 40 votes), initial train on 6k, eval on 3k, and pool the remaining 9k
     # split catalog and pretend most is unlabelled
-    labelled_catalog = catalog[:8960]  # for initial training data
-    unlabelled_catalog = catalog[8960:]  # for new data
+    # pool_size = 5*1024
+    labelled_size = 25000
+
+    labelled_catalog = catalog[:labelled_size]  # for training and eval. Could do basic split on these!
+    unlabelled_catalog = catalog[labelled_size:]  # for pool
     del unlabelled_catalog['label']
 
     # in memory for now, but will be serialized for later/logs
@@ -183,7 +258,7 @@ if __name__ == '__main__':
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=0.67)
+        train_test_fraction=0.8)  # copying basic_split
     # must be able to end here, snapshot created and ready to go (hopefully)
 
     # finally, tidy up by moving the log into the shard directory

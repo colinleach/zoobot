@@ -6,10 +6,10 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 
-from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start
+from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
 
 
-def get_run_config(params, log_dir, train_records):
+def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs):
 
     channels = 3
 
@@ -18,10 +18,10 @@ def get_run_config(params, log_dir, train_records):
         final_size=params.final_size,
         channels=channels,
         label_col='label',
-        epochs=600,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
-        train_steps=30,
+        epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
+        train_steps=15,  # compensating for doubling the batch, still want to measure often
         eval_steps=5,
-        batch_size=128,
+        batch_size=256,  # increased from 128 for less training noise
         min_epochs=2000,  # no early stopping, just run it overnight
         early_stopping_window=10,  # to tweak
         max_sadness=5.,  # to tweak
@@ -69,7 +69,7 @@ def get_run_config(params, log_dir, train_records):
     )
 
     model = bayesian_estimator_funcs.BayesianModel(
-        learning_rate=0.001,
+        learning_rate=learning_rate,
         optimizer=tf.train.AdamOptimizer,
         conv1_filters=32,
         conv1_kernel=3,

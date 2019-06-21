@@ -45,7 +45,7 @@ def get_classification_results(published_data_loc, nrows=None):
         '_count'
     ]
 
-    useful_columns = ['dr7objid', 'ra', 'dec']
+    useful_columns = ['dr7objid', 'ra', 'dec', 'total_classifications', 'total_votes']
     for answer in relevant_answers:
         for value in relevant_values:
             useful_columns.append("".join([answer, value]))
@@ -53,40 +53,3 @@ def get_classification_results(published_data_loc, nrows=None):
     df = pd.read_csv(published_data_loc, nrows=nrows, usecols=useful_columns)
 
     return df
-
-
-# def get_catalog(published_data_loc, subject_manifest_loc, labels_loc, nrows=None, plot_overlap=False):
-#     """
-#     Load published data (Hart 2016) and subject manifest for AWS. Match on RA/DEC.
-#     Get the weighted fraction and raw count data for each relevant question.
-#     Currently, this is for the questions smooth/featured, edge-on, round/cigar, spiral/not, and spiral count.
-#     Optionally, plot the overlap in RA/DEC of both get_catalogs
-#     Args:
-#         published_data_loc (str): file location of Hart 2016 GZ2 results catalog
-#         subject_manifest_loc (str): file location of AWS subject manifest, private comm. from Sandor Kruk
-#         labels_loc (str): file location to matched catalog
-#         nrows (int): max number of rows to load per catalog, for speedy debugging. if None, load all rows.
-#         plot_overlap (bool): if True, plot overlap of both get_catalogs in RA/DEC
-#
-#     Returns:
-#         (pd.DataFrame) matched catalog of GZ2 classifications and AWS locations, with answers to relevant questions
-#     """
-#     classifications = get_classification_results(published_data_loc, nrows=nrows)
-#     print('Published subjects with labels: {}'.format(len(classifications)))
-#
-#     subject_manifest = pd.read_csv(subject_manifest_loc, nrows=nrows)
-#     print('AWS subjects from Sandor: {}'.format(len(subject_manifest)))
-#
-#     # TODO I don't know how to install datashader on Travis
-#     # if plot_overlap:
-#     #     plot_catalog_overlap(
-#     #         classifications,
-#     #         subject_manifest,
-#     #         ['published subjects', 'sandor AWS subjects'],
-#     #         'sandor_and_volunteers_overlap')
-#
-#     catalog = match_galaxies_to_catalog(classifications, subject_manifest)
-#     assert len(catalog) > 0
-#
-#     catalog.to_csv(labels_loc)
-#     return catalog

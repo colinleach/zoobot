@@ -30,7 +30,7 @@ class ActiveConfig():
         self,
         shard_config,
         run_dir,
-        iterations, 
+        n_iterations, 
         shards_per_iter,  # 4 mins per shard of 4096 images
         subjects_per_iter,
         initial_estimator_ckpt):
@@ -53,12 +53,11 @@ class ActiveConfig():
             shards_per_iter (int): how many shards to find acquisition values for
             subjects_per_iter (int): how many subjects to acquire per training iteration
             initial_estimator_ckpt (str): path to checkpoint folder (datetime) of est. for initial iteration
-            warm_start (bool): if True, continue training the same estimator between iterations. Else, start from scratch.
         """
         self.shards = shard_config
         self.run_dir = run_dir
 
-        self.iterations = iterations  
+        self.n_iterations = n_iterations  
         self.subjects_per_iter = subjects_per_iter
         self.shards_per_iter = shards_per_iter
 
@@ -73,14 +72,15 @@ class ActiveConfig():
         self.prepare_run_folders()
 
 
+    # TODO test the case where run_dir does not yet exist
     def prepare_run_folders(self):
         """
         Create the folders needed to run active learning. 
         Copy the shard database, to be modified by the run
         Wipes any existing folders in run_dir
         """
-        assert os.path.exists(self.run_dir)
-        shutil.rmtree(self.run_dir)
+        if os.path.exists(self.run_dir):
+            shutil.rmtree(self.run_dir)
 
         directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
         for directory in directories:
@@ -100,7 +100,7 @@ class ActiveConfig():
         return True
 
 
-    def run(self, train_callable, acquisition_func):
+    def run(self, train_callable, acquisition_func, n_samples=20):
         """Main active learning training loop. 
         
         Learn with train_callable
@@ -114,19 +114,49 @@ class ActiveConfig():
             train_callable (func): train a tf model. Arg: list of tfrecord locations
             acquisition_func (func): expecting samples of shape [n_subject, n_sample]
         """
+        # clear any leftover mocked labels awaiting collection
+        # won't do this in production
+        # from zoobot.active_learning import mock_panoptes
+        # if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
+        #     os.remove(mock_panoptes.SUBJECTS_REQUESTED)
+
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
-        shards_iterable = itertools.cycle(active_learning.get_all_shard_locs(db))  # cycle through shards
+        all_shard_locs = [os.path.join(self.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
+        shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
 
         iteration_n = 0
         initial_estimator_ckpt = self.initial_estimator_ckpt  # for first iteration, the first model is the one passed to ActiveConfig
         initial_db_loc = self.db_loc
-        initial_train_tfrecords=[self.shards.train_tfrecord_loc]
+        initial_train_tfrecords = self.shards.train_tfrecord_locs()
+        eval_tfrecords = self.shards.eval_tfrecord_locs()
+
+        # iteration_n = 1
+        # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
+        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
+        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/30k_random.tfrecord']
+        # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
+        # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
         
+
+        epochs = 650
+        learning_rate = 0.001
+
         iterations_record = []
-        while iteration_n < self.iterations:
+
+        while iteration_n < self.n_iterations:
 
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
+            # if iteration_n == 0:
+            #     initial_train_tfrecords = [
+            #         'data/shards/latest_shards/initial_train.tfrecord'
+            #     ]
+            # else:
+            #     initial_train_tfrecords = [
+            #         'data/shards/latest_shards/initial_train.tfrecord',
+            #         # 'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
+            #         'data/shards'
+            #     ]
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
@@ -134,12 +164,16 @@ class ActiveConfig():
                 prediction_shards=prediction_shards,
                 initial_db_loc=initial_db_loc,
                 initial_train_tfrecords=initial_train_tfrecords,
+                eval_tfrecords=eval_tfrecords,
                 train_callable=train_callable,
                 acquisition_func=acquisition_func,
-                n_samples=20,
+                n_samples=n_samples,
                 n_subjects_to_acquire=self.subjects_per_iter,
                 initial_size=self.shards.initial_size,
-                initial_estimator_ckpt=initial_estimator_ckpt)
+                learning_rate=learning_rate,
+                initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
+                # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
+                epochs=epochs)
 
             # train as usual, with saved_model being placed in estimator_dir
             logging.info('Training iteration {}'.format(iteration_n))
@@ -147,8 +181,8 @@ class ActiveConfig():
 
             iteration_n += 1
             initial_db_loc = iteration.db_loc
-            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard
-            initial_estimator_ckpt = active_learning.get_latest_checkpoint_dir(iteration.estimators_dir)
+            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
+            initial_estimator_ckpt = iteration.estimators_dir  # TODO rename, only if warm_start
             iterations_record.append(iteration)
 
         return iterations_record
@@ -156,12 +190,15 @@ class ActiveConfig():
 
 def get_train_callable(params):
 
-    def train_callable(log_dir, train_records):
-        run_config = default_estimator_params.get_run_config(params, log_dir, train_records)
-        if params.warm_start:
-            run_config.epochs = 150  # for retraining
+    def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
+        # WARNING TESTING ONLY 
+        # if len(train_records) > 1:
+        #     train_records = [train_records[0], 'some_bad_loc.tfrecord']
+        # WARNING TESTING ONLY
+        logging.info('Training model on: {}'.format(train_records))
+        run_config = default_estimator_params.get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs)
         if params.test: # overrides warm_start
-            run_config.epochs = 5  # minimal training, for speed
+            run_config.epochs = 2  # minimal training, for speed
 
         # Do NOT update eval_config: always eval on the same fixed shard
         return run_estimator.run_estimator(run_config)
@@ -170,14 +207,16 @@ def get_train_callable(params):
 
 
 def mock_acquisition_func(samples):
-            return [np.random.rand() for n in range(len(samples))]
+    logging.critical('Applying MOCK random acquisition function')
+    return [np.random.rand() for n in range(len(samples))]
 
 
 def get_acquisition_func(baseline):
     if baseline:
-        logging.warning('Using mock acquisition function, baseline test mode')
+        logging.critical('Using mock acquisition function, baseline test mode!')
         return mock_acquisition_func
     else:  # callable expecting samples np.ndarray, returning list
+        logging.critical('Using mutual information acquisition function')
         return acquisition_utils.mutual_info_acquisition_func  # predictor should be directory of saved_model.pb
 
 
@@ -193,13 +232,14 @@ if __name__ == '__main__':
                     help='Details of shards to use')
     parser.add_argument('--run_dir', dest='run_dir', type=str,
                     help='Path to save run outputs: models, new shards, log')
-    parser.add_argument('--baseline', dest='baseline', type=bool, default=False,
+    parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
                     help='Use random subject selection only')
-    parser.add_argument('--test', dest='test', type=bool, default=False,
+    parser.add_argument('--test', dest='test', action='store_true', default=False,
                     help='Only do a minimal run to verify that everything works')
-    parser.add_argument('--warm-start', dest='warm_start', type=bool, default=False,
+    parser.add_argument('--warm-start', dest='warm_start', action='store_true', default=False,
                     help='After each iteration, continue training the same model')
     args = parser.parse_args()
+
 
     log_loc = 'execute_{}.log'.format(time.time())
 
@@ -209,29 +249,45 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         level=logging.DEBUG
     )
+    logging.getLogger().addHandler(logging.StreamHandler())
 
     # instructions for the run
     if args.test:  # do a brief run only
-        iterations = 2
+        n_iterations = 2
         subjects_per_iter = 28
-        shards_per_iter = 1
+        shards_per_iter = 2  # temp
     else:
-        iterations = 5  # 1.5h per iteration
-        subjects_per_iter = 1024
-        shards_per_iter = 3
+        n_iterations = 8
+        subjects_per_iter = 4096
+        shards_per_iter = 8  # needs to be <= total prediction shards
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
+    new_shard_dir = 'data/gz2_shards'
+    shard_config.shard_dir = new_shard_dir
+    attrs = [
+        'train_tfrecord_loc',
+        'eval_tfrecord_loc',
+        'labelled_catalog_loc',
+        'unlabelled_catalog_loc',
+        'config_save_loc',
+        'db_loc']
+    for attr in attrs:
+        old_loc = getattr(shard_config, attr)
+        new_loc = os.path.join(new_shard_dir, os.path.split(old_loc)[-1])
+        print(attr, new_loc)
+        setattr(shard_config, attr, new_loc)
     
     active_config = ActiveConfig(
         shard_config, 
         args.run_dir,
-        iterations=iterations, 
+        n_iterations=n_iterations, 
         subjects_per_iter=subjects_per_iter,
         shards_per_iter=shards_per_iter,
         initial_estimator_ckpt=None
     )
 
+    # these do not change per iteration
     train_callable_params = TrainCallableParams(
         initial_size = active_config.shards.initial_size,
         final_size = active_config.shards.final_size,
@@ -242,9 +298,13 @@ if __name__ == '__main__':
 
     train_callable = get_train_callable(train_callable_params)
     acquisition_func = get_acquisition_func(baseline=args.baseline)
+    if args.test:
+        n_samples = 2
+    else:
+        n_samples = 15
 
     ###
-    iterations_record = active_config.run(train_callable, acquisition_func)
+    iterations_record = active_config.run(train_callable, acquisition_func, n_samples)
     ###
 
     # finally, tidy up by moving the log into the run directory
@@ -253,6 +313,4 @@ if __name__ == '__main__':
     sha = repo.head.object.hexsha
     shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    last_iteration = iterations_record[-1]
-    analysis.show_subjects_by_iteration(last_iteration.get_train_records(), 15, 128, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
-
+    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.initial_size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

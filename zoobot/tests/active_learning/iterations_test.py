@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 import json
+import random
 
 import numpy as np
 
@@ -11,9 +12,12 @@ from zoobot.active_learning import iterations
 from zoobot.tests.active_learning import conftest
 
 
-@pytest.fixture()
-def initial_estimator_ckpt(tmpdir):
-    return tmpdir.mkdir('some_datetime_ckpt').strpath
+@pytest.fixture(params=[True, False])
+def initial_estimator_ckpt(tmpdir, request):
+    if request.param:
+        return tmpdir.mkdir('some_datetime_ckpt').strpath
+    else:
+        return None  # no initial ckpt
 
 
 @pytest.fixture()
@@ -27,18 +31,22 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
             iteration_n,
             prediction_shards,
             initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
+            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
+            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
             train_callable=conftest.mock_train_callable,
             acquisition_func=conftest.mock_acquisition_func,
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
-            initial_estimator_ckpt=None
+            initial_estimator_ckpt=initial_estimator_ckpt,
+            learning_rate=0.001,
+            epochs=2
         )
 
         return iteration
 
 
+# TODO could maybe refactor into the fixture above
 def test_init(tmpdir, initial_estimator_ckpt, active_config):
         run_dir = active_config.run_dir
         iteration_n = 0
@@ -49,13 +57,16 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
             iteration_n,
             prediction_shards,
             initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=[active_config.shards.train_tfrecord_loc],
+            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
+            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
             train_callable=np.random.rand,
             acquisition_func=np.random.rand,
             n_samples=10,  # may need more samples?
             n_subjects_to_acquire=50,
             initial_size=64,
-            initial_estimator_ckpt=initial_estimator_ckpt
+            initial_estimator_ckpt=initial_estimator_ckpt,
+            learning_rate=0.001,
+            epochs=2
         )
 
         assert iteration.acquired_tfrecord is None
@@ -73,9 +84,10 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
         assert os.path.exists(expected_db_loc)
 
         # if initial estimator was provided, it should have been copied into the of 0th iteration subdir
-        if initial_estimator_ckpt is not None:
-            expected_initial_estimator_copy = os.path.join(expected_estimators_dir, 'some_datetime_ckpt')
-            assert os.path.isdir(expected_initial_estimator_copy)
+        # TODO TODO TODO
+        # if initial_estimator_ckpt is not None:
+        #     expected_initial_estimator_copy = os.path.join(expected_estimators_dir, 'some_datetime_ckpt')
+        #     assert os.path.isdir(expected_initial_estimator_copy)
 
 
 def test_get_latest_model(monkeypatch, new_iteration):
@@ -98,25 +110,21 @@ def test_make_predictions(monkeypatch, shard_locs, size, new_iteration):
         return 'loaded latest model'
     monkeypatch.setattr(iterations.Iteration, 'get_latest_model', mock_get_latest_model)
 
-    def mock_make_predictions_on_tfrecord(shard_locs, predictor, initial_size, n_samples):
+    def mock_make_predictions_on_tfrecord(shard_locs, predictor, db, size, n_samples):
         assert isinstance(shard_locs, list)
         assert predictor == 'loaded latest model'
-        assert isinstance(initial_size, int)
+        assert isinstance(size, int)
         assert isinstance(n_samples, int)
-        n_subjects = 256 * len(shard_locs)
-        subjects = [{'matrix': np.random.rand(initial_size, initial_size, 3), 'id_str': str(n)} 
+        n_subjects = 112 * len(shard_locs)  # 112 unlabelled subjects per shard
+        subjects = [{'matrix': np.random.rand(size, size, 3), 'id_str': str(n)} 
         for n in range(n_subjects)]
         samples = np.random.rand(n_subjects, n_samples)
         return subjects, samples
     monkeypatch.setattr(iterations.active_learning, 'make_predictions_on_tfrecord', mock_make_predictions_on_tfrecord)
 
     subjects, samples = new_iteration.make_predictions(shard_locs, size)
-    assert len(subjects) == 256 * len(shard_locs)
-    assert samples.shape == (256 * len(shard_locs), new_iteration.n_samples)
-
-
-def test_save_metrics():
-    pass  # does nothing except call external individually-unit-tested functions
+    assert len(subjects) == 112 * len(shard_locs)
+    assert samples.shape == (112 * len(shard_locs), new_iteration.n_samples)
 
 
 def test_get_train_records(new_iteration, active_config):
@@ -140,7 +148,7 @@ def previously_requested_subjects(request, new_iteration):
         return []
 
 
-def test_run(monkeypatch, new_iteration, previously_requested_subjects):
+def test_run(mocker, monkeypatch, new_iteration, previously_requested_subjects):
     SUBJECTS = [
         {'matrix': np.random.rand(new_iteration.initial_size, new_iteration.initial_size, 3),
         'id_str': str(n)}
@@ -175,23 +183,29 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
         assert isinstance(labels, list)
         assert isinstance(labels[0], float)
         pass  # don't actually bother adding the new labels to the db
+        # TODO use a mock and check the call for ids and labels
     monkeypatch.setattr(iterations.active_learning, 'add_labels_to_db', mock_add_labels_to_db)
 
     def mock_make_predictions(self, prediction_shards, initial_size):
-        subjects = SUBJECTS[:len(prediction_shards) * 256] # imagining there are 256 subjects per shard
-        samples = conftest.mock_get_samples_of_subjects(None, subjects, n_samples=self.n_samples)
-        return subjects, samples
+        subjects = SUBJECTS[:len(prediction_shards) * 256]  # imagining there are 256 subjects per shard
+        unlabelled_subjects = random.sample(subjects, 212)  # some of which are labelled
+        images = np.array([subject['matrix'] for subject in unlabelled_subjects])
+        samples = conftest.mock_get_samples_of_images(None, images, n_samples=self.n_samples)
+        return unlabelled_subjects, samples
     monkeypatch.setattr(iterations.Iteration, 'make_predictions', mock_make_predictions)
 
-    def mock_save_metrics(self, subjects, samples):
-        assert os.path.isdir(self.metrics_dir)
-        with open(os.path.join(self.metrics_dir, 'some_metrics.txt'), 'w') as f:
-            f.write('some metrics from iteration {}'.format(self.name))
-    monkeypatch.setattr(iterations.Iteration, 'save_metrics', mock_save_metrics)
+    # TODO check for single call with correct attrs?
+    # mocker.Mock('zoobot.active_learning.iterations.Iteration.record_state')
 
     ####
     new_iteration.run()
     ####
+
+    # TODO review
+    # check that the initial ckpt was copied successfully, if one was given
+    if new_iteration.initial_estimator_ckpt is not None:
+        expected_ckpt_copy = os.path.join(new_iteration.estimators_dir, new_iteration.initial_estimator_ckpt)
+        assert os.path.isdir(expected_ckpt_copy)
 
     # previous iteration may have asked for some subjects - check they were acquired and used
     if len(previously_requested_subjects) > 0:
@@ -202,8 +216,10 @@ def test_run(monkeypatch, new_iteration, previously_requested_subjects):
     else:
         assert new_iteration.acquired_tfrecord not in new_iteration.get_train_records()
 
-    assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
+    # check records were saved TODO
+    # assert os.path.exists(os.path.join(new_iteration.metrics_dir, 'some_metrics.txt'))
 
+    # check the correct subjects were requested
     assert SUBJECTS_REQUESTED != previously_requested_subjects
     assert len(SUBJECTS_REQUESTED) == new_iteration.n_subjects_to_acquire
     subjects_acquired = [SUBJECTS[int(id_str)] for id_str in SUBJECTS_REQUESTED]

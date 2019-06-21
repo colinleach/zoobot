@@ -34,12 +34,25 @@ def test_load_predictor(predictor_model_loc):
     assert callable(predictor)
 
 
-def test_get_samples_of_subjects(predictor, parsed_example):
-    n_subjects = 10
+def test_get_samples_of_subjects(predictor, size, channels):
     n_samples = 5
-    subjects = [parsed_example for n in range(n_subjects)]
-    samples = make_predictions.get_samples_of_subjects(predictor, subjects, n_samples)
-    assert samples.shape == (10, 5)
+    n_subjects = 26
+    images = np.random.rand(n_subjects, size, size, channels)
+    samples = make_predictions.get_samples_of_images(predictor, images, n_samples)
+    assert samples.shape == (n_subjects, n_samples)
+    assert not np.allclose(samples[0, 0], samples [0, 1])
+    assert not np.allclose(samples[0], samples[1])  # predictor is non-deterministic
+
+def test_get_samples_of_many_subjects(predictor, size, channels):
+    n_samples = 5
+    n_subjects = 20000
+    images = np.random.rand(n_subjects, size, size, channels)
+    samples = make_predictions.get_samples_of_images(predictor, images, n_samples)
+    assert predictor.call_count > n_samples
+    assert samples.shape == (n_subjects, n_samples)
+    assert not np.allclose(samples[0, 0], samples [0, 1])
+    assert not np.allclose(samples[0], samples[1])  # predictor is NOT deterministic
+    # TODO replace with a non-deterministic predictor
 
 
 def test_binomial_prob_per_k(n_draws):

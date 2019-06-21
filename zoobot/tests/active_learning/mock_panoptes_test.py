@@ -8,6 +8,15 @@ import pandas as pd
 from zoobot.active_learning import mock_panoptes
 
 
+@pytest.fixture(params=[True, False])
+def subjects_requested_save_loc_possible(request, subjects_to_request, subjects_requested_save_loc):
+    if request.param:
+        json.dump(subjects_to_request, open(subjects_requested_save_loc, 'w'))
+        return subjects_requested_save_loc
+    else:
+        return 'broken_path'
+
+
 @pytest.fixture()
 def subjects_requested_save_loc(monkeypatch, tmpdir):
     save_loc = os.path.join(tmpdir.mkdir('temp').strpath, 'subjects_requested.json')
@@ -27,9 +36,8 @@ def test_request_labels(subjects_requested_save_loc, subjects_to_request):
     
 
 
-def test_get_labels(monkeypatch, subjects_requested_save_loc, subjects_to_request):
+def test_get_labels(monkeypatch, subjects_requested_save_loc_possible, subjects_to_request):
 
-    json.dump(subjects_to_request, open(subjects_requested_save_loc, 'w'))
 
     def mock_read_csv(oracle_loc, usecols, dtype):
         return pd.DataFrame([
@@ -47,6 +55,11 @@ def test_get_labels(monkeypatch, subjects_requested_save_loc, subjects_to_reques
 
     subject_ids, labels = mock_panoptes.get_labels()
 
-    assert not os.path.exists(subjects_requested_save_loc)
-    assert subject_ids == subjects_to_request
-    assert labels == [0.6, 0.3]
+    if subjects_requested_save_loc_possible == 'broken_path':
+        assert subject_ids == []
+        assert labels == []
+    else:
+        assert subject_ids == subjects_to_request
+        assert labels == [0.6, 0.3]
+        # should have been subsequently deleted
+        assert not os.path.exists(subjects_requested_save_loc_possible)

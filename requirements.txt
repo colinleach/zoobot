@@ -11,7 +11,7 @@ astropy
 scipy
 scikit-optimize
 matplotlib
-seaborn
+seaborn==0.9.0
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
 photutils
 pymc3

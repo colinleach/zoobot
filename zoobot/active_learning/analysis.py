@@ -3,6 +3,7 @@ import ast
 import itertools
 import os
 import argparse
+import pickle
 
 import pandas as pd
 import numpy as np
@@ -14,34 +15,10 @@ import seaborn as sns
 sns.set_context('poster')
 sns.set()
 from zoobot.estimators import input_utils
+from zoobot.active_learning import metrics, simulation_timeline
 
 from zoobot.tfrecord import read_tfrecord
 from zoobot.tests import TEST_FIGURE_DIR
-
-
-
-def show_subjects_by_iteration(tfrecord_index_loc, n_subjects, size, channels, save_loc):
-    with open(tfrecord_index_loc, 'r') as f:
-        tfrecord_locs = json.load(f)
-        assert isinstance(tfrecord_locs, list)
-    
-    nrows = len(tfrecord_locs)
-    ncols = n_subjects
-    scale = 2.
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
-
-    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
-        subjects = read_tfrecord.load_examples_from_tfrecord(
-            [tfrecord_loc], 
-            read_tfrecord.matrix_label_feature_spec(size, channels),
-            n_examples=n_subjects)
-
-        for subject_n, subject in enumerate(subjects):
-            read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
-
-
-    fig.tight_layout()
-    fig.savefig(save_loc)
 
 
 def get_metrics_from_log(log_loc):
@@ -245,18 +222,63 @@ def get_smooth_metrics_from_log(log_loc, name=None):
         return metric_smooth
 
 
+def get_iteration_dirs(run_dir):
+    return [os.path.join(run_dir, d) for d in os.listdir(run_dir) if (os.path.isdir(os.path.join(run_dir, d)) and 'iteration_' in d)]
+
+
+def get_final_train_locs(run_dir):
+    iter_dirs = get_iteration_dirs(run_dir)
+    latest_iter_dir = sorted(iter_dirs)[-1]  # assuming iteration_n convention
+    latest_train_index = os.path.join(latest_iter_dir, 'train_records_index.json')
+    return json.load(open(latest_train_index, 'r'))
+    
+
+
+def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_loc):
+    assert isinstance(tfrecord_locs, list)
+    nrows = len(tfrecord_locs)
+    ncols = n_subjects
+    scale = 2.
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * scale, nrows * scale))
+
+    for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
+        subjects = read_tfrecord.load_examples_from_tfrecord(
+            [tfrecord_loc], 
+            read_tfrecord.matrix_label_feature_spec(size, channels),
+            n_examples=n_subjects)
+
+        for subject_n, subject in enumerate(subjects):
+            read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
+
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
+def verify_tfrecord_matches_catalog(tfrecord_loc, catalog):
+    feature_spec = read_tfrecord.id_label_feature_spec()
+    subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec)
+    for subject in subjects:
+        id_str = subject['id_str'].decode('utf-8')
+        label = subject['label']
+        matching_catalog_labels = catalog[catalog['subject_id'].astype(str) == id_str]['smooth-or-featured_smooth_fraction'].values
+        assert len(matching_catalog_labels) == 1
+        assert np.allclose(matching_catalog_labels, np.ones_like(matching_catalog_labels) * label)
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Analyse active learning')
-    parser.add_argument('--active_dir', dest='active_dir', type=str,
+    parser.add_argument('--active-dir', dest='active_dir', type=str,
                     help='')
-    parser.add_argument('--baseline_dir', dest='baseline_dir', type=str, default=None,
+    parser.add_argument('--baseline-dir', dest='baseline_dir', type=str, default=None,
                     help='')
     parser.add_argument('--initial', dest='initial', type=int,
                     help='')
-    parser.add_argument('--per_iter', dest='per_iter', type=int,
+    parser.add_argument('--per-iter', dest='per_iter', type=int,
                     help='')
-    parser.add_argument('--output_dir', dest='output_dir', type=str,
+    parser.add_argument('--output-dir', dest='output_dir', type=str,
+                    help='')
+    parser.add_argument('--catalog-loc', dest='catalog_loc', type=str,
                     help='')
 
     args = parser.parse_args()
@@ -269,11 +291,31 @@ if __name__ == '__main__':
     name = '{}init_{}per'.format(initial, per_iter)
 
     # will be re-used for subject history of baseline, if provided
-    # n_subjects = 15
-    # size = 128
-    # channels = 3
-    active_index_loc = os.path.join(args.active_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.active_dir)))[0])  # returns as tuple of (dir, name)
-    show_subjects_by_iteration(active_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_active.png'))
+    n_subjects = 15
+    size = 128
+    channels = 3
+
+    catalog = pd.read_csv(args.catalog_loc)
+    catalog_cols = ['ra', 'dec', 'smooth-or-featured_smooth_fraction']
+
+    active_train_locs = get_final_train_locs(args.active_dir)
+    show_subjects_by_iteration(active_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_active.png'))
+    
+    
+    # active_history = identify_catalog_subjects_history(active_train_locs, catalog)
+    # for col in catalog_cols:
+    #     show_catalog_col_by_iteration(
+    #         active_history, 
+    #         col, 
+    #         os.path.join(args.output_dir, '{}_history_active.png'.format(col))
+    #     )
+
+    active_iteration_dirs = get_iteration_dirs(args.active_dir)
+    active_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in active_iteration_dirs]
+    active_timeline = simulation_timeline.Timeline(active_states, catalog, args.per_iter, args.output_dir)
+    active_timeline.save_acquistion_comparison()
+    active_timeline.save_model_histograms()
+    
 
     active_log_loc = find_log(args.active_dir)
     active_save_loc = os.path.join(args.output_dir, 'acc_metrics_active_' + name + '.png')
@@ -282,8 +324,16 @@ if __name__ == '__main__':
     plot_log_metrics(active_smooth_metrics, active_save_loc, title=title)
 
     if args.baseline_dir is not None:
-        baseline_index_loc = os.path.join(args.baseline_dir, list(filter(lambda x: 'requested_tfrecords_index' in x, os.listdir(args.baseline_dir)))[0])  # returns as tuple of (dir, name)
-        show_subjects_by_iteration(baseline_index_loc, 15, 128, 3, os.path.join(args.output_dir, 'subject_history_baseline.png'))
+        baseline_train_locs = get_final_train_locs(args.baseline_dir)
+        show_subjects_by_iteration(baseline_train_locs, n_subjects, size, channels, os.path.join(args.output_dir, 'subject_history_baseline.png'))
+        
+        baseline_iteration_dirs = get_iteration_dirs(args.baseline_dir)
+        baseline_states = [metrics.load_iteration_state(iteration_dir) for iteration_dir in baseline_iteration_dirs]
+        args.mkdir(os.path.join(args.output_dir, 'baseline'))
+        baseline_timeline = simulation_timeline.Timeline(baseline_states, catalog, args.per_iter, os.path.join(args.output_dir, 'baseline'))
+        baseline_timeline.save_acquistion_comparison()
+        baseline_timeline.save_model_histograms()
+
         baseline_log_loc = find_log(args.baseline_dir)
         baseline_save_loc = os.path.join(args.output_dir, 'acc_metrics_baseline_' + name + '.png')
         baseline_smooth_metrics = get_smooth_metrics_from_log(baseline_log_loc, name='baseline')

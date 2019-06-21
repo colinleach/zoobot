@@ -21,8 +21,12 @@ Below
 
 `catalog_loc=data/panoptes_predictions_selected.csv`
 `fits_dir=data/fits_native`
-`shard_dir=data/shards/si128_sf64_ss4096`
+`shard_dir=data/gz2_shards`
+`baseline_dir=data/runs/al_baseline`
+`run_dir=data/runs/al_mutual`
+`output_dir=results/latest_metrics`
 
+`fleet_id=sfr-....`
 ### Data from Outside Repo
 
 We need a catalog and images. 
@@ -47,7 +51,7 @@ Now we have the data to create shards.
 - Pretending that the remaining images are unlabelled, write each image to a shard and create a database recording where each image is. This database will also store the revealed labels and latest acquisition values, to be filled in later.
 - Record the shard and database locations, and other metadata, in a 'shard config' (json-serialized dict). This lets us use these shards later.
 
-`dvc run -d $catalog_loc -d $fits_dir -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
+`dvc run -d $catalog_loc -d zoobot/active_learning/make_shards.py -o zoobot/active_learning/oracle.csv -o $shard_dir -f make_shards.dvc python zoobot/active_learning/make_shards.py --catalog_loc=$catalog_loc --shard_dir=$shard_dir`
 
 ### Execution
 
@@ -69,20 +73,19 @@ If you still need to acquire the data:
 - Repeat, including the newly-acquired shard in the training pool
 - Stop after a specified number of iterations, moving the log into the run directory
 
-`run_dir=data/runs/al_mutual`
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $run_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start=True`
+
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $run_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$run_dir --warm-start && git pull && git add al_mutual.dvc && git commit -m 'new mutual metrics' && git push && dvc push -r s3 al_mutual.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+
 OR baseline:
-`baseline_dir=data/runs/al_baseline`
-`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d $fits_dir -d zoobot -o $baseline_dir python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --baseline=True --warm-start=True`
+`dvc run -d $shard_dir -d zoobot/active_learning/oracle.csv -d zoobot -o $baseline_dir --ignore-build-cache python zoobot/active_learning/execute.py --shard_config=$shard_dir/shard_config.json --run_dir=$baseline_dir --warm-start --baseline && git pull && git add al_baseline.dvc && git commit -m 'new baseline metrics' && git push && dvc push -r s3 al_baseline.dvc && aws ec2 cancel-spot-fleet-requests --spot-fleet-request-ids $fleet_id --terminate-instances`
+
+This will execute the simulation, upload the results (via S3 and dvc) and then terminate the instance.
+If the simulation exits with an error code, the instance will not be terminated.
 
 shard_config is the config object describing the shards. run_dir is the directory to create run data (estimator, new tfrecords, etc).
 Optionally, add --baseline=True to select samples for labelling randomly.
 **Check that logs are being recorded**. They should be in the directory the script was run from (i.e. root).
 
-Finally, upload the results.
-
-`git add $run_dir.dvc` or `git add $baseline_dir.dvc`
-`dvc push -r s3 $run_dir.dvc`  or `dvc push -r s3 $baseline_dir.dvc`
 
 ## Generate Metrics
 
@@ -91,8 +94,8 @@ This will run locally or on EC2, but requires both `shard_dir` and `run_dir` to 
 `dvc pull $run_dir.dvc`
 `dvc pull $baseline_dir.dvc`
 
-`output_dir=results/latest_metrics`
-`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc python zoobot/active_learning/analysis.py --active_dir=$run_dir --baseline_dir=$baseline_dir --initial=512 --per_iter=256 --output_dir=$output_dir`
+
+`dvc run -d $shard_dir -d $run_dir -d $baseline_dir -o $output_dir -f al_metrics.dvc -d zoobot/active_learning/analysis.py --ignore-build-cache python zoobot/active_learning/analysis.py --active-dir=$run_dir --baseline-dir=$baseline_dir --initial=6000 --per-iter=3072 --output-dir=$output_dir --catalog-loc=$catalog_loc && git pull && git add al_metrics.dvc && git commit -m 'new metrics' && git push && dvc push -r s3 al_metrics.dvc`
 
 ## Optional: Run Tensorboard to Monitor
 

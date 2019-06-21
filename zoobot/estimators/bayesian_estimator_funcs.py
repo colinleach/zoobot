@@ -103,8 +103,9 @@ class BayesianModel():
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             with tf.variable_scope('train'):
-
-                optimizer = self.optimizer(learning_rate=self.learning_rate)  # TODO adaptive learning rate
+                lr = tf.identity(self.learning_rate)
+                tf.summary.scalar('learning_rate', lr)
+                optimizer = self.optimizer(learning_rate=lr)
 
                 # important to explicitly use within update_ops for batch norm to work
                 # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
@@ -114,7 +115,7 @@ class BayesianModel():
                     train_op = optimizer.minimize(
                         loss=loss,
                         global_step=tf.train.get_global_step())
-
+                
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
         else:  # must be EVAL mode
@@ -143,7 +144,10 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             dropout_rate = self.predict_dropout
 
+        # eval mode will have a lower loss than train mode, because dropout is off
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
+        tf.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
+        tf.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
         predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
@@ -153,7 +157,7 @@ class BayesianModel():
             return response, None  # no loss, as labels not known (in general)
 
         if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for EVAL with binomial
-            scalar_predictions = get_scalar_prediction(predictions)
+            scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
             loss = binomial_loss(labels, scalar_predictions)
             mean_loss = tf.reduce_mean(loss)
             tf.losses.add_loss(mean_loss)
@@ -436,22 +440,17 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     tf.summary.tensor_summary('dropout_summary', dropout)
 
     linear = tf.layers.dense(
-        dropout, 
+        dropout,
         units=2,
         name='layer_after_dropout')
     tf.summary.histogram('layer_after_dropout', linear)
 
-    # sigmoid = tf.nn.sigmoid(linear, name='sigmoid')
+    prediction = linear
 
-    # prediction = tf.squeeze(linear, 1)  # necessary if using tf.losses.mean_squared_error with single unit
-    # scalar_prediction = prediction
-    prediction = linear  # now two units, as logits
-
-    scalar_prediction = get_scalar_prediction(prediction)  # with onehot labels, 0 is [1, 0] and 1 is [0, 1]
-    tf.summary.histogram('prediction', scalar_prediction)
-    tf.summary.histogram('prediction_clipped', tf.clip_by_value(scalar_prediction, 0., 1.))
+    scalar_prediction = get_scalar_prediction(prediction)
+    tf.summary.histogram('scalar_prediction', scalar_prediction)
     response = {
-        "prediction": scalar_prediction, 
+        "prediction": scalar_prediction,  # softmaxed
     }
     if labels is not None:
         tf.summary.histogram('internal_labels', labels)
@@ -459,7 +458,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
 
-    # no softmax yet
+    # prediction has no softmax yet, response does
     return prediction, response
 
 
@@ -474,11 +473,13 @@ def binomial_loss(labels, predictions):
 
     total_votes = tf.constant(40., dtype=tf.float32)
     yes_votes = labels * total_votes
-    p_yes = tf.clip_by_value(predictions, ep, 1 - ep)
+    # p_yes = tf.clip_by_value(predictions, ep, 1 - ep)
+    p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
-    bin_loss = - tf.reduce_mean(yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon))
+    bin_loss = -( yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon) )
     tf.summary.histogram('bin_loss', bin_loss)
+    tf.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
     return bin_loss
 
 
