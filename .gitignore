@@ -53,3 +53,4 @@ data/fits_native
 data/decals/classifications
 
 zooniverse_login.json
+.vscode/settings.json
