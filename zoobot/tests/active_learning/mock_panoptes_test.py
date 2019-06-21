@@ -43,23 +43,30 @@ def test_get_labels(monkeypatch, subjects_requested_save_loc_possible, subjects_
         return pd.DataFrame([
             {
                 'id_str': '20927311',
-                'label': 0.6
+                'label': 12,
+                'total_votes': 3
+
             },
             {
                 'id_str': '20530807',
-                'label': 0.3
+                'label': 4,
+                'total_votes': 2
             }
         ])
 
     monkeypatch.setattr(mock_panoptes.pd, 'read_csv', mock_read_csv)
 
-    subject_ids, labels = mock_panoptes.get_labels()
+    subject_ids, labels, counts = mock_panoptes.get_labels()
 
     if subjects_requested_save_loc_possible == 'broken_path':
         assert subject_ids == []
         assert labels == []
     else:
+        assert isinstance(subject_ids, list)
+        assert isinstance(labels, list)
+        assert isinstance(counts, list)
         assert subject_ids == subjects_to_request
-        assert labels == [0.6, 0.3]
+        assert labels == [12, 4]
+        assert counts == [3, 2]
         # should have been subsequently deleted
         assert not os.path.exists(subjects_requested_save_loc_possible)

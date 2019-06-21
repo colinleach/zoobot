@@ -19,16 +19,18 @@ def get_labels_and_images(classifications, subject_manifest, png_dir, output_loc
 if __name__ == '__main__':
 
     nrows = None
-    overwrite = True
+    overwrite = False
 
     catalog_dir = '/data/galaxy_zoo/gz2/catalogs'  # shared folder, for convenience
     published_data_loc = '{}/gz2_hart16.csv'.format(catalog_dir)  # volunteer labels
     subject_manifest_loc = '{}/galaxyzoo2_sandor.csv'.format(catalog_dir)  # subjects on AWS
     labels_loc = '{}/basic_regression_labels.csv'.format(catalog_dir)  # will place catalog of file list and labels here
-    output_loc = '{}/basic_regression_labels_downloaded.csv'.format(catalog_dir)  # includes png_ready etc.
+    output_loc = '{}/gz2_classifications_and_subjects.csv'.format(catalog_dir)  # includes png_ready etc.
     png_dir = '/Volumes/alpha/gz2/png'  # will place downloaded png here (5GB or so)
 
-    classifications = get_classification_results(published_data_loc, nrows=nrows)
+    # just loads specific columns
+    # classifications = get_classification_results(published_data_loc, nrows=nrows)
+    classifications = pd.read_csv(published_data_loc)
     print('Published subjects with labels: {}'.format(len(classifications)))
 
     subject_manifest = pd.read_csv(subject_manifest_loc, nrows=nrows)

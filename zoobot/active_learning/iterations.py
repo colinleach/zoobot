@@ -47,8 +47,6 @@ class Iteration():
                 logging.critical(tfrecords)
             setattr(self, attr, tfrecords)
 
-
-        self.acquired_tfrecord = None
         assert callable(train_callable)
         self.train_callable = train_callable
         assert callable(acquisition_func)
@@ -61,11 +59,11 @@ class Iteration():
 
         self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
-        self.requested_tfrecords_dir = os.path.join(self.iteration_dir, 'requested_tfrecords')
+        self.acquired_tfrecords_dir = os.path.join(self.iteration_dir, 'acquired_tfrecords')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
-        os.mkdir(self.requested_tfrecords_dir)
+        os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
@@ -99,11 +97,12 @@ class Iteration():
         self.tfrecords_record = os.path.join(self.iteration_dir, 'train_records_index.json')
 
 
+    def get_acquired_tfrecords(self):
+        return [os.path.join(self.acquired_tfrecords_dir, loc) for loc in os.listdir(self.acquired_tfrecords_dir)]
+
+
     def get_train_records(self):
-        if self.acquired_tfrecord is None:
-            return self.initial_train_tfrecords
-        else:
-            return self.initial_train_tfrecords + [self.acquired_tfrecord]
+            return self.initial_train_tfrecords + self.get_acquired_tfrecords()
 
 
     def make_predictions(self, shard_locs, initial_size):
@@ -136,11 +135,20 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels = get_labels()
+        subject_ids, labels, total_votes = get_labels()
         if len(subject_ids) > 0:
-            active_learning.add_labels_to_db(subject_ids, labels, self.db)
-            self.acquired_tfrecord = os.path.join(self.requested_tfrecords_dir, 'acquired_shard.tfrecord')
-            active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
+            active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
+            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
+            active_learning.write_catalog_to_tfrecord_shards(
+                top_subject_df,
+                db=None,
+                img_size=self.initial_size,
+                columns_to_save=['id_str', 'label', 'total_votes'],
+                save_dir=self.acquired_tfrecords_dir,
+                shard_size=4096  # hardcoded, awkward TODO
+            )
+            # self.acquired_tfrecord = os.path.join(self.acquired_tfrecords_dir, 'acquired_shard.tfrecord')
+            # active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
 
         """
         Callable should expect 
@@ -165,7 +173,7 @@ class Iteration():
         subjects, samples = self.make_predictions(self.prediction_shards, self.initial_size)
 
         acquisitions = self.acquisition_func(samples)  # returns list of acquisition values
-        self.record_state(subjects, samples, acquisitions)
+        # self.record_state(subjects, samples, acquisitions)
         logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)

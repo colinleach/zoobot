@@ -20,10 +20,13 @@ from zoobot.estimators import run_estimator
 from zoobot.estimators import make_predictions
 from zoobot.tfrecord import read_tfrecord
 
-from zoobot.active_learning import mock_panoptes
+try:
+    LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
+    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
+except AssertionError:
+    LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
+    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
 
-
-LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
 
 
 def create_db(catalog, db_loc):
@@ -47,7 +50,8 @@ def create_db(catalog, db_loc):
         '''
         CREATE TABLE catalog(
             id_str STRING PRIMARY KEY,
-            label FLOAT DEFAULT NULL,
+            label INT DEFAULT NULL,
+            total_votes INT DEFAULT NULL,
             file_loc STRING)
         '''
     )
@@ -88,7 +92,7 @@ def add_catalog_to_db(df, db):
     cursor = db.cursor()
     cursor.executemany(
         '''
-        INSERT INTO catalog(id_str, label, file_loc) VALUES(?,NULL,?)''',
+        INSERT INTO catalog(id_str, label, total_votes, file_loc) VALUES(?,NULL,NULL,?)''',
         catalog_entries
     )
     db.commit()
@@ -126,7 +130,7 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
             reader=catalog_to_tfrecord.get_reader(df['file_loc']),
             append=False)
         if db is not None:  # explicitly not passing db will skip this step, for e.g. train/test
-            add_tfrecord_to_db(save_loc, db, df_shard)
+            add_tfrecord_to_db(save_loc, db, df_shard)  # record ids in db, not labels
 
 
 def add_tfrecord_to_db(tfrecord_loc, db, df):
@@ -253,6 +257,8 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     logging.debug('Extracting images from unlabelled subjects')
     # need to construct array from list: required to have known length
     unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
+    for subject in unlabelled_subjects:
+        del subject['matrix']  # we don't need after this, so long as we skip recording state
     samples = make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
     return unlabelled_subjects, samples
 
@@ -324,27 +330,23 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
     return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
 
-
-def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
-    """Write the subjects with ids in `subject_ids` to a tfrecord at `tfrecord_loc`
-    tfrecord will save the image stored at `db.catalog.fits_loc` at size `size`
-    tfrecord will include the label stored under `db.catalog.label`
+# bad name, actually gets all table columns
+def get_file_loc_df_from_db(db, subject_ids):
+    """
+    Look up the file_loc and label in db for the subjects with ids in `subject_ids`
+    df will include the image_loc stored at `db.catalog.file_loc`
+    df will include the label stored under `db.catalog.label`
     Useful for creating additional training tfrecords during active learning
     
     Args:
         db (sqlite3.Connection): database with `db.catalog` table to get subject image and label
         subject_ids (list): of subject ids matching `db.catalog.id_str` values
-        tfrecord_loc (str): path into which to save new tfrecord
-        size (int): height/width dimension of image matrix to rescale and save to tfrecords
     
     Raises:
         IndexError: No matches found to an id in `subject_ids` within db.catalog.id_str
         ValueError: Subject with an id in `subject_ids` has null label (code error in this func.)
     """
-
-    logging.info('Adding {} subjects  (e.g. {}) to new tfrecord {}'.format(len(subject_ids), subject_ids[:5], tfrecord_loc))
     assert len(subject_ids) > 0
-    assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     cursor = db.cursor()
 
     rows = []
@@ -353,7 +355,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         logging.debug(subject_id)
         cursor.execute(
             '''
-            SELECT id_str, label, file_loc FROM catalog
+            SELECT id_str, label, total_votes, file_loc FROM catalog
             WHERE id_str = (:id_str)
             ''',
             (subject_id,)
@@ -368,21 +370,26 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
-            'label': float(subject[1]),
-            'file_loc': get_relative_loc(str(subject[2]))
+            'label': int(subject[1]),
+            'total_votes': int(subject[2]),
+            'file_loc': get_relative_loc(str(subject[3]))
         })
 
     top_subject_df = pd.DataFrame(data=rows)
-
-    
-
     assert len(top_subject_df) == len(subject_ids)
+    return top_subject_df
+
+
+def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
+    df = get_file_loc_df_from_db(db, subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
-        top_subject_df,
+        df,
         tfrecord_loc,
         size,
-        columns_to_save=['id_str', 'label'],
-        reader=catalog_to_tfrecord.get_reader(top_subject_df['file_loc']))
+        columns_to_save=['id_str', 'label', 'total_votes'],
+        reader=catalog_to_tfrecord.get_reader(df['file_loc']))
+
 
 
 def get_relative_loc(loc):
@@ -398,43 +405,50 @@ def get_latest_checkpoint_dir(base_dir):
     return os.path.join(base_dir, saved_models[0])  # the subfolder with the most recent time
 
 
-def add_labels_to_db(subject_ids, labels, db):
+def add_labels_to_db(subject_ids, labels, total_votes, db):
     cursor = db.cursor()
 
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
+        total_votes_val = total_votes[subject_n]
         subject_id = subject_ids[subject_n]
 
         # np.int64 is wrongly written as byte string e.g. b'\x00...',  b'\x01...'
-        if isinstance(label, np.float32):
-            label = float(label)
-        assert isinstance(label, float)
+        label = int(label)
+        total_votes_val = int(total_votes_val)
+        assert isinstance(label, int)
+        assert isinstance(label, int)
         assert isinstance(subject_id, str)
-
         cursor.execute(
             '''
             UPDATE catalog
-            SET label = (:label)
+            SET label = (:label), total_votes = (:total_votes)
             WHERE id_str = (:subject_id)
             ''',
             {
                 'label': label,
-                'subject_id': subject_id
+                'subject_id': subject_id,
+                'total_votes': total_votes_val
             }
         )
         db.commit()
 
-        # check labels really have been added, and not as byte string
-        cursor.execute(
-            '''
-            SELECT label FROM catalog
-            WHERE id_str = (:subject_id)
-            LIMIT 1
-            ''',
-            (subject_id,)
-        )
-        retrieved_label = cursor.fetchone()[0]
-        assert retrieved_label == label
+        if subject_n == 0:  # careful check on first write only, for speed
+            # check labels really have been added, and not as byte string
+            cursor.execute(
+                '''
+                SELECT label, total_votes FROM catalog
+                WHERE id_str = (:subject_id)
+                LIMIT 1
+                ''',
+                (subject_id,)
+            )
+            row = cursor.fetchone()
+            assert row is not None
+            retrieved_label = row[0]
+            assert retrieved_label == label
+            retrieved_total_votes = row[1]
+            assert retrieved_total_votes == total_votes_val
 
 
 def get_all_shard_locs(db):

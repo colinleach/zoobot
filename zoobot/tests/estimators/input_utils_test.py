@@ -25,7 +25,7 @@ Test augmentation applied to a single image (i.e. within map_fn)
 
 def test_geometric_augmentations_on_image(visual_check_image):
 
-    final_image = input_utils.geometric_augmentation(visual_check_image, max_zoom=1.5, final_size=256)
+    final_image = input_utils.geometric_augmentation(visual_check_image, zoom=(1., 1.5), final_size=256)
 
     with tf.Session() as session:
         session.run(tf.global_variables_initializer())
@@ -61,7 +61,7 @@ def test_photometric_augmentations_on_image(visual_check_image):
 
 
 def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image):
-    transformed_images = input_utils.geometric_augmentation(batch_of_visual_check_image, max_zoom=1.5, final_size=256)
+    transformed_images = input_utils.geometric_augmentation(batch_of_visual_check_image, zoom=(1., 1.5), final_size=256)
 
     with tf.Session() as session:
         session.run(tf.global_variables_initializer())
@@ -105,7 +105,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
         stratify_probs=None,
         geometric_augmentation=True,
         shift_range=None,
-        max_zoom=1.5,
+        zoom=(1., 1.5),
         fill_mode=None,
         photographic_augmentation=True,
         max_brightness_delta=0.2,

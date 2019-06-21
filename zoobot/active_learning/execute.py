@@ -63,11 +63,6 @@ class ActiveConfig():
 
         self.initial_estimator_ckpt = initial_estimator_ckpt
         self.db_loc = os.path.join(self.run_dir, 'run_db.db')  
-    
-        # will download/copy fits of top acquisitions into here
-        self.requested_fits_dir = os.path.join(self.run_dir, 'requested_fits')
-        # and then write them into tfrecords here
-        self.requested_tfrecords_dir = os.path.join(self.run_dir, 'requested_tfrecords')
 
         self.prepare_run_folders()
 
@@ -82,7 +77,7 @@ class ActiveConfig():
         if os.path.exists(self.run_dir):
             shutil.rmtree(self.run_dir)
 
-        directories = [self.run_dir, self.requested_fits_dir, self.requested_tfrecords_dir]
+        directories = [self.run_dir]
         for directory in directories:
             os.mkdir(directory)
 
@@ -95,8 +90,6 @@ class ActiveConfig():
             assert os.path.isdir(self.initial_estimator_ckpt)
             assert os.path.exists(os.path.join(self.initial_estimator_ckpt, 'saved_model.pb'))
         assert os.path.isdir(self.run_dir)
-        assert os.path.isdir(self.requested_fits_dir)
-        assert os.path.isdir(self.requested_tfrecords_dir)
         return True
 
 
@@ -116,9 +109,9 @@ class ActiveConfig():
         """
         # clear any leftover mocked labels awaiting collection
         # won't do this in production
-        # from zoobot.active_learning import mock_panoptes
-        # if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
-        #     os.remove(mock_panoptes.SUBJECTS_REQUESTED)
+        from zoobot.active_learning import mock_panoptes
+        if os.path.exists(mock_panoptes.SUBJECTS_REQUESTED):
+            os.remove(mock_panoptes.SUBJECTS_REQUESTED)
 
         assert self.ready()
         db = sqlite3.connect(self.db_loc)
@@ -131,32 +124,18 @@ class ActiveConfig():
         initial_train_tfrecords = self.shards.train_tfrecord_locs()
         eval_tfrecords = self.shards.eval_tfrecord_locs()
 
-        # iteration_n = 1
-        # initial_db_loc = 'data/gz2_shards/runs_cache/iteration_0th_only.db'
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
-        # initial_train_tfrecords = [self.shards.train_tfrecord_loc, 'data/gz2_shards/runs_cache/30k_random.tfrecord']
-        # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord']
-        # initial_train_tfrecords = ['data/gz2_shards/runs_cache/acquired_from_0th_iter.tfrecord', 'data/gz2_shards/runs_cache/30k_random.tfrecord']
-        
-
-        epochs = 650
         learning_rate = 0.001
 
         iterations_record = []
 
         while iteration_n < self.n_iterations:
 
+            if iteration_n == 0:
+                epochs = 50  # not 125, will massively overfit the first epoch
+            else:
+                epochs = 50
+
             prediction_shards = [next(shards_iterable) for n in range(self.shards_per_iter)]
-            # if iteration_n == 0:
-            #     initial_train_tfrecords = [
-            #         'data/shards/latest_shards/initial_train.tfrecord'
-            #     ]
-            # else:
-            #     initial_train_tfrecords = [
-            #         'data/shards/latest_shards/initial_train.tfrecord',
-            #         # 'data/runs/al_baseline_cold/iteration_1/requested_tfrecords/acquired_shard.tfrecord'
-            #         'data/shards'
-            #     ]
 
             iteration = iterations.Iteration(
                 run_dir=self.run_dir, 
@@ -169,10 +148,9 @@ class ActiveConfig():
                 acquisition_func=acquisition_func,
                 n_samples=n_samples,
                 n_subjects_to_acquire=self.subjects_per_iter,
-                initial_size=self.shards.initial_size,
+                initial_size=self.shards.size,
                 learning_rate=learning_rate,
-                initial_estimator_ckpt=initial_estimator_ckpt,  # will not warm start, may or may not break
-                # initial_estimator_ckpt='data/runs/al_baseline_cold/iteration_0/estimators',
+                initial_estimator_ckpt=initial_estimator_ckpt,  # will only warm start with --warm_start, though
                 epochs=epochs)
 
             # train as usual, with saved_model being placed in estimator_dir
@@ -181,8 +159,8 @@ class ActiveConfig():
 
             iteration_n += 1
             initial_db_loc = iteration.db_loc
-            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shard # WARNING DISABLE ADDING NEW SHARD
-            initial_estimator_ckpt = iteration.estimators_dir  # TODO rename, only if warm_start
+            initial_train_tfrecords = iteration.get_train_records()  # includes newly acquired shards
+            initial_estimator_ckpt = iteration.estimators_dir
             iterations_record.append(iteration)
 
         return iterations_record
@@ -240,7 +218,6 @@ if __name__ == '__main__':
                     help='After each iteration, continue training the same model')
     args = parser.parse_args()
 
-
     log_loc = 'execute_{}.log'.format(time.time())
 
     logging.basicConfig(
@@ -254,20 +231,22 @@ if __name__ == '__main__':
     # instructions for the run
     if args.test:  # do a brief run only
         n_iterations = 2
-        subjects_per_iter = 28
+        subjects_per_iter = 256  # tests show acquiring this way gives good tfrecords
         shards_per_iter = 2  # temp
+        final_size = 32
     else:
-        n_iterations = 8
-        subjects_per_iter = 4096
-        shards_per_iter = 8  # needs to be <= total prediction shards
+        n_iterations = 24
+        subjects_per_iter = 250 # to see if performance improves at all with more images
+        shards_per_iter = 4  # needs to be <= total prediction shards, will fail loudly if so
+        final_size = 96
 
     # shards to use
     shard_config = make_shards.load_shard_config(args.shard_config_loc)
-    new_shard_dir = 'data/gz2_shards'
+    new_shard_dir = os.path.dirname(args.shard_config_loc)
     shard_config.shard_dir = new_shard_dir
     attrs = [
-        'train_tfrecord_loc',
-        'eval_tfrecord_loc',
+        'train_dir',
+        'eval_dir',
         'labelled_catalog_loc',
         'unlabelled_catalog_loc',
         'config_save_loc',
@@ -289,16 +268,17 @@ if __name__ == '__main__':
 
     # these do not change per iteration
     train_callable_params = TrainCallableParams(
-        initial_size = active_config.shards.initial_size,
-        final_size = active_config.shards.final_size,
-        warm_start = args.warm_start,
-        eval_tfrecord_loc=active_config.shards.eval_tfrecord_loc,
+        initial_size=active_config.shards.size,
+        final_size=final_size,
+        warm_start=args.warm_start,
+        # TODO remove?
+        eval_tfrecord_loc=active_config.shards.eval_tfrecord_locs(),
         test=args.test
     )
 
     train_callable = get_train_callable(train_callable_params)
     acquisition_func = get_acquisition_func(baseline=args.baseline)
-    if args.test:
+    if args.test or args.baseline:
         n_samples = 2
     else:
         n_samples = 15
@@ -309,8 +289,9 @@ if __name__ == '__main__':
 
     # finally, tidy up by moving the log into the run directory
     # could not be create here because run directory did not exist at start of script
-    repo = git.Repo(search_parent_directories=True)
-    sha = repo.head.object.hexsha
-    shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
+    if os.path.exists(log_loc):  # temporary workaround for disappearing log
+        repo = git.Repo(search_parent_directories=True)
+        sha = repo.head.object.hexsha
+        shutil.move(log_loc, os.path.join(args.run_dir, '{}.log'.format(sha)))
 
-    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.initial_size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
+    analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

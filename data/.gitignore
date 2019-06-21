@@ -4,3 +4,6 @@
 /panoptes_predictions_selected.csv
 /basic_split
 /fits_native.tar
+/basic_split_gz2
+/basic_regression_labels_with_bars.csv
+/gz2_classifications_and_subjects.csv

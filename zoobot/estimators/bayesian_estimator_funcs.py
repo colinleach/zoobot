@@ -86,10 +86,6 @@ class BayesianModel():
         Returns:
 
         """
-        if labels is not None:
-            logging.warning('Enforcing float labels for regression mode')
-            labels = tf.cast(labels, tf.float32)
-        
         response, loss = self.bayesian_regressor(features, labels, mode)
         
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -156,103 +152,12 @@ class BayesianModel():
         if mode == tf.estimator.ModeKeys.PREDICT:
             return response, None  # no loss, as labels not known (in general)
 
-        if mode == tf.estimator.ModeKeys.EVAL: # calculate loss for EVAL with binomial
+        else: # calculate loss for TRAIN/EVAL with binomial
+            labels = tf.stop_gradient(labels)
             scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
             loss = binomial_loss(labels, scalar_predictions)
             mean_loss = tf.reduce_mean(loss)
             tf.losses.add_loss(mean_loss)
-            return response, mean_loss
-
-        else:  # Calculate Loss for TRAIN with softmax (proxy of binomial)
-              # don't find the gradient of the labels (e.g. adversarial)
-            labels = tf.stop_gradient(labels)
-
-            # this works
-            # mean_loss = tf.losses.mean_squared_error(labels, predictions)
-
-            # linear error
-            # this seems to work: loss decreases from 4 to <0.2, which is similar to above
-            # Curiously, rmse is not identical to this loss!
-            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels))
-
-            # binomial loss - equal to sensible guessing, unstable, when used with non-noisy labels
-            # l2_loss = tf.losses.get_regularization_loss()  # doesn't add to loss_collection, happily
-            # tf.summary.histogram('l2_loss', l2_loss)
-            # mean_loss = binomial_loss(labels, predictions) + penalty_if_not_probability(predictions) + l2_loss
-
-            # cross-entropy loss (assumes noisy labels and that prediction is linear and unscaled i.e. logits)
-            # label_print = tf.print('labels', labels)
-            # with tf.control_dependencies([label_print]):
-            # onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
-            # print_op = tf.print('onehot_labels', onehot_labels)
-            # # with tf.control_dependencies([print_op]):
-            # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=predictions)
-            # tf.summary.histogram('loss', loss)
-            # mean_loss = tf.reduce_mean(loss) # consider +tf.losses.get_regularization_loss()
-            # tf.losses.add_loss(mean_loss)
-
-            # Calculate loss using mean squared error - untested
-            # mean_loss = tf.losses.mean_squared_error(labels=labels, predictions=predictions)
-
-            # Calculate loss using mean squared error + L2 - untested
-            # mean_loss = tf.reduce_mean(tf.abs(predictions - labels)) + tf.losses.get_regularization_loss()
-
-            # binomial loss using softmax and custom bin loss, non-noisy labels
-            scalar_predictions = get_scalar_prediction(predictions)
-            loss = binomial_loss(labels, scalar_predictions)
-            mean_loss = tf.reduce_mean(loss)
-            tf.losses.add_loss(mean_loss)
-
-            return response, mean_loss
-
-
-    def bayesian_classifier(self, features, labels, mode):
-        """
-        Model function of four-layer CNN
-        Can be used in isolation or called within an estimator e.g. four_layer_binary_classifier
-
-        Args:
-            features ():
-            labels ():
-            mode ():
-            params ():
-
-        Returns:
-
-        """
-        dense1 = input_to_dense(features, mode, self)  # run from input to dense1 output
-        # dense1 = input_to_dense_normed(features, mode, self)  # use batch normalisation
-
-        # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
-        if mode == tf.estimator.ModeKeys.PREDICT:
-
-            with tf.variable_scope("sample"):
-                # Feedforward from dense1. Always apply dropout.
-                _, response = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.predict_dropout)
-                response.update({'features': features})  # for now, also export the model input
-            return response, None  # no loss, as labels not known (in general)
-
-        else:  # Calculate Loss for TRAIN and EVAL modes)
-            # only feedforward once for one set of predictions
-
-            with tf.variable_scope("training_loss"):
-                logits, response = dense_to_multiclass_prediction(dense1, labels, dropout_on=mode == tf.estimator.ModeKeys.TRAIN, dropout_rate=self.dense1_dropout)
-                onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
-                onehot_labels = tf.stop_gradient(onehot_labels)  # don't find the gradient of the labels (e.g. adversarial)
-                loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-                    labels=onehot_labels,
-                    logits=logits,
-                    name='model/layer4/loss')
-
-                # loss = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logits, name='model/layer4/loss')
-                mean_loss = tf.reduce_mean(loss, name='mean_loss')
-
-            # create dummy variables that match names in predict mode
-            # TODO this is potentially wasteful as we don't actually need the feedforwards.
-            # Unclear if it executes - check.
-            # with tf.variable_scope("sample"):
-            #     _, _ = dense_to_multiclass_prediction(dense1, labels, dropout_on=True, dropout_rate=self.dense1_dropout)
-
             return response, mean_loss
 
 
@@ -268,8 +173,9 @@ def input_to_dense(features, mode, model):
 
     """
     input_layer = features["x"]
-    tf.summary.image('model_input', input_layer, 1)
-    assert input_layer.shape[3] == 1  # should be greyscale, for later science
+    # tf.summary.image('model_input', input_layer, 1)
+    # assert input_layer.shape[3] == 1  # should be greyscale, for later science
+    tf.summary.image('model_input', input_layer, 3)
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     # dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
@@ -376,7 +282,7 @@ def input_to_dense(features, mode, model):
 
     """
     Flatten tensor into a batch of vectors
-    Start with image_dim shape, 1 channel
+    Start with image_dim shape, 1 channel (*3 if 3 channels)
     2 * 2 * 2 = 8 factor reduction in shape from pooling, assuming stride 2 and pool_size 2
     length ^ 2 to make shape 1D
     64 filters in final layer
@@ -392,37 +298,6 @@ def input_to_dense(features, mode, model):
         name='model/layer4/dense1')
 
     return dense1
-
-
-def dense_to_multiclass_prediction(dense1, labels, dropout_on, dropout_rate):
-
-    # Add dropout operation
-    dropout = tf.layers.dropout(
-        inputs=dense1,
-        rate=dropout_rate,
-        training=dropout_on)
-    tf.summary.tensor_summary('dropout_summary', dropout)
-
-    # Logits layer
-    logits = tf.layers.dense(inputs=dropout, units=2, name='logits')
-    tf.summary.histogram('logits_false', logits[:, 0])  # first dimension is batch, second is class (0 = featured here)
-    tf.summary.histogram('logits_true', logits[:, 1])
-
-    softmax = tf.nn.softmax(logits, name='softmax')
-    softmax_true_score = softmax[:, 1]  # predicts if label = 1 i.e. smooth
-    tf.summary.histogram('softmax_true_score', softmax_true_score)
-
-    response = {
-        "prediction": softmax,
-        "predictions_for_true": softmax_true_score,  # keep only one softmax per subject. Softmax sums to 1
-    }
-    if labels is not None:
-        response.update({
-            'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
-            "classes": tf.argmax(input=logits, axis=1, name='classes'),
-        })
-
-    return logits, response
 
 
 def get_scalar_prediction(prediction):
@@ -453,7 +328,8 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
         "prediction": scalar_prediction,  # softmaxed
     }
     if labels is not None:
-        tf.summary.histogram('internal_labels', labels)
+        tf.summary.histogram('yes_votes', labels[:, 0])
+        tf.summary.histogram('total_votes', labels[:, 1])
         response.update({
             'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
         })
@@ -471,9 +347,9 @@ def binomial_loss(labels, predictions):
     ep = 1e-8
     epsilon = tf.constant(ep, dtype=tf.float32)
 
-    total_votes = tf.constant(40., dtype=tf.float32)
-    yes_votes = labels * total_votes
-    # p_yes = tf.clip_by_value(predictions, ep, 1 - ep)
+    # multiplication in tf requires floats
+    yes_votes = tf.cast(labels[:, 0], tf.float32)
+    total_votes = tf.cast(labels[:, 1], tf.float32)
     p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
@@ -497,10 +373,13 @@ def penalty_if_not_probability(predictions):
 
 def get_eval_metric_ops(self, labels, predictions):
     # record distribution of predictions for tensorboard
-    tf.summary.histogram('labels', labels)
-    assert labels.dtype == tf.float32
+    tf.summary.histogram('yes_votes', labels[0, :])
+    tf.summary.histogram('total_votes', labels[1, :])
+    assert labels.dtype == tf.int64
     assert predictions['prediction'].dtype == tf.float32
-    return {"rmse": tf.metrics.root_mean_squared_error(labels, predictions['prediction'])}
+    observed_vote_fraction = tf.cast(labels[:, 0], dtype=tf.float32) / tf.cast(labels[:, 1], dtype=tf.float32)
+    tf.summary.histogram('observed vote fraction', observed_vote_fraction)
+    return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fraction, predictions['prediction'])}
 
 def logging_hooks(model_config):
     train_tensors = {

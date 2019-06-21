@@ -1,15 +1,13 @@
-cmd: ' python zoobot/active_learning/make_shards.py --catalog_loc=data/panoptes_predictions_selected.csv
-  --shard_dir=data/shards/latest_shards'
+cmd: python zoobot/active_learning/make_shards.py --shard_dir=data/gz2_shards/uint8_256px_bar_n_1k
+  --catalog_loc=data/gz2_classifications_and_subjects.csv
 deps:
-- md5: 88ee406ed1da864adb358f56f58321a5
-  path: data/panoptes_predictions_selected.csv
-- md5: 4a6c320f666183f1c8a7f625e455d556
+- md5: 057bb9ee8282a0ff35ade29d672f0a75
+  path: data/gz2_classifications_and_subjects.csv
+- md5: 081851cf3074fd7616be39ab67e88a7d
   path: zoobot/active_learning/make_shards.py
-md5: 2fc4aa78189effa82f57409a84321113
+md5: a1e5e0d25bf503fcb1f4443a43e0e8d8
 outs:
 - cache: true
-  md5: 02b84102e93637c4385a4bdfb087cc8e
-  path: zoobot/active_learning/oracle.csv
-- cache: true
-  md5: f7aa1c32f922ea231b15f96fb2bf4c91.dir
-  path: data/shards/latest_shards
+  md5: ff005d0334e3ce00fa640a638f137515.dir
+  metric: false
+  path: data/gz2_shards/uint8_256px_bar_n_1k

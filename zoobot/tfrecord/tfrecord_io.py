@@ -18,60 +18,35 @@ def general_parsing_function(serialized_example, features):
     return example
 
 
-def load_dataset(example_loc, feature_spec, num_parallel_calls=4):
+def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
     # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
-    logging.debug('tfrecord.io: Loading dataset from {}'.format(example_loc))
-
-    parse_function = partial(general_parsing_function, features=feature_spec)
-    if isinstance(example_loc, str):
+    logging.debug('tfrecord.io: Loading dataset from {}'.format(filenames))
+    parse_function = partial(general_parsing_function, features=feature_spec)    
+    if isinstance(filenames, str):
         logging.debug('Loading single tfrecord')
-        dataset = tf.data.TFRecordDataset(example_loc)
+        dataset = tf.data.TFRecordDataset(filenames)
         return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
     else:
-        assert isinstance(example_loc, list)
+        # see https://github.com/tensorflow/tensorflow/issues/14857#issuecomment-365439428
+        logging.warning('Loading multiple tfrecords with interleaving, shuffle={}'.format(shuffle))
+        assert isinstance(filenames, list)
+        assert len(filenames) > 0
         # tensorflow will NOT raise an error if a tfrecord file is missing, if the directory exists!
-        assert all([os.path.isfile(loc) for loc in example_loc])
-        logging.debug('Loading multiple tfrecords, no interleaving')
-        dataset = tf.data.TFRecordDataset(example_loc)
-        return dataset.map(parse_function, num_parallel_calls=num_parallel_calls)  # Parse the record into tensors
-        # cycle_length = len(example_loc)
-        # num_parallel_calls = min(num_parallel_calls, cycle_length)
-        # # see https://www.tensorflow.org/api_docs/python/tf/data/Dataset#interleave 
-        #  # read from all tfrecords in parallel, with block_length example from each record per cycle
-        # filenames_dataset = tf.data.Dataset.from_tensor_slices(example_loc)
-        # logging.debug('Interleaving tfrecords {} as {}'.format(example_loc, filenames_dataset))
-        # return filenames_dataset.interleave(
-        #     lambda file_loc: tf.data.TFRecordDataset(file_loc).map(parse_function), 
-        #     cycle_length=len(example_loc), 
-        #     block_length=64,
-        #     num_parallel_calls=num_parallel_calls)
-
-
-# TODO convert this to a proper test of dataset readability?
-# if __name__ == '__main__':
-#
-#     example_image_data = np.array(np.ones((50, 50, 3), dtype=float))
-#     tfrecord_dir = '/data/repos/zoobot/zoobot/get_catalogs/tfrecord'
-#     label = 1
-#     save_loc = '{}/example.tfrecords'.format(tfrecord_dir)
-#     if os.path.exists(save_loc):
-#         os.remove(save_loc)
-#     assert not os.path.exists(save_loc)
-#     writer = tf.python_io.TFRecordWriter(save_loc)
-#     image_to_tfrecord(example_image_data, label, writer)
-#     assert os.path.exists(save_loc)
-#     writer.close()  # very important - will give 'DataLoss' error if writer not closed
-#
-#     feature_spec = matrix_label_feature_spec(size=50)
-#     example_features = read_first_example(save_loc, feature_spec)
-#     label = example_features['label']
-#     image = example_features['matrix']
-#
-#     sess = tf.Session()
-#     init = tf.global_variables_initializer()
-#     sess.run(init)
-#     tf.train.start_queue_runners(sess=sess)
-#     label, image = sess.run([label, image])
-#
-#     print(label, image)
+        assert all([os.path.isfile(loc) for loc in filenames])
+        num_shards = len(filenames)
+        # get tfrecords matching filenames, optionally shuffling order of shards to be read
+        # dataset = tf.data.Dataset.list_files(filenames, shuffle=shuffle)
+        dataset = tf.data.Dataset.from_tensor_slices(tf.constant(filenames, dtype=tf.string))
+        if shuffle:
+            dataset = dataset.shuffle(num_shards)
+        # read 1 file per shard, cycling through shards
+        print_op = tf.print("loading filenames:", dataset)
+        with tf.control_dependencies([print_op]):
+            dataset = dataset.interleave(
+                lambda filename: tf.data.TFRecordDataset(filename).map(parse_function),
+                cycle_length=num_shards
+            )
+            # could add num_parallel_calls if desired, but let's leave for now 
+        # for extra randomness, may shuffle those (1st in s1, 1st in s2, ...) subjects
+        return dataset

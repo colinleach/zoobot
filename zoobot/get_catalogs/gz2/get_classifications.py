@@ -25,6 +25,9 @@ def get_classification_results(published_data_loc, nrows=None):
         't02_edgeon_a04_yes',
         't02_edgeon_a05_no',
 
+        't03_bar_a06_bar',
+        't03_bar_a07_no_bar',
+
         't04_spiral_a08_spiral',
         't04_spiral_a09_no_spiral',
 

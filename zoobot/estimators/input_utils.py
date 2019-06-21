@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
-from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec
+from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec, matrix_label_counts_feature_spec
 
 
 class InputConfig():
@@ -26,7 +26,7 @@ class InputConfig():
             regression=True,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
-            max_zoom=1.1,
+            zoom=(1., 1.1),
             fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,
@@ -54,7 +54,7 @@ class InputConfig():
 
         self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
         self.shift_range = shift_range  # not yet implemented
-        self.max_zoom = max_zoom
+        self.zoom = zoom
         self.fill_mode = fill_mode  # not yet implemented, 'pad' or 'zoom'
 
         self.photographic_augmentation = photographic_augmentation
@@ -89,14 +89,15 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
-        batch_images, batch_labels = load_batches_with_labels(config)
+        # batch_images, batch_labels = load_batches_with_labels(config)
+        batch_images, batch_labels, batch_counts = load_batches_with_counts(config)
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        assert preprocessed_batch_images['x'].shape[3] == 1
-        # print_op = tf.print('ex input', batch_labels)
-        # with tf.control_dependencies([print_op]):
-        return preprocessed_batch_images, tf.identity(batch_labels)
+        assert preprocessed_batch_images['x'].shape[3] == 3
+
+        joint_batch_labels = tf.stack([batch_labels, batch_counts], axis=1)
+        return preprocessed_batch_images, joint_batch_labels
 
 
 def make_labels_noisy(labels):
@@ -110,11 +111,11 @@ def make_labels_noisy(labels):
 
 
 def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
-        dataset = load_dataset(tfrecord_loc, feature_spec)
+        dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
         if shuffle:
-            dataset = dataset.shuffle(batch_size * 20)
+            dataset = dataset.shuffle(5000)  # should be > len of each tfrecord
         if repeat:
-            dataset = dataset.repeat(-1)  # Careful, don't repeat forever for eval - make param
+            dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
         iterator = dataset.make_one_shot_iterator()
@@ -145,6 +146,10 @@ def get_labels_from_batch(batch, noisy_labels):
     return sampled_labels
 
 
+def get_counts_from_batch(batch):
+    return batch['total_votes']
+
+
 def load_batches_with_labels(config):
     """
     Get batches of images and labels from tfrecord according to instructions in config
@@ -168,6 +173,17 @@ def load_batches_with_labels(config):
         return batch_images, batch_labels
 
 
+def load_batches_with_counts(config):
+    with tf.name_scope('load_batches_{}'.format(config.name)):
+        feature_spec = matrix_label_counts_feature_spec()
+        batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+        batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
+        batch_labels = get_labels_from_batch(batch, config.noisy_labels)
+        batch_counts = get_counts_from_batch(batch)
+
+        return batch_images, batch_labels, batch_counts
+
+
 def load_batches_without_labels(config):
     # does not fetch id - unclear if this is important
     feature_spec = matrix_feature_spec(config.initial_size, config.channels)
@@ -188,14 +204,14 @@ def preprocess_batch(batch_images, config):
         assert len(batch_images.shape) == 4
         assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
-        greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
-        assert greyscale_images.shape[1] == config.initial_size
-        assert greyscale_images.shape[2] == config.initial_size
-        assert greyscale_images.shape[3] == 1
-        tf.summary.image('b_greyscale', greyscale_images)
+        # greyscale_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)   # new channel dimension of 1
+        # assert greyscale_images.shape[1] == config.initial_size
+        # assert greyscale_images.shape[2] == config.initial_size
+        # assert greyscale_images.shape[3] == 1
+        # tf.summary.image('b_greyscale', greyscale_images)
 
-        augmented_images = augment_images(greyscale_images, config)
-        print(augmented_images.shape)
+        # augmented_images = augment_images(greyscale_images, config)
+        augmented_images = augment_images(batch_images, config)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
         tf.summary.image('c_augmented', augmented_images)
@@ -245,7 +261,7 @@ def augment_images(images, input_config):
     if input_config.geometric_augmentation:
         images = geometric_augmentation(
             images,
-            max_zoom=input_config.max_zoom,
+            zoom=input_config.zoom,
             final_size=input_config.final_size)
 
     if input_config.photographic_augmentation:
@@ -278,7 +294,7 @@ def augment_images(images, input_config):
 #         images = tf.concat(images, axis=3)
 
 
-def geometric_augmentation(images, max_zoom, final_size):
+def geometric_augmentation(images, zoom, final_size):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -288,7 +304,7 @@ def geometric_augmentation(images, max_zoom, final_size):
 
     Args:
         images ():
-        max_zoom ():
+        zoom (tuple): of form {min zoom in decimals e,g, 1.0, max zoom in decimals e.g, 1.2}
         final_size ():
 
     Returns:
@@ -298,7 +314,9 @@ def geometric_augmentation(images, max_zoom, final_size):
     images = ensure_images_have_batch_dimension(images)
 
     assert images.shape[1] == images.shape[2]  # must be square
-    assert max_zoom > 1. and max_zoom < 10.  # catch user accidentally putting in pixel values here
+    assert len(zoom) == 2
+    assert zoom[0] <= zoom[1]
+    assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
 
     # flip functions don't support batch dimension - wrap with map_fn
     images = tf.map_fn(
@@ -311,18 +329,10 @@ def geometric_augmentation(images, max_zoom, final_size):
         random_rotation,
         images)
 
-    # if max_zoom = 1.3, zoom randomly 1x to 1.3x
-    images = tf.map_fn(lambda x: random_crop_random_size(x, max_zoom=max_zoom), images)
+    # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
+    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=True), images)
 
-    # do not change batch  or 'channel' dimension
     # resize to final desired size (may match crop size)
-    # pad...
-    # image = tf.image.resize_image_with_crop_or_pad(
-    #     image,
-    #     target_size,
-    #     target_size
-    # )
-    # ...or zoom
     images = tf.image.resize_images(
         images,
         tf.constant([final_size, final_size], dtype=tf.int32),
@@ -339,10 +349,16 @@ def random_rotation(im):
     )
 
 
-def random_crop_random_size(im, max_zoom):
-    new_width = int(int(im.shape[1]) / np.random.uniform(1.0, max_zoom))  # first int cast allows division of Dimension
-    cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
-    return tf.random_crop(im, cropped_shape)
+def crop_random_size(im, zoom, central):
+    original_width = int(im.shape[1]) # int cast allows division of Dimension
+    new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))
+    if central:
+        lost_width = int((original_width - new_width) / 2)
+        return im[lost_width:-lost_width, lost_width:-lost_width]
+    else:
+        cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
+        return tf.random_crop(im, cropped_shape)
+
 
 
 def photographic_augmentation(images, max_brightness_delta, contrast_range):
@@ -402,7 +418,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
         regression=True,
         geometric_augmentation=None,
         photographic_augmentation=None,
-        max_zoom=None,
+        zoom=None,
         fill_mode=None,
         batch_size=n_galaxies,
         initial_size=initial_size,

@@ -48,6 +48,36 @@ def matrix_label_feature_spec(size, channels, float_label=True):
         "label": tf.FixedLenFeature((), label_dtype)}
 
 
+def custom_feature_spec(features_requested):
+    # TODO properly, with error checking
+    features = {}
+    if 'matrix' in features_requested:
+        features["matrix"] = tf.FixedLenFeature([], tf.string)
+    if 'label' in features_requested:
+        features["label"] = tf.FixedLenFeature([], tf.int64)
+    if 'total_votes' or 'count' in features_requested:
+        features["total_votes"] = tf.FixedLenFeature([], tf.int64)
+    if 'id_str' in features_requested:
+        features["id_str"] = tf.FixedLenFeature([], tf.string)
+    return features
+
+
+def matrix_label_counts_feature_spec():
+    return {
+        "matrix": tf.FixedLenFeature([], tf.string),
+        "label": tf.FixedLenFeature((), tf.int64),
+        "total_votes": tf.FixedLenFeature([], tf.int64)
+    }
+
+
+def id_label_counts_feature_spec():
+    return {
+        "id_str": tf.FixedLenFeature((), tf.string),
+        "label": tf.FixedLenFeature((), tf.int64),
+        "total_votes": tf.FixedLenFeature([], tf.int64)
+    }
+
+
 def matrix_id_feature_spec(size, channels):
     return {
         "matrix": tf.FixedLenFeature([], tf.string),
@@ -97,13 +127,8 @@ def show_examples(examples, size, channels):
 
 def show_example(example, size, channels, ax, show_label=False):  # modifies ax inplace
     # saved as floats but truly int, show as int
-    im = example['matrix'].reshape(size, size, channels)
-    if im.max() < 1.:
-        ax.imshow(im)
-    else:
-        ax.imshow(im.astype(np.uint8))
+    im = example['matrix'].astype(np.uint8).reshape(size, size, channels)
     ax.axis('off')
-
     if show_label:
         label = example['label']
         if isinstance(label, int):

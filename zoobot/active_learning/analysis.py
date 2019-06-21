@@ -85,7 +85,7 @@ def is_eval_log_entry(line):
     return 'Saving dict for global step' in line
 
 
-def smooth_loss(metrics_list):
+def smooth_loss(metrics_list, frac=0.25):
     """Smooth out the loss of a model to remove stochastic noise and find typical performance.
     
     Args:
@@ -94,7 +94,6 @@ def smooth_loss(metrics_list):
     Returns:
         (list): as metrics_list, but where each df has 'smooth_loss' column added with smoothed loss
     """
-
     smoothed_list = []
     for df in metrics_list:
         lowess = sm.nonparametric.lowess
@@ -102,7 +101,7 @@ def smooth_loss(metrics_list):
             df['loss'],
             df['step'],
             is_sorted=True, 
-            frac=0.25)  # controls how much smoothing
+            frac=frac)  # controls how much smoothing
         df['smoothed_loss'] = smoothed_metrics[:, 1]
         smoothed_list.append(df)
     return smoothed_list
@@ -244,9 +243,9 @@ def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_l
     for iteration_n, tfrecord_loc in enumerate(tfrecord_locs):
         subjects = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc], 
-            read_tfrecord.matrix_label_feature_spec(size, channels),
+            read_tfrecord.custom_feature_spec(['matrix', 'label']),
             n_examples=n_subjects)
-
+        
         for subject_n, subject in enumerate(subjects):
             read_tfrecord.show_example(subject, size, channels, axes[iteration_n][subject_n])
 
@@ -255,14 +254,19 @@ def show_subjects_by_iteration(tfrecord_locs, n_subjects, size, channels, save_l
 
 
 def verify_tfrecord_matches_catalog(tfrecord_loc, catalog):
-    feature_spec = read_tfrecord.id_label_feature_spec()
+    feature_spec = read_tfrecord.id_label_counts_feature_spec()
     subjects = read_tfrecord.load_examples_from_tfrecord(tfrecord_loc, feature_spec)
+    id_strs = []
     for subject in subjects:
         id_str = subject['id_str'].decode('utf-8')
         label = subject['label']
-        matching_catalog_labels = catalog[catalog['subject_id'].astype(str) == id_str]['smooth-or-featured_smooth_fraction'].values
+        matching_catalog_labels = catalog[catalog['id_str'].astype(str) == id_str]['label'].values
         assert len(matching_catalog_labels) == 1
         assert np.allclose(matching_catalog_labels, np.ones_like(matching_catalog_labels) * label)
+        id_strs.append(id_str)
+    # check shard is unique, while we're here
+    assert len(id_strs) == len(set(id_strs))
+    return id_strs
 
 
 if __name__ == '__main__':
