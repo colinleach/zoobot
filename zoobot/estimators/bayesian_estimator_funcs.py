@@ -2,6 +2,7 @@ import logging
 import sys
 
 import tensorflow as tf
+tf.contrib.layers.l2_regularizer
 from tensorflow.python.saved_model import signature_constants
 
 
@@ -343,8 +344,7 @@ def binomial_loss(labels, predictions):
     # TODO will need to refactor and generalise, but should change tfrecord instead
     one = tf.constant(1., dtype=tf.float32)
     # TODO may be able to use normal python types, not sure about speed
-    ep = 1e-8
-    epsilon = tf.constant(ep, dtype=tf.float32)
+    epsilon = tf.constant(1e-8, dtype=tf.float32)
 
     # multiplication in tf requires floats
     yes_votes = tf.cast(labels[:, 0], tf.float32)

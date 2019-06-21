@@ -53,8 +53,8 @@ def upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc):
 
 if __name__ == '__main__':
 
-    project_id = '8751'
-    workflow_id = '10582'
+    project_id = '8751'  # DUMMY PROJECT
+    workflow_id = '10582' # REAL enhanced workflow
     login_loc = 'zooniverse_login.json'
     catalog_loc = 'data/decals/decals_master_catalog.csv'
 

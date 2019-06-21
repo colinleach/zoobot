@@ -143,9 +143,9 @@ def get_learning_rate(iteration_n):
 
 def get_epochs(iteration_n):
     if iteration_n == 0:
-        return 1000  # let's see how we do with 1 iteration only
+        return 400  # about this long for initial convergence
     else:
-        return 50
+        return 50  # shorter update
 
 
 def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=False):
@@ -185,7 +185,7 @@ if __name__ == '__main__':
                     help='Only do a minimal iteration to verify that everything works')
     args = parser.parse_args()
 
-    log_loc = 'create_instructions_{}.log'.format(time.time())
+    log_loc = 'run_iteration_{}.log'.format(time.time())
 
     logging.basicConfig(
         filename=log_loc,

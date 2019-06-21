@@ -10,12 +10,12 @@ import pandas as pd
 def get_experiment_catalogs(catalog, question, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
-    labelled, unlabelled = split_labelled_and_unlabelled(catalog, question)
+    labelled, unlabelled = split_retired_and_not(catalog, question)
     labelled = define_labels(labelled, question)  # unlabelled and catalog have no 'label' column
     return catalog, labelled, unlabelled
 
 
-def split_labelled_and_unlabelled(catalog, question):
+def split_retired_and_not(catalog, question):
     retired = catalog.apply(subject_is_retired, axis=1)
     labelled = catalog[retired]
     unlabelled= catalog[~retired]

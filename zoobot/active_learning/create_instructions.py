@@ -274,8 +274,8 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
             project_id='5733',
-            workflow_id='6122',
-            last_id='160414882',
+            workflow_ids=['6122', '10582'],
+            last_id='160414882',  # TODO remove
             question='smooth'  # TODO sloppy!
         )
     else:  # use mock Panoptes oracle
@@ -290,7 +290,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Execute active learning')
+    parser = argparse.ArgumentParser(description='Create instructions')
     parser.add_argument('--shard-config', dest='shard_config_loc', type=str,
                     help='Details of shards to use')
     parser.add_argument('--catalog-dir', dest='catalog_dir', type=str,
@@ -314,9 +314,11 @@ if __name__ == '__main__':
         filename=log_loc,
         filemode='w',
         format='%(asctime)s %(message)s',
-        level=logging.DEBUG
+        level=logging.INFO
     )
     logging.getLogger().addHandler(logging.StreamHandler())
+
+    logging.warning('Baseline: {}'.format(args.baseline))
 
     main(args.shard_config_loc, args.catalog_dir, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
 

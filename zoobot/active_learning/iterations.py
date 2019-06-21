@@ -70,13 +70,14 @@ class Iteration():
         os.mkdir(self.iteration_dir)
         os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
+        # TODO have a test that verifies new folder structure?
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
         assert os.path.isfile(initial_db_loc)
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
+        assert not active_learning.db_fully_labelled(self.db)
 
-        # TODO have a test that verifies new folder structure
         self.initial_estimator_ckpt = initial_estimator_ckpt
         
         src = self.initial_estimator_ckpt
@@ -140,20 +141,30 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels, total_votes = self.oracle.get_labels(self.labels_dir)  # labels_dir used as working directory for reduction pipeline, useful to record for later inspection
+        all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
+         # can't allow overwriting of previous labels, as may have been written to tfrecord
+        subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+            self.db,
+            all_subject_ids, 
+            all_labels,
+            all_total_votes
+        )
         if len(subject_ids) > 0:
-            active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
-            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids, )
+            # record in db
+            active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
+            # write to disk
+            top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,
-                db=None,
+                db=None,  # don't record again in db as simply a fixed train record
                 img_size=self.initial_size,
                 columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=self.acquired_tfrecords_dir,
                 shard_size=4096  # hardcoded, awkward TODO
             )
-            # self.acquired_tfrecord = os.path.join(self.acquired_tfrecords_dir, 'acquired_shard.tfrecord')
-            # active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
+        else: 
+            logging.warning('No new subjects acquired - does this make sense?')
+        assert not active_learning.db_fully_labelled(self.db)
 
         """
         Callable should expect 

@@ -92,6 +92,7 @@ def file_loc_of_image(request):
 
 @pytest.fixture()
 def filled_shard_db(empty_shard_db, file_loc_of_image):
+    # some_hash, some_other_hash and yet_another_hash are unlabelled but exist
     db = empty_shard_db
     cursor = db.cursor()
 
@@ -102,9 +103,7 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
         ''',
         {
             'id_str': 'some_hash',
-            'file_loc': file_loc_of_image,
-            'label': 1,  # already labelled!,
-            'total_votes': 1
+            'file_loc': file_loc_of_image
         }
     )
     db.commit()
@@ -199,27 +198,8 @@ def filled_shard_db(empty_shard_db, file_loc_of_image):
     return db
 
 
-@pytest.fixture()
-def filled_shard_db_with_labels(filled_shard_db):
-    db = filled_shard_db
+def make_db(db, rows):
     cursor = db.cursor()
-    rows = [
-        {
-            'id_str': 'some_hash',
-            'label': 1,
-            'total_votes': 1
-         },
-         {
-            'id_str': 'some_other_hash',
-            'label': 1,
-            'total_votes': 1
-        },
-        {
-            'id_str': 'yet_another_hash',
-            'label': 0,
-            'total_votes': 1
-        }
-    ]
     for row in rows:
         cursor.execute(
             '''
@@ -229,15 +209,74 @@ def filled_shard_db_with_labels(filled_shard_db):
             (row['label'], row['total_votes'], row['id_str'])
         )
         db.commit()
+    return db
+
+
+@pytest.fixture()
+def filled_shard_db_with_partial_labels(filled_shard_db):
+    # some_hash is labelled, some_other_hash and yet_another_hash are unlabelled but exist
+    rows = [
+        {
+            'id_str': 'some_hash',
+            'label': 1,
+            'total_votes': 2
+         },
+         {
+            'id_str': 'some_other_hash',
+            'label': None,
+            'total_votes': None
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'label': None,
+            'total_votes': None
+        }
+    ]
+    db = make_db(filled_shard_db, rows)
+    # trust but verify
+    cursor = db.cursor()
     cursor.execute(
         '''
         SELECT id_str, label, total_votes FROM catalog
         '''
     )
-    # trust but verify
     catalog = cursor.fetchall()
-    assert catalog == [('some_hash', 1, 1), ('some_other_hash', 1, 1), ('yet_another_hash', 0, 1)]
+    assert catalog == [('some_hash', 1, 2), ('some_other_hash', None, None), ('yet_another_hash', None, None)]
     return db
+
+
+@pytest.fixture()
+def filled_shard_db_with_labels(filled_shard_db):
+    # all subjects labelled
+    rows = [
+        {
+            'id_str': 'some_hash',
+            'label': 1,
+            'total_votes': 2
+         },
+         {
+            'id_str': 'some_other_hash',
+            'label': 1,
+            'total_votes': 1
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'label': 1,
+            'total_votes': 1
+        }
+    ]
+    db = make_db(filled_shard_db, rows)
+    # trust but verify
+    cursor = db.cursor()
+    cursor.execute(
+        '''
+        SELECT id_str, label, total_votes FROM catalog
+        '''
+    )
+    catalog = cursor.fetchall()
+    assert catalog == [('some_hash', 1, 2), ('some_other_hash', 1, 1), ('yet_another_hash', 1, 1)]
+    return db
+
 
 
 def test_write_catalog_to_tfrecord_shards(unlabelled_catalog, empty_shard_db, size, channels, tfrecord_dir):
@@ -361,12 +400,12 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, fille
     )
 
     MAX_ID_STR = 64
-    def mock_subject_is_unlabelled(id_str, db):
-        return int(id_str) > MAX_ID_STR
+    def mock_subject_is_labelled(id_str, db):
+        return int(id_str) <= MAX_ID_STR
     monkeypatch.setattr(
         active_learning,
-        'subject_is_unlabelled',
-        mock_subject_is_unlabelled
+        'subject_is_labelled',
+        mock_subject_is_labelled
     )
 
     n_samples = 10
@@ -383,19 +422,19 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, fille
     assert [int(subject['id_str']) > MAX_ID_STR for subject in subjects]  # no labelled subjects 
 
 
-def test_subject_is_unlabelled(filled_shard_db):
+def test_subject_is_labelled(filled_shard_db_with_partial_labels):
     id_strs = ['some_hash', 'some_other_hash', 'yet_another_hash']
-    labelled_ids = [active_learning.subject_is_unlabelled(id_str, filled_shard_db) for id_str in id_strs]
-    labelled_ids == [True, False, False]
+    labelled_ids = [active_learning.subject_is_labelled(id_str, filled_shard_db_with_partial_labels) for id_str in id_strs]
+    assert labelled_ids == [True, False, False]
 
+
+def test_subject_is_labelled_missing_subject(filled_shard_db_with_partial_labels):
     with pytest.raises(ValueError):
-        active_learning.subject_is_unlabelled('missing_subject', filled_shard_db)
+        active_learning.subject_is_labelled('missing_subject', filled_shard_db_with_partial_labels)
 
 
-def test_add_labelled_subjects_to_tfrecord(monkeypatch, filled_shard_db_with_labels, tfrecord_dir, size, channels):
-    # e.g. root image directory is tests, with images in subdirectory test_examples
-    monkeypatch.setattr(active_learning, 'LOCAL_IMAGE_FOLDER', os.path.dirname(TEST_EXAMPLE_DIR))
-    tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')
+def test_add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, tfrecord_dir, size, channels):
+    tfrecord_loc = os.path.join(tfrecord_dir, 'active_train.tfrecord')  # place images here
     subject_ids = ['some_hash', 'yet_another_hash']
     active_learning.add_labelled_subjects_to_tfrecord(filled_shard_db_with_labels, subject_ids, tfrecord_loc, size)
 
@@ -438,9 +477,68 @@ def test_add_labels_to_db(filled_shard_db):
         assert results[0][0] == subject['label']
 
 
+# def test_get_all_subjects(filled_shard_db_with_partial_labels):
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels)
+#     assert subjects == ['some_hash', 'some_other_hash', 'yet_another_hash']
+
+# def test_get_all_subjects_labelled(filled_shard_db_with_partial_labels):
+#     cursor = filled_shard_db_with_partial_labels.cursor()
+#     cursor.execute(
+#             '''
+#             SELECT id_str FROM catalog
+#             '''
+#         )
+#     result = cursor.fetchall()
+#     assert False
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=True)
+#     assert subjects == ['some_hash']
+
+# def test_get_all_subjects_unlabelled(filled_shard_db_with_partial_labels):
+#     subjects = active_learning.get_all_subjects(filled_shard_db_with_partial_labels, labelled=False)
+#     assert subjects == ['some_other_hash', 'yet_another_hash']
+
+def test_add_labels_to_db_already_labelled_should_fail(filled_shard_db_with_partial_labels):
+    subjects = [
+        {
+            'id_str': 'some_hash',
+            'label': 0,
+            'total_votes': 0
+        }
+    ]
+    subject_ids = [x['id_str'] for x in subjects]
+    labels = [x['label'] for x in subjects]
+    total_votes = [x['total_votes'] for x in subjects]
+    with pytest.raises(ValueError):
+        active_learning.add_labels_to_db(
+            subject_ids, labels, total_votes, filled_shard_db_with_partial_labels)
+
+
 def test_get_all_shard_locs(filled_shard_db):
     assert active_learning.get_all_shard_locs(filled_shard_db) == ['tfrecord_a', 'tfrecord_b']
 
 def test_get_latest_checkpoint_dir(estimators_dir):
     latest_ckpt = active_learning.get_latest_checkpoint_dir(estimators_dir)
     assert os.path.split(latest_ckpt)[-1] == '157003'
+
+def test_filter_for_new_only(filled_shard_db_with_partial_labels):
+    all_subject_ids = ['some_hash', 'some_other_hash']  
+    all_labels = [1, 4]
+    total_votes = [2, 4]
+    subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+        filled_shard_db_with_partial_labels, # some_hash already has a label in this db
+        all_subject_ids,
+        all_labels,
+        total_votes
+    )
+    assert subject_ids == ['some_other_hash']
+    assert labels == [4]
+    assert total_votes == [4]
+
+def test_db_fully_labelled_empty(filled_shard_db):
+    assert not active_learning.db_fully_labelled(filled_shard_db)
+
+def test_db_fully_labelled_partial(filled_shard_db_with_partial_labels):
+    assert not active_learning.db_fully_labelled(filled_shard_db_with_partial_labels)
+
+def test_db_fully_labelled_full(filled_shard_db_with_labels):
+    assert active_learning.db_fully_labelled(filled_shard_db_with_labels)

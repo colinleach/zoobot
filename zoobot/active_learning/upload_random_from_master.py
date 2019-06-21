@@ -18,18 +18,31 @@ if __name__ == '__main__':
     print('{} of {} unlabelled'.format(len(unlabelled), len(df)))
 
     unlabelled['file_loc'] = unlabelled['local_png_loc']
+    print(unlabelled['file_loc'][:5])
 
-    selected = slice(0, 5000)
+    # touch table will work backwards through the list
+    # unlabelled = unlabelled.sort_values('file_loc', ascending=False)
+    # selected = slice(20000, 25000)
+    # name = '2019-06-14_touch_table_5k'
+    # retirement = 40
+
+    # galaxy zoo will work forwards
+    unlabelled = unlabelled.sort_values('file_loc')
+    selected = slice(5000, 15000)
+    name = 'random'
+    retirement = 3
+
     with tempfile.TemporaryDirectory() as tempdir:
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
+
         unlabelled[selected].to_csv(unlabelled_loc)
         panoptes = mock_panoptes.Panoptes(
             catalog_loc=unlabelled_loc,
             login_loc=login_loc,
             project_id=project_id,
             # don't worry about these, not getting labels
-            workflow_id=None,
+            workflow_ids=[],
             last_id=None,
             question=None
         )
-    panoptes.request_labels(unlabelled['id_str'].values, name='random', retirement=3)
+    panoptes.request_labels(unlabelled['id_str'].values, name=name, retirement=retirement)
