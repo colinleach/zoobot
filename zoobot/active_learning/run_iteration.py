@@ -12,7 +12,7 @@ import git
 import numpy as np
 
 from zoobot.estimators import run_estimator
-from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions, oracles
+from zoobot.active_learning import database, iterations, default_estimator_params, acquisition_utils, create_instructions, oracles
 
 InitialState = namedtuple(
     'InitialState',
@@ -129,7 +129,7 @@ def save_final_state(final_state, save_dir):
 
 def get_prediction_shards(iteration_n, instructions):
     db = sqlite3.connect(instructions.db_loc)
-    all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
+    all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in database.get_all_shard_locs(db)]
     shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
     for n in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.
         prediction_shards = [next(shards_iterable) for n in range(instructions.shards_per_iter)]

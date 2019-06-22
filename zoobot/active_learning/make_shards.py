@@ -20,7 +20,7 @@ from shared_astro_utils import object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.science_logic import prepare_catalogs
-from zoobot.active_learning import active_learning
+from zoobot.active_learning import db_access, database
 
 
 class ShardConfig():
@@ -117,7 +117,7 @@ class ShardConfig():
         # training and eval galaxies are labelled and should never be read by db
         # just write them directly as shards, don't enter into db
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
-            active_learning.write_catalog_to_tfrecord_shards(
+            database.write_catalog_to_tfrecord_shards(
                 df,
                 db=None,
                 img_size=self.size,
@@ -190,9 +190,9 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     if os.path.exists(db_loc):
         os.remove(db_loc)
     # set up db and shards using unknown catalog data
-    db = active_learning.create_db(catalog, db_loc)
+    db = db_access.create_db(catalog, db_loc)
     columns_to_save = ['id_str']
-    active_learning.write_catalog_to_tfrecord_shards(
+    database.write_catalog_to_tfrecord_shards(
         catalog,
         db,
         size,
