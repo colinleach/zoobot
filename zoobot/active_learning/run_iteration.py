@@ -106,20 +106,24 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             epochs=get_epochs(this_iteration_n)  # duplication
         )
     else:
-        with open(os.path.join(previous_iteration_dir, 'final_state.json'), 'r') as f:  # coupled to saving of final state
-            previous_final_state = FinalState(**json.load(f))
-            this_iteration_n = previous_final_state.iteration_n + 1
-            initial_state = InitialState(
-                iteration_dir=this_iteration_dir,  # duplication
-                iteration_n=this_iteration_n,  # duplication
-                initial_train_tfrecords=previous_final_state.train_records,
-                initial_estimator_ckpt=previous_final_state.estimators_dir,
-                initial_db_loc=previous_final_state.db_loc,
-                prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
-                learning_rate=get_learning_rate(this_iteration_n),  # duplication
-                epochs=get_epochs(this_iteration_n)  # duplication
-            )
+        previous_final_state = load_final_state(previous_iteration_dir)
+        this_iteration_n = previous_final_state.iteration_n + 1
+        initial_state = InitialState(
+            iteration_dir=this_iteration_dir,  # duplication
+            iteration_n=this_iteration_n,  # duplication
+            initial_train_tfrecords=previous_final_state.train_records,
+            initial_estimator_ckpt=previous_final_state.estimators_dir,
+            initial_db_loc=previous_final_state.db_loc,
+            prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
+            learning_rate=get_learning_rate(this_iteration_n),  # duplication
+            epochs=get_epochs(this_iteration_n)  # duplication
+        )
     return initial_state
+
+
+def load_final_state(iteration_dir):
+    with open(os.path.join(iteration_dir, 'final_state.json'), 'r') as f:
+        return FinalState(**json.load(f))
 
 
 def save_final_state(final_state, save_dir):

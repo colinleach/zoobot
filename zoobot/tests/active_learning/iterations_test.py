@@ -9,7 +9,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from zoobot.active_learning import iterations
+from zoobot.active_learning import iterations, oracles
 from zoobot.tests.active_learning import conftest
 
 
@@ -22,57 +22,32 @@ def initial_estimator_ckpt(tmpdir, request):
 
 
 @pytest.fixture()
-def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
-        run_dir = active_config.run_dir
+def new_iteration(tmpdir, initial_estimator_ckpt):
+        iteration_dir = 'some_iteration_dir'
         
         prediction_shards = ['first_shard.tfrecord', 'second_shard.tfrecord']
 
         iteration = iterations.Iteration(
-            run_dir,
+            iteration_dir,
             'some_iteration_name',
             prediction_shards,
-            initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
-            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
+            initial_db_loc='stuff/db_loc.db',
+            initial_train_tfrecords=['train_a.tfrecord', 'train_b.tfrecord'],
+            eval_tfrecords='shards.eval_tfrecord_locs(),
             train_callable=conftest.mock_train_callable,
             acquisition_func=conftest.mock_acquisition_func,
-            n_samples=10,  # may need more samples?
+            n_samples=10,
             n_subjects_to_acquire=50,
             initial_size=64,
             initial_estimator_ckpt=initial_estimator_ckpt,
             learning_rate=0.001,
-            epochs=2
-        )
-
-        return iteration
-
-
-# TODO could maybe refactor into the fixture above
-def test_init(tmpdir, initial_estimator_ckpt, active_config):
-        run_dir = active_config.run_dir
-        prediction_shards = ['some', 'shards']
-        name = 'iteration_name'
-
-        iteration = iterations.Iteration(
-            run_dir,
-            name,
-            prediction_shards,
-            initial_db_loc=active_config.db_loc,
-            initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
-            eval_tfrecords=active_config.shards.eval_tfrecord_locs(),
-            train_callable=np.random.rand,
-            acquisition_func=np.random.rand,
-            n_samples=10,  # may need more samples?
-            n_subjects_to_acquire=50,
-            initial_size=64,
-            initial_estimator_ckpt=initial_estimator_ckpt,
-            learning_rate=0.001,
-            epochs=2
+            epochs=2,
+            oracle=oracles.Oracle()  # mocked below
         )
 
         assert not iteration.get_acquired_tfrecords()
  
-        expected_iteration_dir = os.path.join(run_dir, name)
+        expected_iteration_dir = os.path.join(iteration_dir, name)
         assert os.path.isdir(expected_iteration_dir)
 
         expected_estimators_dir = os.path.join(expected_iteration_dir, 'estimators')
@@ -89,6 +64,8 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
         # if initial_estimator_ckpt is not None:
         #     expected_initial_estimator_copy = os.path.join(expected_estimators_dir, 'some_datetime_ckpt')
         #     assert os.path.isdir(expected_initial_estimator_copy)
+
+        return iteration
 
 
 def test_get_latest_model(monkeypatch, new_iteration):

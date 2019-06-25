@@ -20,7 +20,7 @@ from shared_astro_utils import object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.science_logic import prepare_catalogs
-from zoobot.active_learning import db_access, database
+from zoobot.active_learning import database
 
 
 class ShardConfig():
@@ -190,7 +190,7 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     if os.path.exists(db_loc):
         os.remove(db_loc)
     # set up db and shards using unknown catalog data
-    db = db_access.create_db(catalog, db_loc)
+    db = database.create_db(catalog, db_loc)
     columns_to_save = ['id_str']
     database.write_catalog_to_tfrecord_shards(
         catalog,

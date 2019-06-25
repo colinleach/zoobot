@@ -19,8 +19,8 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 
-from zoobot.tfrecord import catalog_to_tfrecord, create_tfrecord, read_tfrecord
-from zoobot.estimators import input_utils, estimator_params, run_estimator, make_predictions
+from zoobot.tfrecord import catalog_to_tfrecord, read_tfrecord
+from zoobot.estimators import input_utils
 from zoobot.active_learning import db_access
 
 
@@ -237,7 +237,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_
         all_unlabelled_subjects.extend(unlabelled_subjects)
         all_samples.append(samples)
 
-        assert len(unlabelled_subjects) != 0
+        assert unlabelled_subjects
 
         min_tfrecord += records_per_batch
 
@@ -316,3 +316,4 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
 
 # TODO?
 get_all_shard_locs = db_access.get_all_shard_locs
+create_db = db_access.create_db

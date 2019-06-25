@@ -7,7 +7,7 @@ import sqlite3
 import numpy as np
 
 from zoobot.estimators import make_predictions
-from zoobot.active_learning import database, db_access, metrics, acquisition_utils, misc
+from zoobot.active_learning import database, db_access, metrics, misc
 
 
 class Iteration():
@@ -167,14 +167,12 @@ class Iteration():
             logging.warning('No new subjects acquired - does this make sense?')
         assert not database.db_fully_labelled(self.db)
 
-        """
-        Callable should expect 
+        """Callable should expect 
         - log dir to train models in
         - list of tfrecord files to train on
         - list of tfrecord files to eval on
         - learning rate to use 
-        - epochs to train for
-        """
+        - epochs to train for"""
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
         self.train_callable(

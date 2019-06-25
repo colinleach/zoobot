@@ -28,9 +28,6 @@ def train_callable_factory(request):
     )
 
 
-
-
-
 @pytest.fixture()
 def acquisition_callable_factory(request, baseline):
     return create_instructions.AcquisitionCallableFactory(

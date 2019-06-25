@@ -69,7 +69,8 @@ def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir, 
 def labelled_catalog(catalog_random_images):
     catalog = catalog_random_images.copy()
     catalog['id_str'] = catalog_random_images['id_str'] + '_from_labelled'  # must be unique
-    catalog['label'] = np.random.rand(len(catalog))
+    catalog['label_a'] = np.random.rand(len(catalog))
+    catalog['label_b'] = np.random.rand(len(catalog))
     catalog['total_votes'] = np.random.randint(low=1, high=41, size=len(catalog))
     return catalog
 
