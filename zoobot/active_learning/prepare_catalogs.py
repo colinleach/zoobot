@@ -8,7 +8,7 @@ from astropy.table import Table
 
 
 def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
-    """Convert zooniverse/decals joint catalog for active learning and join to previous classifications
+    """Convert zooniverse/decals joint catalog (from decals repo) for active learning and join to previous classifications
     
     Args:
         catalog_loc ([type]): [description]
