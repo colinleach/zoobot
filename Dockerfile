@@ -15,17 +15,17 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 
 WORKDIR /home
 ADD credentials  /home/credentials
-# RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
-# RUN git clone git@github.com:mwalmsley/zoobot
-# RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
-# RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
-# RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
+RUN git clone git@github.com:mwalmsley/zoobot
+RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
+RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
+RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
 
-# RUN pip install -r zoobot/requirements.txt
+RUN pip install -r zoobot/requirements.txt
 # # will have tf2 from base image
 # # RUN pip install tensorflow
-# RUN pip install -e zoobot
-# RUN pip install -e shared-astro-utilities 
+RUN pip install -e zoobot
+RUN pip install -e shared-astro-utilities 
 
-# WORKDIR /home/zoobot
+WORKDIR /home/zoobot
