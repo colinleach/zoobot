@@ -21,6 +21,7 @@ WORKDIR /home
 
 # RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 
+RUN mkdir /root/.ssh
 RUN git config --global url.”https://$GIT_TOKEN:@github.com/".insteadOf “https://github.com/"
 
 # Skip Host verification for git
