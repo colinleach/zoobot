@@ -1,4 +1,5 @@
 FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
+# FROM tensorflow/tensorflow 
 
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 RUN gsutil cp s3://galaxy-zoo/credentials/github ~/.ssh/github
@@ -13,6 +14,8 @@ RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
 RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
 
 RUN pip install -r zoobot/requirements.txt
+# will have tf2 from base image
+# RUN pip install tensorflow
 RUN pip install -e zoobot
 RUN pip install -e shared-astro-utilities 
 

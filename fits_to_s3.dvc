@@ -1,4 +1,0 @@
-cmd: ' aws s3 sync data/fits_native s3://galaxy-zoo/decals/fits_native'
-deps:
-- path: data/fits_native
-md5: null
