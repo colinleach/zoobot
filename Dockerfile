@@ -13,14 +13,19 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
 
+# env variable but only during build
+ARG GIT_TOKEN
+
 WORKDIR /home
-ADD credentials  /home/credentials
+# ADD credentials  /home/credentials
 
 # RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 
+RUN git config --global url.”https://$GIT_TOKEN:@github.com/".insteadOf “https://github.com/"
+
 # Skip Host verification for git
-RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
-RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+# RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
+# RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
 RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
