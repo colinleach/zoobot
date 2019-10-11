@@ -13,12 +13,12 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
 
-RUN ls
-RUN ls /home
-RUN ls /home/credentials
-RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+RUN mkdir /home
 
-# WORKDIR /home
+WORKDIR /home
+ADD credentials  /home/credentials
+# RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+
 # RUN git clone git@github.com:mwalmsley/zoobot
 # RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
 # RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
