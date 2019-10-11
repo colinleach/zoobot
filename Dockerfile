@@ -8,13 +8,15 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # RUN ls ~/.ssh
 # COPY credentials/github ~/.ssh/github
 # COPY credentials/github.pub ~/.ssh/github.pub
-RUN pwd
-RUN ls /home
+# RUN pwd
+# RUN ls /home
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
 
-
-# RUN eval "$(ssh-agent -s)"  && ssh-add ~/credentials/github
+RUN ls
+RUN ls /home
+RUN ls /home/credentials
+RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
 # WORKDIR /home
 # RUN git clone git@github.com:mwalmsley/zoobot
