@@ -18,11 +18,12 @@ ARG GIT_TOKEN
 
 WORKDIR /home
 ADD credentials  /root/.ssh
+RUN chmod 600 /root/.ssh/github
 
 # RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 # RUN git config --global url."https://$GIT_TOKEN:@github.com/".insteadOf "https://github.com/"
 
-# Skip Host verification for git
+RUN echo "[url \"git@github.com:\"]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 RUN echo "StrictHostKeyChecking no " > /root/.ssh/config
 RUN eval "$(ssh-agent -s)"  && ssh-add /root/.ssh/github
 
