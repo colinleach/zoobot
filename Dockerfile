@@ -15,6 +15,11 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 
 WORKDIR /home
 ADD credentials  /home/credentials
+
+# RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
+
+# Skip Host verification for git
+RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
 RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
