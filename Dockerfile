@@ -13,8 +13,6 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
 
-RUN mkdir /home
-
 WORKDIR /home
 ADD credentials  /home/credentials
 # RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
