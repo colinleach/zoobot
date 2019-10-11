@@ -8,21 +8,24 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # RUN ls ~/.ssh
 # COPY credentials/github ~/.ssh/github
 # COPY credentials/github.pub ~/.ssh/github.pub
-
+RUN pwd
+RUN ls
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
-RUN eval "$(ssh-agent -s)"  && ssh-add ~/credentials/github
 
-WORKDIR /home
-RUN git clone git@github.com:mwalmsley/zoobot
-RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
-RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
-RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
 
-RUN pip install -r zoobot/requirements.txt
-# will have tf2 from base image
-# RUN pip install tensorflow
-RUN pip install -e zoobot
-RUN pip install -e shared-astro-utilities 
+# RUN eval "$(ssh-agent -s)"  && ssh-add ~/credentials/github
 
-WORKDIR /home/zoobot
+# WORKDIR /home
+# RUN git clone git@github.com:mwalmsley/zoobot
+# RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
+# RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
+# RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
+
+# RUN pip install -r zoobot/requirements.txt
+# # will have tf2 from base image
+# # RUN pip install tensorflow
+# RUN pip install -e zoobot
+# RUN pip install -e shared-astro-utilities 
+
+# WORKDIR /home/zoobot
