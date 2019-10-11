@@ -25,7 +25,7 @@ RUN chmod 600 /root/.ssh/github
 
 RUN echo "[url \"git@github.com:\"]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 RUN echo "StrictHostKeyChecking no " > /root/.ssh/config
-RUN eval "$(ssh-agent -s)"  && ssh-add /root/.ssh/github
+# RUN eval "$(ssh-agent -s)"  && ssh-add /root/.ssh/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
 RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
