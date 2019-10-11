@@ -17,16 +17,14 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 ARG GIT_TOKEN
 
 WORKDIR /home
-# ADD credentials  /home/credentials
+ADD credentials  /root/.ssh
 
 # RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
-
-RUN mkdir /root/.ssh
-RUN git config --global url."https://$GIT_TOKEN:@github.com/".insteadOf "https://github.com/"
+# RUN git config --global url."https://$GIT_TOKEN:@github.com/".insteadOf "https://github.com/"
 
 # Skip Host verification for git
 RUN echo "StrictHostKeyChecking no " > /root/.ssh/config
-# RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
 RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
