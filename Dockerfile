@@ -4,10 +4,14 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 # RUN gsutil cp s3://galaxy-zoo/credentials/github ~/.ssh/github
 # RUN gsutil cp s3://galaxy-zoo/credentials/github.pub ~/.ssh/github.pub
-COPY credentials/github ~/.ssh/github
-COPY credentials/github.pub ~/.ssh/github.pub
-RUN chmod 400 ~/.ssh/github
-RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
+# RUN ls credentials
+# RUN ls ~/.ssh
+# COPY credentials/github ~/.ssh/github
+# COPY credentials/github.pub ~/.ssh/github.pub
+
+# RUN chmod 400 ~/.ssh/github
+# RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
+RUN eval "$(ssh-agent -s)"  && ssh-add ~/credentials/github
 
 WORKDIR /home
 RUN git clone git@github.com:mwalmsley/zoobot
