@@ -9,7 +9,7 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # COPY credentials/github ~/.ssh/github
 # COPY credentials/github.pub ~/.ssh/github.pub
 RUN pwd
-RUN ls
+RUN ls /home
 # RUN chmod 400 ~/.ssh/github
 # RUN eval "$(ssh-agent -s)"  && ssh-add ~/.ssh/github
 
