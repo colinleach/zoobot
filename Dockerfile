@@ -18,7 +18,7 @@ ARG GIT_TOKEN
 
 WORKDIR /home
 ADD credentials  /root/.ssh
-RUN chmod 600 /root/.ssh/github
+RUN chmod 600 /root/.ssh/id_rsa
 
 # RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
 # RUN git config --global url."https://$GIT_TOKEN:@github.com/".insteadOf "https://github.com/"
