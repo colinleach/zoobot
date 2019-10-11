@@ -1,0 +1,6 @@
+md5: 6478ac57ae8640c6b4e38e9c6f86f64d
+outs:
+- cache: true
+  md5: 86c664aa1bd976b5faafa0845521c036
+  metric: false
+  path: png.tar

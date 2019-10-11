@@ -1,0 +1,8 @@
+md5: 46a4dd10ee0b14187655f10bee890e9d
+outs:
+- cache: true
+  md5: 2d7121d5996a4aa7e4d0b2126934c0d5
+  metric: false
+  path: data/gz2/previous_classifications_renamed.csv
+  persist: false
+wdir: ../..

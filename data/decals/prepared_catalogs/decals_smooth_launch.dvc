@@ -1,0 +1,15 @@
+cmd: python zoobot/active_learning/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv
+  --question=smooth --save-dir=data/decals/prepared_catalogs/decals_smooth_launch
+deps:
+- md5: 203ca129441c2f8e52a0739e2bc70056
+  path: data/decals/decals_master_catalog.csv
+- md5: c6de37686f4f9c0751a42e3a0aa32259
+  path: zoobot/active_learning/define_experiment.py
+md5: f3ced0c21dbd4a2373a0f29e9c9426ab
+outs:
+- cache: true
+  md5: 4806c6656feeb3f70f893002b6ea25c1.dir
+  metric: false
+  path: data/decals/prepared_catalogs/decals_smooth_launch
+  persist: false
+wdir: ../../..

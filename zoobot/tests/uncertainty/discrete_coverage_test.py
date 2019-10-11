@@ -16,7 +16,7 @@ from zoobot.tests import TEST_FIGURE_DIR
 
 @pytest.fixture()
 def n_subjects():
-    return 24
+    return 100
 
 @pytest.fixture()
 def n_samples():
@@ -24,7 +24,7 @@ def n_samples():
 
 @pytest.fixture()
 def n_draws():
-    return 20
+    return 40
 
 @pytest.fixture()
 def true_p(n_subjects):
@@ -44,6 +44,48 @@ def bin_prob_of_samples_by_k(n_subjects, n_samples, n_draws, true_p):
             for k in range(n_draws + 1):
                 bin_probs[subject_n, sample_n, k] = scipy.stats.binom(p=true_p[subject_n], n=n_draws).pmf(k)
             assert np.allclose(bin_probs[subject_n, sample_n].sum(), 1.)  # must be one of these k
+    return bin_probs
+
+
+@pytest.fixture()
+def bin_prob_of_samples_by_k_low_p(n_subjects, n_samples, n_draws, true_p):
+    """ of form [subject_n, sample_n, k] """
+    bin_probs = np.zeros((n_subjects, n_samples, n_draws + 1))
+    for subject_n in range(n_subjects):
+        for sample_n in range(n_samples):
+            for k in range(n_draws + 1):
+                bin_probs[subject_n, sample_n, k] = scipy.stats.binom(p=true_p[subject_n] * 0.5, n=n_draws).pmf(k)
+            assert np.allclose(bin_probs[subject_n, sample_n].sum(), 1.)  # must be one of these k
+    return bin_probs
+
+
+@pytest.fixture()  # i.e. wider posteriors than are accurate, by sqrt true probs
+def bin_prob_of_samples_by_k_smoothed(n_subjects, n_samples, n_draws, true_p):
+    """ of form [subject_n, sample_n, k] """
+    bin_probs = np.zeros((n_subjects, n_samples, n_draws + 1))
+    smoothing_length = 5
+    for subject_n in range(n_subjects):
+        for sample_n in range(n_samples):
+            raw_probs = [scipy.stats.binom(p=true_p[subject_n], n=n_draws).pmf(k) for k in range(n_draws + 1)]
+            smoothed_probs = np.sqrt(raw_probs)
+            rescaled_probs = smoothed_probs / smoothed_probs.sum()  # total over sample should be 1
+            bin_probs[subject_n, sample_n] = rescaled_probs
+            assert np.allclose(bin_probs[subject_n, sample_n].sum(), 1.)  # total of each sample should be 1 (same as above)
+    return bin_probs
+
+
+@pytest.fixture()  # i.e. narrower posteriors than are accurate, by squaring true probs
+def bin_prob_of_samples_by_k_peaked(n_subjects, n_samples, n_draws, true_p):
+    """ of form [subject_n, sample_n, k] """
+    bin_probs = np.zeros((n_subjects, n_samples, n_draws + 1))
+    smoothing_length = 5
+    for subject_n in range(n_subjects):
+        for sample_n in range(n_samples):
+            raw_probs = [scipy.stats.binom(p=true_p[subject_n], n=n_draws).pmf(k) for k in range(n_draws + 1)]
+            smoothed_probs = np.square(raw_probs)
+            rescaled_probs = smoothed_probs / smoothed_probs.sum()  # total over sample should be 1
+            bin_probs[subject_n, sample_n] = rescaled_probs
+            assert np.allclose(bin_probs[subject_n, sample_n].sum(), 1.)  # total of each sample should be 1 (same as above)
     return bin_probs
 
 
@@ -133,6 +175,81 @@ def test_evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k):
     discrete_coverage.plot_coverage_df(coverage_df, ax)
     fig.tight_layout()
     fig.savefig(save_loc)
+
+
+def test_evaluate_discrete_coverage_low_p(volunteer_votes, bin_prob_of_samples_by_k_low_p):
+    # if I'm clever, I can get error bars
+    # df of form: [max +/- n states, mean observed frequency, mean probability prediction]
+    coverage_df = discrete_coverage.evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k_low_p)
+    # assert np.allclose(len(coverage_df), np.product(bin_prob_of_samples_by_k) * 10 * 2)  # 10 test errors, observed Y/N
+    save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_evaluate_low_p.png')
+    fig, ax = plt.subplots()
+
+    # discrete_coverage.plot_coverage_df(coverage_df, ax)
+
+    coverage_df = coverage_df.groupby('max_state_error').agg({'prediction': 'sum', 'observed': 'sum'}).reset_index()
+    plt.plot(coverage_df['max_state_error'], coverage_df['prediction'], label='Model Expects')
+    plt.plot(coverage_df['max_state_error'], coverage_df['observed'], 'k--', label='Actual')
+    ax.set_xlabel('Max Allowed Vote Error')
+    ax.set_ylabel('Galaxies Within Max Error')
+    ax.legend()
+    # ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))  # must expect 'x' kw arg
+
+    ax.set_title('Systematically Wrong Classifier (predicts true p * 0.5)')
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
+def test_evaluate_discrete_coverage_smoothed(volunteer_votes, bin_prob_of_samples_by_k_smoothed):
+    # if I'm clever, I can get error bars
+    # df of form: [max +/- n states, mean observed frequency, mean probability prediction]
+    coverage_df = discrete_coverage.evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k_smoothed)
+    # assert np.allclose(len(coverage_df), np.product(bin_prob_of_samples_by_k) * 10 * 2)  # 10 test errors, observed Y/N
+
+
+    save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_evaluate_smoothed.png')
+    fig, ax = plt.subplots()
+
+    # discrete_coverage.plot_coverage_df(coverage_df, ax)
+
+    coverage_df = coverage_df.groupby('max_state_error').agg({'prediction': 'sum', 'observed': 'sum'}).reset_index()
+    plt.plot(coverage_df['max_state_error'], coverage_df['prediction'], label='Model Expects')
+    plt.plot(coverage_df['max_state_error'], coverage_df['observed'], 'k--', label='Actual')
+    ax.set_xlabel('Max Allowed Vote Error')
+    ax.set_ylabel('Galaxies Within Max Error')
+    ax.legend()
+    # ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))  # must expect 'x' kw arg
+
+    ax.set_title('Underconfident Classifier (predicts sqrt(true p))')
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
+
+
+def test_evaluate_discrete_coverage_peaked(volunteer_votes, bin_prob_of_samples_by_k_peaked):
+    # if I'm clever, I can get error bars
+    # df of form: [max +/- n states, mean observed frequency, mean probability prediction]
+    ungrouped_coverage_df = discrete_coverage.evaluate_discrete_coverage(volunteer_votes, bin_prob_of_samples_by_k_peaked)
+    # assert np.allclose(len(coverage_df), np.product(bin_prob_of_samples_by_k) * 10 * 2)  # 10 test errors, observed Y/N
+    save_loc = os.path.join(TEST_FIGURE_DIR, 'discrete_coverage_evaluate_peaked.png')
+    fig, ax = plt.subplots()
+
+    coverage_df = ungrouped_coverage_df.groupby('max_state_error').agg({'prediction': 'sum', 'observed': 'sum'}).reset_index()
+
+    plt.plot(coverage_df['max_state_error'], coverage_df['prediction'], label='Model Expects')
+    plt.plot(coverage_df['max_state_error'], coverage_df['observed'], 'k--', label='Actual')
+
+    ax.set_xlabel('Max Allowed Vote Error')
+    ax.set_ylabel('Galaxies Within Max Error')
+    ax.legend()
+    # ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))  # must expect 'x' kw arg
+
+    ax.set_title('Overconfident Classifier (predicts true p squared)')
+    fig.tight_layout()
+    fig.savefig(save_loc)
+
+
 
 def test_evaluate_discrete_coverage_bad_fractions(bin_prob_of_samples_by_k):  # TODO
     """Should raise an error if mistakenly called with vote fractions instead of labels"""

@@ -24,12 +24,12 @@ def initial_estimator_ckpt(tmpdir, request):
 @pytest.fixture()
 def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
         run_dir = active_config.run_dir
-        iteration_n = 0
+        
         prediction_shards = ['first_shard.tfrecord', 'second_shard.tfrecord']
 
         iteration = iterations.Iteration(
             run_dir,
-            iteration_n,
+            'some_iteration_name',
             prediction_shards,
             initial_db_loc=active_config.db_loc,
             initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
@@ -50,12 +50,12 @@ def new_iteration(tmpdir, initial_estimator_ckpt, active_config):
 # TODO could maybe refactor into the fixture above
 def test_init(tmpdir, initial_estimator_ckpt, active_config):
         run_dir = active_config.run_dir
-        iteration_n = 0
         prediction_shards = ['some', 'shards']
+        name = 'iteration_name'
 
         iteration = iterations.Iteration(
             run_dir,
-            iteration_n,
+            name,
             prediction_shards,
             initial_db_loc=active_config.db_loc,
             initial_train_tfrecords=active_config.shards.train_tfrecord_locs(),
@@ -72,7 +72,7 @@ def test_init(tmpdir, initial_estimator_ckpt, active_config):
 
         assert not iteration.get_acquired_tfrecords()
  
-        expected_iteration_dir = os.path.join(run_dir, 'iteration_{}'.format(iteration_n))
+        expected_iteration_dir = os.path.join(run_dir, name)
         assert os.path.isdir(expected_iteration_dir)
 
         expected_estimators_dir = os.path.join(expected_iteration_dir, 'estimators')

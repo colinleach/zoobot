@@ -1,0 +1,18 @@
+cmd: './production/create_instructions.sh data/decals/prepared_catalogs/decals_smooth_launch
+  data/decals/shards/decals_smooth_launch data/experiments/simulation/decals_smooth_launch_single
+  --test '
+deps:
+- md5: f025ba9fbcccf6d2839de2ceb98e51d7.dir
+  path: data/decals/shards/decals_smooth_launch
+- md5: 4806c6656feeb3f70f893002b6ea25c1.dir
+  path: data/decals/prepared_catalogs/decals_smooth_launch
+- md5: ab4cba882dffdc7b58076fcbf9094585
+  path: production/create_instructions.sh
+md5: 0f6949143c28a661037eb6d3fbc7126b
+outs:
+- cache: true
+  md5: 7cf37ba107c09dca3697be372ff9a4ed.dir
+  metric: false
+  path: data/experiments/simulation/decals_smooth_launch_single/instructions
+  persist: false
+wdir: ../../../..

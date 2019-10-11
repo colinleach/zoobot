@@ -20,14 +20,6 @@ from zoobot.estimators import run_estimator
 from zoobot.estimators import make_predictions
 from zoobot.tfrecord import read_tfrecord
 
-try:
-    LOCAL_IMAGE_FOLDER = '/Volumes/alpha/gz2/png'
-    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
-except AssertionError:
-    LOCAL_IMAGE_FOLDER = 'data/gz2_shards/gz2/png'
-    assert os.path.isdir(LOCAL_IMAGE_FOLDER)
-
-
 
 def create_db(catalog, db_loc):
     """Instantiate sqlite database at db_loc with the following tables:
@@ -57,6 +49,7 @@ def create_db(catalog, db_loc):
     )
     db.commit()
 
+    # no longer used
     cursor.execute(
         '''
         CREATE TABLE shardindex(
@@ -66,6 +59,7 @@ def create_db(catalog, db_loc):
     )
     db.commit()
 
+    # no longer used
     cursor.execute(
         '''
         CREATE TABLE acquisitions(
@@ -219,6 +213,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
         list: unlabelled subjects of form [{id_str: .., matrix: ..}, ..]
         np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
     """
+    logging.info('Predicting on {}'.format(tfrecords_batch_locs))
     batch_images, _, batch_id_str = input_utils.predict_input_func(
                 tfrecords_batch_locs,
                 n_galaxies=max_images,
@@ -235,22 +230,27 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     # tfrecord will have encoded to bytes, need to decode
     logging.debug('Constructing subjects from loaded data')
     subjects = (
-        {'matrix': image, 'id_str': id_st.decode('utf-8')} 
-        for image, id_st in zip(images, id_str_bytes)
-    )
+        {'matrix': image, 'id_str': id_str.decode('utf-8')} 
+        for image, id_str in zip(images, id_str_bytes)
+    )  # generator expression to minimise memory
+    # logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
     del images  # free memory
 
     # exclude subjects with labels in db
-    logging.debug('Filtering for unlabelled subjects')
+    logging.info('Filtering for unlabelled subjects')
+    if db_fully_labelled(db):
+        logging.critical('All subjects are labelled - stop running active learning!')
+        exit(0)
     unlabelled_subjects = [
         subject for subject in subjects
-        if subject_is_unlabelled(subject['id_str'], db)
+        if not subject_is_labelled(subject['id_str'], db)
     ]
-    logging.debug('Loaded {} unlabelled subjects from {} of size {}'.format(
+    logging.info('Loaded {} unlabelled subjects from {} of size {}'.format(
         len(unlabelled_subjects),
         tfrecords_batch_locs,
          size)
         )
+    assert unlabelled_subjects
     del subjects  # free memory
 
     # make predictions on only those subjects
@@ -284,37 +284,21 @@ def save_acquisition_to_db(subject_id, acquisition, db):
     db.commit()
 
 
-def subject_is_unlabelled(id_str, db):
-    """Get the subject ids of up to `n_subjects`:
-        1. Without labels (required for later training)
-        1. With the highest acquisition values, up to the first `n_subjects`
+def subject_is_labelled(id_str: str, db):
+    """Get the subject with subject_id
 
     Args:
-        db (sqlite3.Connection): database with `acquisitions` table to read acquisition
-        n_subjects (int, optional): Defaults to 1000. Max subject ids to return.
-        shard_loc (str, optional): Defaults to None. Get top subjects from only this shard.
+        id_str (str): subject_id to search for
+        db (sqlite3.Connection): database with `catalog` table to read labels
 
     Raises:
         ValueError: all subjects in `db.catalog` have labels
-        IndexError: if no top subjects are found, optionally looking only in shard_loc
 
     Returns:
-        list: ordered list (descending) of subject id strings with highest acquisition values
+        bool: subject with id_str is labelled
     """
+    # find the subject(s) with id_str in db
     cursor = db.cursor()
-    # check that at least 1 subject has no label
-    cursor.execute(
-        '''
-        SELECT id_str FROM catalog
-        WHERE label IS NULL
-        '''
-    )
-    unlabelled_subject = cursor.fetchone()
-    if unlabelled_subject is None:
-        logging.critical('WARNING - shard appears to be completely labelled')
-        return True
-
-    # find subject in db.catalog
     cursor.execute(
         '''
         SELECT id_str, label
@@ -328,10 +312,21 @@ def subject_is_unlabelled(id_str, db):
         raise ValueError('Subject not found: {}'.format(id_str))
     if len(matching_subjects) > 1:
         raise ValueError('Duplicate subject in db: {}'.format(id_str))
-    return matching_subjects[0][1] is None  # not sure why bool( ... ) tests passed, possibly upside down
+    # logging.debug(matching_subjects)
+    # logging.debug(matching_subjects[0][1])
+    return matching_subjects[0][1] is not None
+
+
+def db_fully_labelled(db):
+    # check that at least one subject has no label
+    if not get_all_subjects(db, labelled=True):
+        logging.warning('Shard appears to be completely labelled')
+        return True
+    else:
+        return False  # technically, None is considered False, but this is type-consistent
 
 # bad name, actually gets all table columns
-def get_file_loc_df_from_db(db, subject_ids):
+def get_file_loc_df_from_db(db, subject_ids: list):
     """
     Look up the file_loc and label in db for the subjects with ids in `subject_ids`
     df will include the image_loc stored at `db.catalog.file_loc`
@@ -351,6 +346,7 @@ def get_file_loc_df_from_db(db, subject_ids):
 
     rows = []
     for subject_id in subject_ids:
+        # find subject data in db
         assert isinstance(subject_id, str)
         logging.debug(subject_id)
         cursor.execute(
@@ -368,12 +364,14 @@ def get_file_loc_df_from_db(db, subject_ids):
         if subject[1] is None:
             raise ValueError('Fatal: {} missing label in db!'.format(subject_id))
         assert subject[1] != b'\x00\x00\x00\x00\x00\x00\x00\x00'  # i.e. np.int64 write error
+        # add subject data to df
         rows.append({
             'id_str': str(subject[0]),  # db cursor casts to int-like string to int...
             'label': int(subject[1]),
             'total_votes': int(subject[2]),
-            'file_loc': get_relative_loc(str(subject[3]))
+            'file_loc': str(subject[3])  # db must contain accurate path to image
         })
+        assert os.path.isfile(str(subject[3]))  # check that image path is correct
 
     top_subject_df = pd.DataFrame(data=rows)
     assert len(top_subject_df) == len(subject_ids)
@@ -381,6 +379,7 @@ def get_file_loc_df_from_db(db, subject_ids):
 
 
 def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
+    # must only be called with subject_ids that are all labelled, else will raise error
     assert not os.path.isfile(tfrecord_loc)  # this will overwrite, tfrecord can't append
     df = get_file_loc_df_from_db(db, subject_ids)
     catalog_to_tfrecord.write_image_df_to_tfrecord(
@@ -391,14 +390,6 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size):
         reader=catalog_to_tfrecord.get_reader(df['file_loc']))
 
 
-
-def get_relative_loc(loc):
-    fname = os.path.basename(loc)
-    subdir = os.path.basename(os.path.dirname(loc))
-    return os.path.join(LOCAL_IMAGE_FOLDER, subdir, fname)
-
-
-
 def get_latest_checkpoint_dir(base_dir):
     saved_models = [x for x in os.listdir(base_dir) if x.startswith('15')]  # subfolders with timestamps
     saved_models.sort(reverse=True)  # sort by name i.e. timestamp, early timestamp first
@@ -406,8 +397,14 @@ def get_latest_checkpoint_dir(base_dir):
 
 
 def add_labels_to_db(subject_ids, labels, total_votes, db):
-    cursor = db.cursor()
+    # be careful: don't update any labels that might already have been written to tfrecord!
+    logging.info('Adding new labels for {} subjects to db'.format(len(subject_ids)))
+    logging.debug('Example subject ids: {}'.format(subject_ids[:3]))
+    logging.debug('Example labels: {}'.format(labels[:3]))
+    logging.debug('Example total_votes: {}'.format(total_votes[:3]))
+    assert len(subject_ids) == len(labels) == len(total_votes)
 
+    cursor = db.cursor()
     for subject_n in range(len(subject_ids)):
         label = labels[subject_n]
         total_votes_val = total_votes[subject_n]
@@ -419,6 +416,21 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
         assert isinstance(label, int)
         assert isinstance(label, int)
         assert isinstance(subject_id, str)
+
+        # check not already labelled, else raise a manual error (see below)
+        cursor.execute(
+            '''
+            SELECT id_str, label FROM catalog
+            WHERE id_str = (:subject_id) AND label is NOT NULL
+            ''',
+            (subject_id,)
+        )
+        if cursor.fetchone() is not None:
+            raise ValueError(
+                'Trying to set label {} for already-labelled subject {}'.format(label, subject_id)
+            )
+
+        # set the label (this won't raise an automatic error if already exists!)
         cursor.execute(
             '''
             UPDATE catalog
@@ -451,6 +463,36 @@ def add_labels_to_db(subject_ids, labels, total_votes, db):
             assert retrieved_total_votes == total_votes_val
 
 
+def get_all_subjects(db, labelled=None):
+    cursor = db.cursor()
+    if labelled:
+        cursor.execute(
+            '''
+            SELECT id_str, label FROM catalog
+            WHERE label IS NOT NULL
+            '''
+        )
+    if labelled == False:  # explicitly not None
+        cursor.execute(
+            '''
+            SELECT id_str FROM catalog
+            WHERE label IS NULL
+            '''
+        )
+    else:
+        cursor.execute(
+            '''
+            SELECT id_str FROM catalog
+            '''
+        )
+    result = cursor.fetchall()
+    # assert False
+    if result:
+        return [x[0] for x in result]  # id_strs
+    else:
+        return []
+
+
 def get_all_shard_locs(db):
     cursor = db.cursor()
     cursor.execute(
@@ -461,3 +503,35 @@ def get_all_shard_locs(db):
         '''
     )
     return [row[0] for row in cursor.fetchall()]  # list of shard locs
+
+
+def filter_for_new_only(db, all_subject_ids, all_labels, all_total_votes):
+    # TODO needs test
+    # TODO wrap oracle subject as namedtuple?
+
+    all_subjects = get_all_subjects(db)  # strictly, all sharded subjects - ignore train/eval catalog entries
+    logging.info('all_subject_ids, {}'.format(all_subject_ids[:3]))
+    logging.info('all_subjects, {}, of {}'.format(all_subjects[:3], len(all_subjects)))
+    logging.info('matched: {}'.format(set(all_subject_ids).intersection(all_subjects)))
+    found_in_db = [x in all_subjects for x in all_subject_ids]
+    assert found_in_db  # should always be some galaxies not in train or eval, even if labelled
+    logging.info('Oracle-labelled subjects in db: {}'.format(sum(found_in_db)))
+
+    labelled_subjects = get_all_subjects(db, labelled=True)
+    not_yet_labelled = [x not in labelled_subjects for x in all_subject_ids]
+    logging.info('Not yet labelled (or maybe not matched): {}'.format(sum(not_yet_labelled)))
+
+    # lists can't be boolean indexed, so convert to old-fashioned numeric index...
+    indices = np.array([n for n in range(len(all_subject_ids))])
+    safe_to_label = np.array(found_in_db) & np.array(not_yet_labelled)
+    indices_safe_to_label = indices[safe_to_label]
+    if sum(safe_to_label) == len(all_subject_ids):
+        logging.warning('All oracle labels identified as new - does this make sense?')
+    logging.info(
+        'Galaxies to newly label: {} of {}'.format(len(indices_safe_to_label), len(all_subject_ids))
+    )
+    # ...then use list comprehension to select with numeric index
+    safe_subject_ids = [all_subject_ids[i] for i in indices_safe_to_label]
+    safe_labels = [all_labels[i] for i in indices_safe_to_label]
+    safe_total_votes = [all_total_votes[i] for i in indices_safe_to_label]
+    return safe_subject_ids, safe_labels, safe_total_votes

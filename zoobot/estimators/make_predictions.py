@@ -26,7 +26,7 @@ def load_predictor(predictor_loc):
     """
     model_unwrapped = predictor.from_saved_model(predictor_loc)
     # wrap to avoid having to pass around dicts all the time
-    # expects image matrix, passes to model within dict of type {examples: matrix}
+    # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
     return lambda x: model_unwrapped({'examples': x})['prediction']
 
@@ -43,6 +43,7 @@ def get_samples_of_images(model, images, n_samples):
         np.array: of form (subject_i, sample_j_of_subject_i)
     """
     assert isinstance(images, np.ndarray)
+    assert len(images) > 0
     results = np.zeros((len(images), n_samples))
     # make predictions batch-wise to avoid out-of-memory issues
     min_image = 0
@@ -124,7 +125,7 @@ def plot_samples(scores, labels, total_votes, fig, axes, alpha=0.15):
     for galaxy_n, ax in enumerate(axes):
         x = np.arange(0, total_votes[galaxy_n]+1) # inclusive
         if scores.shape[1] > 1:
-            c='g'
+            c = (0., .85, 0.)
             probability_record = []
             for score_n, score in enumerate(scores[galaxy_n]):
                 if score_n == 0: 
@@ -140,7 +141,7 @@ def plot_samples(scores, labels, total_votes, fig, axes, alpha=0.15):
             mean_posterior = binomial_prob_per_k(scores[galaxy_n, 0], n_draws=total_votes[galaxy_n])
             c='k'
         ax.plot(x, mean_posterior, c=c, linewidth=2., label='Posterior')
-        ax.axvline(labels[galaxy_n], c='r', label='Observed')
+        ax.axvline(labels[galaxy_n], c=(0.8, 0., 0.), label='Observed')
         ax.yaxis.set_visible(False)
 
 

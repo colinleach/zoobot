@@ -1,0 +1,8 @@
+md5: e1d39c26d64726589848ea90fa9f771d
+outs:
+- cache: true
+  md5: 4f1fae2b7af92049d563e38b14880154.dir
+  metric: false
+  path: ds_nair
+  persist: false
+wdir: .

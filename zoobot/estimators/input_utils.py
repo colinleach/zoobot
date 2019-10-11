@@ -3,6 +3,8 @@ import copy
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+tf.contrib.training.stratified_sample
+tf.contrib.image.rotate
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec, matrix_label_counts_feature_spec
@@ -282,27 +284,6 @@ def augment_images(images, input_config):
             contrast_range=input_config.contrast_range)
 
     return images
-
-
-# def augment_images(images, params):
-#     if params['transform']:
-#         # images = tf.map_fn(
-#         #     lambda image: tf.py_func(
-#         #         func=functools.partial(transform_3d, params=params),
-#         #         inp=[image],
-#         #         Tout=tf.float32,
-#         #         stateful=False,
-#         #         name='augment'
-#         #     ),
-#         #     images)
-#
-#         [images] = tf.py_func(
-#                 func=functools.partial(transform_3d, params=params),
-#                 inp=[images[n] for n in range(images.shape[0])],
-#                 Tout=tf.float32,
-#                 stateful=False,
-#                 name='augment')
-#         images = tf.concat(images, axis=3)
 
 
 def geometric_augmentation(images, zoom, final_size, central):

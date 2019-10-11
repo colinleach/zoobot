@@ -10,7 +10,7 @@ import pandas as pd
 from PIL import Image
 
 from astropy.io import fits
-from zoobot.active_learning import make_shards, execute
+from zoobot.active_learning import make_shards, create_instructions
 
 
 @pytest.fixture()
@@ -97,43 +97,6 @@ def shard_config_ready(shard_config, labelled_catalog, unlabelled_catalog):
     return config
 
 
-@pytest.fixture(
-    params=[
-        {
-            'initial_estimator_ckpt': 'use_predictor',
-            'warm_start': True
-        },
-        {
-            'initial_estimator_ckpt': None,
-            'warm_start': False
-        }
-    ])
-def active_config(shard_config_ready, tmpdir, predictor_model_loc, request):
-
-    warm_start = request.param['warm_start']
-
-    # work around using fixture as param by having param toggle whether the fixture is used
-    if request.param['initial_estimator_ckpt'] == 'use_predictor':
-        initial_estimator_ckpt = predictor_model_loc
-    else:
-        initial_estimator_ckpt = None
-    
-    config = execute.ActiveConfig(
-        shard_config_ready, 
-        run_dir=tmpdir.mkdir('run_dir').strpath,
-        n_iterations=3,  # 1st is only the initial cycle
-        shards_per_iter=2,
-        subjects_per_iter=10,
-        initial_estimator_ckpt=initial_estimator_ckpt
-        )
-
-    assert os.path.isdir(config.run_dir)  # permanent directory for dvc control
-    assert os.path.exists(config.db_loc)
-
-    assert config.ready()
-    return config
-
-
 @pytest.fixture()
 def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
@@ -199,3 +162,71 @@ def estimators_dir(tmpdir):
         with open(os.path.join(base_dir, file_name), 'w') as f:
             f.write('Dummy file')
     return base_dir
+
+
+@pytest.fixture()
+def shard_config_loc(tmpdir):
+    shard_dir = tmpdir.mkdir('shard_dir').strpath
+    shard_config_loc = os.path.join(shard_dir, 'shard_config.json')
+    shard_data = {
+        'shard_dir': shard_dir,
+        'train_dir': os.path.join(shard_dir, 'some_train_dir'),
+        'eval_dir': os.path.join(shard_dir, 'some_eval_dir'),
+        'labelled_catalog_loc': os.path.join(shard_dir, 'some_labelled_catalog_loc'),
+        'unlabelled_catalog_loc': os.path.join(shard_dir, 'some_unlabelled_catalog_loc'),
+        'config_save_loc': os.path.join(shard_dir, 'some_config_save_loc'),
+        'db_loc': os.path.join(shard_dir, 'some_db_loc.db')
+    }
+    with open(shard_config_loc, 'w') as f:
+        json.dump(shard_data, f)
+    # with open(shard_data['db_loc'], 'w') as f:
+    #     f.write('dummy shard db')
+    return shard_config_loc
+
+
+@pytest.fixture(params=[True, False])
+def initial_estimator_ckpt(request, predictor_model_loc):
+    if request.param:
+        return predictor_model_loc
+    else:
+        return None
+
+
+@pytest.fixture()
+def instructions(mocker, shard_config_loc, tmpdir, predictor_model_loc, warm_start, initial_estimator_ckpt):
+
+    # replace load_shard_config with a mock, so we don't need to actually make the shards
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.make_shards.load_shard_config', 
+        autospec=True
+    )
+    
+    config = create_instructions.Instructions(
+        shard_config_loc, 
+        save_dir=tmpdir.mkdir('run_dir').strpath,
+        shards_per_iter=2,
+        subjects_per_iter=10,
+        initial_estimator_ckpt=initial_estimator_ckpt,
+        n_samples=15
+        )
+
+    assert os.path.isdir(config.save_dir)  # permanent directory for dvc control
+    assert os.path.exists(config.db_loc)
+
+    assert config.ready()
+    return config
+
+
+@pytest.fixture(params=[True, False])
+def baseline(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def test(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def warm_start(request):
+    return request.param

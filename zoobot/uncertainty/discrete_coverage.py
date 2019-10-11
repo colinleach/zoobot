@@ -11,21 +11,34 @@ import seaborn as sns
 from zoobot.active_learning import acquisition_utils
 
 
-def evaluate_discrete_coverage(volunteer_votes, mean_k_predictions):
+def evaluate_discrete_coverage(volunteer_votes, k_predictions, max_possible_k=15):
+    """Calculate discrete coverage, by max allowed error, given actual votes and mean k predictions
+    
+    Args:
+        volunteer_votes (list): of shape (subject_n), values of k for that subject
+        k_predictions (list): of shape (subject_n, sample_n, k), values of p(k), num of k (i.e. last dim) varies by subject
+        max_possible_k (int): Default 20. Don't test errors higher than this.
+    
+    Raises:
+        ValueError: [description]
+    
+    Returns:
+        [type]: [description]
+    """
     data = []
     if volunteer_votes.mean() < 1.:  # make sure this isn't the vote fractions!
         raise ValueError('Expected integer vote counts (k), not fractions, but mean "vote" is below 1.')
     n_subjects = len(volunteer_votes)
-    max_possible_k = 80  # don't test errors higher than this
     # mean_posterior = acquisition_utils.get_mean_predictions(sample_probs_by_k)
     for error_bar_width in range(max_possible_k + 1):  # include max_error = max_k in range
         for subject_n in range(n_subjects):
-            p_of_k = mean_k_predictions[subject_n]
-            expected_k = int(np.sum(p_of_k * np.arange(len(p_of_k))))  # expected k per subject
-            # most_likely_k = p_of_k.argmax()
+            p_of_k_per_sample = k_predictions[subject_n]  # values of p(k) for that subject, shape (samples, k)
+            p_of_k = np.mean(p_of_k_per_sample, axis=0)  # values of p(k) for that subject over all samples, shape (k)
+            n_possible_k = len(p_of_k)
+            expected_k = int(np.sum(p_of_k * np.arange(n_possible_k)))  # expected k per subject
             actual_k = volunteer_votes[subject_n]
             # use min/max because slice (below) will fail if min_k or max_k are negative
-            max_k = np.min([expected_k + error_bar_width, len(p_of_k)])
+            max_k = np.min([expected_k + error_bar_width, n_possible_k])
             min_k = np.max([expected_k - error_bar_width, 0])
             assert min_k <= max_k
             # warning, slice will fail if min_k or max_k are negative

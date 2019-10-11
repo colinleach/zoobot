@@ -1,0 +1,9 @@
+cmd: python zoobot/active_learning/define_experiment.py
+md5: 18f0db6ae8bdb06c39df6f8bdfc4b19f
+outs:
+- cache: true
+  md5: dfb7165e122877f314a386772e131657.dir
+  metric: false
+  path: data/decals/prepared_catalogs/smooth_unfiltered
+  persist: false
+wdir: ../../..

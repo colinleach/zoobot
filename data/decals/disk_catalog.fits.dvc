@@ -1,0 +1,12 @@
+cmd: cp /Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits data/decals/disk_catalog.fits
+deps:
+- md5: 425b0b38b3feedfd1ec2b215e1d470e8
+  path: /Volumes/alpha/galaxy_zoo/decals/catalogs/dr5_nsa_v1_0_0_to_upload.fits
+md5: 72b5a7341e5e6ee42a7aa00c56b92aff
+outs:
+- cache: true
+  md5: 425b0b38b3feedfd1ec2b215e1d470e8
+  metric: false
+  path: data/decals/disk_catalog.fits
+  persist: false
+wdir: ../..

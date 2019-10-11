@@ -15,8 +15,7 @@ class Iteration():
 
     def __init__(
         self, 
-        run_dir,
-        iteration_n,
+        iteration_dir,
         prediction_shards,
         initial_db_loc,
         initial_train_tfrecords,
@@ -28,12 +27,15 @@ class Iteration():
         initial_size,
         learning_rate,
         epochs,
+        oracle,
         initial_estimator_ckpt=None
         ):
 
-        self.name = 'iteration_{}'.format(iteration_n)
+        self.iteration_dir = iteration_dir
+
         # shards should be unique, or everything falls apart.
-        assert len(prediction_shards) == len(set(prediction_shards))
+        if not len(prediction_shards) == len(set(prediction_shards)):
+            raise ValueError('Warning: duplicate prediction shards! {}'.format(prediction_shards))
         self.prediction_shards = prediction_shards
         
         for (tfrecords, attr) in [
@@ -47,6 +49,7 @@ class Iteration():
                 logging.critical(tfrecords)
             setattr(self, attr, tfrecords)
 
+    
         assert callable(train_callable)
         self.train_callable = train_callable
         assert callable(acquisition_func)
@@ -56,22 +59,25 @@ class Iteration():
         self.initial_size = initial_size  # need to know what size to write new images to shards
         self.learning_rate = learning_rate
         self.epochs = epochs
+        
+        self.oracle = oracle
 
-        self.iteration_dir = os.path.join(run_dir, self.name)
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.acquired_tfrecords_dir = os.path.join(self.iteration_dir, 'acquired_tfrecords')
+        self.labels_dir = os.path.join(self.iteration_dir, 'acquired_labels')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
         os.mkdir(self.iteration_dir)
         os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
+        # TODO have a test that verifies new folder structure?
 
         self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
         assert os.path.isfile(initial_db_loc)
         shutil.copy(initial_db_loc, self.db_loc)
         self.db = sqlite3.connect(self.db_loc)
+        assert not active_learning.db_fully_labelled(self.db)
 
-        # TODO have a test that verifies new folder structure
         self.initial_estimator_ckpt = initial_estimator_ckpt
         
         src = self.initial_estimator_ckpt
@@ -102,7 +108,7 @@ class Iteration():
 
 
     def get_train_records(self):
-            return self.initial_train_tfrecords + self.get_acquired_tfrecords()
+            return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
 
     def make_predictions(self, shard_locs, initial_size):
@@ -135,20 +141,30 @@ class Iteration():
 
 
     def run(self):
-        subject_ids, labels, total_votes = get_labels()
+        all_subject_ids, all_labels, all_total_votes = self.oracle.get_labels(self.labels_dir)
+         # can't allow overwriting of previous labels, as may have been written to tfrecord
+        subject_ids, labels, total_votes = active_learning.filter_for_new_only(
+            self.db,
+            all_subject_ids, 
+            all_labels,
+            all_total_votes
+        )
         if len(subject_ids) > 0:
-            active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db)
+            # record in db
+            active_learning.add_labels_to_db(subject_ids, labels, total_votes, self.db) 
+            # write to disk
             top_subject_df = active_learning.get_file_loc_df_from_db(self.db, subject_ids)
             active_learning.write_catalog_to_tfrecord_shards(
                 top_subject_df,
-                db=None,
+                db=None,  # don't record again in db as simply a fixed train record
                 img_size=self.initial_size,
                 columns_to_save=['id_str', 'label', 'total_votes'],
                 save_dir=self.acquired_tfrecords_dir,
                 shard_size=4096  # hardcoded, awkward TODO
             )
-            # self.acquired_tfrecord = os.path.join(self.acquired_tfrecords_dir, 'acquired_shard.tfrecord')
-            # active_learning.add_labelled_subjects_to_tfrecord(self.db, subject_ids, self.acquired_tfrecord, self.initial_size)
+        else: 
+            logging.warning('No new subjects acquired - does this make sense?')
+        assert not active_learning.db_fully_labelled(self.db)
 
         """
         Callable should expect 
@@ -163,7 +179,7 @@ class Iteration():
         self.train_callable(
             self.estimators_dir,
             self.get_train_records(),
-            self.eval_tfrecords,
+            self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
             self.learning_rate,
             self.epochs
         )  # could be docker container to run, save model
@@ -177,20 +193,12 @@ class Iteration():
         logging.debug('{} {} {}'.format(len(acquisitions), len(subjects), len(samples)))
 
         _, top_acquisition_ids = pick_top_subjects(subjects, acquisitions, self.n_subjects_to_acquire)
-        request_labels(top_acquisition_ids)
+        self.oracle.request_labels(top_acquisition_ids, name='priority', retirement=40)
 
 
     def record_train_records(self):
         with open(os.path.join(self.tfrecords_record), 'w') as f:
             json.dump(self.get_train_records(), f)
-
-
-def request_labels(top_acquisition_ids):
-    mock_panoptes.request_labels(top_acquisition_ids)
-
-
-def get_labels():
-    return mock_panoptes.get_labels()
 
 
 # to be shared for consistency
