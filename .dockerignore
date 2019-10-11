@@ -3,3 +3,9 @@
 .vscode
 data
 notebooks
+analysis
+results
+runs
+logs
+
+auth_token.txt
