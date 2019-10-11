@@ -31,6 +31,9 @@ WORKDIR /home
 # RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
 # RUN git clone git@github.com:mwalmsley/gz-panoptes-reduction.git
 # RUN git clone git@github.com:mwalmsley/shared-astro-utilities.git
+ADD zoobot /home/zoobot
+ADD shared-astro-utilities /home/shared-astro-utilities
+ADD gz-panoptes-reduction /home/gzreduction
 
 RUN pip install -r zoobot/requirements.txt
 # # will have tf2 from base image
