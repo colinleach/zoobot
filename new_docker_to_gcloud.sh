@@ -1,4 +1,4 @@
-#!bin/sh
+#!/usr/bin/env bash
 # export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 export IMAGE_REPO_NAME=zoobot
 export IMAGE_TAG=$(date +%Y%m%d_%H%M%S)
