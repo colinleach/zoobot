@@ -25,7 +25,7 @@ RUN mkdir /root/.ssh
 RUN git config --global url."https://$GIT_TOKEN:@github.com/".insteadOf "https://github.com/"
 
 # Skip Host verification for git
-# RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
+RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
 # RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
