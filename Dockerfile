@@ -24,7 +24,7 @@ ADD credentials  /root/.ssh
 
 # Skip Host verification for git
 RUN echo "StrictHostKeyChecking no " > /root/.ssh/config
-RUN eval "$(ssh-agent -s)"  && ssh-add /home/credentials/github
+RUN eval "$(ssh-agent -s)"  && ssh-add /root/.ssh/github
 
 RUN git clone git@github.com:mwalmsley/zoobot
 RUN cd zoobot && git checkout al-iter-arms-smooth-full && cd ../
