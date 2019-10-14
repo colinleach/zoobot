@@ -197,7 +197,6 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     )
 
 
-
 if __name__ == '__main__':
 
     # only responsible for making the shards. 
@@ -245,8 +244,7 @@ if __name__ == '__main__':
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs
-    train_test_fraction = (len(labelled_catalog) - int(args.eval_size))/len(labelled_catalog)  # always eval on random 2500 galaxies
-    logging.info('Train test fraction: {}'.format(train_test_fraction))
+    train_test_fraction = catalog_to_tfrecord.get_train_test_fraction(len(labelled_catalog), args.eval_size)
 
     shard_config = ShardConfig(shard_dir=args.shard_dir)
 
