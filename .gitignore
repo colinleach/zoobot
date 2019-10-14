@@ -26,6 +26,8 @@ results
 runs
 zoobot/legacy/embeddings/chollet_128
 
+credentials
+
 .vscode/settings.json
 
 # tensorflow saved data
