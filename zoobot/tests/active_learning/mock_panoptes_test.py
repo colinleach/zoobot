@@ -74,7 +74,7 @@ def test_panoptes_mock_with_bad_oracle_loc(oracle_loc, subjects_requested_loc):
         oracles.PanoptesMock('broken_oracle_loc', subjects_requested_loc)
 
 def test_request_labels(panoptes_mock, subjects_to_request):
-    panoptes_mock.request_labels(subjects_to_request, 'dummy_name')
+    panoptes_mock.request_labels(subjects_to_request, 'dummy_uploader_name', retirement=40)
     requested_subjects = json.load(open(panoptes_mock._subjects_requested_loc, 'r'))
     assert requested_subjects == subjects_to_request
     

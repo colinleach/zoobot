@@ -111,7 +111,13 @@ def test_main(mocker, shard_config_loc, instructions_dir, baseline, warm_start, 
         'zoobot.active_learning.create_instructions.AcquisitionCallableFactory', 
         autospec=True
     )
-    # need catalog_dir and panoptes
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.oracles.Panoptes', 
+        autospec=True
+    )
+    panoptes = True  # for now, just test this TODO
+    catalog_dir = 'some_catalog_dir'
+    
     create_instructions.main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, test, panoptes)
 
 

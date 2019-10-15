@@ -145,9 +145,12 @@ def stratified_data(true_image_values, false_image_values, size, channels):
 
 
 @pytest.fixture()
+def nonexistent_dir(tmpdir):
+    return os.path.join(tmpdir.mkdir('some_new_dir').strpath, 'nonexistent_dir')
+
+@pytest.fixture()
 def tfrecord_dir(tmpdir):
     return tmpdir.mkdir('tfrecord_dir').strpath
-
 
 @pytest.fixture()  # depends on create_tfrecord serializing correctly
 def serialized_matrix_label_example(size, channels):

@@ -75,11 +75,7 @@ class Iteration():
         os.mkdir(self.metrics_dir)
         # TODO have a test that verifies new folder structure?
 
-        self.db_loc = os.path.join(self.iteration_dir, 'iteration.db')
-        assert os.path.isfile(initial_db_loc)
-        shutil.copy(initial_db_loc, self.db_loc)
-        self.db = sqlite3.connect(self.db_loc)
-        assert not database.db_fully_labelled(self.db)
+        self.db = get_db(self.iteration_dir, initial_db_loc)
 
         self.initial_estimator_ckpt = initial_estimator_ckpt
 
@@ -107,6 +103,7 @@ class Iteration():
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(
             self.iteration_dir, 'train_records_index.json')
+
 
     def get_acquired_tfrecords(self):
         return [os.path.join(self.acquired_tfrecords_dir, loc) for loc in os.listdir(self.acquired_tfrecords_dir)]
@@ -152,7 +149,7 @@ class Iteration():
         )
         if len(subject_ids) > 0:
             # record in db
-            db_access.add_labels_to_db(subject_ids, labels, self.db)
+            db_access.add_labels_to_db(subject_ids, labels, self.db)  # TODO should be via database.py?
             # write to disk
             top_subject_df = database.get_specific_subjects(self.db, subject_ids)
             database.write_catalog_to_tfrecord_shards(
@@ -215,3 +212,12 @@ def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
     assert len(top_acquisition_ids) == len(
         set(top_acquisition_ids))  # no duplicates allowed
     return top_acquisition_subjects, top_acquisition_ids
+
+
+def get_db(iteration_dir, initial_db_loc):
+    new_db_loc = os.path.join(iteration_dir, 'iteration.db')
+    assert os.path.isfile(initial_db_loc)
+    shutil.copy(initial_db_loc, new_db_loc)
+    db = sqlite3.connect(new_db_loc)
+    assert not database.db_fully_labelled(db)
+    return db

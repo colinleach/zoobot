@@ -25,7 +25,7 @@ Test augmentation applied to a single image (i.e. within map_fn)
 
 def test_geometric_augmentations_on_image(visual_check_image):
 
-    final_image = input_utils.geometric_augmentation(visual_check_image, zoom=(1., 1.5), final_size=256)
+    final_image = input_utils.geometric_augmentation(visual_check_image, zoom=(1., 1.5), final_size=256, central=False)
 
     with tf.Session() as session:
         session.run(tf.global_variables_initializer())

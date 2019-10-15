@@ -106,6 +106,13 @@ def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
 
 
+@pytest.fixture()
+def existing_db_loc(db_loc):
+    with open(db_loc, 'w') as f:
+        f.write('Some db file is here')
+    return db_loc
+
+
 def mock_acquisition_func(samples):
     assert isinstance(samples, np.ndarray)
     assert len(samples.shape) == 2

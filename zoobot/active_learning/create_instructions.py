@@ -222,7 +222,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
 
     Args:
         shard_config_loc (str): 
-        catalog_dir (str):
+        catalog_dir (str): dir holding catalogs to use. Needed to make oracle. See `prepare_catalogs.py`
         instructions_dir (str): directory to save the above parameters
         baseline (bool): if True, use random subject acquisition prioritisation
         warm_start (bool): if True, continue training the latest estimator from any log_dir provided to a train callable

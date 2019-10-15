@@ -339,20 +339,26 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
 
 def binomial_loss(labels, predictions):
-    # assume labels are vote fractions and 40 people voted
-    # assume predictions are softmaxed (i.e. sum to 1 in second dim)
-    # TODO will need to refactor and generalise, but should change tfrecord instead
+    """Calculate likelihood of labels given predictions, if labels are binomially distributed
+    
+    Args:
+        labels (tf.constant): of shape (batch_dim, 2) where 0th col is successes and 1st is total trials
+        predictions (tf.constant): of shape (batch_dim) with values of prob. success
+    
+    Returns:
+        (tf.constant): negative log likelihood of labels given prediction
+    """
     one = tf.constant(1., dtype=tf.float32)
     # TODO may be able to use normal python types, not sure about speed
     epsilon = tf.constant(1e-8, dtype=tf.float32)
 
     # multiplication in tf requires floats
-    yes_votes = tf.cast(labels[:, 0], tf.float32)
-    total_votes = tf.cast(labels[:, 1], tf.float32)
+    successes = tf.cast(labels[:, 0], tf.float32)
+    n_trials = tf.cast(labels[:, 1], tf.float32)
     p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
-    bin_loss = -( yes_votes * tf.log(p_yes + epsilon) + (total_votes - yes_votes) * tf.log(one - p_yes + epsilon) )
+    bin_loss = -( successes * tf.log(p_yes + epsilon) + (n_trials - successes) * tf.log(one - p_yes + epsilon) )
     tf.summary.histogram('bin_loss', bin_loss)
     tf.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
     return bin_loss
