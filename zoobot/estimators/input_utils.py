@@ -1,4 +1,5 @@
 import copy
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -7,24 +8,25 @@ tf.contrib.training.stratified_sample
 tf.contrib.image.rotate
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
-from zoobot.tfrecord.read_tfrecord import matrix_feature_spec, matrix_id_feature_spec, matrix_label_feature_spec, matrix_label_counts_feature_spec
+from zoobot.tfrecord.read_tfrecord import get_feature_spec
 
 
 class InputConfig():
 
     def __init__(
             self,
-            name,
-            tfrecord_loc,
-            label_col,
-            initial_size,
-            final_size,
-            channels,
-            batch_size,
-            shuffle,
-            repeat,
-            stratify,
-            stratify_probs,
+            name: str,
+            tfrecord_loc: str,
+            label_cols: List,
+            initial_size: int,
+            final_size: int,
+            channels: int,
+            batch_size: int,
+            shuffle: bool,
+            repeat: bool,
+            stratify: bool,
+            stratify_col=None,
+            stratify_probs=None,
             regression=True,
             geometric_augmentation=True,
             shift_range=None,  # not implemented
@@ -33,14 +35,13 @@ class InputConfig():
             photographic_augmentation=True,
             max_brightness_delta=0.05,
             contrast_range=(0.95, 1.05),
-            noisy_labels=True,
             greyscale=True,
             zoom_central=True
     ):
 
         self.name = name
         self.tfrecord_loc = tfrecord_loc
-        self.label_col = label_col
+        self.label_cols = label_cols
         self.initial_size = initial_size
         self.final_size = final_size
         self.channels = channels
@@ -48,6 +49,7 @@ class InputConfig():
         self.shuffle = shuffle
         self.repeat = repeat
         self.stratify = stratify
+        self.stratify_col = stratify_col
         self.stratify_probs = stratify_probs
         self.regression = regression
 
@@ -65,14 +67,13 @@ class InputConfig():
         self.max_brightness_delta = max_brightness_delta
         self.contrast_range = contrast_range
 
-        self.noisy_labels = noisy_labels
-
         self.greyscale = greyscale
         self.zoom_central = zoom_central
 
+
     def set_stratify_probs_from_csv(self, csv_loc):
         subject_df = pd.read_csv(csv_loc)
-        self.stratify_probs = [1. - subject_df[self.label_col].mean(), subject_df[self.label_col].mean()]
+        self.stratify_probs = [1. - subject_df[self.stratify_col].mean(), subject_df[self.stratify_col].mean()]
 
 
     # TODO move to shared utilities
@@ -110,13 +111,7 @@ def get_input(config):
 
 
 def make_labels_noisy(labels):
-    # NEW - noisy labels
-    # would like to get a volunteer response (1. or 0.), but awkward to write everything x40
-    # intead, sample a label based on the observed vote fraction.
-    # the expectation will be the same, and we'll run this many times.
-    uniform_sample = tf.distributions.Uniform(low=1e-6, high=1.0 - 1e-6).sample(tf.shape(labels))
-    # 0. if label < sample, or 1. if label > sample
-    return tf.round(tf.constant(0.5) + labels - uniform_sample)
+    raise NotImplementedError('This has been deprecated')
 
 
 def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
@@ -132,32 +127,22 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
+    batch_data = batch['matrix']
+    batch_images = tf.reshape(
+        batch_data,
+        [-1, size, size, channels])  # may not get full batch at end of dataset
+    assert len(batch_images.shape) == 4
+    tf.summary.image('a_original', batch_images)
+    # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
+    return batch_images
 
-        batch_data = batch['matrix']
-        batch_images = tf.reshape(
-            batch_data,
-            [-1, size, size, channels])  # may not get full batch at end of dataset
-        assert len(batch_images.shape) == 4
-        tf.summary.image('a_original', batch_images)
-        # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
-        return batch_images
 
-
-def get_labels_from_batch(batch, noisy_labels):
-    # TODO likely will break after this point
-    labels = batch['label']
-    if noisy_labels:
-        sampled_labels = make_labels_noisy(labels)
-    else:
-        sampled_labels = labels
-    # tf.summary.histogram('raw_labels', labels)
-    # tf.summary.histogram('loaded_labels', sampled_labels)
-    # tf.summary.scalar('mean_label', tf.reduce_mean(labels))
-    return sampled_labels
+def get_labels_from_batch(batch, label_cols: List):
+    return tf.stack([batch[col] for col in label_cols], axis=1)   # TODO batch[cols] appears not to work?
 
 
 def get_counts_from_batch(batch):
-    return batch['total_votes']
+    raise NotImplementedError('This has been deprecated')
 
 
 def load_batches_with_labels(config):
@@ -174,36 +159,30 @@ def load_batches_with_labels(config):
         (tf.Tensor, tf.Tensor)
     """
     with tf.name_scope('load_batches_{}'.format(config.name)):
-        feature_spec = matrix_label_feature_spec(config.initial_size, config.channels, float_label=config.regression)
-
+        requested_features = {'matrix': 'string'}
+        # We only support float labels!
+        requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
+        feature_spec = get_feature_spec(requested_features)
         batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
-
         batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
-        batch_labels = get_labels_from_batch(batch, config.noisy_labels)
+        batch_labels = get_labels_from_batch(batch, config.label_cols)
         return batch_images, batch_labels
 
 
 def load_batches_with_counts(config):
-    with tf.name_scope('load_batches_{}'.format(config.name)):
-        feature_spec = matrix_label_counts_feature_spec()
-        batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
-        batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
-        batch_labels = get_labels_from_batch(batch, config.noisy_labels)
-        batch_counts = get_counts_from_batch(batch)
-
-        return batch_images, batch_labels, batch_counts
+    raise NotImplementedError('This has been deprecated')
 
 
 def load_batches_without_labels(config):
     # does not fetch id - unclear if this is important
-    feature_spec = matrix_feature_spec(config.initial_size, config.channels)
+    feature_spec = get_feature_spec({'matrix': 'string'})
     batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
 
 
 def load_batches_with_id_str(config):
     # does not fetch id - unclear if this is important
-    feature_spec = matrix_id_feature_spec(config.initial_size, config.channels)
+    feature_spec = get_feature_spec({'matrix': 'string', 'id_str': 'string'})
     batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True), batch['id_str']
 
@@ -403,11 +382,10 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
     config = InputConfig(
         name='predict',
         tfrecord_loc=tfrecord_loc,
-        label_col='label',
+        label_cols=['label_a', 'label_b'],
         stratify=False,
         shuffle=False,  # important - preserve the order
         repeat=False,
-        stratify_probs=None,
         regression=True,
         geometric_augmentation=None,
         photographic_augmentation=None,
@@ -416,8 +394,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
         batch_size=n_galaxies,
         initial_size=initial_size,
         final_size=None,
-        channels=3,
-        noisy_labels=False  # important - we want the actual vote fractions
+        channels=3
     )
     if mode == 'labels':
         batch_images, batch_labels = load_batches_with_labels(config)

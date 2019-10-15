@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 import numpy as np
 import matplotlib
@@ -34,18 +35,10 @@ def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None, ma
 
 
 def matrix_feature_spec(size, channels):  # used for predict mode
-    return {
-        "matrix": tf.FixedLenFeature([], tf.string)}
-
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 def matrix_label_feature_spec(size, channels, float_label=True):
-    if float_label:
-        label_dtype = tf.float32
-    else:
-        label_dtype = tf.int64
-    return {
-        "matrix": tf.FixedLenFeature([], tf.string),
-        "label": tf.FixedLenFeature((), label_dtype)}
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def custom_feature_spec(features_requested):
@@ -62,46 +55,53 @@ def custom_feature_spec(features_requested):
     return features
 
 
+def get_feature_spec(expected_features: Dict) -> Dict:
+    """For arbitrary feature specs, to generalise active learning to multi-label
+    
+    Args:
+        expected_features_dict ([type]): [description]
+    
+    Raises:
+        ValueError: [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    features = dict()
+    for key, value  in expected_features.items():
+        if value == 'string':  # e.g. matrix
+            features[key] = tf.FixedLenFeature([], tf.string)
+        elif value == 'float':  # e.g. a label
+            features[key] = tf.FixedLenFeature([], tf.float32)
+        elif value == 'int':  # e.g. size of image
+            features[key] = tf.FixedLenFeature([], tf.int64)
+        else:
+            raise ValueError('Data type {} (for {}) not understood'.format(value, key))
+    return features
+
+
 def matrix_label_counts_feature_spec():
-    return {
-        "matrix": tf.FixedLenFeature([], tf.string),
-        "label": tf.FixedLenFeature((), tf.int64),
-        "total_votes": tf.FixedLenFeature([], tf.int64)
-    }
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def id_label_counts_feature_spec():
-    return {
-        "id_str": tf.FixedLenFeature((), tf.string),
-        "label": tf.FixedLenFeature((), tf.int64),
-        "total_votes": tf.FixedLenFeature([], tf.int64)
-    }
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def matrix_id_feature_spec(size, channels):
-    return {
-        "matrix": tf.FixedLenFeature([], tf.string),
-        "id_str": tf.FixedLenFeature((), tf.string)
-        }
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def matrix_label_id_feature_spec(size, channels):
-    return {
-        "matrix": tf.FixedLenFeature([], tf.string),
-        "label": tf.FixedLenFeature((), tf.float32),
-        "id_str": tf.FixedLenFeature((), tf.string)
-        }
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def id_feature_spec():
-    return {"id_str": tf.FixedLenFeature((), tf.string)}
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 def id_label_feature_spec():
-    return {
-        "label": tf.FixedLenFeature((), tf.float32),
-        "id_str": tf.FixedLenFeature((), tf.string)
-        }
+    raise NotImplementedError('This has been deprecated - use get_feature_spec instead')
 
 
 # not required, use tf.parse_single_example directly

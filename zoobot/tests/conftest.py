@@ -263,19 +263,39 @@ def tfrecord_matrix_ints_loc(tfrecord_dir, size, channels):  # write shards dyna
 # may be duplicate with shard fixture
 @pytest.fixture()
 def tfrecord_matrix_id_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
-
     tfrecord_loc = os.path.join(tfrecord_dir, 's28_matrix_float_0_128.tfrecord')
     if os.path.exists(tfrecord_loc):
         os.remove(tfrecord_loc)
-        
     # monotonic labels, to check shuffling
     examples = [{'matrix': random_image(size, channels), 'id_str': str(n)} for n in range(128)]
-
     writer = tf.python_io.TFRecordWriter(tfrecord_loc)
     for example in examples:  # depends on tfrecord.create_tfrecord
         writer.write(create_tfrecord.serialize_image_example(matrix=example['matrix'], id_str=example['id_str']))
     writer.close()
+    return tfrecord_loc
 
+# may be duplicate with shard fixture
+@pytest.fixture()
+def tfrecord_multilabel_loc(tfrecord_dir, size, channels):  # write shards dynamically when called
+    tfrecord_loc = os.path.join(tfrecord_dir, 's28_im128_multilabel.tfrecord')
+    if os.path.exists(tfrecord_loc):
+        os.remove(tfrecord_loc)
+    # monotonic labels, to check shuffling
+    examples = [
+        {'matrix': random_image(size, channels),
+        'id_str': str(n),
+        'label_a': float(n),
+        'label_b': float(n) * -1.
+        } for n in range(128)]
+    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    for example in examples:  # depends on tfrecord.create_tfrecord
+        writer.write(create_tfrecord.serialize_image_example(
+            matrix=example['matrix'],
+            id_str=example['id_str'],
+            label_a=example['label_a'],
+            label_b=example['label_b']
+        ))
+    writer.close()
     return tfrecord_loc
 
 @pytest.fixture()
