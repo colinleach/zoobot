@@ -11,17 +11,17 @@ from zoobot.estimators.estimator_params import default_four_layer_architecture, 
 from zoobot.estimators import run_estimator, estimator_funcs, bayesian_estimator_funcs, dummy_image_estimator
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def true_image_values():
     return 3.
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def false_image_values():
     return -3.
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def example_data(size, true_image_values, false_image_values):
     n_true_examples = 100
     n_false_examples = 400

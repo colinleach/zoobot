@@ -18,6 +18,7 @@ class BayesianModel():
     def __init__(
             self,
             image_dim,
+            calculate_loss,
             learning_rate=0.001,
             optimizer=tf.train.AdamOptimizer,
             conv1_filters=32,
@@ -37,6 +38,7 @@ class BayesianModel():
             log_freq=10,
     ):
         self.image_dim = image_dim
+        self.calculate_loss = calculate_loss # callable loss = calculate_loss(labels, predictions) (or can subclass)
         self.optimizer = optimizer
         self.learning_rate = learning_rate
         self.conv1_filters = conv1_filters
@@ -87,6 +89,15 @@ class BayesianModel():
         Returns:
 
         """
+
+        # if labels is not None:
+        #     tf.summary.histogram('yes_votes', labels[:, 0])
+        #     tf.summary.histogram('total_votes', labels[:, 1])
+        #     tf.summary.histogram('observed_vote_fraction', labels[:, 0] / labels[:, 1])
+        #     response.update({
+        #         'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
+        #     })
+
         response, loss = self.bayesian_regressor(features, labels, mode)
         
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -118,9 +129,12 @@ class BayesianModel():
         else:  # must be EVAL mode
             with tf.variable_scope('eval'):
                 # Add evaluation metrics (for EVAL mode)
-                eval_metric_ops = get_eval_metric_ops(self, labels, response)
-                return tf.estimator.EstimatorSpec(
-                    mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+                # eval_metric_ops = get_eval_metric_ops(self, labels, response)
+                # return tf.estimator.EstimatorSpec(
+                #     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+                # return tf.estimator.EstimatorSpec(mode=mode, loss=loss) # warning - no default eval op implemented!
+                raise NotImplementedError('No default eval op implemented - needs to be passed')
+
 
 
     def bayesian_regressor(self, features, labels, mode):
@@ -147,7 +161,7 @@ class BayesianModel():
         tf.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions, response = dense_to_regression(dense1, labels, dropout_on=dropout_on, dropout_rate=dropout_rate)
+        predictions, response = dense_to_output(dense1, dropout_on=dropout_on, dropout_rate=dropout_rate)
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -155,8 +169,7 @@ class BayesianModel():
 
         else: # calculate loss for TRAIN/EVAL with binomial
             labels = tf.stop_gradient(labels)
-            scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
-            loss = binomial_loss(labels, scalar_predictions)
+            loss = self.calculate_loss(labels, predictions)
             mean_loss = tf.reduce_mean(loss)
             tf.losses.add_loss(mean_loss)
             return response, mean_loss
@@ -303,7 +316,7 @@ def get_scalar_prediction(prediction):
     return tf.nn.softmax(prediction)[:, 1]
 
 
-def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
+def dense_to_output(dense1, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
     # Add dropout operation
     # TODO refactor out, duplication + SRP
@@ -326,16 +339,14 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
     response = {
         "prediction": scalar_prediction,  # softmaxed
     }
-    if labels is not None:
-        tf.summary.histogram('yes_votes', labels[:, 0])
-        tf.summary.histogram('total_votes', labels[:, 1])
-        tf.summary.histogram('observed_vote_fraction', labels[:, 0] / labels[:, 1])
-        response.update({
-            'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
-        })
 
     # prediction has no softmax yet, response does
     return prediction, response
+
+
+def calculate_binomial_loss(labels, predictions):
+    scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
+    return binomial_loss(labels, scalar_predictions)
 
 
 def binomial_loss(labels, predictions):
@@ -376,15 +387,17 @@ def penalty_if_not_probability(predictions):
     #     return tf.identity(deviation_penalty)  
 
 
-def get_eval_metric_ops(self, labels, predictions):
+def get_gz_binomial_eval_metric_ops(self, labels, predictions):
+    raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
+    # will probably be callable/subclass rather than implemented here 
     # record distribution of predictions for tensorboard
-    tf.summary.histogram('yes_votes', labels[0, :])
-    tf.summary.histogram('total_votes', labels[1, :])
-    assert labels.dtype == tf.int64
-    assert predictions['prediction'].dtype == tf.float32
-    observed_vote_fraction = tf.cast(labels[:, 0], dtype=tf.float32) / tf.cast(labels[:, 1], dtype=tf.float32)
-    tf.summary.histogram('observed vote fraction', observed_vote_fraction)
-    return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fraction, predictions['prediction'])}
+    # tf.summary.histogram('yes_votes', labels[0, :])
+    # tf.summary.histogram('total_votes', labels[1, :])
+    # assert labels.dtype == tf.int64
+    # assert predictions['prediction'].dtype == tf.float32
+    # observed_vote_fraction = tf.cast(labels[:, 0], dtype=tf.float32) / tf.cast(labels[:, 1], dtype=tf.float32)
+    # tf.summary.histogram('observed vote fraction', observed_vote_fraction)
+    # return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fraction, predictions['prediction'])}
 
 def logging_hooks(model_config):
     train_tensors = {
