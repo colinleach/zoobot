@@ -197,7 +197,8 @@ def tfrecord_loc(requested_features, tfrecord_multilabel_loc, tfrecord_matrix_id
     else:
         return tfrecord_matrix_id_loc
 
-def test_get_batch(requested_features, tfrecord_loc, size, channels):
+# warning - tightly coupled to tests/conftest.py tfrecord construction
+def test_get_batch(requested_features, label_cols, tfrecord_loc, size, channels):
     feature_spec = read_tfrecord.get_feature_spec(requested_features)  # not actually under test, a bit sloppy
     batch = input_utils.get_batch(
         [tfrecord_loc],
@@ -216,6 +217,13 @@ def test_get_batch(requested_features, tfrecord_loc, size, channels):
     assert '12' in set(id_strs)
     assert len(set(id_strs)) == 128  # all ids in tfrecord
 
+    for label_col in label_cols:
+        if label_col in requested_features.keys():
+            label_values = np.concatenate([b[label_col] for b in batches])
+            if label_col == 'label_a':
+                assert 12. in label_values
+            if label_col == 'label_b':
+                assert -12. in label_values
 
 
 def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct):
