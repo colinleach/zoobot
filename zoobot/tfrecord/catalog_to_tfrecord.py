@@ -106,7 +106,7 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
 
 
 def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, reader, append=False):
-    # TODO tfrecord does not support appending :'(
+    # tfrecord does not support appending :'(
     if append:
         raise NotImplementedError('tfrecord does not support appending')
     else:
@@ -122,7 +122,21 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, read
 
 
 def row_to_serialized_example(row, img_size, columns_to_save, reader):
-    # row should have columns that exactly match a read_tfrecord feature spec function
+    """
+    Row should have columns that exactly match a read_tfrecord feature spec function
+    Serialised example will have columns ['matrix] + columns_to_save
+    e.g. ['matrix', 'smooth-or-featured_smooth', 'smooth-or-featured_featured', 'smooth-or-featured_total']
+    
+    Args:
+        row ([type]): [description]
+        img_size ([type]): [description]
+        columns_to_save ([type]): [description]
+        reader ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    #
 
     pil_img = reader(row)
     # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')

@@ -315,7 +315,7 @@ def dense_to_regression(dense1, labels, dropout_on, dropout_rate):
 
     linear = tf.layers.dense(
         dropout,
-        units=2,
+        units=2,  # num outputs
         name='layer_after_dropout')
     tf.summary.histogram('layer_after_dropout', linear)
 

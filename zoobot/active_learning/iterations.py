@@ -104,7 +104,6 @@ class Iteration():
         self.tfrecords_record = os.path.join(
             self.iteration_dir, 'train_records_index.json')
 
-
     def get_acquired_tfrecords(self):
         return [os.path.join(self.acquired_tfrecords_dir, loc) for loc in os.listdir(self.acquired_tfrecords_dir)]
 
@@ -149,9 +148,11 @@ class Iteration():
         )
         if len(subject_ids) > 0:
             # record in db
-            db_access.add_labels_to_db(subject_ids, labels, self.db)  # TODO should be via database.py?
+            # TODO should be via database.py?
+            db_access.add_labels_to_db(subject_ids, labels, self.db)
             # write to disk
-            top_subject_df = database.get_specific_subjects(self.db, subject_ids)
+            top_subject_df = database.get_specific_subjects(
+                self.db, subject_ids)
             database.write_catalog_to_tfrecord_shards(
                 top_subject_df,
                 db=None,  # don't record again in db as simply a fixed train record
@@ -182,14 +183,14 @@ class Iteration():
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
-        subjects, samples = self.make_predictions(
+        subjects, predictions = self.make_predictions(
             self.prediction_shards, self.initial_size)
 
         # returns list of acquisition values
-        acquisitions = self.acquisition_func(samples)
-        self.record_state(subjects, samples, acquisitions)
+        acquisitions = self.acquisition_func(predictions)
+        self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
-            len(acquisitions), len(subjects), len(samples)))
+            len(acquisitions), len(subjects), len(predictions)))
 
         _, top_acquisition_ids = pick_top_subjects(
             subjects, acquisitions, self.n_subjects_to_acquire)
