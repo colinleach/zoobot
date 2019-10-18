@@ -8,7 +8,6 @@ from zoobot.active_learning import create_instructions
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(name='--shard-loc', dest='shard_loc', type=str)
     parser.add_argument(name='--experiment-dir', dest='save_dir', type=str)
     parser.add_argument(name='--train-dir', dest='train_records_dir', type=str)
     parser.add_argument(name='--eval-dir', dest='eval_records_dir', type=str)
@@ -16,7 +15,6 @@ if __name__ == '__main__':
     parser.add_argument(name='--test', default=False, action='store_true')
     args = parser.parse_args()
 
-    shard_loc = args.shard_loc
     shard_img_size = 256
     final_size = 128
     warm_start = False

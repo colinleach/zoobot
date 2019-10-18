@@ -14,4 +14,8 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 # https://cloud.google.com/blog/products/ai-machine-learning/introducing-deep-learning-containers-consistent-and-portable-environments
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 
-docker run $IMAGE_URI -v /data/repos/zoobot/data:/home/zoobot/data
+docker run $IMAGE_URI -v /data/repos/zoobot/data:/home/zoobot/data -v /data/repos/zoobot/data/experiments/multilabel:/home/experiments/multilabel python offline_training.py \
+    --train-dir /home/data/multilabel/train \
+    --eval-dir /home/data/multilabel/eval
+    --epochs 10
+    --test
