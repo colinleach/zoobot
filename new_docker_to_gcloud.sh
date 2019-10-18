@@ -14,6 +14,8 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 # https://cloud.google.com/blog/products/ai-machine-learning/introducing-deep-learning-containers-consistent-and-portable-environments
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 
+docker rm $(docker ps -aq)
+
 docker run -d \
     --name offline \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
