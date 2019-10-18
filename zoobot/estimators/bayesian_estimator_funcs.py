@@ -20,6 +20,7 @@ class BayesianModel():
             self,
             image_dim,
             calculate_loss,
+            output_dim,
             learning_rate=0.001,
             optimizer=tf.train.AdamOptimizer,
             conv1_filters=32,
@@ -162,7 +163,7 @@ class BayesianModel():
         tf.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions = dense_to_output(dense1, output_dim=tf.shape(labels)[1], dropout_on=dropout_on, dropout_rate=dropout_rate)
+        predictions = dense_to_output(dense1, output_dim=self.output_dim, dropout_on=dropout_on, dropout_rate=dropout_rate)
         response = {'prediction': predictions}
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
