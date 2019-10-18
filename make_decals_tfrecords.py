@@ -5,7 +5,7 @@ import argparse
 import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.active_learning import active_learning
+from zoobot.active_learning import database
 
 
 if __name__ == '__main__':
