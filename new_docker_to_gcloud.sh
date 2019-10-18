@@ -14,6 +14,8 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 # https://cloud.google.com/blog/products/ai-machine-learning/introducing-deep-learning-containers-consistent-and-portable-environments
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 
+cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./
+
 docker rm $(docker ps -aq)
 
 docker run -d \

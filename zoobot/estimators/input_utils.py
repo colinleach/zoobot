@@ -97,8 +97,7 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.name_scope('input_{}'.format(config.name)):
-        # batch_images, batch_labels = load_batches_with_labels(config)
-        batch_images, batch_labels, batch_counts = load_batches_with_counts(config)
+        batch_images, batch_labels = load_batches_with_labels(config)
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
         # tf.shape is important to record the dynamic shape, rather than static shape
@@ -107,8 +106,7 @@ def get_input(config):
         else:
             assert preprocessed_batch_images['x'].shape[3] == 3
 
-        joint_batch_labels = tf.stack([batch_labels, batch_counts], axis=1)
-        return preprocessed_batch_images, joint_batch_labels
+        return preprocessed_batch_images, batch_labels
 
 
 def make_labels_noisy(labels):
