@@ -35,6 +35,9 @@ if __name__ == '__main__':
         len(labelled_catalog), eval_size)
     train_dir = os.path.join(shard_dir, 'train')
     eval_dir = os.path.join(shard_dir, 'eval')
+    for directory in [train_dir, eval_dir]:
+        if not os.path.exists(directory):
+            os.mkdir(directory)
 
     train_df, eval_df = catalog_to_tfrecord.split_df(
         labelled_catalog, train_test_fraction=train_test_fraction)
