@@ -15,6 +15,7 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 # https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
 
 docker run -d \
+    --name offline \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
     -v /Data/repos/zoobot/data/experiments/multilabel:/home/experiments/multilabel $IMAGE_URI  \
     python offline_training.py --train-dir /home/data/multilabel/train --eval-dir /home/data/multilabel/eval --epochs 10 --test
