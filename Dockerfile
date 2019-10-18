@@ -6,7 +6,7 @@ WORKDIR /home
 
 # separately for speed, avoid re-installing with every new code version
 ADD gz-panoptes-reduction/requirements.txt /home/gzreduction/requirements.txt
-RUN pip install -r zoobot/requirements.txt
+RUN pip install -r gzreduction/requirements.txt
 ADD zoobot/requirements.txt /home/zoobot/requirements.txt
 RUN pip install -r zoobot/requirements.txt
 # will have tf from base image
