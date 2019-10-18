@@ -26,6 +26,8 @@ results
 runs
 zoobot/legacy/embeddings/chollet_128
 
+credentials
+
 .vscode/settings.json
 
 # tensorflow saved data
@@ -53,3 +55,4 @@ data/fits_native
 data/decals/classifications
 
 zooniverse_login.json
+.vscode/settings.json

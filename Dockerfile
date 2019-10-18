@@ -1,12 +1,16 @@
-FROM python:3.6
+FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
+# FROM tensorflow/tensorflow 
 
-WORKDIR /repos/zoobot
+WORKDIR /home
 
-# add requirements.txt separately to allow the build to be cached and re-used
-ADD requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+ADD zoobot /home/zoobot
+ADD shared-astro-utilities /home/shared-astro-utilities
+ADD gz-panoptes-reduction /home/gzreduction
 
-ADD . .
+RUN pip install -r zoobot/requirements.txt
+# will have tf2 from base image
 
-# Remove any trailing cache files to avoid confusing pytest with file locations
-RUN find . -name '*.pyc' -delete
+RUN pip install -e zoobot
+RUN pip install -e shared-astro-utilities 
+
+WORKDIR /home/zoobot

@@ -88,6 +88,7 @@ class InputConfig():
 def get_input(config):
     """
     Load tfrecord as dataset. Stratify and transform_3d images as directed. Batch with queues for Estimator input.
+    Batch counts are N for k of N volunteers i.e. the total observed responses
     Args:
         config (InputConfig): Configuration object defining how 'get_input' should function  # TODO consider active class
 

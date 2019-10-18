@@ -10,7 +10,9 @@ if __name__ == '__main__':
     # careful, may technically be a different master catalog
     master_catalog_loc = 'data/decals/decals_master_catalog.csv'
     login_loc = 'zooniverse_login.json'
-    project_id = '5733'
+
+    project_id = '5733'  # main GZ project
+    # project_id = '6490'  # mobile GZ project
 
     df = pd.read_csv(master_catalog_loc)
     unlabelled = df[pd.isnull(df['smooth-or-featured_total-votes'])]
@@ -26,9 +28,9 @@ if __name__ == '__main__':
     # name = '2019-06-14_touch_table_5k'
     # retirement = 40
 
-    # galaxy zoo will work forwards
+    # galaxy zoo (and mobile app) will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(5000, 15000)
+    selected = slice(40000, 55000)
     name = 'random'
     retirement = 3
 

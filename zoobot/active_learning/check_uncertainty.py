@@ -50,8 +50,23 @@ def compare_models(model_a, model_b):
     logging.info('{} binomial loss: {}'.format(model_a.name, model_a.mean_bin_loss))
     logging.info('{} mean binomial loss: {}'.format(model_b.name, model_b.mean_bin_loss))
 
-
+# TODO refactor to take predictor_loc instead of results_dir and model_name
 def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name, inital_size=256, n_samples=30):
+    """Get images, image ids (for cross-matching to true labels), and model predictions on those images
+    
+    Args:
+        tfrecord_loc (str): tfrecord of images (with saved id_str feature) to load. May support lists?
+        n_galaxies (int: Max number of galaxies in tfrecord to predict on
+        results_dir (str): root directory where models are saved
+        model_name (str): name of dir in results_dir holding model to use
+        inital_size (int, optional): Image size in tfrecords. Defaults to 256.
+        n_samples (int, optional): Num. of forward passes to make. Defaults to 30.
+    
+    Returns:
+        images: list of images loaded from tfrecord_loc
+        id_strs: list of id_strs for those images, loaded from tfrecord_loc
+        results: model predictions, as ndarray of shape (image, sample)
+    """
     images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=inital_size, mode='id_str')  # tf graph
     with tf.Session() as sess:
         images, id_strs = sess.run([images_g, id_str_g])
