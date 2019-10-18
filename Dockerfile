@@ -15,5 +15,6 @@ ADD gz-panoptes-reduction /home/gzreduction
 
 RUN pip install -e zoobot
 RUN pip install -e shared-astro-utilities 
+RUN pip install -e gzreduction
 
 WORKDIR /home/zoobot
