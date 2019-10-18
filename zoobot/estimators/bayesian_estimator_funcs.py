@@ -39,6 +39,7 @@ class BayesianModel():
             regression=False,
             log_freq=10,
     ):
+        self.output_dim = output_dim  # n final neuron
         self.image_dim = image_dim
         self.calculate_loss = calculate_loss # callable loss = calculate_loss(labels, predictions) (or can subclass)
         self.optimizer = optimizer
