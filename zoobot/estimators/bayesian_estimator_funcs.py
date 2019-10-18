@@ -5,6 +5,7 @@ import tensorflow as tf
 tf.contrib.layers.l2_regularizer
 from tensorflow.python.saved_model import signature_constants
 
+from zoobot.estimators import losses
 
 def estimator_wrapper(features, labels, mode, params):
     # estimator model funcs are only allowed to have (features, labels, params) arguments
@@ -82,8 +83,8 @@ class BayesianModel():
         Details (e.g. neurons, activation funcs, etc) controlled by 'params'
 
         Args:
-            features ():
-            labels ():
+            features (tf.constant): images, shape (batch, x, y, 1)
+            labels (tf.constant): labels, shape (batch, label_col)
             mode ():
 
         Returns:
@@ -312,10 +313,6 @@ def input_to_dense(features, mode, model):
     return dense1
 
 
-def get_scalar_prediction(prediction):
-    return tf.nn.softmax(prediction)[:, 1]
-
-
 def dense_to_output(dense1, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
     # Add dropout operation
@@ -342,37 +339,6 @@ def dense_to_output(dense1, dropout_on, dropout_rate):
 
     # prediction has no softmax yet, response does
     return prediction, response
-
-
-def calculate_binomial_loss(labels, predictions):
-    scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
-    return binomial_loss(labels, scalar_predictions)
-
-
-def binomial_loss(labels, predictions):
-    """Calculate likelihood of labels given predictions, if labels are binomially distributed
-    
-    Args:
-        labels (tf.constant): of shape (batch_dim, 2) where 0th col is successes and 1st is total trials
-        predictions (tf.constant): of shape (batch_dim) with values of prob. success
-    
-    Returns:
-        (tf.constant): negative log likelihood of labels given prediction
-    """
-    one = tf.constant(1., dtype=tf.float32)
-    # TODO may be able to use normal python types, not sure about speed
-    epsilon = tf.constant(1e-8, dtype=tf.float32)
-
-    # multiplication in tf requires floats
-    successes = tf.cast(labels[:, 0], tf.float32)
-    n_trials = tf.cast(labels[:, 1], tf.float32)
-    p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
-
-    # negative log likelihood
-    bin_loss = -( successes * tf.log(p_yes + epsilon) + (n_trials - successes) * tf.log(one - p_yes + epsilon) )
-    tf.summary.histogram('bin_loss', bin_loss)
-    tf.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
-    return bin_loss
 
 
 def penalty_if_not_probability(predictions):
