@@ -5,8 +5,6 @@ FROM gcr.io/deeplearning-platform-release/tf-gpu.1-14
 WORKDIR /home
 
 # separately for speed, avoid re-installing with every new code version
-ADD shard-astro-utilities/requirements.txt /home/shard-astro-utilities/requirements.txt
-RUN pip install -r zoobot/requirements.txt
 ADD gzreduction/requirements.txt /home/gzreduction/requirements.txt
 RUN pip install -r zoobot/requirements.txt
 ADD zoobot/requirements.txt /home/zoobot/requirements.txt
