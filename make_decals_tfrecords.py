@@ -44,7 +44,7 @@ if __name__ == '__main__':
         print('More eval subjects than training subjects - is this intended?')
 
     for (df, save_dir) in [(train_df, train_dir), (eval_df, eval_dir)]:
-        active_learning.write_catalog_to_tfrecord_shards(
+        database.write_catalog_to_tfrecord_shards(
             df,
             db=None,
             img_size=img_size,
