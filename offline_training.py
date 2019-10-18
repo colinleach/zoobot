@@ -1,0 +1,44 @@
+  
+import os
+import argparse
+
+from zoobot.active_learning import create_instructions
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(name='--shard-loc', dest='shard_loc', type=str)
+    parser.add_argument(name='--experiment-dir', dest='save_dir', type=str)
+    parser.add_argument(name='--train-dir', dest='train_records_dir', type=str)
+    parser.add_argument(name='--eval-dir', dest='eval_records_dir', type=str)
+    parser.add_argument(name='--epochs', dest='epochs', type=int)
+    parser.add_argument(name='--test', default=False, action='store_true')
+    args = parser.parse_args()
+
+    shard_loc = args.shard_loc
+    shard_img_size = 256
+    final_size = 128
+    warm_start = False
+    test = args.test
+    epochs = args.epochs
+    train_records_dir = args.train_records_dir
+    eval_records_dir = args.eval_records_dir
+    save_dir = args.save_dir
+    train_records = [os.path.join(train_records_dir, x) for x in os.listdir(train_records_dir) if x.endswith('.tfrecord')]
+    eval_records = [os.path.join(eval_records_dir, x) for x in os.listdir(eval_records_dir) if x.endswith('.tfrecord')]
+
+    if not os.path.isdir(save_dir):
+      os.mkdir(save_dir)
+  
+    # parameters that only affect train_callable
+    train_callable_obj = create_instructions.TrainCallableFactory(
+        initial_size=shard_img_size,
+        final_size=final_size,
+        warm_start=warm_start,
+        test=test
+    )
+    train_callable_obj.save(save_dir)
+
+    train_callable = train_callable_obj.get()
+    train_callable(save_dir, train_records, eval_records, learning_rate=0.01, epochs=epochs)
