@@ -35,7 +35,7 @@ if __name__ == '__main__':
         len(labelled_catalog), eval_size)
     train_dir = os.path.join(shard_dir, 'train')
     eval_dir = os.path.join(shard_dir, 'eval')
-    for directory in [train_dir, eval_dir]:
+    for directory in [shard_dir, train_dir, eval_dir]:  # order matters
         if not os.path.exists(directory):
             os.mkdir(directory)
 
