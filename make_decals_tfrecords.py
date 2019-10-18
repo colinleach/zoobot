@@ -48,7 +48,7 @@ if __name__ == '__main__':
             df,
             db=None,
             img_size=img_size,
-            columns_to_save=['id_str', 'label', 'total_votes'],
+            columns_to_save=['id_str', 'bar_strong', 'bar_weak', 'bar_none', 'bar_total'],  # TODO use schema to save all?
             save_dir=save_dir,
             shard_size=shard_size
         )
