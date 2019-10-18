@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 
-from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils
+from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, losses
 
 
 def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs):
@@ -17,7 +17,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         initial_size=params.initial_size,
         final_size=params.final_size,
         channels=channels,
-        label_col='label',
+        label_cols=['bar_strong', 'bar_weak', 'bar_no'],
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         train_steps=15,  # compensating for doubling the batch, still want to measure often
         eval_steps=5,
@@ -33,7 +33,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     train_config = input_utils.InputConfig(
         name='train',
         tfrecord_loc=train_records,
-        label_col=run_config.label_col,
+        label_cols=run_config.label_cols,
         stratify=False,
         shuffle=True,
         repeat=True,
@@ -48,7 +48,6 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False,  # train using softmax proxy for binomial loss,
         greyscale=True,
         zoom_central=False  # SMOOTH MODE
         # zoom_central=True  # BAR MODE
@@ -57,7 +56,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     eval_config = input_utils.InputConfig(
         name='eval',
         tfrecord_loc=eval_records,
-        label_col=run_config.label_col,
+        label_cols=run_config.label_cols,
         stratify=False,
         shuffle=True,
         repeat=False,
@@ -72,7 +71,6 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         initial_size=run_config.initial_size,
         final_size=run_config.final_size,
         channels=run_config.channels,
-        noisy_labels=False,  # eval using binomial loss
         greyscale=True,
         zoom_central=False  # SMOOTH MODE
         # zoom_central=True  # BAR MODE
@@ -92,7 +90,8 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         predict_dropout=0.5,  # change this to calibrate
         regression=True,  # important!
         log_freq=10,
-        image_dim=run_config.final_size  # not initial size
+        image_dim=run_config.final_size,  # not initial size
+        calculate_loss=losses.multinomial_loss  # assumes labels are columns of successes and predictions are cols of prob.
     )
 
     run_config.assemble(train_config, eval_config, model)

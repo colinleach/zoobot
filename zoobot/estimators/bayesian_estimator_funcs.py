@@ -162,7 +162,8 @@ class BayesianModel():
         tf.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-        predictions, response = dense_to_output(dense1, dropout_on=dropout_on, dropout_rate=dropout_rate)
+        predictions = dense_to_output(dense1, output_dim=tf.shape(labels)[1], dropout_on=dropout_on, dropout_rate=dropout_rate)
+        response = {'prediction': predictions}
 
         # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -313,7 +314,7 @@ def input_to_dense(features, mode, model):
     return dense1
 
 
-def dense_to_output(dense1, dropout_on, dropout_rate):
+def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
     # Add dropout operation
     # TODO refactor out, duplication + SRP
@@ -323,22 +324,16 @@ def dense_to_output(dense1, dropout_on, dropout_rate):
         training=dropout_on)
     tf.summary.tensor_summary('dropout_summary', dropout)
 
-    linear = tf.layers.dense(
+    prediction = tf.layers.dense(
         dropout,
-        units=2,  # num outputs
+        units=output_dim,  # num outputs
         name='layer_after_dropout')
-    tf.summary.histogram('layer_after_dropout', linear)
+    tf.summary.histogram('prediction', prediction)
 
-    prediction = linear
+    normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1)
+    tf.summary.histogram('normalised_prediction', normalised_prediction)
 
-    scalar_prediction = get_scalar_prediction(prediction)
-    tf.summary.histogram('scalar_prediction', scalar_prediction)
-    response = {
-        "prediction": scalar_prediction,  # softmaxed
-    }
-
-    # prediction has no softmax yet, response does
-    return prediction, response
+    return normalised_prediction
 
 
 def penalty_if_not_probability(predictions):

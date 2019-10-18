@@ -4,6 +4,7 @@ import shutil
 import time
 import copy
 from functools import partial
+from typing import List
 
 import numpy as np
 import tensorflow as tf
@@ -17,7 +18,7 @@ class RunEstimatorConfig():
             initial_size,
             final_size,
             channels,
-            label_col,
+            label_cols: List,
             epochs=50,
             train_steps=30,
             eval_steps=3,
@@ -33,7 +34,7 @@ class RunEstimatorConfig():
         self.initial_size = initial_size
         self.final_size=final_size
         self.channels = channels
-        self.label_col = label_col
+        self.label_cols = label_cols
         self.epochs = epochs
         self.train_batches = train_steps
         self.eval_batches = eval_steps
