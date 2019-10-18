@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help='Path to csv catalog of previous labels and file_loc, for shards')
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                         help='Directory into which to place shard directory')
-    parser.add_argument('--max', dest='max_labelled', type=int,
+    parser.add_argument('--max', dest='max_labelled', type=int, default=10000000000,
                         help='Max galaxies (for debugging/speed')
 
     args = parser.parse_args()
