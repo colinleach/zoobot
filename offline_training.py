@@ -31,7 +31,6 @@ if __name__ == '__main__':
     else:
       batch_size = 256
 
-    assert batch_size == 4
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
   

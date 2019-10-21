@@ -125,8 +125,6 @@ class TrainCallableFactory():
         """
         def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, **kw_args):
             logging.info('Training model on: {}'.format(train_records))
-            print(kw_args)
-            print(**kw_args)
             run_config = default_estimator_params.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, **kw_args)
             if self.test: # overrides warm_start
                 run_config.epochs = 2  # minimal training, for speed
