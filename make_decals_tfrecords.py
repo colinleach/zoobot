@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help='Path to csv catalog of previous labels and file_loc, for shards')
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                         help='Directory into which to place shard directory')
-    parser.add_argument('--img-size', dest='image_size', type=int, default=256,
+    parser.add_argument('--img-size', dest='img_size', type=int, default=256,
                         help='Directory into which to place shard directory')
     parser.add_argument('--max', dest='max_labelled', type=int, default=10000000000,
                         help='Max galaxies (for debugging/speed')
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     max_labelled = args.max_labelled
     shard_dir = args.shard_dir
     eval_size = args.eval_size
-    img_size = args.image_size
+    img_size = args.img_size
     shard_size = 4096
 
     labelled_catalog = pd.read_csv(labelled_catalog_loc)
