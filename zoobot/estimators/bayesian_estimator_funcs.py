@@ -135,8 +135,8 @@ class BayesianModel():
                 # eval_metric_ops = get_eval_metric_ops(self, labels, response)
                 # return tf.estimator.EstimatorSpec(
                 #     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-                # return tf.estimator.EstimatorSpec(mode=mode, loss=loss) # warning - no default eval op implemented!
-                raise NotImplementedError('No default eval op implemented - needs to be passed')
+                return tf.estimator.EstimatorSpec(mode=mode, loss=loss) # warning - no default eval op implemented! Only the loss. But okay?
+                # raise NotImplementedError('No default eval op implemented - needs to be passed')
 
 
 
