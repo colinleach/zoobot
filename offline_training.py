@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('--test', default=False, action='store_true')
     args = parser.parse_args()
 
-    shard_img_size = args.shard_image_size
+    shard_img_size = args.shard_img_size
     final_size = int(shard_img_size / 2) # temp
     warm_start = False
     test = args.test

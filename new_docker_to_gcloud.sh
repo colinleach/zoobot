@@ -26,3 +26,13 @@ docker run -d \
     python offline_training.py --train-dir /home/zoobot/data/decals/shards/multilabel_64/train --eval-dir /home/zoobot/data/decals/shards/multilabel_64/eval --experiment-dir /home/experiments/multilabel --epochs 10 --test
 
 docker logs --follow offline
+
+
+cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) && docker run -d \
+    --name offline \
+    -m 8GB \
+    -v /Data/repos/zoobot/data:/home/zoobot/data \
+    -v /Data/repos/zoobot/data/experiments/multilabel:/home/experiments/multilabel $IMAGE_URI  \
+    python offline_training.py --train-dir /home/zoobot/data/decals/shards/multilabel_64/train --eval-dir /home/zoobot/data/decals/shards/multilabel_64/eval --experiment-dir /home/experiments/multilabel --shard-img-size 64 --epochs 10 --test
+
+docker logs --follow offline
