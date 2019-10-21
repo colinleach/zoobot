@@ -338,7 +338,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     # prediction = tf.exp(output)  # to ensure > 0, without too many 0's from using relu or no 0/1 from using softmax
     # normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1, keepdims=True)
 
-    prediction = tf.identify(output)
+    prediction = tf.identity(output)
     normalised_prediction = tf.nn.softmax(prediction)  # probably normalised along axis=1 by default?
 
     print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
