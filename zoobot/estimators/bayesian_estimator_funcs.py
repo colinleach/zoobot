@@ -332,6 +332,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     prediction = tf.layers.dense(
         dropout,
         units=output_dim,  # num outputs
+        activation=tf.nn.relu,  # want > 0
         name='layer_after_dropout')
     tf.summary.histogram('prediction', prediction)
 
