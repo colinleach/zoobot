@@ -172,11 +172,14 @@ class BayesianModel():
             return response, None  # no loss, as labels not known (in general)
 
         else: # calculate loss for TRAIN/EVAL with binomial
-            labels = tf.stop_gradient(labels)
-            loss = self.calculate_loss(labels, predictions)
-            mean_loss = tf.reduce_mean(loss)
-            tf.losses.add_loss(mean_loss)
-            return response, mean_loss
+
+            print_op = tf.print('shapes', tf.shape(labels), tf.shape(predictions))
+            with tf.control_dependencies([print_op]):
+                labels = tf.stop_gradient(labels)
+                loss = self.calculate_loss(labels, predictions)
+                mean_loss = tf.reduce_mean(loss)
+                tf.losses.add_loss(mean_loss)
+                return response, mean_loss
 
 
 def input_to_dense(features, mode, model):

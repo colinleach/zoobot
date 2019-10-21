@@ -12,6 +12,7 @@ from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_uti
 def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
 
     channels = 3
+    assert batch_size == 4
 
     run_config = run_estimator.RunEstimatorConfig(
         initial_size=params.initial_size,
