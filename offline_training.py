@@ -45,4 +45,4 @@ if __name__ == '__main__':
     train_callable_obj.save(save_dir)
 
     train_callable = train_callable_obj.get()
-    train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.01, epochs=epochs, batch_size=batch_size, )  # can override default args here
+    train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size)  # can override default args here
