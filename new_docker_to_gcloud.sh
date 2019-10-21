@@ -24,3 +24,5 @@ docker run -d \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
     -v /Data/repos/zoobot/data/experiments/multilabel:/home/experiments/multilabel $IMAGE_URI  \
     python offline_training.py --train-dir /home/zoobot/data/decals/shards/multilabel/train --eval-dir /home/zoobot/data/decals/shards/multilabel/eval --experiment-dir /home/experiments/multilabel --epochs 10 --test
+
+docker logs --follow offline
