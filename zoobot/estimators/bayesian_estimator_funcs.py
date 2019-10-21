@@ -332,7 +332,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
         name='layer_after_dropout')
     tf.summary.histogram('prediction', prediction)
 
-    normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1)
+    normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1, keepdims=True)
     tf.summary.histogram('normalised_prediction', normalised_prediction)
 
     return normalised_prediction
