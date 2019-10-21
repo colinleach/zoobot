@@ -26,6 +26,11 @@ if __name__ == '__main__':
     train_records = [os.path.join(train_records_dir, x) for x in os.listdir(train_records_dir) if x.endswith('.tfrecord')]
     eval_records = [os.path.join(eval_records_dir, x) for x in os.listdir(eval_records_dir) if x.endswith('.tfrecord')]
 
+    if test:
+      batch_size = 4
+    else:
+      batch_size = 256
+
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
   
@@ -34,9 +39,9 @@ if __name__ == '__main__':
         initial_size=shard_img_size,
         final_size=final_size,
         warm_start=warm_start,
-        test=test
+        test=test,
     )
     train_callable_obj.save(save_dir)
 
-    train_callable = train_callable_obj.get()
+    train_callable = train_callable_obj.get(batch_size=batch_size)  # can override default args here
     train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.01, epochs=epochs)
