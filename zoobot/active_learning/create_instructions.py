@@ -117,13 +117,13 @@ class TrainCallableFactory():
         self.warm_start = warm_start
         self.test = test
 
-    def get(self, **kw_args):
+    def get(self):
         """Using the fixed params stored in self, create a train callable (see class def).
         
         Returns:
             callable: callable expecting per-iteration args, training a model when called
         """
-        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, kw_args):
+        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, **kw_args):
             logging.info('Training model on: {}'.format(train_records))
             print(kw_args)
             print(**kw_args)
