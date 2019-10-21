@@ -22,8 +22,8 @@ def multinomial_loss(successes, expected_probs):
     # for this to be correct, predictions must sum to 1 and successes must sum to n_trials
     # negative log loss, of course
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
-    expected_probs_printed = tf.Print(expected_probs, [tf.shape(expected_probs], 'Expected_probs shape')
-    sucesses_printed = tf.Print(successes, [tf.shape(successes], 'Successes shape')
+    expected_probs_printed = tf.Print(expected_probs, [tf.shape(expected_probs)], 'Expected_probs shape')
+    sucesses_printed = tf.Print(successes, [tf.shape(successes)], 'Successes shape')
     return -tf.reduce_sum(sucesses_printed * tf.log(expected_probs_printed + tf.constant(1e-8, dtype=tf.float32)), axis=1)  
 
 
