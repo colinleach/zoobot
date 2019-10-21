@@ -336,9 +336,14 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     tf.summary.histogram('prediction', prediction)
 
     normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1, keepdims=True)
-    tf.summary.histogram('normalised_prediction', normalised_prediction)
 
-    return normalised_prediction
+    print_op = tf.print('norm predictions', tf.shape(normalised_prediction), normalised_prediction)
+    with tf.control_dependencies([print_op]):
+        normalised_prediction_p = tf.identity(normalised_prediction)
+
+    tf.summary.histogram('normalised_prediction', normalised_prediction_p)
+
+    return normalised_prediction_p
 
 
 def penalty_if_not_probability(predictions):

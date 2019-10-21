@@ -12,11 +12,12 @@ RUN pip install -r zoobot/requirements.txt
 # will have tf from base image
 
 ADD shared-astro-utilities /home/shared-astro-utilities
-ADD gz-panoptes-reduction /home/gzreduction
-ADD zoobot /home/zoobot
-
 RUN pip install -e shared-astro-utilities 
+
+ADD gz-panoptes-reduction /home/gzreduction
 RUN pip install -e gzreduction
+
+ADD zoobot /home/zoobot
 RUN pip install -e zoobot
 
 WORKDIR /home/zoobot
