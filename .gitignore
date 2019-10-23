@@ -56,3 +56,6 @@ data/decals/classifications
 
 zooniverse_login.json
 .vscode/settings.json
+
+notebooks/estimators
+notebooks/molly_galaxies
