@@ -7,14 +7,16 @@ from zoobot.active_learning import mock_panoptes
 
 if __name__ == '__main__':
 
-    # careful, may technically be a different master catalog
-    master_catalog_loc = 'data/decals/decals_master_catalog.csv'
-    login_loc = 'zooniverse_login.json'
+    # even if the master catalog has changed, as long as it only includes new labels, you're safe
+    master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # all galaxies in DECALS, uploaded or not
+    login_loc = 'zooniverse_login.json'  # add your own credentials here if not exist
 
     project_id = '5733'  # main GZ project
     # project_id = '6490'  # mobile GZ project
 
+    # begin the upload process here
     df = pd.read_csv(master_catalog_loc)
+    # filter to galaxies which have not yet been labelled at all
     unlabelled = df[pd.isnull(df['smooth-or-featured_total-votes'])]
     unlabelled['id_str'] = unlabelled['iauname']  # my client expects this column
     print('{} of {} unlabelled'.format(len(unlabelled), len(df)))
@@ -30,7 +32,7 @@ if __name__ == '__main__':
 
     # galaxy zoo (and mobile app) will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(40000, 55000)
+    selected = slice(40000, 55000)  # if these are always increased, you'll never upload a galaxy twice
     name = 'random'
     retirement = 3
 
