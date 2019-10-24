@@ -172,13 +172,13 @@ class BayesianModel():
             return response, None  # no loss, as labels not known (in general)
 
         else: # calculate loss for TRAIN/EVAL with binomial
-            print_op = tf.print('labels', labels)
-            with tf.control_dependencies([print_op]):
-                labels = tf.stop_gradient(labels)
-                loss = self.calculate_loss(labels, predictions)
-                mean_loss = tf.reduce_mean(loss)
-                tf.losses.add_loss(mean_loss)
-                return response, mean_loss
+            # print_op = tf.print('labels', labels)
+            # with tf.control_dependencies([print_op]):
+            labels = tf.stop_gradient(labels)
+            loss = self.calculate_loss(labels, predictions)
+            mean_loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(mean_loss)
+            return response, mean_loss
 
 
 def input_to_dense(features, mode, model):
@@ -341,9 +341,9 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     prediction = tf.identity(output)
     normalised_prediction = tf.nn.softmax(prediction)  # probably normalised along axis=1 by default?
 
-    print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
-    with tf.control_dependencies([print_op]):
-        normalised_prediction_p = tf.identity(normalised_prediction)
+    # print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
+    # with tf.control_dependencies([print_op]):
+    normalised_prediction_p = tf.identity(normalised_prediction)
 
     # tf.summary.histogram('normalised_prediction', normalised_prediction_p)
 

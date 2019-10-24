@@ -23,9 +23,9 @@ def multinomial_loss(successes, expected_probs):
     # negative log loss, of course
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
     loss = -tf.reduce_sum(successes * tf.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)  
-    print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
-    with tf.control_dependencies([print_op]):
-        return loss
+    # print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
+    # with tf.control_dependencies([print_op]):
+    return loss
 
 def binomial_loss(labels, predictions):
     """Calculate likelihood of labels given predictions, if labels are binomially distributed
