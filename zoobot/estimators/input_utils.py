@@ -119,7 +119,6 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
             dataset = dataset.shuffle(1500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
         if repeat:
             dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
-        assert batch_size == 4
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
         iterator = dataset.make_one_shot_iterator()

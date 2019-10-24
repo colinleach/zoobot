@@ -21,6 +21,8 @@ if __name__ == '__main__':
                         help='Directory into which to place shard directory')
     parser.add_argument('--max', dest='max_labelled', type=int, default=10000000000,
                         help='Max galaxies (for debugging/speed')
+    parser.add_argument('--png-prefix', dest='png_prefix', type=str, default='')
+
 
     args = parser.parse_args()
     labelled_catalog_loc = args.labelled_catalog_loc
@@ -40,6 +42,9 @@ if __name__ == '__main__':
     for directory in [shard_dir, train_dir, eval_dir]:  # order matters
         if not os.path.exists(directory):
             os.mkdir(directory)
+
+    if args.png_prefix != '':
+        labelled_catalog['file_loc'] = labelled_catalog['file_loc'].apply(lambda x: x[30:] + args.png_prefix)
 
     train_df, eval_df = catalog_to_tfrecord.split_df(
         labelled_catalog, train_test_fraction=train_test_fraction)
