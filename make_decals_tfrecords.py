@@ -43,9 +43,10 @@ if __name__ == '__main__':
         if not os.path.exists(directory):
             os.mkdir(directory)
 
+    assert len(labelled_catalog) > 0
     if args.png_prefix != '':
         labelled_catalog['file_loc'] = labelled_catalog['file_loc'].apply(lambda x: args.png_prefix + x[35:])
-        logging.info('Expected files at: {}'.format(labelled_catalog['file_loc'][0]))
+        logging.info('Expected files at: {}'.format(labelled_catalog['file_loc'].iloc[0]))
 
     train_df, eval_df = catalog_to_tfrecord.split_df(
         labelled_catalog, train_test_fraction=train_test_fraction)

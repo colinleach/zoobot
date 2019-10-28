@@ -20,29 +20,15 @@ cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker bui
 
 export SHARD_IMG_SIZE=64
 
+docker rm $(docker ps -aq)
+
+# Build shards locally (needed rarely)
 docker run -d \
     --name shards \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
     -v /Data/repos/zoobot/data/experiments/multilabel_$SHARD_IMG_SIZE:/home/experiments/multilabel_$SHARD_IMG_SIZE $IMAGE_URI  \
-    python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000
+    python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000 --png-prefix=/Volumes/alpha/
 
-
-
-    parser = argparse.ArgumentParser(description='Make shards')
-    parser.add_argument('--labelled-catalog', dest='labelled_catalog_loc', type=str,
-                        help='Path to csv catalog of previous labels and file_loc, for shards')
-    parser.add_argument('--eval-size', dest='eval_size', type=str,
-                        help='Path to csv catalog of previous labels and file_loc, for shards')
-    parser.add_argument('--shard-dir', dest='shard_dir', type=str,
-                        help='Directory into which to place shard directory')
-    parser.add_argument('--img-size', dest='img_size', type=int, default=256,
-                        help='Directory into which to place shard directory')
-    parser.add_argument('--max', dest='max_labelled', type=int, default=10000000000,
-                        help='Max galaxies (for debugging/speed')
-    parser.add_argument('--png-prefix', dest='png_prefix', type=str, default='')
-
-
-docker rm $(docker ps -aq)
 
 # run locally
 docker run -d \
