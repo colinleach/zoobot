@@ -25,7 +25,7 @@ def multinomial_loss(successes, expected_probs):
 
     # temporarily setting to be weak vs no bar, for debugging
     # loss = -tf.reduce_sum(successes * tf.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
-    binary_loss = -tf.reduce_sum(successes[:, 1:2] * tf.log(expected_probs[:, 1:2] + tf.constant(1e-8, dtype=tf.float32)), axis=1)
+    binary_loss = -tf.reduce_sum(successes[:, 1:] * tf.log(expected_probs[:, 1:] + tf.constant(1e-8, dtype=tf.float32)), axis=1)
     tf.summary.histogram('successes_0', successes[:, 0])
     tf.summary.histogram('successes_1', successes[:, 1])
     tf.summary.histogram('successes_2', successes[:, 2])
