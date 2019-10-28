@@ -336,6 +336,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     # normalised_prediction = prediction / tf.reduce_sum(prediction, axis=1, keepdims=True)
 
     prediction = tf.identity(output)
+    prediction[:, 0] = tf.constant(0)  # TODO temporary!
     normalised_prediction = tf.nn.softmax(prediction)  # probably normalised along axis=1 by default?
 
     # print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
