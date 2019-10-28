@@ -93,13 +93,10 @@ class BayesianModel():
 
         """
 
-        # if labels is not None:
-        #     tf.summary.histogram('yes_votes', labels[:, 0])
-        #     tf.summary.histogram('total_votes', labels[:, 1])
-        #     tf.summary.histogram('observed_vote_fraction', labels[:, 0] / labels[:, 1])
-        #     response.update({
-        #         'labels': tf.identity(labels, name='labels'),  # these are None in predict mode
-        #     })
+        if labels is not None:  # TODO temporary only, will not generalise!
+            tf.summary.histogram('labels_0', labels[:, 0])
+            tf.summary.histogram('labels_0', labels[:, 1])
+            tf.summary.histogram('labels_0', labels[:, 2])
 
         response, loss = self.bayesian_regressor(features, labels, mode)
         
@@ -343,23 +340,11 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
 
     # print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
     # with tf.control_dependencies([print_op]):
-    normalised_prediction_p = tf.identity(normalised_prediction)
+    # normalised_prediction_p = tf.identity(normalised_prediction)
 
-    # tf.summary.histogram('normalised_prediction', normalised_prediction_p)
+    tf.summary.histogram('normalised_prediction', normalised_prediction)
 
-    return normalised_prediction_p
-
-
-def penalty_if_not_probability(predictions):
-    above_one = tf.maximum(predictions, 1.) - 1  # distance above 1
-    below_zero = tf.abs(tf.minimum(predictions, 0.))  # distance below 0
-    deviation_penalty = tf.reduce_sum(above_one + below_zero) # penalty for deviation in either direction
-    tf.summary.histogram('deviation_penalty', deviation_penalty)
-    tf.summary.histogram('deviation_penalty_clipped', tf.clip_by_value(deviation_penalty, 0., 30.))
-    return deviation_penalty
-    # print_op = tf.print('deviation_penalty', deviation_penalty)
-    # with tf.control_dependencies([print_op]):
-    #     return tf.identity(deviation_penalty)  
+    return normalised_prediction
 
 
 def get_gz_binomial_eval_metric_ops(self, labels, predictions):
