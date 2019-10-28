@@ -92,11 +92,9 @@ class BayesianModel():
         Returns:
 
         """
-
-        if labels is not None:  # TODO temporary only, will not generalise!
-            tf.summary.histogram('labels_0', labels[:, 0])
-            tf.summary.histogram('labels_0', labels[:, 1])
-            tf.summary.histogram('labels_0', labels[:, 2])
+        if labels is not None:
+            for n in range(self.output_dim):
+                tf.summary.histogram('labels_{}'.format(n), labels[:, n])
 
         response, loss = self.bayesian_regressor(features, labels, mode)
         
