@@ -18,24 +18,19 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     return total_loss
 
 
-def multinomial_loss(successes, expected_probs):
+def multinomial_loss(successes, expected_probs, output_dim=2):
     # for this to be correct, predictions must sum to 1 and successes must sum to n_trials
     # negative log loss, of course
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
 
-    # temporarily setting to be weak vs no bar, for debugging
-    # loss = -tf.reduce_sum(successes * tf.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
-    binary_loss = -tf.reduce_sum(successes[:, 1:] * tf.log(expected_probs[:, 1:] + tf.constant(1e-8, dtype=tf.float32)), axis=1)
-    tf.summary.histogram('successes_0', successes[:, 0])
-    tf.summary.histogram('successes_1', successes[:, 1])
-    tf.summary.histogram('successes_2', successes[:, 2])
-    tf.summary.histogram('expected_probs_0', expected_probs[:, 0])
-    tf.summary.histogram('expected_probs_1', expected_probs[:, 1])
-    tf.summary.histogram('expected_probs_2', expected_probs[:, 2])
-    tf.summary.histogram('loss', binary_loss)
+    loss = -tf.reduce_sum(successes * tf.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
+    for n in range(output_dim):  # careful, output_dim must be fixed
+        tf.summary.histogram('successes_{}'.format(n), successes[:, n])
+        tf.summary.histogram('expected_probs_{}', expected_probs[:, n])
+    tf.summary.histogram('loss', loss)
     # print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
     # with tf.control_dependencies([print_op]):
-    return binary_loss
+    return loss
 
 def binomial_loss(labels, predictions):
     """Calculate likelihood of labels given predictions, if labels are binomially distributed

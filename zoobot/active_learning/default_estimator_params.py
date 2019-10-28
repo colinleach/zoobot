@@ -92,8 +92,8 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size,  # not initial size
-        calculate_loss=losses.multinomial_loss  # assumes labels are columns of successes and predictions are cols of prob.
-    )
+        calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
+    )  # WARNING will need to be updated for multiquestion
 
     run_config.assemble(train_config, eval_config, model)
     return run_config
