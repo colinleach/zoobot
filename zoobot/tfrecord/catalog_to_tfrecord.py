@@ -68,7 +68,8 @@ def get_reader(paths):
     # check for consistency
     assert all([loc.split('.')[-1] == file_format for loc in paths])
     # check that file paths resolve correctly
-    assert all(os.path.isfile(loc) for loc in paths)
+    if not all(os.path.isfile(loc) for loc in paths):
+        raise FileNotFoundError('Check file paths: currently prefixed like {}'.format(paths[0]))
     if file_format == 'png':
         reader = load_png_as_pil
     elif file_format == 'fits':

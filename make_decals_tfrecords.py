@@ -44,7 +44,7 @@ if __name__ == '__main__':
             os.mkdir(directory)
 
     if args.png_prefix != '':
-        labelled_catalog['file_loc'] = labelled_catalog['file_loc'].apply(lambda x: args.png_prefix + x[30:])
+        labelled_catalog['file_loc'] = labelled_catalog['file_loc'].apply(lambda x: args.png_prefix + x[35:])
         logging.info('Expected files at: {}'.format(labelled_catalog['file_loc'][0]))
 
     train_df, eval_df = catalog_to_tfrecord.split_df(
