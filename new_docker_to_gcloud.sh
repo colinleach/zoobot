@@ -18,19 +18,19 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 
 cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./
 
-# export SHARD_IMG_SIZE=64
-export SHARD_IMG_SIZE=256
+export SHARD_IMG_SIZE=64
+# export SHARD_IMG_SIZE=256
 
 docker rm $(docker ps -aq)
 
 # Build shards locally (needed rarely)
+
 docker run  \
     --name shards \
     -v /Volumes/alpha/decals:/home/data/decals \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
     -v /Data/repos/zoobot/data/experiments/multilabel_$SHARD_IMG_SIZE:/home/experiments/multilabel_$SHARD_IMG_SIZE $IMAGE_URI  \
     python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000 --png-prefix=/home/data
-
 
 # run locally
 docker run -d \
