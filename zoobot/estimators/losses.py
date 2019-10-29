@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 
@@ -13,27 +14,28 @@ def get_scalar_prediction(prediction):
 # requires that labels be continguous by question - easily satisfied
 def get_schema_from_label_cols(label_cols, questions):
     print('label_cols: {}'.format(label_cols))
-    schema = {}
-    if 'smooth' in questions:
-        schema['smooth'] = slice(
-                label_cols.index('smooth-or-featured_smooth'),
-                label_cols.index('smooth-or-featured_featured-or-disk')
-                # TODO add artifact?
-        )
-    if 'spiral' in questions:
-        schema['spiral'] = slice(
+    schema = np.zeros((len(questions), 2))
+    # if 'smooth' in questions:
+    schema[0] = [
+            label_cols.index('smooth-or-featured_smooth'),
+            label_cols.index('smooth-or-featured_featured-or-disk')
+            # TODO add artifact?
+    ]
+    # if 'spiral' in questions:
+    schema[1] = [
             label_cols.index('has-spiral-arms_yes'),
             label_cols.index('has-spiral-arms_no')
-        )
-    return schema
+    ]
+    print('schema: {}'.format(schema))
+    return tf.constant(schema, dtype=tf.int8)
 
 
 def multiquestion_loss(labels, predictions, question_index_groups):
     # very important that question_index_groups is fixed, else tf autograph will mess up this for loop
-    answer_slices = question_index_groups.items()  # list of list of indices e.g. [[0, 1], [3, 4]]
+    # answer_slices = question_index_groups.items()  # list of list of indices e.g. [[0, 1], [3, 4]]
     all_losses = tf.map_fn(
-        lambda x: multinomial_loss(labels[:, x], predictions[:, x]),
-        answer_slices
+        lambda x: multinomial_loss(labels[:, x[0]:x[1]], predictions[:, x[0]:x[1]]),
+        question_index_groups
     )
     # TODO good view into each loss
     total_loss = tf.reduce_mean(all_losses)

@@ -9,8 +9,8 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, losses
 
 
-def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10, label_cols=['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk']):
-
+def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, label_cols, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
+    # TODO enforce keyword only arguments
     channels = 3
 
     run_config = run_estimator.RunEstimatorConfig(

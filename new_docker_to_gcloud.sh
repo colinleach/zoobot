@@ -38,7 +38,7 @@ cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker bui
     -v /Data/repos/zoobot/data/experiments/multilabel_$SHARD_IMG_SIZE:/home/experiments/multilabel_$SHARD_IMG_SIZE $IMAGE_URI  \
     python offline_training.py --train-dir /home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE/train --eval-dir /home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE/eval --experiment-dir /home/experiments/multilabel_$SHARD_IMG_SIZE --shard-img-size $SHARD_IMG_SIZE --epochs 10 --test
 
-
+# if running in detached [-d] mode
 docker logs --follow offline
 
 # construct shards with full catalog (locally)
