@@ -55,7 +55,7 @@ if __name__ == '__main__':
     if len(train_df) < len(eval_df):
         print('More eval subjects than training subjects - is this intended?')
 
-    label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk', 'smooth-or-featured_artifact', 'smooth-or-featured_total-votes', 'bar_strong', 'bar_weak', 'bar_no', 'bar_total-votes']
+    label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk', 'smooth-or-featured_artifact', 'smooth-or-featured_total-votes', 'bar_strong', 'bar_weak', 'bar_no', 'bar_total-votes',  'spiral_yes', 'spiral_no', 'spiral_total-votes']
     columns_to_save = ['id_str'] + label_cols
     for (df, save_dir) in [(train_df, train_dir), (eval_df, eval_dir)]:
         database.write_catalog_to_tfrecord_shards(

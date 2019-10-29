@@ -18,16 +18,18 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 
 cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./
 
-export SHARD_IMG_SIZE=64
+# export SHARD_IMG_SIZE=64
+export SHARD_IMG_SIZE=256
 
 docker rm $(docker ps -aq)
 
 # Build shards locally (needed rarely)
-docker run -d \
+docker run  \
     --name shards \
+    -v /Volumes/alpha/decals:/home/data/decals \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
     -v /Data/repos/zoobot/data/experiments/multilabel_$SHARD_IMG_SIZE:/home/experiments/multilabel_$SHARD_IMG_SIZE $IMAGE_URI  \
-    python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000 --png-prefix=/Volumes/alpha/
+    python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000 --png-prefix=/home/data
 
 
 # run locally
@@ -108,6 +110,7 @@ gcloud compute instances create $INSTANCE_NAME \
 gcloud compute instances list
 gcloud compute instances describe zoobot-p100-cli
 gcloud compute ssh zoobot-p100-cli -- -L 8080:127.0.0.1:8080
+gcloud compute instances start zoobot-p100-cli
 gcloud compute instances stop zoobot-p100-cli
 gcloud compute instances delete zoobot-p100-cli
 
@@ -172,4 +175,8 @@ sudo mount -o discard,defaults $DEVICE_LOC $MNT_DIR
 sudo chmod a+w $MNT_DIR
 
 # Go!
+MNT_DIR=/mnt/disks/data
 docker run --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest
+
+docker run -d --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest python make_decals_tfrecords.py --labelled-catalog /home/data/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=2500 --shard-dir=/home/data/decals/shards/multilabel_all_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --png-prefix=/home/data
+
