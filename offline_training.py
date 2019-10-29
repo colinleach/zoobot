@@ -48,5 +48,6 @@ if __name__ == '__main__':
     train_callable = train_callable_obj.get()
     # label_cols = ['bar_strong', 'bar_weak', 'bar_no']
     # label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk']
-    label_cols = ['has-spiral-arms_yes', 'has-spiral-arms_no']
+    # label_cols = ['has-spiral-arms_yes', 'has-spiral-arms_no']
+    label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk', 'has-spiral-arms_yes', 'has-spiral-arms_no']
     train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size, label_cols=label_cols)  # can override default args here
