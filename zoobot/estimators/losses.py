@@ -42,7 +42,7 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     spiral_loss = multinomial_loss(labels[:, 2:], predictions[:, 2:])
     tf.summary.histogram('spiral_loss', spiral_loss)
     # TODO good view into each loss
-    total_loss = tf.reduce_mean(smooth_loss + spiral_loss, axis=1)
+    total_loss = tf.reduce_mean(smooth_loss + spiral_loss)
     tf.summary.histogram('total_loss', total_loss)
     return total_loss
 
