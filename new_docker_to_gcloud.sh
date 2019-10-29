@@ -5,17 +5,6 @@ export IMAGE_TAG=latest
 export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
 # gcr.io/zoobot-223419/zoobot:latest
 
-
-docker build -f Dockerfile -t $IMAGE_URI ./
-
-# first time only
-# gcloud auth configure-docker  
-
-# docker push $IMAGE_URI
-
-# https://cloud.google.com/blog/products/ai-machine-learning/introducing-deep-learning-containers-consistent-and-portable-environments
-# https://cloud.docker.com/u/mikewalmsley/repository/docker/mikewalmsley/zoobot
-
 cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./
 
 export SHARD_IMG_SIZE=64
