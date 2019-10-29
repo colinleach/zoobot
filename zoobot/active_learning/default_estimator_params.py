@@ -76,7 +76,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # zoom_central=True  # BAR MODE
     )
 
-    schema = losses.get_schema_from_label_cols(label_cols=label_cols, questions=['smooth', 'spiral'])
+    schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         learning_rate=learning_rate,

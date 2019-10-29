@@ -12,6 +12,7 @@ def get_scalar_prediction(prediction):
 
 # requires that labels be continguous by question - easily satisfied
 def get_schema_from_label_cols(label_cols, questions):
+    print('label_cols: {}'.format(label_cols))
     schema = {}
     if 'smooth' in questions:
         schema['smooth'] = slice(
