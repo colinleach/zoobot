@@ -3,7 +3,7 @@ import tempfile
 
 import pandas as pd
 
-from zoobot.active_learning import mock_panoptes
+from zoobot.active_learning import oracles
 
 if __name__ == '__main__':
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
 
         unlabelled[selected].to_csv(unlabelled_loc)
-        panoptes = mock_panoptes.Panoptes(
+        panoptes = oracles.Panoptes(
             catalog_loc=unlabelled_loc,
             login_loc=login_loc,
             project_id=project_id,
