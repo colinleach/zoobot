@@ -10,11 +10,33 @@ def get_scalar_prediction(prediction):
     return tf.nn.softmax(prediction)[:, 1]
 
 
+# requires that labels be continguous by question - easily satisfied
+def get_schema_from_label_cols(label_cols, questions):
+    schema = {}
+    if 'smooth' in questions:
+        schema['smooth'] = slice(
+                label_cols.index('smooth-or-featured_smooth'),
+                label_cols.index('smooth-or-featured_featured-or-disk')
+                # TODO add artifact?
+        )
+    if 'spiral' in questions:
+        schema['spiral'] = slice(
+            label_cols.index('has-spiral-arms_yes'),
+            label_cols.index('has-spiral-arms_no')
+        )
+    return schema
+
+
 def multiquestion_loss(labels, predictions, question_index_groups):
     # very important that question_index_groups is fixed, else tf autograph will mess up this for loop
-    total_loss = 0
-    for question_group in question_index_groups:
-        total_loss += multinomial_loss(labels[question_group], predictions[question_group])
+    answer_slices = question_index_groups.items()  # list of list of indices e.g. [[0, 1], [3, 4]]
+    all_losses = tf.map_fn(
+        lambda x: multinomial_loss(labels[:, x], predictions[:, x]),
+        answer_slices
+    )
+    # TODO good view into each loss
+    total_loss = tf.reduce_mean(all_losses)
+    tf.summary.scalar('total_loss', total_loss)
     return total_loss
 
 
