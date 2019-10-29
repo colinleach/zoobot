@@ -27,18 +27,22 @@ def get_schema_from_label_cols(label_cols, questions):
             label_cols.index('has-spiral-arms_no')
     ]
     print('schema: {}'.format(schema))
-    return tf.constant(schema, dtype=tf.int8)
+    return tf.constant(schema.astype(int), dtype=tf.int32)
 
 
 def multiquestion_loss(labels, predictions, question_index_groups):
     # very important that question_index_groups is fixed, else tf autograph will mess up this for loop
     # answer_slices = question_index_groups.items()  # list of list of indices e.g. [[0, 1], [3, 4]]
-    all_losses = tf.map_fn(
-        lambda x: multinomial_loss(labels[:, x[0]:x[1]], predictions[:, x[0]:x[1]]),
-        question_index_groups
-    )
+    # all_losses = tf.map_fn(
+    #     lambda x: multinomial_loss(labels[:, x[0]:x[1]], predictions[:, x[0]:x[1]]),
+    #     question_index_groups
+    # )
+    smooth_loss = multinomial_loss(labels[:, :2], predictions[:, :2])
+    tf.summary.histogram('smooth_loss', smooth_loss)
+    spiral_loss = multinomial_loss(labels[:, 2:], predictions[:, 2:])
+    tf.summary.histogram('spiral_loss', spiral_loss)
     # TODO good view into each loss
-    total_loss = tf.reduce_mean(all_losses)
+    total_loss = tf.reduce_mean(smooth_loss + spiral_loss)
     tf.summary.scalar('total_loss', total_loss)
     return total_loss
 
