@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     # galaxy zoo (and mobile app) will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(40000, 55000)
+    selected = slice(55000, 65000)
     name = 'random'
     retirement = 3
 

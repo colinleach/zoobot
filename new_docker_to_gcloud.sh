@@ -19,7 +19,7 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./
 
 export SHARD_IMG_SIZE=64
-# export SHARD_IMG_SIZE=256
+
 
 docker rm $(docker ps -aq)
 
@@ -33,7 +33,7 @@ docker run  \
     python make_decals_tfrecords.py --labelled-catalog /home/zoobot/data/decals/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=500 --shard-dir=/home/zoobot/data/decals/shards/multilabel_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --max=1000 --png-prefix=/home/data
 
 # run locally
-docker run -d \
+docker run \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -42,7 +42,7 @@ docker run -d \
 
 
 # pr pull, build, and run locally in one command
-cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) ; docker run -d \
+cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) ; docker run \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -175,8 +175,9 @@ sudo mount -o discard,defaults $DEVICE_LOC $MNT_DIR
 sudo chmod a+w $MNT_DIR
 
 # Go!
-MNT_DIR=/mnt/disks/data
-docker run --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest
+export SHARD_IMG_SIZE=256
+export MNT_DIR=/mnt/disks/data
+docker run -d --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest 
 
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest python make_decals_tfrecords.py --labelled-catalog /home/data/prepared_catalogs/decals_smooth_may/labelled_catalog.csv --eval-size=2500 --shard-dir=/home/data/decals/shards/multilabel_all_$SHARD_IMG_SIZE --img-size=$SHARD_IMG_SIZE --png-prefix=/home/data
 
