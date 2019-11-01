@@ -3,20 +3,18 @@ import tempfile
 
 import pandas as pd
 
-from zoobot.active_learning import mock_panoptes
+from zoobot.active_learning import oracles
 
 if __name__ == '__main__':
 
-    # even if the master catalog has changed, as long as it only includes new labels, you're safe
-    master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # all galaxies in DECALS, uploaded or not
-    login_loc = 'zooniverse_login.json'  # add your own credentials here if not exist
+    # careful, may technically be a different master catalog
+    master_catalog_loc = 'data/decals/decals_master_catalog.csv'
+    login_loc = 'zooniverse_login.json'
 
     project_id = '5733'  # main GZ project
     # project_id = '6490'  # mobile GZ project
 
-    # begin the upload process here
     df = pd.read_csv(master_catalog_loc)
-    # filter to galaxies which have not yet been labelled at all
     unlabelled = df[pd.isnull(df['smooth-or-featured_total-votes'])]
     unlabelled['id_str'] = unlabelled['iauname']  # my client expects this column
     print('{} of {} unlabelled'.format(len(unlabelled), len(df)))
@@ -32,7 +30,7 @@ if __name__ == '__main__':
 
     # galaxy zoo (and mobile app) will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(40000, 55000)  # if these are always increased, you'll never upload a galaxy twice
+    selected = slice(55000, 65000)
     name = 'random'
     retirement = 3
 
@@ -40,7 +38,7 @@ if __name__ == '__main__':
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
 
         unlabelled[selected].to_csv(unlabelled_loc)
-        panoptes = mock_panoptes.Panoptes(
+        panoptes = oracles.Panoptes(
             catalog_loc=unlabelled_loc,
             login_loc=login_loc,
             project_id=project_id,
