@@ -1,5 +1,5 @@
-# FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
-FROM gcr.io/deeplearning-platform-release/tf-gpu.1-14
+FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
+# FROM gcr.io/deeplearning-platform-release/tf-gpu.1-14
 # FROM tensorflow/tensorflow 
 
 WORKDIR /home
