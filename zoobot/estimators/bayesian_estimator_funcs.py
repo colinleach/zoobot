@@ -349,7 +349,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
 
 def get_proxy_mean_squared_error_eval_ops(labels, predictions):
     # TODO again, hardcoded!
-    observed_vote_fractions = tf.concat([ labels[:, :2]/tf.reduce_sum(labels[:, :2], axis=1), labels[:, 2:]/tf.reduce_sum(labels[:, 2:], axis=1) ])
+    observed_vote_fractions = tf.concat([ labels[:, :2]/tf.reduce_sum(labels[:, :2], axis=1), labels[:, 2:]/tf.reduce_sum(labels[:, 2:], axis=1) ], axis=1)
     return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)}
 
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):
