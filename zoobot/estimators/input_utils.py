@@ -126,12 +126,12 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
-    batch_data = batch['matrix']
+    batch_data = batch['matrix']  # will automatically read uint8 into float32
     batch_images = tf.reshape(
         batch_data,
         [-1, size, size, channels])  # may not get full batch at end of dataset
     assert len(batch_images.shape) == 4
-    tf.compat.v1.summary.image('a_original', batch_images)
+    tf.summary.image('a_original', batch_images)
     # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
     return batch_images
 
@@ -198,14 +198,14 @@ def preprocess_batch(batch_images, config):
             assert channel_images.shape[1] == config.initial_size
             assert channel_images.shape[2] == config.initial_size
             assert channel_images.shape[3] == 1
-            tf.compat.v1.summary.image('b_greyscale', channel_images)
+            tf.summary.image('b_greyscale', channel_images)
         else:
             channel_images = tf.identity(batch_images)
 
         augmented_images = augment_images(channel_images, config)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
-        tf.compat.v1.summary.image('c_augmented', augmented_images)
+        tf.summary.image('c_augmented', augmented_images)
 
         feature_cols = {'x': augmented_images}
         return feature_cols
@@ -276,7 +276,7 @@ def geometric_augmentation(images, zoom, final_size, central):
     Args:
         images ():
         zoom (tuple): of form {min zoom in decimals e,g, 1.0, max zoom in decimals e.g, 1.2}
-        final_size ():
+        final_size (): resize to this after crop
 
     Returns:
         (Tensor): image rotated, flipped, cropped and (perhaps) normalized, shape (target_size, target_size, channels)
@@ -301,14 +301,9 @@ def geometric_augmentation(images, zoom, final_size, central):
         images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
-    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central), images)
+    # images has a fixed size due to final_size
+    images = tf.stack([crop_random_size(x, zoom=zoom, central=central, final_size=final_size) for x in images])
 
-    # resize to final desired size (may match crop size)
-    images = tf.image.resize(
-        images,
-        tf.constant([final_size, final_size], dtype=tf.int32),
-        method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
-    )
     return images
 
 
@@ -320,16 +315,23 @@ def random_rotation(im):
     )
 
 
-def crop_random_size(im, zoom, central):
+def crop_random_size(im, zoom, central, final_size):
     original_width = int(im.shape[1]) # int cast allows division of Dimension
     new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))
     if central:
         lost_width = int((original_width - new_width) / 2)
-        return im[lost_width:-lost_width, lost_width:-lost_width]
+        cropped_im = im[lost_width:original_width-lost_width, lost_width:original_width-lost_width]
     else:
         cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
-        return tf.image.random_crop(im, cropped_shape)
+        cropped_im = tf.image.random_crop(im, cropped_shape)
 
+    # resize to final desired size (may match crop size)
+    final_im = tf.image.resize(
+        cropped_im,
+        tf.constant([final_size, final_size], dtype=tf.int32),
+        method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
+    )
+    return final_im
 
 
 def photographic_augmentation(images, max_brightness_delta, contrast_range):
@@ -366,7 +368,7 @@ def ensure_images_have_batch_dimension(images):
     return images
 
 
-def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
+def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels', label_cols=None):
     """Wrapper to mimic the run_estimator.py input procedure.
     Get subjects and labels from tfrecord, just like during training
     Subjects must fit in memory, as they are loaded as a single batch
@@ -381,7 +383,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
     config = InputConfig(
         name='predict',
         tfrecord_loc=tfrecord_loc,
-        label_cols=['label_a', 'label_b'],
+        label_cols=label_cols,
         stratify=False,
         shuffle=False,  # important - preserve the order
         repeat=False,
@@ -396,6 +398,7 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels'):
         channels=3
     )
     if mode == 'labels':
+        assert label_cols is not None
         batch_images, batch_labels = load_batches_with_labels(config)
         id_strs = None
     elif mode == 'id_str':
