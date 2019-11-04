@@ -58,31 +58,31 @@ def multiquestion_loss(labels, predictions, question_index_groups, num_questions
     #     lambda x: multinomial_loss(labels[:, x[0]:x[1]], predictions[:, x[0]:x[1]]),
     #     question_index_groups
     # )
-    # smooth_loss = multinomial_loss(labels[:, :2], predictions[:, :2])
-    # tf.summary.histogram('smooth_loss', smooth_loss)
-    # spiral_loss = multinomial_loss(labels[:, 2:], predictions[:, 2:])
-    # tf.summary.histogram('spiral_loss', spiral_loss)
-    # # TODO good view into each loss
-    # total_loss = tf.reduce_mean(smooth_loss + spiral_loss)
-    # tf.summary.histogram('total_loss', total_loss)
+    smooth_loss = multinomial_loss(labels[:, :2], predictions[:, :2])
+    tf.summary.histogram('smooth_loss', smooth_loss)
+    spiral_loss = multinomial_loss(labels[:, 2:], predictions[:, 2:])
+    tf.summary.histogram('spiral_loss', spiral_loss)
+    # TODO good view into each loss
+    total_loss = tf.reduce_mean(smooth_loss + spiral_loss)
+    tf.summary.histogram('total_loss', total_loss)
+    return total_loss
 
     # do next
     # not really sure why tf separately requires num_partitions to be specified...?
-    labels_dim = tf.shape(input=labels)[1]
-    batch_dim = tf.shape(input=labels)[0]
-    copied_indices = tf.tile(question_index_groups, tf.expand_dims(batch_dim, axis=0))
-    tiled_indices = tf.reshape(copied_indices, (batch_dim, labels_dim))
-    labels_by_q = tf.dynamic_partition(labels, tiled_indices, num_partitions=num_questions)
-    predictions_by_q = tf.dynamic_partition(predictions, tiled_indices, num_partitions=num_questions)
+    # labels_dim = tf.shape(input=labels)[1]
+    # batch_dim = tf.shape(input=labels)[0]
+    # copied_indices = tf.tile(question_index_groups, tf.expand_dims(batch_dim, axis=0))
+    # tiled_indices = tf.reshape(copied_indices, (batch_dim, labels_dim))
+    # labels_by_q = tf.dynamic_partition(labels, tiled_indices, num_partitions=num_questions)
+    # predictions_by_q = tf.dynamic_partition(predictions, tiled_indices, num_partitions=num_questions)
 
     # print_op = tf.print('copied_indices', copied_indices, 'tiled_indices', tiled_indices, 'labels_by_q', labels_by_q,  'predictions_by_q', predictions_by_q)
     # with tf.control_dependencies([print_op]):
     #     copied_indices = tf.identity(copied_indices)
-    # return copied_indices
-
-    losses_list = [multinomial_loss(question_labels, question_predictions) for question_labels, question_predictions in zip(labels_by_q, predictions_by_q)]
-    losses = tf.concat(losses, axis=1)
-    return losses  # reduce later!
+    # return copied_
+    # losses_list = [multinomial_loss(question_labels, question_predictions) for question_labels, question_predictions in zip(labels_by_q, predictions_by_q)]
+    # losses = tf.concat(losses, axis=1)
+    # return losses  # reduce later!
 
 
 def multinomial_loss(successes, expected_probs, output_dim=2):
