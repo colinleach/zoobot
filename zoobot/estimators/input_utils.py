@@ -121,8 +121,8 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
             dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
-        iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
-        return iterator.get_next()
+        # warning, no longer one shot iterator
+        return dataset
 
 
 def get_images_from_batch(batch, size, channels, summary=False):

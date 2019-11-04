@@ -12,15 +12,12 @@ def estimator_wrapper(features, labels, mode, params):
     return params.entry_point(features, labels, mode)  # must have exactly the args (features, labels)
 
 
-class BayesianModel():
+class BayesianModel(tf.keras.Model):
 
     def __init__(
             self,
             image_dim,
-            calculate_loss,
             output_dim,
-            learning_rate=0.001,
-            optimizer=tf.compat.v1.train.AdamOptimizer,
             conv1_filters=32,
             conv1_kernel=1,
             conv1_activation=tf.nn.relu,
@@ -37,6 +34,8 @@ class BayesianModel():
             regression=False,
             log_freq=10,
     ):
+        super(BayesianModel, self).__init__()
+
         self.output_dim = output_dim  # n final neuron
         self.image_dim = image_dim
         # self.calculate_loss = calculate_loss # callable loss = calculate_loss(labels, predictions) (or can subclass)
@@ -150,26 +149,27 @@ class BayesianModel():
             name='model/layer5/dense1')
 
 
-    def __call__(self, x, training):
+    def __call__(self, x, training=None):
 
+        dropout_on = True  # dropout always on, regardless of training arg (required by keras)
         x = self.conv1(x)
-        x = self.drop1(x, training=training)
+        x = self.drop1(x, training=dropout_on)
         x = self.conv1b(x)
-        x = self.drop1b(x, training=training)
+        x = self.drop1b(x, training=dropout_on)
         x = self.pool1(x)
 
         x = self.conv2(x)
-        x = self.drop2(x, training=training)
+        x = self.drop2(x, training=dropout_on)
         x = self.conv2b(x)
-        x = self.drop2b(x, training=training)
+        x = self.drop2b(x, training=dropout_on)
         x = self.pool2(x)
 
         x = self.conv3(x)
-        x = self.drop3(x, training=training)
+        x = self.drop3(x, training=dropout_on)
         x = self.pool3(x)
 
         x = self.conv4(x)
-        x = self.drop4(x, training=training)
+        x = self.drop4(x, training=dropout_on)
         x = self.pool4(x)
 
         """
@@ -181,13 +181,14 @@ class BayesianModel():
         """
         x = tf.reshape(x, [-1, int(self.image_dim / 16) ** 2 * self.conv3_filters], name='model/layer4/flat')
 
-        x = self.dropout_final(x, training=training)
+        x = self.dropout_final(x, training=dropout_on)
         x = self.dense_final(x)
-        tf.summary.histogram('prediction', x)
+        print(x, 'before histogram')
+        # tf.summary.histogram('prediction', x)
 
         # normalise predictions by question (TODO hardcoded!)
         x = tf.concat([ tf.nn.softmax(x[:, :2]), tf.nn.softmax(x[:, 2:]) ], axis=1)
-        tf.compat.v1.summary.histogram('normalised_prediction', x)
+        # tf.summary.histogram('normalised_prediction', x)
         return x
 
 
