@@ -362,8 +362,8 @@ def get_proxy_mean_squared_error_eval_ops(labels, predictions):
     tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
     return {
         # "rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)
-            'smooth_observed_fracs': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
-            'spiral_observed_fracs': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
+            'smooth_observed_fracs_eval': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
+            'spiral_observed_fracs_eval': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
         }
 
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):

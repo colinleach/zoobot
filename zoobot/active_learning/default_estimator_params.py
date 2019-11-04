@@ -76,7 +76,9 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # zoom_central=True  # BAR MODE
     )
 
-    schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
+    # schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
+    questions = ['smooth', 'spiral']
+    question_indices = losses.get_indices_from_label_cols(label_cols=run_config.label_cols, questions=questions)
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         learning_rate=learning_rate,
@@ -93,7 +95,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size,  # not initial size
-        calculate_loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema)
+        calculate_loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_indices, num_questions=len(questions), dtype=tf.int32)
         # calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
     )  # WARNING will need to be updated for multiquestion
 
