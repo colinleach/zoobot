@@ -356,14 +356,14 @@ def get_proxy_mean_squared_error_eval_ops(labels, predictions):
     tf.summary.histogram('smooth_total', smooth_total)
     tf.summary.histogram('spiral_total', spiral_total)
     smooth_observed_fracs = labels[:, 0]/smooth_total
-    spiral_observed_fracs = labels[:, 1]/spiral_total
+    spiral_observed_fracs = labels[:, 2]/spiral_total
     # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
     tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
     tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
     return {
         # "rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)
-            'smooth_observed_fracs': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions),
-            'spiral_observed_fracs': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions)
+            'smooth_observed_fracs': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
+            'spiral_observed_fracs': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
         }
 
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):
