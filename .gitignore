@@ -56,3 +56,4 @@ data/decals/classifications
 
 zooniverse_login.json
 .vscode/settings.json
+.vscode/*

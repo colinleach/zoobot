@@ -163,7 +163,7 @@ sudo mkdir -p $MNT_DIR
 sudo mount -o discard,defaults $DEVICE_LOC $MNT_DIR
 sudo chmod a+w $MNT_DIR
 
-# Go!
+# Run default notebook/tensorboard
 export SHARD_IMG_SIZE=256
 export MNT_DIR=/mnt/disks/data
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data -p 8080:8080 gcr.io/zoobot-223419/zoobot:latest 
@@ -181,4 +181,4 @@ docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobo
 # export EXPERIMENT_DIR=/home/data/experiments/multilabel_feat10_$SHARD_IMG_SIZE
 export EXPERIMENT_DIR=/home/data/experiments/multiquestion_smooth_spiral_feat10_$SHARD_IMG_SIZE
 export EPOCHS=100
-docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python offline_training.py --experiment-dir $EXPERIMENT_DIR --train-dir $SHARD_DIR/train --eval-dir $SHARD_DIR/eval --shard-img-size=$SHARD_IMG_SIZE --epochs $EPOCHS --warm-start
+docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python offline_training.py --experiment-dir $EXPERIMENT_DIR --train-dir $SHARD_DIR/train --eval-dir $SHARD_DIR/eval --shard-img-size=$SHARD_IMG_SIZE --epochs $EPOCHS
