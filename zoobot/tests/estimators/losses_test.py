@@ -101,3 +101,27 @@ def test_multinomial_loss():
 
     # assert neg_log_likelihood[0] < neg_log_likelihood[1] # first is less improbable than second
     # assert False
+
+
+"""Schema and Indices"""
+
+def test_get_indices_from_label_cols():
+    questions = ['q1', 'q2']
+    label_cols = ['q1_a1', 'q1_a2', 'q2_a1', 'q2_a2']
+    indices = losses.get_indices_from_label_cols(label_cols, questions)
+
+    with tf.Session() as sess:
+        indices = sess.run(indices)
+        expected_indices = np.array([0, 0, 1, 1])
+        assert (indices == expected_indices).all()
+
+
+def test_multiquestion_loss():
+    labels = tf.constant([[5, 3, 1, 2], [5, 3, 1, 2]], dtype=tf.float32)  # need to be floats
+    predictions = tf.constant([[0.7, 0.3, 0.3, 0.7], [0.7, 0.3, 0.3, 0.7]], dtype=tf.float32)
+    question_index_groups = tf.constant([0, 0, 1, 1], dtype=tf.int32)
+    loss = losses.multiquestion_loss(labels, predictions, question_index_groups, num_questions=int(2))
+    with tf.Session() as sess:
+        loss = sess.run(loss)
+        print(loss)
+        assert all(loss > 0)

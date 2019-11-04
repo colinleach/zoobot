@@ -176,6 +176,7 @@ export LABELLED_CATALOG=/home/data/prepared_catalogs/decals_smooth_may/labelled_
 export SHARD_DIR=/home/data/decals/shards/multilabel_feat10_$SHARD_IMG_SIZE
 export LABELLED_CATALOG=/home/data/prepared_catalogs/mac_catalog_feat10_correct_labels_full_256.csv
 
+# make shards
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python make_decals_tfrecords.py --labelled-catalog $LABELLED_CATALOG --eval-size=2500 --shard-dir=$SHARD_DIR --img-size=$SHARD_IMG_SIZE --png-prefix=/home/data
 
 # export EXPERIMENT_DIR=/home/data/experiments/multilabel_feat10_$SHARD_IMG_SIZE

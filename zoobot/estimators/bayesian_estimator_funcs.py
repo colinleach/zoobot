@@ -130,8 +130,8 @@ class BayesianModel():
                 # eval_metric_ops = get_eval_metric_ops(self, labels, response)
                 # return tf.estimator.EstimatorSpec(
                 #     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-                return tf.estimator.EstimatorSpec(mode=mode, loss=loss) # warning - no default eval op implemented! Only the loss. But okay?
-                # raise NotImplementedError('No default eval op implemented - needs to be passed')
+                eval_metric_ops = get_proxy_mean_squared_error_eval_ops(labels, response['prediction'])
+                return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
 
@@ -347,10 +347,24 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     return normalised_prediction
 
 
-def get_proxy_mean_squared_error(labels, predictions):
+def get_proxy_mean_squared_error_eval_ops(labels, predictions):
     # TODO again, hardcoded!
-    observed_vote_fractions = tf.concat([ labels[:, :2]/tf.reduce_sum(labels[:, :2], axis=1), labels[:, 2:]/tf.reduce_sum(labels[:, 2:], axis=1) ])
-    return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)}
+    # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
+    # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
+    smooth_total = tf.reduce_sum(labels[:, :2], axis=1)
+    spiral_total = tf.reduce_sum(labels[:, 2:], axis=1)
+    tf.summary.histogram('smooth_total', smooth_total)
+    tf.summary.histogram('spiral_total', spiral_total)
+    smooth_observed_fracs = labels[:, 0]/smooth_total
+    spiral_observed_fracs = labels[:, 2]/spiral_total
+    # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
+    tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
+    tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
+    return {
+        # "rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)
+            'smooth_observed_fracs_eval': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
+            'spiral_observed_fracs_eval': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
+        }
 
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):
     # raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
