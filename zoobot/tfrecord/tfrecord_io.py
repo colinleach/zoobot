@@ -12,7 +12,7 @@ def cast_bytes_of_uint8_to_float32(some_bytes):
 
 def general_parsing_function(serialized_example, features):
     """Parse example. Decode feature 'matrix' into float32 if present"""
-    example = tf.parse_single_example(serialized_example, features)
+    example = tf.io.parse_single_example(serialized=serialized_example, features=features)
     if 'matrix' in features.keys():
         example['matrix'] = cast_bytes_of_uint8_to_float32(example['matrix'])
     return example

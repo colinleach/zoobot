@@ -68,7 +68,7 @@ def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
     for tfrecord_loc in tfrecord_locs:
         if os.path.exists(tfrecord_loc):
             os.remove(tfrecord_loc)
-        writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+        writer = tf.io.TFRecordWriter(tfrecord_loc)
 
         for example in example_data:
             writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))

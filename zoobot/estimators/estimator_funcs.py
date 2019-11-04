@@ -27,7 +27,7 @@ def four_layer_binary_classifier(features, labels, mode, params):
         optimizer = params['optimizer'](learning_rate=params['learning_rate'])
         train_op = optimizer.minimize(
             loss=loss,
-            global_step=tf.train.get_global_step())
+            global_step=tf.compat.v1.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     tensorboard_summary.pr_curve_streaming_op(
@@ -56,42 +56,42 @@ def four_layer_cnn(features, labels, mode, params):
 
     """
     input_layer = features["x"]
-    tf.summary.image('augmented', input_layer, 1)
+    tf.compat.v1.summary.image('augmented', input_layer, 1)
 
-    conv1 = tf.layers.conv2d(
+    conv1 = tf.compat.v1.layers.conv2d(
         inputs=input_layer,
         filters=params['conv1_filters'],
         kernel_size=params['conv1_kernel'],
         padding=params['padding'],
         activation=params['conv1_activation'],
         name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
+    pool1 = tf.compat.v1.layers.max_pooling2d(
         inputs=conv1,
         pool_size=params['pool1_size'],
         strides=params['pool1_strides'],
         name='model/layer1/pool1')
 
-    conv2 = tf.layers.conv2d(
+    conv2 = tf.compat.v1.layers.conv2d(
         inputs=pool1,
         filters=params['conv2_filters'],
         kernel_size=params['conv2_kernel'],
         padding=params['padding'],
         activation=params['conv2_activation'],
         name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
+    pool2 = tf.compat.v1.layers.max_pooling2d(
         inputs=conv2,
         pool_size=params['pool2_size'],
         strides=params['pool2_strides'],
         name='model/layer2/pool2')
 
-    conv3 = tf.layers.conv2d(
+    conv3 = tf.compat.v1.layers.conv2d(
         inputs=pool2,
         filters=params['conv3_filters'],
         kernel_size=params['conv3_kernel'],
         padding=params['padding'],
         activation=params['conv3_activation'],
         name='model/layer3/conv3')
-    pool3 = tf.layers.max_pooling2d(
+    pool3 = tf.compat.v1.layers.max_pooling2d(
         inputs=conv3,
         pool_size=params['pool3_size'],
         strides=params['pool3_strides'],
@@ -101,24 +101,24 @@ def four_layer_cnn(features, labels, mode, params):
     pool3_flat = tf.reshape(pool3, [-1, int(params['image_dim'] / 8) ** 2 * 64], name='model/layer3/flat')
 
     # Dense Layer
-    dense1 = tf.layers.dense(
+    dense1 = tf.compat.v1.layers.dense(
         inputs=pool3_flat,
         units=params['dense1_units'],
         activation=params['dense1_activation'],
         name='model/layer4/dense1')
 
     # Add dropout operation
-    dropout = tf.layers.dropout(
+    dropout = tf.compat.v1.layers.dropout(
         inputs=dense1,
         rate=params['dense1_dropout'],
         training=mode == tf.estimator.ModeKeys.TRAIN)
-    tf.summary.tensor_summary('dropout_summary', dropout)
+    tf.compat.v1.summary.tensor_summary('dropout_summary', dropout)
 
     # Logits layer
-    logits = tf.layers.dense(inputs=dropout, units=2, name='logits')
+    logits = tf.compat.v1.layers.dense(inputs=dropout, units=2, name='logits')
 
-    tf.summary.histogram('logits', logits)
-    tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
+    tf.compat.v1.summary.histogram('logits', logits)
+    tf.compat.v1.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
     predictions = {
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
@@ -137,8 +137,8 @@ def four_layer_cnn(features, labels, mode, params):
         # softmax cross entropy is only defined with at least 2 classes, hence onehot labels are needed
         # it's not easy to turn logits into onehot logits, so compromise and have 2 logits (one per class)
         # might be better to have 1 logits because we know classes are exclusive
-        loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=onehot_labels, logits=logits, name='model/layer4/loss')
-        mean_loss = tf.reduce_mean(loss, name='mean_loss')
+        loss = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logits, name='model/layer4/loss')
+        mean_loss = tf.reduce_mean(input_tensor=loss, name='mean_loss')
         predictions.update({
             # Generate predictions (for PREDICT and EVAL mode)
             'labels': tf.identity(labels, name='labels'),
@@ -152,20 +152,20 @@ def four_layer_cnn(features, labels, mode, params):
 def get_eval_metric_ops(labels, predictions):
 
     # record distribution of predictions for tensorboard
-    tf.summary.histogram('Probabilities', predictions['probabilities'])
-    tf.summary.histogram('Classes', predictions['classes'])
+    tf.compat.v1.summary.histogram('Probabilities', predictions['probabilities'])
+    tf.compat.v1.summary.histogram('Classes', predictions['classes'])
 
     return {
-        "acc/accuracy": tf.metrics.accuracy(
+        "acc/accuracy": tf.compat.v1.metrics.accuracy(
             labels=labels, predictions=predictions["classes"]),
-        "pr/auc": tf.metrics.auc(labels=labels, predictions=predictions['classes']),
-        "acc/mean_per_class_accuracy": tf.metrics.mean_per_class_accuracy(labels=labels, predictions=predictions['classes'], num_classes=2),
-        'pr/precision': tf.metrics.precision(labels=labels, predictions=predictions['classes']),
-        'pr/recall': tf.metrics.recall(labels=labels, predictions=predictions['classes']),
-        'confusion/true_positives': tf.metrics.true_positives(labels=labels, predictions=predictions['classes']),
-        'confusion/true_negatives': tf.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
-        'confusion/false_positives': tf.metrics.false_positives(labels=labels, predictions=predictions['classes']),
-        'confusion/false_negatives': tf.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
+        "pr/auc": tf.compat.v1.metrics.auc(labels=labels, predictions=predictions['classes']),
+        "acc/mean_per_class_accuracy": tf.compat.v1.metrics.mean_per_class_accuracy(labels=labels, predictions=predictions['classes'], num_classes=2),
+        'pr/precision': tf.compat.v1.metrics.precision(labels=labels, predictions=predictions['classes']),
+        'pr/recall': tf.compat.v1.metrics.recall(labels=labels, predictions=predictions['classes']),
+        'confusion/true_positives': tf.compat.v1.metrics.true_positives(labels=labels, predictions=predictions['classes']),
+        'confusion/true_negatives': tf.compat.v1.metrics.true_negatives(labels=labels, predictions=predictions['classes']),
+        'confusion/false_positives': tf.compat.v1.metrics.false_positives(labels=labels, predictions=predictions['classes']),
+        'confusion/false_negatives': tf.compat.v1.metrics.false_negatives(labels=labels, predictions=predictions['classes'])
     }
 
 
@@ -183,29 +183,29 @@ def three_layer_cnn(features, labels, mode, params):
 
     """
     input_layer = features["x"]
-    tf.summary.image('augmented', input_layer, 1)
+    tf.compat.v1.summary.image('augmented', input_layer, 1)
 
-    conv1 = tf.layers.conv2d(
+    conv1 = tf.compat.v1.layers.conv2d(
         inputs=input_layer,
         filters=params['conv1_filters'],
         kernel_size=params['conv1_kernel'],
         padding=params['padding'],
         activation=params['conv1_activation'],
         name='model/layer1/conv1')
-    pool1 = tf.layers.max_pooling2d(
+    pool1 = tf.compat.v1.layers.max_pooling2d(
         inputs=conv1,
         pool_size=params['pool1_size'],
         strides=params['pool1_strides'],
         name='model/layer1/pool1')
 
-    conv2 = tf.layers.conv2d(
+    conv2 = tf.compat.v1.layers.conv2d(
         inputs=pool1,
         filters=params['conv2_filters'],
         kernel_size=params['conv2_kernel'],
         padding=params['padding'],
         activation=params['conv2_activation'],
         name='model/layer2/conv2')
-    pool2 = tf.layers.max_pooling2d(
+    pool2 = tf.compat.v1.layers.max_pooling2d(
         inputs=conv2,
         pool_size=params['pool2_size'],
         strides=params['pool2_strides'],
@@ -213,26 +213,26 @@ def three_layer_cnn(features, labels, mode, params):
 
     # Flatten tensor into a batch of vectors
     pool2_flat = tf.reshape(pool2, [-1, int(params['image_dim'] / 4) ** 2 * 64], name='model/layer2/flat')
-    tf.summary.histogram('pool2_flat', pool2_flat)  # to visualise embedding of learned features
+    tf.compat.v1.summary.histogram('pool2_flat', pool2_flat)  # to visualise embedding of learned features
 
     # Dense Layer
-    dense1 = tf.layers.dense(
+    dense1 = tf.compat.v1.layers.dense(
         inputs=pool2_flat,
         units=params['dense1_units'],
         activation=params['dense1_activation'],
         name='model/layer3/dense1')
 
     # Add dropout operation
-    dropout = tf.layers.dropout(
+    dropout = tf.compat.v1.layers.dropout(
         inputs=dense1,
         rate=params['dense1_dropout'],
         training=mode == tf.estimator.ModeKeys.TRAIN)
-    tf.summary.tensor_summary('dropout_summary', dropout)
+    tf.compat.v1.summary.tensor_summary('dropout_summary', dropout)
 
     # Logits layer
-    logits = tf.layers.dense(inputs=dropout, units=2, name='model/layer4/logits')
-    tf.summary.histogram('logits', logits)
-    tf.summary.histogram('logits probabilities', tf.nn.softmax(logits))
+    logits = tf.compat.v1.layers.dense(inputs=dropout, units=2, name='model/layer4/logits')
+    tf.compat.v1.summary.histogram('logits', logits)
+    tf.compat.v1.summary.histogram('logits probabilities', tf.nn.softmax(logits))
 
     predictions = {
         # Generate predictions (for PREDICT and EVAL mode)
@@ -245,7 +245,7 @@ def three_layer_cnn(features, labels, mode, params):
     # Calculate Loss (for both TRAIN and EVAL modes)
     # required for EstimatorSpec
     onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=2)
-    loss = tf.losses.softmax_cross_entropy(
+    loss = tf.compat.v1.losses.softmax_cross_entropy(
         onehot_labels=onehot_labels, logits=logits)
     # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
 

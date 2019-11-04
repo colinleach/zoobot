@@ -4,8 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-tf.contrib.training.stratified_sample
-tf.contrib.image.rotate
+import tensorflow_addons as tfa
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 from zoobot.tfrecord.read_tfrecord import get_feature_spec
@@ -56,6 +55,7 @@ class InputConfig():
         if regression:
             assert not stratify
         if stratify:
+            raise NotImplementedError('Deprecated for TF2?')
             assert not regression
 
         self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
@@ -96,7 +96,7 @@ def get_input(config):
         (dict) of form {'x': greyscale image batch}, as Tensor of shape [batch, size, size, 1]}
         (Tensor) categorical labels for each image
     """
-    with tf.name_scope('input_{}'.format(config.name)):
+    with tf.compat.v1.name_scope('input_{}'.format(config.name)):
         batch_images, batch_labels = load_batches_with_labels(config)
         
         preprocessed_batch_images = preprocess_batch(batch_images, config)
@@ -121,7 +121,7 @@ def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
             dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
-        iterator = dataset.make_one_shot_iterator()
+        iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
         return iterator.get_next()
 
 
@@ -131,7 +131,7 @@ def get_images_from_batch(batch, size, channels, summary=False):
         batch_data,
         [-1, size, size, channels])  # may not get full batch at end of dataset
     assert len(batch_images.shape) == 4
-    tf.summary.image('a_original', batch_images)
+    tf.compat.v1.summary.image('a_original', batch_images)
     # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
     return batch_images
 
@@ -157,7 +157,7 @@ def load_batches_with_labels(config):
     Returns:
         (tf.Tensor, tf.Tensor)
     """
-    with tf.name_scope('load_batches_{}'.format(config.name)):
+    with tf.compat.v1.name_scope('load_batches_{}'.format(config.name)):
         requested_features = {'matrix': 'string'}
         # We only support float labels!
         requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
@@ -187,25 +187,25 @@ def load_batches_with_id_str(config):
 
 
 def preprocess_batch(batch_images, config):
-    with tf.name_scope('preprocess'):
+    with tf.compat.v1.name_scope('preprocess'):
 
         assert len(batch_images.shape) == 4
         assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
         if config.greyscale:
             # new channel dimension of 1
-            channel_images = tf.reduce_mean(batch_images, axis=3, keepdims=True)
+            channel_images = tf.reduce_mean(input_tensor=batch_images, axis=3, keepdims=True)
             assert channel_images.shape[1] == config.initial_size
             assert channel_images.shape[2] == config.initial_size
             assert channel_images.shape[3] == 1
-            tf.summary.image('b_greyscale', channel_images)
+            tf.compat.v1.summary.image('b_greyscale', channel_images)
         else:
             channel_images = tf.identity(batch_images)
 
         augmented_images = augment_images(channel_images, config)
         assert augmented_images.shape[1] == config.final_size
         assert augmented_images.shape[2] == config.final_size
-        tf.summary.image('c_augmented', augmented_images)
+        tf.compat.v1.summary.image('c_augmented', augmented_images)
 
         feature_cols = {'x': augmented_images}
         return feature_cols
@@ -225,18 +225,18 @@ def stratify_images(image, label, batch_size, init_probs):
         (Tensor): pixel value batch of 1st dim length batch_size, with other dimensions set by image dimensions
         (Tensor): label batch of 1st dim length batch_size
     """
-
-    assert init_probs is not None  # should not be called with stratify=False
-    data_batch, label_batch = tf.contrib.training.stratified_sample(
-        [image],
-        label,
-        target_probs=np.array([0.5, 0.5]),
-        init_probs=init_probs,
-        batch_size=batch_size,
-        enqueue_many=True,  # each image/label is a single example, will be automatically batched (thanks TensorFlow!)
-        queue_capacity=batch_size * 100
-    )
-    return data_batch, label_batch
+    raise NotImplementedError
+    # assert init_probs is not None  # should not be called with stratify=False
+    # data_batch, label_batch = tf.contrib.training.stratified_sample(
+    #     [image],
+    #     label,
+    #     target_probs=np.array([0.5, 0.5]),
+    #     init_probs=init_probs,
+    #     batch_size=batch_size,
+    #     enqueue_many=True,  # each image/label is a single example, will be automatically batched (thanks TensorFlow!)
+    #     queue_capacity=batch_size * 100
+    # )
+    # return data_batch, label_batch
 
 
 def augment_images(images, input_config):
@@ -304,7 +304,7 @@ def geometric_augmentation(images, zoom, final_size, central):
     images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central), images)
 
     # resize to final desired size (may match crop size)
-    images = tf.image.resize_images(
+    images = tf.image.resize(
         images,
         tf.constant([final_size, final_size], dtype=tf.int32),
         method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
@@ -313,9 +313,9 @@ def geometric_augmentation(images, zoom, final_size, central):
 
 
 def random_rotation(im):
-    return tf.contrib.image.rotate(
+    return tfa.image.rotate(
         im,
-        3.14 * tf.random_uniform(shape=[1]),
+        3.14 * tf.random.uniform(shape=[1]),
         interpolation='BILINEAR'
     )
 
@@ -328,7 +328,7 @@ def crop_random_size(im, zoom, central):
         return im[lost_width:-lost_width, lost_width:-lost_width]
     else:
         cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
-        return tf.random_crop(im, cropped_shape)
+        return tf.image.random_crop(im, cropped_shape)
 
 
 

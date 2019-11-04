@@ -68,8 +68,8 @@ def multiquestion_loss(labels, predictions, question_index_groups, num_questions
 
     # do next
     # not really sure why tf separately requires num_partitions to be specified...?
-    labels_dim = tf.shape(labels)[1]
-    batch_dim = tf.shape(labels)[0]
+    labels_dim = tf.shape(input=labels)[1]
+    batch_dim = tf.shape(input=labels)[0]
     copied_indices = tf.tile(question_index_groups, tf.expand_dims(batch_dim, axis=0))
     tiled_indices = tf.reshape(copied_indices, (batch_dim, labels_dim))
     labels_by_q = tf.dynamic_partition(labels, tiled_indices, num_partitions=num_questions)
@@ -90,11 +90,11 @@ def multinomial_loss(successes, expected_probs, output_dim=2):
     # negative log loss, of course
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
 
-    loss = -tf.reduce_sum(successes * tf.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
+    loss = -tf.reduce_sum(input_tensor=successes * tf.math.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
     for n in range(output_dim):  # careful, output_dim must be fixed
-        tf.summary.histogram('successes_{}'.format(n), successes[:, n])
-        tf.summary.histogram('expected_probs_{}', expected_probs[:, n])
-    tf.summary.histogram('loss', loss)
+        tf.compat.v1.summary.histogram('successes_{}'.format(n), successes[:, n])
+        tf.compat.v1.summary.histogram('expected_probs_{}', expected_probs[:, n])
+    tf.compat.v1.summary.histogram('loss', loss)
     # print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
     # with tf.control_dependencies([print_op]):
     return loss
@@ -119,7 +119,7 @@ def binomial_loss(labels, predictions):
     p_yes = tf.identity(predictions)  # fail loudly if passed out-of-range values
 
     # negative log likelihood
-    bin_loss = -( successes * tf.log(p_yes + epsilon) + (n_trials - successes) * tf.log(one - p_yes + epsilon) )
-    tf.summary.histogram('bin_loss', bin_loss)
-    tf.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
+    bin_loss = -( successes * tf.math.log(p_yes + epsilon) + (n_trials - successes) * tf.math.log(one - p_yes + epsilon) )
+    tf.compat.v1.summary.histogram('bin_loss', bin_loss)
+    tf.compat.v1.summary.histogram('bin_loss_clipped', tf.clip_by_value(bin_loss, 0., 50.))
     return bin_loss

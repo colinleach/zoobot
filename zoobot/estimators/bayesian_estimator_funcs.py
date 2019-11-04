@@ -2,7 +2,6 @@ import logging
 import sys
 
 import tensorflow as tf
-tf.contrib.layers.l2_regularizer
 from tensorflow.python.saved_model import signature_constants
 
 from zoobot.estimators import losses
@@ -22,7 +21,7 @@ class BayesianModel():
             calculate_loss,
             output_dim,
             learning_rate=0.001,
-            optimizer=tf.train.AdamOptimizer,
+            optimizer=tf.compat.v1.train.AdamOptimizer,
             conv1_filters=32,
             conv1_kernel=1,
             conv1_activation=tf.nn.relu,
@@ -94,12 +93,12 @@ class BayesianModel():
         """
         if labels is not None:
             for n in range(self.output_dim):
-                tf.summary.histogram('labels_{}'.format(n), labels[:, n])
+                tf.compat.v1.summary.histogram('labels_{}'.format(n), labels[:, n])
 
         response, loss = self.bayesian_regressor(features, labels, mode)
         
         if mode == tf.estimator.ModeKeys.PREDICT:
-            with tf.variable_scope('predict'):
+            with tf.compat.v1.variable_scope('predict'):
                 export_outputs = {
                     signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput(response)
                 }
@@ -108,24 +107,24 @@ class BayesianModel():
         assert labels is not None
 
         if mode == tf.estimator.ModeKeys.TRAIN:
-            with tf.variable_scope('train'):
+            with tf.compat.v1.variable_scope('train'):
                 lr = tf.identity(self.learning_rate)
-                tf.summary.scalar('learning_rate', lr)
+                tf.compat.v1.summary.scalar('learning_rate', lr)
                 optimizer = self.optimizer(learning_rate=lr)
 
                 # important to explicitly use within update_ops for batch norm to work
                 # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
                 logging.warning(update_ops)
                 with tf.control_dependencies(update_ops):
                     train_op = optimizer.minimize(
                         loss=loss,
-                        global_step=tf.train.get_global_step())
+                        global_step=tf.compat.v1.train.get_global_step())
                 
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
         else:  # must be EVAL mode
-            with tf.variable_scope('eval'):
+            with tf.compat.v1.variable_scope('eval'):
                 # Add evaluation metrics (for EVAL mode)
                 # eval_metric_ops = get_eval_metric_ops(self, labels, response)
                 # return tf.estimator.EstimatorSpec(
@@ -155,8 +154,8 @@ class BayesianModel():
 
         # eval mode will have a lower loss than train mode, because dropout is off
         dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
-        tf.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
-        tf.summary.scalar('dropout_rate', dropout_rate)
+        tf.compat.v1.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
+        tf.compat.v1.summary.scalar('dropout_rate', dropout_rate)
 
         dense1 = input_to_dense(features, mode, self)  # use batch normalisation
         predictions = dense_to_output(dense1, output_dim=self.output_dim, dropout_on=dropout_on, dropout_rate=dropout_rate)
@@ -171,8 +170,8 @@ class BayesianModel():
             # with tf.control_dependencies([print_op]):
             labels = tf.stop_gradient(labels)
             loss = self.calculate_loss(labels, predictions)
-            mean_loss = tf.reduce_mean(loss)
-            tf.losses.add_loss(mean_loss)
+            mean_loss = tf.reduce_mean(input_tensor=loss)
+            tf.compat.v1.losses.add_loss(mean_loss)
             return response, mean_loss
 
 
@@ -188,14 +187,15 @@ def input_to_dense(features, mode, model):
 
     """
     input_layer = features["x"]
-    tf.summary.image('model_input', input_layer, input_layer.shape[-1])
+    tf.compat.v1.summary.image('model_input', input_layer, input_layer.shape[-1])
 
     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
     # dropout_rate = model.dense1_dropout / 10.  # use a much smaller dropout on early layers (should test)
     dropout_rate = 0  # no dropout on conv layers
-    regularizer = tf.contrib.layers.l2_regularizer(scale=0.1)
+    # regularizer = tf.keras.regularizers.l2(l=0.5 * (0.1))  # TODO check I mean to have a little regularisation?
+    regularizer = None
 
-    conv1 = tf.layers.conv2d(
+    conv1 = tf.compat.v1.layers.conv2d(
         inputs=input_layer,
         filters=model.conv1_filters,
         kernel_size=[model.conv1_kernel, model.conv1_kernel],
@@ -203,11 +203,11 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1')
-    drop1 = tf.layers.dropout(
+    drop1 = tf.compat.v1.layers.dropout(
         inputs=conv1,
         rate=dropout_rate,
         training=dropout_on)
-    conv1b = tf.layers.conv2d(
+    conv1b = tf.compat.v1.layers.conv2d(
         inputs=drop1,
         filters=model.conv1_filters,
         kernel_size=[model.conv1_kernel, model.conv1_kernel],
@@ -215,18 +215,18 @@ def input_to_dense(features, mode, model):
         activation=model.conv1_activation,
         kernel_regularizer=regularizer,
         name='model/layer1/conv1b')
-    drop1b = tf.layers.dropout(
+    drop1b = tf.compat.v1.layers.dropout(
         inputs=conv1b,
         rate=dropout_rate,
         training=dropout_on)
-    pool1 = tf.layers.max_pooling2d(
+    pool1 = tf.compat.v1.layers.max_pooling2d(
         inputs=drop1b,
         pool_size=[model.pool1_size, model.pool1_size],
         strides=model.pool1_strides,
         name='model/layer1/pool1')
     
 
-    conv2 = tf.layers.conv2d(
+    conv2 = tf.compat.v1.layers.conv2d(
         inputs=pool1,
         filters=model.conv2_filters,
         kernel_size=[model.conv2_kernel, model.conv2_kernel],
@@ -234,11 +234,11 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2')
-    drop2 = tf.layers.dropout(
+    drop2 = tf.compat.v1.layers.dropout(
         inputs=conv2,
         rate=dropout_rate,
         training=dropout_on)
-    conv2b = tf.layers.conv2d(
+    conv2b = tf.compat.v1.layers.conv2d(
         inputs=drop2,
         filters=model.conv2_filters,
         kernel_size=[model.conv2_kernel, model.conv2_kernel],
@@ -246,17 +246,17 @@ def input_to_dense(features, mode, model):
         activation=model.conv2_activation,
         kernel_regularizer=regularizer,
         name='model/layer2/conv2b')
-    drop2b = tf.layers.dropout(
+    drop2b = tf.compat.v1.layers.dropout(
         inputs=conv2b,
         rate=dropout_rate,
         training=dropout_on)
-    pool2 = tf.layers.max_pooling2d(
+    pool2 = tf.compat.v1.layers.max_pooling2d(
         inputs=drop2b,
         pool_size=model.pool2_size,
         strides=model.pool2_strides,
         name='model/layer2/pool2')
 
-    conv3 = tf.layers.conv2d(
+    conv3 = tf.compat.v1.layers.conv2d(
         inputs=pool2,
         filters=model.conv3_filters,
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
@@ -264,18 +264,18 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer3/conv3')
-    drop3 = tf.layers.dropout(
+    drop3 = tf.compat.v1.layers.dropout(
         inputs=conv3,
         rate=dropout_rate,
         training=dropout_on)
-    pool3 = tf.layers.max_pooling2d(
+    pool3 = tf.compat.v1.layers.max_pooling2d(
         inputs=drop3,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
         name='model/layer3/pool3')
 
     # identical to conv3
-    conv4 = tf.layers.conv2d(
+    conv4 = tf.compat.v1.layers.conv2d(
         inputs=pool3,
         filters=model.conv3_filters,
         kernel_size=[model.conv3_kernel, model.conv3_kernel],
@@ -283,11 +283,11 @@ def input_to_dense(features, mode, model):
         activation=model.conv3_activation,
         kernel_regularizer=regularizer,
         name='model/layer4/conv4')
-    drop4 = tf.layers.dropout(
+    drop4 = tf.compat.v1.layers.dropout(
         inputs=conv4,
         rate=dropout_rate,
         training=dropout_on)
-    pool4 = tf.layers.max_pooling2d(
+    pool4 = tf.compat.v1.layers.max_pooling2d(
         inputs=drop4,
         pool_size=[model.pool3_size, model.pool3_size],
         strides=model.pool3_strides,
@@ -303,7 +303,7 @@ def input_to_dense(features, mode, model):
     pool4_flat = tf.reshape(pool4, [-1, int(model.image_dim / 16) ** 2 * model.conv3_filters], name='model/layer4/flat')
 
     # Dense Layer
-    dense1 = tf.layers.dense(
+    dense1 = tf.compat.v1.layers.dense(
         inputs=pool4_flat,
         units=model.dense1_units,
         activation=model.dense1_activation,
@@ -317,13 +317,13 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     # helpful example: https://github.com/tensorflow/tensorflow/blob/r1.11/tensorflow/examples/get_started/regression/custom_regression.py
     # Add dropout operation
     # TODO refactor out, duplication + SRP
-    dropout = tf.layers.dropout(
+    dropout = tf.compat.v1.layers.dropout(
         inputs=dense1,
         rate=dropout_rate,
         training=dropout_on)
-    tf.summary.tensor_summary('dropout_summary', dropout)
+    tf.compat.v1.summary.tensor_summary('dropout_summary', dropout)
 
-    output = tf.layers.dense(
+    output = tf.compat.v1.layers.dense(
         dropout,
         units=output_dim,  # num outputs
         # activation=tf.exp,  # want > 0
@@ -342,7 +342,7 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     # with tf.control_dependencies([print_op]):
     # normalised_prediction_p = tf.identity(normalised_prediction)
 
-    tf.summary.histogram('normalised_prediction', normalised_prediction)
+    tf.compat.v1.summary.histogram('normalised_prediction', normalised_prediction)
 
     return normalised_prediction
 
@@ -351,19 +351,19 @@ def get_proxy_mean_squared_error_eval_ops(labels, predictions):
     # TODO again, hardcoded!
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
-    smooth_total = tf.reduce_sum(labels[:, :2], axis=1)
-    spiral_total = tf.reduce_sum(labels[:, 2:], axis=1)
-    tf.summary.histogram('smooth_total', smooth_total)
-    tf.summary.histogram('spiral_total', spiral_total)
+    smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
+    spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
+    tf.compat.v1.summary.histogram('smooth_total', smooth_total)
+    tf.compat.v1.summary.histogram('spiral_total', spiral_total)
     smooth_observed_fracs = labels[:, 0]/smooth_total
     spiral_observed_fracs = labels[:, 2]/spiral_total
     # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
-    tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
-    tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
+    tf.compat.v1.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
+    tf.compat.v1.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
     return {
         # "rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)
-            'smooth_observed_fracs_eval': tf.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
-            'spiral_observed_fracs_eval': tf.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
+            'smooth_observed_fracs_eval': tf.compat.v1.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
+            'spiral_observed_fracs_eval': tf.compat.v1.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
         }
 
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):

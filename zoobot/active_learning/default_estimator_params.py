@@ -82,7 +82,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         learning_rate=learning_rate,
-        optimizer=tf.train.AdamOptimizer,
+        optimizer=tf.compat.v1.train.AdamOptimizer,
         conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,

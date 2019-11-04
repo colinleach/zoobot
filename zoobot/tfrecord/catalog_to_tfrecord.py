@@ -122,7 +122,7 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, read
             logging.warning('{} already exists - deleting'.format(tfrecord_loc))
             os.remove(tfrecord_loc)
 
-    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    writer = tf.io.TFRecordWriter(tfrecord_loc)
     for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
         serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, reader)
         writer.write(serialized_example)

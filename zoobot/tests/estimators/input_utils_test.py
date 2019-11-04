@@ -36,8 +36,8 @@ def test_geometric_augmentations_on_image(visual_check_image, size, central):
         central=central
     )
 
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as session:
+        session.run(tf.compat.v1.global_variables_initializer())
         original_image = session.run(visual_check_image)
         final_image = np.squeeze(session.run(final_image_tf))  # remove batch dimension
         assert final_image.shape == (expected_final_size, expected_final_size, 3)
@@ -54,8 +54,8 @@ def test_geometric_augmentations_on_image(visual_check_image, size, central):
 def test_photometric_augmentations_on_image(visual_check_image):
     final_image = input_utils.photographic_augmentation(visual_check_image, max_brightness_delta=0.1, contrast_range=(0.9, 1.1))
 
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as session:
+        session.run(tf.compat.v1.global_variables_initializer())
         input_image = session.run(visual_check_image)
         final_image = np.squeeze(session.run(final_image))  # adds a batch dimension
 
@@ -78,8 +78,8 @@ def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image, 
         central=central
     )
 
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as session:
+        session.run(tf.compat.v1.global_variables_initializer())
         transformed_images = session.run(transformed_images)
 
     fig, axes = plt.subplots(nrows=16, figsize=(4, 4 * 16))
@@ -92,8 +92,8 @@ def test_repeated_geometric_augmentations_on_image(batch_of_visual_check_image, 
 def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image):
     transformed_images = input_utils.photographic_augmentation(batch_of_visual_check_image, max_brightness_delta=0.1, contrast_range=(0.9, 1.1))
 
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as session:
+        session.run(tf.compat.v1.global_variables_initializer())
         transformed_images = session.run(transformed_images)
 
     fig, axes = plt.subplots(nrows=16, figsize=(4, 4 * 16))
@@ -128,7 +128,7 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
 
     transformed_batch = input_utils.augment_images(batch_of_visual_check_image, input_config)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         transformed_batch = sess.run(transformed_batch)
 
     assert not isinstance(transformed_batch, list)  # should be a single 4D tensor, not a list
@@ -172,13 +172,13 @@ def multi_label_dataset(random_features, labels, id_strs, batch_size):
 
 @pytest.fixture
 def multi_label_batch(multi_label_dataset):
-    iterator = multi_label_dataset.make_one_shot_iterator()
+    iterator = tf.compat.v1.data.make_one_shot_iterator(multi_label_dataset)
     return iterator.get_next()
 
 
 def test_get_labels_from_batch(multi_label_batch, label_cols, batch_size):
     labels_tf = input_utils.get_labels_from_batch(multi_label_batch, label_cols)
-    with tf.Session() as sess:  
+    with tf.compat.v1.Session() as sess:  
         labels = sess.run(labels_tf)
     assert labels.shape == (batch_size, len(label_cols))
 
@@ -207,7 +207,7 @@ def test_get_batch(requested_features, label_cols, tfrecord_loc, size, channels)
         shuffle=True,
         repeat=True
     )
-    with tf.Session() as sess:  
+    with tf.compat.v1.Session() as sess:  
         batches = []
         for _ in range(10):
             batches.append(sess.run(batch))
@@ -235,14 +235,14 @@ def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_di
 
     # load individually
     batch_tf_0 = input_utils.get_batch(tfrecord_locs[0], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.Session() as sess:  
+    with tf.compat.v1.Session() as sess:  
         batches_tf_0 = []
         for i in range(n_batches):
             batches_tf_0.append(sess.run(batch_tf_0))
     assert len(batches_tf_0) == n_batches
 
     batch_tf_1 = input_utils.get_batch(tfrecord_locs[1], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.Session() as sess:  
+    with tf.compat.v1.Session() as sess:  
         batches_tf_1 = []
         for i in range(n_batches):
             batches_tf_1.append(sess.run(batch_tf_1))
@@ -250,7 +250,7 @@ def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_di
 
     # load from both
     batch = input_utils.get_batch(tfrecord_locs, feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.Session() as sess:  
+    with tf.compat.v1.Session() as sess:  
         batches = []
         for i in range(n_batches):
             batches.append(sess.run(batch))
@@ -296,7 +296,7 @@ def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_ints_loc, size)
         initial_size=size,
         mode='labels'
     )
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         subjects = sess.run(subjects)
         assert subjects.shape == (n_galaxies, size, size, 3)
         labels = sess.run(labels)
@@ -308,7 +308,7 @@ def test_predict_input_func_with_id(shard_locs, size):
     n_galaxies = 24
     tfrecord_loc = shard_locs[0]
     subjects, _, id_strs = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=size, mode='id_str')
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         subjects, id_strs = sess.run([subjects, id_strs])
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
     assert len(id_strs) == 24
@@ -317,6 +317,6 @@ def test_predict_input_func_with_id(shard_locs, size):
 def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     n_galaxies = 24
     subjects, _, _ = input_utils.predict_input_func(tfrecord_matrix_loc, n_galaxies=n_galaxies, initial_size=size, mode='matrix')
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         subjects = sess.run(subjects)
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time

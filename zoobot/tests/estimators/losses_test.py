@@ -26,7 +26,7 @@ def test_binomial_loss(single_label, single_prediction):
 
     neg_log_likelihood = losses.binomial_loss(single_label, single_prediction)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         [neg_log_likelihood] = sess.run([neg_log_likelihood])
     
     assert neg_log_likelihood[0] < neg_log_likelihood[1] # first is less improbable than second
@@ -43,7 +43,7 @@ def test_binomial_loss_1D_plot():
     labels = tf.cast(tf.constant(labels_data), tf.float32)
     predictions = tf.cast(tf.constant(predictions_data), tf.float32)
     tf_neg_log_likelihood = losses.binomial_loss(labels, predictions)
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         tf_neg_log_likelihood = sess.run(tf_neg_log_likelihood)
 
     np_neg_likilihoods = - make_predictions.binomial_likelihood(true_prob, predictions_data, n_trials=n_trials)
@@ -88,7 +88,7 @@ def test_multinomial_loss():
     # print(predictions.shape)
 
     neg_log_likelihood = losses.multinomial_loss(successes, predictions)
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         [neg_log_likelihood] = sess.run([neg_log_likelihood])
 
     print(neg_log_likelihood)
@@ -110,7 +110,7 @@ def test_get_indices_from_label_cols():
     label_cols = ['q1_a1', 'q1_a2', 'q2_a1', 'q2_a2']
     indices = losses.get_indices_from_label_cols(label_cols, questions)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         indices = sess.run(indices)
         expected_indices = np.array([0, 0, 1, 1])
         assert (indices == expected_indices).all()
@@ -121,7 +121,7 @@ def test_multiquestion_loss():
     predictions = tf.constant([[0.7, 0.3, 0.3, 0.7], [0.7, 0.3, 0.3, 0.7]], dtype=tf.float32)
     question_index_groups = tf.constant([0, 0, 1, 1], dtype=tf.int32)
     loss = losses.multiquestion_loss(labels, predictions, question_index_groups, num_questions=int(2))
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         loss = sess.run(loss)
         print(loss)
         assert all(loss > 0)
