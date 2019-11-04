@@ -9,8 +9,8 @@ matplotlib.use('Agg')
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, losses
 
 
-def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10, label_cols=['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk']):
-
+def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, label_cols, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
+    # TODO enforce keyword only arguments
     channels = 3
 
     run_config = run_estimator.RunEstimatorConfig(
@@ -76,6 +76,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # zoom_central=True  # BAR MODE
     )
 
+    schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         learning_rate=learning_rate,
@@ -92,7 +93,8 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         regression=True,  # important!
         log_freq=10,
         image_dim=run_config.final_size,  # not initial size
-        calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
+        calculate_loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema)
+        # calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
     )  # WARNING will need to be updated for multiquestion
 
     run_config.assemble(train_config, eval_config, model)

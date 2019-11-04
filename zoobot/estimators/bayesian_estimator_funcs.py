@@ -335,7 +335,8 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
 
     prediction = tf.identity(output)
     # prediction[:, 0] = tf.constant(0)  # TODO tempo
-    normalised_prediction = tf.nn.softmax(prediction)  # probably normalised along axis=1 by default?
+    # TODO hardcoded!
+    normalised_prediction = tf.concat([ tf.nn.softmax(prediction[:, :2]), tf.nn.softmax(prediction[:, 2:]) ], axis=1)
 
     # print_op = tf.print('predictions', tf.shape(prediction), prediction, 'norm predictions', tf.shape(normalised_prediction), normalised_prediction)
     # with tf.control_dependencies([print_op]):
@@ -346,8 +347,13 @@ def dense_to_output(dense1, output_dim, dropout_on, dropout_rate):
     return normalised_prediction
 
 
-def get_gz_binomial_eval_metric_ops(self, labels, predictions):
-    raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
+def get_proxy_mean_squared_error(labels, predictions):
+    # TODO again, hardcoded!
+    observed_vote_fractions = tf.concat([ labels[:, :2]/tf.reduce_sum(labels[:, :2], axis=1), labels[:, 2:]/tf.reduce_sum(labels[:, 2:], axis=1) ])
+    return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)}
+
+# def get_gz_binomial_eval_metric_ops(self, labels, predictions):
+    # raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
     # will probably be callable/subclass rather than implemented here 
     # record distribution of predictions for tensorboard
     # tf.summary.histogram('yes_votes', labels[0, :])
@@ -358,25 +364,25 @@ def get_gz_binomial_eval_metric_ops(self, labels, predictions):
     # tf.summary.histogram('observed vote fraction', observed_vote_fraction)
     # return {"rmse": tf.metrics.root_mean_squared_error(observed_vote_fraction, predictions['prediction'])}
 
-def logging_hooks(model_config):
-    train_tensors = {
-        'labels': 'labels',
-        # 'logits': 'logits',  may not always exist? TODO
-        "probabilities": 'softmax',
-        'mean_loss': 'mean_loss'
-    }
-    train_hook = tf.train.LoggingTensorHook(
-        tensors=train_tensors, every_n_iter=model_config.log_freq)
+# def logging_hooks(model_config):
+#     train_tensors = {
+#         'labels': 'labels',
+#         # 'logits': 'logits',  may not always exist? TODO
+#         "probabilities": 'softmax',
+#         'mean_loss': 'mean_loss'
+#     }
+#     train_hook = tf.train.LoggingTensorHook(
+#         tensors=train_tensors, every_n_iter=model_config.log_freq)
 
-    # eval_hook = train_hook
-    eval_hook = tf.train.LoggingTensorHook(
-        tensors=train_tensors, every_n_iter=model_config.log_freq)
+#     # eval_hook = train_hook
+#     eval_hook = tf.train.LoggingTensorHook(
+#         tensors=train_tensors, every_n_iter=model_config.log_freq)
 
-    prediction_tensors = {}
-    # [prediction_tensors.update({'sample_{}/predictions'.format(n): 'sample_{}/predictions'.format(n)}) for n in range(3)]
+#     prediction_tensors = {}
+#     # [prediction_tensors.update({'sample_{}/predictions'.format(n): 'sample_{}/predictions'.format(n)}) for n in range(3)]
 
-    prediction_hook = tf.train.LoggingTensorHook(
-        tensors=prediction_tensors, every_n_iter=model_config.log_freq
-    )
+#     prediction_hook = tf.train.LoggingTensorHook(
+#         tensors=prediction_tensors, every_n_iter=model_config.log_freq
+#     )
 
-    return [train_hook], [eval_hook], [prediction_hook]  # estimator expects lists of logging hooks
+#     return [train_hook], [eval_hook], [prediction_hook]  # estimator expects lists of logging hooks
