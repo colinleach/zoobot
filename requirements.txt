@@ -6,7 +6,7 @@ pytest-cov
 pytest-mock
 pytest-xdist
 codecov
-tensorflow-gpu=2.0
+tensorflow-gpu==2.0
 tqdm
 pillow
 numpy
