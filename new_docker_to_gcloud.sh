@@ -33,7 +33,7 @@ docker run \
 
 
 # pr pull, build, and run locally in one command
-cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) ; docker run \
+cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker run \
     --rm \
     --name offline \
     -m 8GB \

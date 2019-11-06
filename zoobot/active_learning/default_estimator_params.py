@@ -99,7 +99,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         label_cols=run_config.label_cols,
         stratify=False,
         shuffle=True,
-        repeat=True,
+        repeat=False,  # Changed from True for keras, which understands to restart a dataset
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
