@@ -26,7 +26,7 @@ statsmodels
 panoptes-client
 requests
 # tensorflow-addons==0.6.0
-tfa-nightly
+# tfa-nightly
 # also requires personal package shared_astro_utils, pip install -e ../shared-astro-utilities
 # also requires personal package gzreduction, pip install -e ../gz-panoptes-reduction
 # pip install -r ../gz-panoptes-reduction/requirements.txt
