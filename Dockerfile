@@ -6,6 +6,7 @@ FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 WORKDIR /home
 
 RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools
 
 # separately for speed, avoid re-installing with every new code version
 ADD gz-panoptes-reduction/requirements.txt /home/gzreduction/requirements.txt
