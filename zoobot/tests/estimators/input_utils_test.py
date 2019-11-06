@@ -19,7 +19,7 @@ def central(request):
 
 @pytest.fixture()
 def batch_of_visual_check_image(visual_check_image):
-    return tf.stack([visual_check_image for n in range(16)], axis=0)  # dimensions batch, height, width, channels
+    return tf.cast(tf.stack([visual_check_image for n in range(16)], axis=0), tf.float32)  # dimensions batch, height, width, channels
 
 
 """
@@ -28,11 +28,11 @@ Test augmentations applied to a single image (i.e. within map_fn), or batches of
 
 def test_geometric_augmentations_on_image(visual_check_image, size, central):
 
-    original_image = visual_check_image
+    original_image = tf.cast(visual_check_image, tf.float32)
     expected_final_size = int(size / 2)
 
     final_image = input_utils.geometric_augmentation(
-        visual_check_image,
+        original_image,
         zoom=(1., 1.5),
         final_size=expected_final_size,
         central=central
@@ -89,15 +89,15 @@ def test_repeated_photometric_augmentations_on_image(batch_of_visual_check_image
     fig.savefig(os.path.join(TEST_FIGURE_DIR, 'photometric_augmentation_check_on_batch.png'))
 
 
-def test_all_augmentations_on_batch(batch_of_visual_check_image):
-
-    input_config = input_utils.InputConfig(
+@pytest.fixture
+def example_input_config(tfrecord_multilabel_loc, size, channels):
+    config = input_utils.InputConfig(
         name='pytest',
-        tfrecord_loc='',
-        label_cols=[''],
-        initial_size=424,
-        final_size=256,
-        channels=3,
+        tfrecord_loc=tfrecord_multilabel_loc,
+        label_cols=['label_a', 'label_b'],
+        initial_size=size,
+        final_size=int(size / 2),
+        channels=channels,
         batch_size=16,
         stratify=False,
         regression=False,
@@ -111,8 +111,10 @@ def test_all_augmentations_on_batch(batch_of_visual_check_image):
         max_brightness_delta=0.2,
         contrast_range=(0.8, 1.2)
     )
+    return config
 
-    transformed_batch = input_utils.augment_images(batch_of_visual_check_image, input_config)
+def test_all_augmentations_on_batch(batch_of_visual_check_image, example_input_config):
+    transformed_batch = input_utils.augment_images(batch_of_visual_check_image, example_input_config)
 
     assert not isinstance(transformed_batch, list)  # should be a single 4D tensor, not a list
     transformed_images = [transformed_batch[n] for n in range(len(transformed_batch))]  # back to list form
@@ -282,3 +284,10 @@ def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
         mode='matrix'
     )
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
+
+
+def test_get_input(example_input_config):
+    dataset = input_utils.get_input(example_input_config)
+    for images, labels in dataset.take(2):
+        print(images[0])
+        print(labels[0])

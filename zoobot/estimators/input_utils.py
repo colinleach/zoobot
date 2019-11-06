@@ -99,7 +99,7 @@ def get_input(config):
     """
     with tf.compat.v1.name_scope('input_{}'.format(config.name)):
         dataset = load_dataset_with_labels(config)
-        preprocessed_dataset = dataset.map(preprocess_batch)
+        preprocessed_dataset = dataset.map(lambda x: preprocess_batch(x, config=config))
         # tf.shape is important to record the dynamic shape, rather than static shape
         # if config.greyscale:
         #     assert preprocessed_batch_images['x'].shape[3] == 1
@@ -157,7 +157,7 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
-    batch_data = batch['matrix']  # will automatically read uint8 into float32
+    batch_data = tf.cast(batch['matrix'], tf.float32)  # may automatically read uint8 into float32, but let's be sure
     batch_images = tf.reshape(
         batch_data,
         [-1, size, size, channels])  # may not get full batch at end of dataset
@@ -225,10 +225,8 @@ def preprocess_batch(batch, config):
     assert augmented_images.shape[2] == config.final_size
     tf.summary.image('c_augmented', augmented_images)
 
-    batch_features = {'x': augmented_images}
-
     batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
-    return batch_features, batch_labels # labels are unchanged
+    return augmented_images, batch_labels # labels are unchanged
 
 
 def stratify_images(image, label, batch_size, init_probs):
@@ -316,13 +314,14 @@ def geometric_augmentation(images, zoom, final_size, central):
     images = tf.map_fn(
         tf.image.random_flip_up_down,
         images)
+
     images = tf.map_fn(
         random_rotation,
         images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
-    images = tf.stack([crop_random_size(x, zoom=zoom, central=central, final_size=final_size) for x in images])
+    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central, final_size=final_size), images)
 
     return images
 
@@ -333,8 +332,15 @@ def random_rotation(im):
     #      * tf.random.uniform(shape=[1]),
     #     interpolation='BILINEAR'
     # )
-    return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
+    # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+    im_shape = im.shape
+    im = tf.py_function(np_random_rotation, [im], tf.float32)
+    im.set_shape(im_shape)
+    return im
 
+
+def np_random_rotation(im):
+    return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
 
 def crop_random_size(im, zoom, central, final_size):
     original_width = int(im.shape[1]) # int cast allows division of Dimension
