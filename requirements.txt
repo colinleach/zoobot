@@ -6,7 +6,7 @@ pytest-cov
 pytest-mock
 pytest-xdist
 codecov
-# tensorflow=2.0 No! Don't do here, will confuse EC2 AMI / Image / etc. If local, install manually
+tensorflow-gpu=2.0
 tqdm
 pillow
 numpy
