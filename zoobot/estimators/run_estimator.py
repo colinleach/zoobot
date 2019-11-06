@@ -33,13 +33,21 @@ def run_estimator(config):
     train_dataset = input_utils.get_input(config=config.train_config)
     test_dataset = input_utils.get_input(config=config.eval_config)
 
+    callbacks = [
+        tf.keras.callbacks.TensorBoard(log_dir=os.path.join(config.log_dir, 'tensorboard')),
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=os.path.join(config.log_dir, 'models'),
+            save_weights_only=True)
+    ]
+
     config.model.fit(
         train_dataset,
         validation_data=test_dataset,
         validation_steps=10,
-        epochs=config.epochs
+        epochs=config.epochs,
+        callbacks=callbacks
     )
 
     logging.info('All epochs completed - finishing gracefully')
-    config.model.save_weights(config.log_dir)
+    config.model.save_weights(os.path.join(config.log_dir, 'models/final'))
     return config.model
