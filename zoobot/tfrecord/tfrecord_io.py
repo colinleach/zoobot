@@ -18,7 +18,7 @@ def general_parsing_function(serialized_example, features):
     return example
 
 
-def load_dataset(filenames, feature_spec, num_parallel_calls=4, shuffle=False):
+def load_dataset(filenames, feature_spec, num_parallel_calls=tf.data.experimental.AUTOTUNE, shuffle=False):
     # TODO consider num_parallel_calls = len(list)?
     # small wrapper around loading a TFRecord as a single tensor tuples
     logging.debug('tfrecord.io: Loading dataset from {}'.format(filenames))

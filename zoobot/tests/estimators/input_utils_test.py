@@ -178,22 +178,11 @@ def tfrecord_loc(requested_features, tfrecord_multilabel_loc, tfrecord_matrix_id
     else:
         return tfrecord_matrix_id_loc
 
-# warning - tightly coupled to tests/conftest.py tfrecord construction
-@pytest.mark.skip(reason='Changed in TF2, now starts fresh every time')
-def test_get_batch(requested_features, label_cols, tfrecord_loc, size, channels):
-    feature_spec = read_tfrecord.get_feature_spec(requested_features)  # not actually under test, a bit sloppy
-    batches = []
-    for _ in range(10):
-        batch = input_utils.get_batch(
-            [tfrecord_loc],
-            feature_spec,
-            batch_size=24,  # larger batch size to make sure we loop, otherwise only 100 elements
-            shuffle=False, # behaviour changed in tf2, makes a new graph each time!
-            repeat=True
-        )
-        batches.append(batch)
-    assert len(batches) == 10
 
+def test_get_dataset(tfrecord_loc, requested_features, label_cols):
+    feature_spec = read_tfrecord.get_feature_spec(requested_features)  # not actually under test, a bit sloppy
+    dataset = input_utils.get_dataset(tfrecord_loc, feature_spec, batch_size=24, shuffle=False, repeat=False)
+    batches = [batch for batch in dataset]
     id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str'].numpy()]
     # should have loaded all saved id_str
     assert '12' in set(id_strs)
@@ -208,43 +197,28 @@ def test_get_batch(requested_features, label_cols, tfrecord_loc, size, channels)
                 assert -12. in label_values
 
 
-@pytest.mark.skip(reason='Changed in TF2, now starts fresh every time')
-def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct):
-    feature_spec = read_tfrecord.id_feature_spec()
+def test_get_dataset_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct):
+    feature_spec = read_tfrecord.get_feature_spec({'id_str': 'string'})
     tfrecord_locs = [tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_distinct]
-
-    n_batches = 81  # enough to cycle through full records, and get close to expected counts
     shuffle = False
 
     # load individually
-    batch_tf_0 = input_utils.get_batch(tfrecord_locs[0], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.compat.v1.Session() as sess:  
-        batches_tf_0 = []
-        for i in range(n_batches):
-            batches_tf_0.append(sess.run(batch_tf_0))
-    assert len(batches_tf_0) == n_batches
+    dataset_tf_0 = input_utils.get_dataset(tfrecord_locs[0], feature_spec, batch_size=24, shuffle=shuffle, repeat=False)
+    batches_tf_0 = [batch for batch in dataset_tf_0]
 
-    batch_tf_1 = input_utils.get_batch(tfrecord_locs[1], feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.compat.v1.Session() as sess:  
-        batches_tf_1 = []
-        for i in range(n_batches):
-            batches_tf_1.append(sess.run(batch_tf_1))
-    assert len(batches_tf_1) == n_batches
+    dataset_tf_1 = input_utils.get_dataset(tfrecord_locs[1], feature_spec, batch_size=24, shuffle=shuffle, repeat=False)
+    batches_tf_1 = [batch for batch in dataset_tf_1]
 
     # load from both
-    batch = input_utils.get_batch(tfrecord_locs, feature_spec, batch_size=24, shuffle=shuffle, repeat=True)
-    with tf.compat.v1.Session() as sess:  
-        batches = []
-        for i in range(n_batches):
-            batches.append(sess.run(batch))
-    assert len(batches) == n_batches
+    dataset = input_utils.get_dataset(tfrecord_locs, feature_spec, batch_size=24, shuffle=shuffle, repeat=False)
+    batches = [batch for batch in dataset]
 
-    id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str']]
-    id_strs_0 = [id_str.decode('utf-8') for b in batches_tf_0 for id_str in b['id_str']]
-    id_strs_1 = [id_str.decode('utf-8') for b in batches_tf_1 for id_str in b['id_str']]
-    # for batch in batches:
-        # print(batch)
-    # assert False
+    assert len(batches_tf_0) < len(batches)
+    assert len(batches_tf_1) < len(batches)
+
+    id_strs = [id_str.decode('utf-8') for b in batches for id_str in b['id_str'].numpy()]
+    id_strs_0 = [id_str.decode('utf-8') for b in batches_tf_0 for id_str in b['id_str'].numpy()]
+    id_strs_1 = [id_str.decode('utf-8') for b in batches_tf_1 for id_str in b['id_str'].numpy()]
 
     #  for tests to work, should be some ids only in one record or the other
     assert len(set(id_strs_0) ^ set(id_strs_1)) > 0
@@ -260,7 +234,7 @@ def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_di
     for counter in [counts_0, counts_1, counts]:
         most_common_n_reads = counter.most_common()[0][1]
         least_common_n_reads = counter.most_common()[::-1][0][1]
-        assert most_common_n_reads == least_common_n_reads + 1  # batch size won't exactly match record size
+        assert most_common_n_reads == least_common_n_reads
 
     mean_tfrecord_0_reads = np.mean([counts[id_str] for id_str in id_strs_0])
     mean_tfrecord_1_reads = np.mean([counts[id_str] for id_str in id_strs_1])
@@ -268,7 +242,7 @@ def test_get_batch_double_locs(tfrecord_matrix_id_loc, tfrecord_matrix_id_loc_di
     assert np.abs(mean_tfrecord_0_reads - mean_tfrecord_1_reads) < 0.2
 
 
-
+@pytest.mark.skip(reason='Need to check how this is used')
 def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_ints_loc, size):
     
     # tfrecord_matrix_loc
@@ -285,6 +259,7 @@ def test_predict_input_func_subbatch_with_labels(tfrecord_matrix_ints_loc, size)
     # should not have shuffled
     assert labels[0] < labels [1] < labels [2] < labels [10] < labels[23]
 
+@pytest.mark.skip(reason='Need to check how this is used')
 def test_predict_input_func_with_id(shard_locs, size):
     n_galaxies = 24
     tfrecord_loc = shard_locs[0]
@@ -297,7 +272,7 @@ def test_predict_input_func_with_id(shard_locs, size):
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
     assert len(id_strs) == 24
 
-
+@pytest.mark.skip(reason='Need to check how this is used')
 def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     n_galaxies = 24
     subjects, _, _ = input_utils.predict_input_func(

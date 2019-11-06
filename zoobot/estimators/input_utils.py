@@ -97,32 +97,62 @@ def get_input(config):
         (Tensor) categorical labels for each image
     """
     with tf.compat.v1.name_scope('input_{}'.format(config.name)):
-        batch_images, batch_labels = load_batches_with_labels(config)
-        
-        preprocessed_batch_images = preprocess_batch(batch_images, config)
+        dataset = load_dataset_with_labels(config)
+        preprocessed_dataset = dataset.map(preprocess_batch)
         # tf.shape is important to record the dynamic shape, rather than static shape
-        if config.greyscale:
-            assert preprocessed_batch_images['x'].shape[3] == 1
-        else:
-            assert preprocessed_batch_images['x'].shape[3] == 3
+        # if config.greyscale:
+        #     assert preprocessed_batch_images['x'].shape[3] == 1
+        # else:
+        #     assert preprocessed_batch_images['x'].shape[3] == 3
+        return preprocessed_dataset
 
-        return preprocessed_batch_images, batch_labels
 
+def load_dataset_with_labels(config):
+    """
+    Get dataset images and labels from tfrecord according to instructions in config
+    Does NOT apply preprocessing e.g. augmentations or further brightness tweaks
+
+    Args:
+        config (InputConfig): instructions to load and preprocess the image and label data
+
+    Returns:
+        (tf.Tensor, tf.Tensor)
+    """
+    requested_features = {'matrix': 'string'}
+    # We only support float labels!
+    requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
+    feature_spec = get_feature_spec(requested_features)
+    return get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
 
 def make_labels_noisy(labels):
     raise NotImplementedError('This has been deprecated')
 
 
-def get_batch(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
-        dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
-        if shuffle:
-            dataset = dataset.shuffle(1500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
-        if repeat:
-            dataset = dataset.repeat(-1)  # careful, don't repeat forever for eval
-        dataset = dataset.batch(batch_size)
-        dataset = dataset.prefetch(3)  # ensure that a batch is always ready to go
-        # warning, no longer one shot iterator
-        return dataset
+def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
+    """
+    Use feature_spec to load data from tfrecord_loc, and shuffle/batch according to args.
+    Does NOT apply any preprocessing.
+    
+    Args:
+        tfrecord_loc ([type]): [description]
+        feature_spec ([type]): [description]
+        batch_size ([type]): [description]
+        shuffle ([type]): [description]
+        repeat ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+
+    dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
+    if shuffle:
+        dataset = dataset.shuffle(1500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
+    if repeat:
+        dataset = dataset.repeat()  # careful, don't repeat forever for eval
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)  # ensure that a batch is always ready to go
+    # warning, no longer one shot iterator
+    return dataset
 
 
 def get_images_from_batch(batch, size, channels, summary=False):
@@ -144,28 +174,6 @@ def get_counts_from_batch(batch):
     raise NotImplementedError('This has been deprecated')
 
 
-def load_batches_with_labels(config):
-    """
-    Get batches of images and labels from tfrecord according to instructions in config
-    # TODO make a single stratify parameter that expects list of floats - required to run properly anyway
-    # use e.g. dataset.map(func, num_parallel_calls=n) rather than map_fn - but stratify??
-    Does NOT apply augmentations or further brightness tweaks
-
-    Args:
-        config (InputConfig): instructions to load and preprocess the image and label data
-
-    Returns:
-        (tf.Tensor, tf.Tensor)
-    """
-    with tf.compat.v1.name_scope('load_batches_{}'.format(config.name)):
-        requested_features = {'matrix': 'string'}
-        # We only support float labels!
-        requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
-        feature_spec = get_feature_spec(requested_features)
-        batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
-        batch_images = get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
-        batch_labels = get_labels_from_batch(batch, config.label_cols)
-        return batch_images, batch_labels
 
 
 def load_batches_with_counts(config):
@@ -175,40 +183,51 @@ def load_batches_with_counts(config):
 def load_batches_without_labels(config):
     # does not fetch id - unclear if this is important
     feature_spec = get_feature_spec({'matrix': 'string'})
-    batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
 
 
 def load_batches_with_id_str(config):
     # does not fetch id - unclear if this is important
     feature_spec = get_feature_spec({'matrix': 'string', 'id_str': 'string'})
-    batch = get_batch(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True), batch['id_str']
 
 
-def preprocess_batch(batch_images, config):
-    with tf.compat.v1.name_scope('preprocess'):
+def preprocess_batch(batch, config):
+    """
+    TODO check use of e.g. dataset.map(func, num_parallel_calls=n) 
+    
+    Args:
+        batch ([type]): [description]
+        config ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels)
+    assert len(batch_images.shape) == 4
+    assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
-        assert len(batch_images.shape) == 4
-        assert batch_images.shape[3] == 3  # should still have 3 channels at this point
+    if config.greyscale:
+        # new channel dimension of 1
+        channel_images = tf.reduce_mean(input_tensor=batch_images, axis=3, keepdims=True)
+        assert channel_images.shape[1] == config.initial_size
+        assert channel_images.shape[2] == config.initial_size
+        assert channel_images.shape[3] == 1
+        tf.summary.image('b_greyscale', channel_images)
+    else:
+        channel_images = tf.identity(batch_images)
 
-        if config.greyscale:
-            # new channel dimension of 1
-            channel_images = tf.reduce_mean(input_tensor=batch_images, axis=3, keepdims=True)
-            assert channel_images.shape[1] == config.initial_size
-            assert channel_images.shape[2] == config.initial_size
-            assert channel_images.shape[3] == 1
-            tf.summary.image('b_greyscale', channel_images)
-        else:
-            channel_images = tf.identity(batch_images)
+    augmented_images = augment_images(channel_images, config)
+    assert augmented_images.shape[1] == config.final_size
+    assert augmented_images.shape[2] == config.final_size
+    tf.summary.image('c_augmented', augmented_images)
 
-        augmented_images = augment_images(channel_images, config)
-        assert augmented_images.shape[1] == config.final_size
-        assert augmented_images.shape[2] == config.final_size
-        tf.summary.image('c_augmented', augmented_images)
+    batch_features = {'x': augmented_images}
 
-        feature_cols = {'x': augmented_images}
-        return feature_cols
+    batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
+    return batch_features, batch_labels # labels are unchanged
 
 
 def stratify_images(image, label, batch_size, init_probs):
@@ -380,37 +399,39 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels', la
         subjects: np.array of shape (batch, x, y, channel)
         labels: np.array of shape (batch)
     """
-    config = InputConfig(
-        name='predict',
-        tfrecord_loc=tfrecord_loc,
-        label_cols=label_cols,
-        stratify=False,
-        shuffle=False,  # important - preserve the order
-        repeat=False,
-        regression=True,
-        geometric_augmentation=None,
-        photographic_augmentation=None,
-        zoom=None,
-        fill_mode=None,
-        batch_size=n_galaxies,
-        initial_size=initial_size,
-        final_size=None,
-        channels=3
-    )
-    if mode == 'labels':
-        assert label_cols is not None
-        batch_images, batch_labels = load_batches_with_labels(config)
-        id_strs = None
-    elif mode == 'id_str':
-        batch_images, id_strs = load_batches_with_id_str(config)
-        batch_labels = None
-    elif mode == 'matrix':
-        batch_images = load_batches_without_labels(config)
-        batch_labels = None
-        id_strs = None
-    else:
-        raise ValueError('Predict input func. mode not recognised: {}'.format(mode))
+    raise NotImplementedError('Deprecated, check to see how/if this is useful')
+    # config = InputConfig(
+    #     name='predict',
+    #     tfrecord_loc=tfrecord_loc,
+    #     label_cols=label_cols,
+    #     stratify=False,
+    #     shuffle=False,  # important - preserve the order
+    #     repeat=False,
+    #     regression=True,
+    #     geometric_augmentation=None,
+    #     photographic_augmentation=None,
+    #     zoom=None,
+    #     fill_mode=None,
+    #     batch_size=n_galaxies,
+    #     initial_size=initial_size,
+    #     final_size=None,
+    #     channels=3
+    # )
+    # # dataset = get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat)
+    # if mode == 'labels':
+    #     assert label_cols is not None
+    #     # batch_images = batch['matrix'] for batch for batch in dataset
+    #     id_strs = None
+    # elif mode == 'id_str':
+    #     batch_images, id_strs = load_batches_with_id_str(config)
+    #     batch_labels = None
+    # elif mode == 'matrix':
+    #     batch_images = load_batches_without_labels(config)
+    #     batch_labels = None
+    #     id_strs = None
+    # else:
+    #     raise ValueError('Predict input func. mode not recognised: {}'.format(mode))
 
-    # don't do this! preprocessing is done at predict time, expects raw-ish images
-    # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
-    return batch_images, batch_labels, id_strs
+    # # don't do this! preprocessing is done at predict time, expects raw-ish images
+    # # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
+    # return batch_images, batch_labels, id_strs
