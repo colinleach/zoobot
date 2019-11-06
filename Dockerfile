@@ -1,7 +1,7 @@
-# FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
+FROM gcr.io/deeplearning-platform-release/tf2-gpu.2-0
 # FROM gcr.io/deeplearning-platform-release/tf-gpu.1-14
 # FROM tensorflow/tensorflow 
-FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
+# FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 
 WORKDIR /home
 
