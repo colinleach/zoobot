@@ -160,7 +160,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     )  # WARNING will need to be updated for multiquestion
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_indices, num_questions=len(questions)),
-        optimizer=tf.keras.optimisers.Adam(),
+        optimizer=tf.keras.optimizers.Adam(),
         metrics=None  # TODO add RMSE
     )
 

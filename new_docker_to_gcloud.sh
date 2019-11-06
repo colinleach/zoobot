@@ -15,7 +15,7 @@ docker rm $(docker ps -aq)
 # Build shards locally (needed rarely)
 
 docker run  \
-    --rm
+    --rm \
     --name shards \
     -v /Volumes/alpha/decals:/home/data/decals \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -24,7 +24,7 @@ docker run  \
 
 # run locally
 docker run \
-    --rm
+    --rm \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -34,7 +34,7 @@ docker run \
 
 # pr pull, build, and run locally in one command
 cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) ; docker run \
-    --rm
+    --rm \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
