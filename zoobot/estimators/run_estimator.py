@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from zoobot.estimators import input_utils, bayesian_estimator_funcs
 
-
+# don't decorate, this is session creation point
 def run_estimator(config):
     """
     Train and evaluate an estimator.
@@ -34,7 +34,11 @@ def run_estimator(config):
     test_dataset = input_utils.get_input(config=config.eval_config)
 
     callbacks = [
-        tf.keras.callbacks.TensorBoard(log_dir=os.path.join(config.log_dir, 'tensorboard')),
+        tf.keras.callbacks.TensorBoard(
+            log_dir=os.path.join(config.log_dir, 'tensorboard'),
+            histogram_freq=1,
+            write_images=True
+        ),
         tf.keras.callbacks.ModelCheckpoint(
             filepath=os.path.join(config.log_dir, 'models'),
             save_weights_only=True)
