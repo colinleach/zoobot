@@ -5,12 +5,6 @@ import tensorflow as tf
 
 from zoobot.estimators import losses
 
-def estimator_wrapper(features, labels, mode, params):
-    # estimator model funcs are only allowed to have (features, labels, params) arguments
-    # re-order the arguments internally to allow for the custom class to be passed around
-    # params is really the model class
-    return params.entry_point(features, labels, mode)  # must have exactly the args (features, labels)
-
 
 class BayesianModel(tf.keras.Model):
 
@@ -148,8 +142,9 @@ class BayesianModel(tf.keras.Model):
             units=self.output_dim,  # num outputs
             name='model/layer5/dense1')
 
-
-    def __call__(self, x, training=None):
+    # really important to use call, not __call__, or the dataset won't be made in graph mode and you'll get eager/symbolic mismatch error
+    @tf.function
+    def call(self, x, training=None):
 
         dropout_on = True  # dropout always on, regardless of training arg (required by keras)
         x = self.conv1(x)
@@ -183,12 +178,12 @@ class BayesianModel(tf.keras.Model):
 
         x = self.dropout_final(x, training=dropout_on)
         x = self.dense_final(x)
-        print(x, 'before histogram')
-        # tf.summary.histogram('prediction', x)
 
         # normalise predictions by question (TODO hardcoded!)
         x = tf.concat([ tf.nn.softmax(x[:, :2]), tf.nn.softmax(x[:, 2:]) ], axis=1)
-        # tf.summary.histogram('normalised_prediction', x)
+        tf.summary.histogram('normalised_smooth_prediction', x[:, 0])
+        tf.summary.histogram('normalised_spiral_prediction', x[:, 2])
+
         return x
 
 
@@ -253,7 +248,7 @@ class BayesianModel(tf.keras.Model):
         #         # eval_metric_ops = get_eval_metric_ops(self, labels, response)
         #         # return tf.estimator.EstimatorSpec(
         #         #     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-        #         eval_metric_ops = get_proxy_mean_squared_error_eval_ops(labels, response['prediction'])
+        #         eval_metric_ops = log_custom_metrics(labels, response['prediction'])
         #         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
@@ -300,25 +295,56 @@ class BayesianModel(tf.keras.Model):
     #         return response, mean_loss
 
 
-def get_proxy_mean_squared_error_eval_ops(labels, predictions):
+def custom_smooth_mse(labels, predictions):
     # TODO again, hardcoded!
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
     smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
     spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
-    tf.compat.v1.summary.histogram('smooth_total', smooth_total)
-    tf.compat.v1.summary.histogram('spiral_total', spiral_total)
+    tf.summary.histogram('smooth_total', smooth_total)
+    tf.summary.histogram('spiral_total', spiral_total)
     smooth_observed_fracs = labels[:, 0]/smooth_total
     spiral_observed_fracs = labels[:, 2]/spiral_total
     # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
-    tf.compat.v1.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
-    tf.compat.v1.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
-    return {
-        # "rmse": tf.metrics.root_mean_squared_error(observed_vote_fractions, predictions)
-            'smooth_observed_fracs_eval': tf.compat.v1.metrics.root_mean_squared_error(smooth_observed_fracs, predictions[:, 0]),
-            'spiral_observed_fracs_eval': tf.compat.v1.metrics.root_mean_squared_error(spiral_observed_fracs, predictions[:, 2])
-        }
+    tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
+    tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
 
+    squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
+    squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
+
+    tf.summary.histogram('squared_smooth_error', squared_smooth_error)
+    tf.summary.histogram('squared_spiral_error', squared_spiral_error)
+
+    tf.summary.scalar('squared_smooth_mse', tf.reduce_mean(squared_smooth_error))
+    tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
+
+    return squared_smooth_error
+
+
+class CustomSmoothMSE(tf.keras.metrics.Metric):
+
+    def __init__(self, name='custom_smooth_MSE', **kwargs):
+        super(CustomSmoothMSE, self).__init__(name=name, **kwargs)
+        self.mse = self.add_weight(name='smooth_mse', initializer='zeros')
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        values = custom_smooth_mse(y_true, y_pred)
+        self.mse.assign_add(tf.reduce_sum(values))
+
+    def result(self):
+        return self.mse
+
+    def reset_states(self):
+      # The state of the metric will be reset at the start of each epoch.
+        self.mse.assign(0.)
+
+
+
+    # train_accuracy = tf.keras.metrics.MeanSquaredError('train_mse')
+    # test_accuracy = tf.keras.metrics.MeanSquaredError('test_mse')
+    # 'smooth_observed_fracs_eval': tf.metrics.root_mean_squared_error(),
+    # 'spiral_observed_fracs_eval': tf.metrics.root_mean_squared_error()
+        
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):
     # raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
     # will probably be callable/subclass rather than implemented here 
