@@ -43,62 +43,31 @@ def get_indices_from_label_cols(label_cols, questions):
     Returns:
     indices = [0, 0, 1, 1]
     """
-    indices = np.zeros(len(label_cols))
-    for question_n, question in enumerate(questions):
-        for column_n, label_col in enumerate(label_cols):
-            if label_col.startswith(question):
-                indices[column_n] = question_n
-    return tf.constant(indices.astype(int), dtype=tf.int32)
+    raise NotImplementedError('This has been deprecated, use get_schema above')
+    # indices = np.zeros(len(label_cols))
+    # for question_n, question in enumerate(questions):
+    #     for column_n, label_col in enumerate(label_cols):
+    #         if label_col.startswith(question):
+    #             indices[column_n] = question_n
+    # return tf.constant(indices.astype(int), dtype=tf.int32)
 
 
 @tf.function
 def multiquestion_loss(labels, predictions, question_index_groups, num_questions):
-    # very important that question_index_groups is fixed, else tf autograph will mess up this for loop
-    # answer_slices = question_index_groups.items()  # list of list of indices e.g. [[0, 1], [3, 4]]
-    # all_losses = tf.map_fn(
-    #     lambda x: multinomial_loss(labels[:, x[0]:x[1]], predictions[:, x[0]:x[1]]),
-    #     question_index_groups
-    # )
-    # smooth_loss = multinomial_loss(labels[:, :2], predictions[:, :2])
-    # tf.summary.histogram('smooth_loss', smooth_loss)
-    # spiral_loss = multinomial_loss(labels[:, 2:], predictions[:, 2:])
-    # tf.summary.histogram('spiral_loss', spiral_loss)
-    # # TODO good view into each loss
-    # total_loss = tf.reduce_mean(smooth_loss + spiral_loss)
-    # tf.summary.histogram('total_loss', total_loss)
-    # return total_loss
+    # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
 
     q_losses = []
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
         q_start = q_indices[0]
         q_end = q_indices[1]
-        print('q_start', q_start)
-        print('q_end', q_end)
-        q_losses.append(multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1]))
-        # tf.summary.histogram('smooth_loss', q_loss)
-        total_loss = tf.stack(q_losses, axis=1)
-
-    # TODO good view into each loss
+        q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
+        tf.summary.histogram('question_{}_loss'.format(q_n), q_loss)
+        q_losses.append(q_loss)
+    
+    total_loss = tf.stack(q_losses, axis=1)
     tf.summary.histogram('total_loss', total_loss)
     return total_loss  # leave the reduce_sum to the estimator
-
-    # do next
-    # not really sure why tf separately requires num_partitions to be specified...?
-    # labels_dim = tf.shape(input=labels)[1]
-    # batch_dim = tf.shape(input=labels)[0]
-    # copied_indices = tf.tile(question_index_groups, tf.expand_dims(batch_dim, axis=0))
-    # tiled_indices = tf.reshape(copied_indices, (batch_dim, labels_dim))
-    # labels_by_q = tf.dynamic_partition(labels, tiled_indices, num_partitions=num_questions)
-    # predictions_by_q = tf.dynamic_partition(predictions, tiled_indices, num_partitions=num_questions)
-
-    # print_op = tf.print('copied_indices', copied_indices, 'tiled_indices', tiled_indices, 'labels_by_q', labels_by_q,  'predictions_by_q', predictions_by_q)
-    # with tf.control_dependencies([print_op]):
-    #     copied_indices = tf.identity(copied_indices)
-    # return copied_
-    # losses_list = [multinomial_loss(question_labels, question_predictions) for question_labels, question_predictions in zip(labels_by_q, predictions_by_q)]
-    # losses = tf.concat(losses, axis=1)
-    # return losses  # reduce later!
 
 
 def multinomial_loss(successes, expected_probs, output_dim=2):

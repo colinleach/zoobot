@@ -93,6 +93,7 @@ def test_multinomial_loss():
 
 
 """Schema and Indices"""
+@pytest.mark.skip('Deprecated')
 def test_get_indices_from_label_cols():
     questions = ['q1', 'q2']
     label_cols = ['q1_a1', 'q1_a2', 'q2_a1', 'q2_a2']
