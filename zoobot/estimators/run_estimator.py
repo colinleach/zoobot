@@ -44,13 +44,18 @@ def run_estimator(config):
             save_weights_only=True)
     ]
 
-    config.model.fit(
-        train_dataset,
-        validation_data=test_dataset,
-        validation_steps=10,
-        epochs=config.epochs,
-        callbacks=callbacks
-    )
+    # if this doesn't get the steps right, can use any custom callback to keras.backend.set_value self.epoch=epoch, and then read that on each summary call
+    # if this doesn't get train/test right, could similarly use the callbacks to set self.mode
+
+    fit_summary_writer = tf.summary.create_file_writer(os.path.join(config.log_dir, 'manual_summaries'))
+    with fit_summary_writer.as_default():
+        config.model.fit(
+            train_dataset,
+            validation_data=test_dataset,
+            validation_steps=10,
+            epochs=config.epochs,
+            callbacks=callbacks
+        )
 
     logging.info('All epochs completed - finishing gracefully')
     config.model.save_weights(os.path.join(config.log_dir, 'models/final'))
