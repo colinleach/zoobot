@@ -85,7 +85,7 @@ class InputConfig():
     def copy(self):
         return copy.deepcopy(self)
 
-
+@tf.function
 def get_input(config):
     """
     Load tfrecord as dataset. Stratify and transform_3d images as directed. Batch with queues for Estimator input.
@@ -206,7 +206,7 @@ def preprocess_batch(batch, config):
     Returns:
         [type]: [description]
     """
-    batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels)
+    batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels, summary=True)
     assert len(batch_images.shape) == 4
     assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
