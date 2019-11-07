@@ -48,21 +48,25 @@ def labels(request, n_examples):
 
 
 @pytest.fixture
-def fake_dataset(size, channels):
+def output_dim():
+    return 4
+
+
+@pytest.fixture
+def fake_data(size, channels, output_dim):
     dataset_len = 1000
-    batch_dim = 16
     features = np.random.rand(dataset_len, size, size, channels).astype(np.float32)
     true_labels = np.array([np.random.choice([0, 1, 2, 3, 4]) for n in range(dataset_len)]).astype(np.float32)
     false_labels = 4 - true_labels
-    labels = np.stack((true_labels, false_labels), axis=1)
-    dataset = tf.data.Dataset.from_tensor_slices((features, labels))
-    return dataset.shuffle(dataset_len).batch(batch_dim)
+    labels = np.stack((true_labels, false_labels, false_labels, true_labels), axis=1)   # TODO hacky dimension for smooth/spiral
+    assert labels.shape[1] == output_dim
+    return features, labels
 
 
 @pytest.fixture()
-def model(size):
+def model(size, output_dim):
     model = bayesian_estimator_funcs.BayesianModel(
-        output_dim=2,
+        output_dim=output_dim,
         conv1_filters=4,
         conv1_kernel=3,
         conv2_filters=8,
@@ -78,7 +82,8 @@ def model(size):
     )
     model.compile(
         loss=losses.multinomial_loss,
-        optimizer=tf.keras.optimizers.Adam()
+        optimizer=tf.keras.optimizers.Adam(),
+        metrics=[bayesian_estimator_funcs.CustomSmoothMSE()]
     )
     return model
 
@@ -98,14 +103,18 @@ def run_config(size, channels, model, log_dir):
 
 def test_run_experiment(
     run_config,
-    fake_dataset,
+    fake_data,
     monkeypatch):
 
     # TODO need to test estimator with input functions!
     # mock both input functions
+    # no need to wrap with tf.function
     def dummy_input(config=None):
-        return fake_dataset
-    monkeypatch.setattr(run_estimator.input_utils, 'get_input', dummy_input)
+        dataset = tf.data.Dataset.from_tensor_slices(fake_data)
+        return dataset.batch(16)
+    dummy_input_tf = tf.function(dummy_input)  # probably doesnt do anything, I think dataset is graph by default? Unclear
+
+    monkeypatch.setattr(run_estimator.input_utils, 'get_input', dummy_input_tf)
     monkeypatch.setattr(run_config, 'is_ready_to_train', lambda: True)
 
     run_estimator.run_estimator(run_config)

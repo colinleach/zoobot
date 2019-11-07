@@ -100,10 +100,11 @@ def test_get_indices_from_label_cols():
     expected_indices = np.array([0, 0, 1, 1])
     assert all(indices == expected_indices)
 
-@pytest.mark.skip
+
 def test_multiquestion_loss():
     labels = tf.constant([[5, 3, 1, 2], [5, 3, 1, 2]], dtype=tf.float32)  # need to be floats
     predictions = tf.constant([[0.7, 0.3, 0.3, 0.7], [0.7, 0.3, 0.3, 0.7]], dtype=tf.float32)
-    question_index_groups = tf.constant([0, 0, 1, 1], dtype=tf.int32)
+    question_index_groups = [[0, 1], [1, 2]]
     loss = losses.multiquestion_loss(labels, predictions, question_index_groups, num_questions=int(2))
-    assert all(loss > 0)
+    loss_np = loss.numpy()
+    assert (loss_np > 0).all()
