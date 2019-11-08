@@ -62,11 +62,11 @@ def multiquestion_loss(labels, predictions, question_index_groups, num_questions
         q_start = q_indices[0]
         q_end = q_indices[1]
         q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
-        tf.summary.histogram('question_{}_loss'.format(q_n), q_loss)
+        # tf.summary.histogram('question_{}_loss'.format(q_n), q_loss)
         q_losses.append(q_loss)
     
     total_loss = tf.stack(q_losses, axis=1)
-    tf.summary.histogram('total_loss', total_loss)
+    # tf.summary.histogram('total_loss', total_loss)
     return total_loss  # leave the reduce_sum to the estimator
 
 
