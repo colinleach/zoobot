@@ -327,6 +327,7 @@ def custom_spiral_mse(labels, predictions):
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
     # smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
+    print(labels[:, 2:])
     spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
     # tf.summary.histogram('smooth_total', smooth_total)
     # tf.summary.histogram('spiral_total', spiral_total)
