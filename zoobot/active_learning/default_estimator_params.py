@@ -98,7 +98,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         tfrecord_loc=train_records,
         label_cols=run_config.label_cols,
         stratify=False,
-        shuffle=True,
+        shuffle=False,  # temporarily turned off due to shuffle op error
         repeat=False,  # Changed from True for keras, which understands to restart a dataset
         stratify_probs=None,
         geometric_augmentation=True,
@@ -121,7 +121,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         tfrecord_loc=eval_records,
         label_cols=run_config.label_cols,
         stratify=False,
-        shuffle=True,
+        shuffle=False,  # see above
         repeat=False,
         stratify_probs=None,
         geometric_augmentation=True,
