@@ -141,7 +141,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
 
     # schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
     questions = ['smooth', 'spiral']
-    question_indices = losses.get_indices_from_label_cols(label_cols=run_config.label_cols, questions=questions)
+    question_groups = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=questions)
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         conv1_filters=32,
@@ -159,7 +159,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
     )  # WARNING will need to be updated for multiquestion
     model.compile(
-        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_indices, num_questions=len(questions)),
+        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_groups, num_questions=len(questions)),
         optimizer=tf.keras.optimizers.Adam(),
         metrics=None  # TODO add RMSE
     )
