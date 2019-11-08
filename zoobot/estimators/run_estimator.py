@@ -55,10 +55,6 @@ def run_estimator(config):
             validation_steps=10,
             epochs=config.epochs,
             callbacks=callbacks,
-            metrics=[
-                bayesian_estimator_funcs.custom_smooth_mse,
-                bayesian_estimator_funcs.custom_spiral_mse
-            ]
         )
 
     logging.info('All epochs completed - finishing gracefully')

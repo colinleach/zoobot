@@ -365,6 +365,23 @@ class CustomSmoothMSE(tf.keras.metrics.Metric):
       # The state of the metric will be reset at the start of each epoch.
         self.mse.assign(0.)
 
+class CustomSpiralMSE(tf.keras.metrics.Metric):
+
+    def __init__(self, name='custom_spiral_MSE', **kwargs):
+        super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
+        self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        values = custom_spiral_mse(y_true, y_pred)
+        self.mse.assign_add(tf.reduce_sum(values))
+
+    def result(self):
+        return self.mse
+
+    def reset_states(self):
+      # The state of the metric will be reset at the start of each epoch.
+        self.mse.assign(0.)
+
 
 
     # train_accuracy = tf.keras.metrics.MeanSquaredError('train_mse')

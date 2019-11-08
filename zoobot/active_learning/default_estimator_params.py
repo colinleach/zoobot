@@ -161,7 +161,10 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_groups, num_questions=len(questions)),
         optimizer=tf.keras.optimizers.Adam(),
-        metrics=None  # TODO add RMSE
+        metrics=[
+            bayesian_estimator_funcs.CustomSmoothMSE(),
+            bayesian_estimator_funcs.CustomSpiralMSE()
+        ]
     )
 
     run_config.assemble(train_config, eval_config, model)
