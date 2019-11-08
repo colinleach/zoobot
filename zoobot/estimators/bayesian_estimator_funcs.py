@@ -300,17 +300,17 @@ def custom_smooth_mse(labels, predictions):
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
     smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
-    spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
+    # spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
     # tf.summary.histogram('smooth_total', smooth_total)
     # tf.summary.histogram('spiral_total', spiral_total)
     smooth_observed_fracs = labels[:, 0]/smooth_total
-    spiral_observed_fracs = labels[:, 2]/spiral_total
+    # spiral_observed_fracs = labels[:, 2]/spiral_total
     # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
     # tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
     # tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
 
     squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
-    squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
+    # squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
 
     # tf.summary.histogram('squared_smooth_error', squared_smooth_error)
     # tf.summary.histogram('squared_spiral_error', squared_spiral_error)
@@ -319,6 +319,33 @@ def custom_smooth_mse(labels, predictions):
     # tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
 
     return squared_smooth_error
+
+
+
+def custom_spiral_mse(labels, predictions):
+    # TODO again, hardcoded!
+    # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
+    # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
+    # smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
+    spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
+    # tf.summary.histogram('smooth_total', smooth_total)
+    # tf.summary.histogram('spiral_total', spiral_total)
+    # smooth_observed_fracs = labels[:, 0]/smooth_total
+    spiral_observed_fracs = labels[:, 2]/spiral_total
+    # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
+    # tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
+    # tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
+
+    # squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
+    squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
+
+    # tf.summary.histogram('squared_smooth_error', squared_smooth_error)
+    # tf.summary.histogram('squared_spiral_error', squared_spiral_error)
+
+    # tf.summary.scalar('squared_smooth_mse', tf.reduce_mean(squared_smooth_error))
+    # tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
+
+    return squared_spiral_error
 
 
 class CustomSmoothMSE(tf.keras.metrics.Metric):
