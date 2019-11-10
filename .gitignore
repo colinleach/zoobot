@@ -58,3 +58,7 @@ data/experiments/*.json
 zooniverse_login.json
 .vscode/settings.json
 .vscode/*
+notebooks/estimators
+notebooks/molly_galaxies
+data/experiments/multilabel_64
+notebooks/*.parquet
