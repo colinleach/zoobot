@@ -54,7 +54,7 @@ def run_estimator(config):
             validation_data=test_dataset,
             validation_steps=10,
             epochs=config.epochs,
-            callbacks=callbacks
+            callbacks=callbacks,
         )
 
     logging.info('All epochs completed - finishing gracefully')

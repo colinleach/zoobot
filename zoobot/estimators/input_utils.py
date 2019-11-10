@@ -97,15 +97,14 @@ def get_input(config):
         (dict) of form {'x': greyscale image batch}, as Tensor of shape [batch, size, size, 1]}
         (Tensor) categorical labels for each image
     """
-    with tf.compat.v1.name_scope('input_{}'.format(config.name)):
-        dataset = load_dataset_with_labels(config)
-        preprocessed_dataset = dataset.map(lambda x: preprocess_batch(x, config=config))
-        # tf.shape is important to record the dynamic shape, rather than static shape
-        # if config.greyscale:
-        #     assert preprocessed_batch_images['x'].shape[3] == 1
-        # else:
-        #     assert preprocessed_batch_images['x'].shape[3] == 3
-        return preprocessed_dataset
+    dataset = load_dataset_with_labels(config)
+    preprocessed_dataset = dataset.map(lambda x: preprocess_batch(x, config=config))
+    # tf.shape is important to record the dynamic shape, rather than static shape
+    # if config.greyscale:
+    #     assert preprocessed_batch_images['x'].shape[3] == 1
+    # else:
+    #     assert preprocessed_batch_images['x'].shape[3] == 3
+    return preprocessed_dataset
 
 
 def load_dataset_with_labels(config):
@@ -162,7 +161,7 @@ def get_images_from_batch(batch, size, channels, summary=False):
         batch_data,
         [-1, size, size, channels])  # may not get full batch at end of dataset
     assert len(batch_images.shape) == 4
-    tf.summary.image('a_original', batch_images)
+    # tf.summary.image('a_original', batch_images)
     # tf.summary.scalar('batch_size', tf.shape(preprocessed_batch_images['x'])[0])
     return batch_images
 
@@ -216,14 +215,14 @@ def preprocess_batch(batch, config):
         assert channel_images.shape[1] == config.initial_size
         assert channel_images.shape[2] == config.initial_size
         assert channel_images.shape[3] == 1
-        tf.summary.image('b_greyscale', channel_images)
+        # tf.summary.image('b_greyscale', channel_images)
     else:
         channel_images = tf.identity(batch_images)
 
     augmented_images = augment_images(channel_images, config)
     assert augmented_images.shape[1] == config.final_size
     assert augmented_images.shape[2] == config.final_size
-    tf.summary.image('c_augmented', augmented_images)
+    # tf.summary.image('c_augmented', augmented_images)
 
     batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
     return augmented_images, batch_labels # labels are unchanged

@@ -111,7 +111,7 @@ def test_run_experiment(
     # no need to wrap with tf.function
     def dummy_input(config=None):
         dataset = tf.data.Dataset.from_tensor_slices(fake_data)
-        return dataset.batch(16)
+        return dataset.batch(16)  #.shuffle(100) causes strange op error
     dummy_input_tf = tf.function(dummy_input)  # probably doesnt do anything, I think dataset is graph by default? Unclear
 
     monkeypatch.setattr(run_estimator.input_utils, 'get_input', dummy_input_tf)
