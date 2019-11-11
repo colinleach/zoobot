@@ -219,9 +219,9 @@ def preprocess_batch(batch, config):
     else:
         channel_images = tf.identity(batch_images)
 
-    augmented_images = augment_images(channel_images, config)
-    assert augmented_images.shape[1] == config.final_size
-    assert augmented_images.shape[2] == config.final_size
+    # augmented_images = augment_images(channel_images, config)
+    # assert augmented_images.shape[1] == config.final_size
+    # assert augmented_images.shape[2] == config.final_size
     # tf.summary.image('c_augmented', augmented_images)
 
     batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
