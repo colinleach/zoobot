@@ -307,16 +307,10 @@ def geometric_augmentation(images, zoom, final_size, central):
     assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
 
     # flip functions don't support batch dimension - wrap with map_fn
-    images = tf.map_fn(
-        tf.image.random_flip_left_right,
-        images)
-    images = tf.map_fn(
-        tf.image.random_flip_up_down,
-        images)
-
-    images = tf.map_fn(
-        random_rotation,
-        images)
+    # actually, in tf2, they do now?
+    images = tf.image.random_flip_left_right(images)
+    images = tf.image.random_flip_up_down(images)
+    images = random_rotation_batch(images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
@@ -325,12 +319,14 @@ def geometric_augmentation(images, zoom, final_size, central):
     return images
 
 
-def random_rotation(im):
+def random_rotation_batch(images):
     return tfa.image.rotate(
-        im,
-         * tf.random.uniform(shape=[1]),
+        images,
+         * tf.random.uniform(shape=[len(images)]),
         interpolation='BILINEAR'
     )
+
+def random_rotation_py(im):
     # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
     im_shape = im.shape
     im = tf.py_function(np_random_rotation, [im], tf.float32)
