@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-# import tensorflow_addons as tfa  DISABLE FOR NOW
+import tensorflow_addons as tfa
 import scipy.ndimage as ndimage  # use this instead
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
@@ -326,11 +326,11 @@ def geometric_augmentation(images, zoom, final_size, central):
 
 
 def random_rotation(im):
-    # return tfa.image.rotate(
-    #     im,
-    #      * tf.random.uniform(shape=[1]),
-    #     interpolation='BILINEAR'
-    # )
+    return tfa.image.rotate(
+        im,
+         * tf.random.uniform(shape=[1]),
+        interpolation='BILINEAR'
+    )
     # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
     im_shape = im.shape
     im = tf.py_function(np_random_rotation, [im], tf.float32)

@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('--labelled-catalog', dest='labelled_catalog_loc', type=str,
                         help='Path to csv catalog of previous labels and file_loc, for shards')
-    parser.add_argument('--eval-size', dest='eval_size', type=str,
+    parser.add_argument('--eval-size', dest='eval_size', type=int,
                         help='Path to csv catalog of previous labels and file_loc, for shards')
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                         help='Directory into which to place shard directory')
