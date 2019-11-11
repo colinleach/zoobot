@@ -322,7 +322,7 @@ def geometric_augmentation(images, zoom, final_size, central):
 def random_rotation_batch(images):
     return tfa.image.rotate(
         images,
-         * tf.random.uniform(shape=[len(images)]),
+        tf.random.uniform(shape=[len(images)]),
         interpolation='BILINEAR'
     )
 
