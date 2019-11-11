@@ -372,7 +372,7 @@ class CustomSpiralMSE(tf.keras.metrics.Metric):
         super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
         self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
 
-    def update_state(self, y_true, y_pred):
+    def update_state(self, y_true, y_pred, sample_weight=None):
         values = custom_spiral_mse(y_true, y_pred)
         print(self.mse, self.mse.shape)
         print(values, values.shape)
