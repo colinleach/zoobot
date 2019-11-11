@@ -306,11 +306,17 @@ def geometric_augmentation(images, zoom, final_size, central):
     assert zoom[0] <= zoom[1]
     assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
 
-    # flip functions don't support batch dimension - wrap with map_fn
-    # actually, in tf2, they do now?
-    images = tf.image.random_flip_left_right(images)
-    images = tf.image.random_flip_up_down(images)
-    images = random_rotation_batch(images)
+    # flip functions support batch dimension, but it must be precisely fixed
+    # let's take the performance hit for now and use map_fn to allow variable length batches
+    # images = tf.image.random_flip_left_right(images)
+    # print(images.shape)
+    # images = tf.image.random_flip_up_down(images)
+    # print(images.shape)
+    # images = random_rotation_batch(images)
+    # print(images.shape)
+    images = tf.map_fn(tf.image.random_flip_left_right, images)
+    images = tf.map_fn(tf.image.random_flip_up_down, images)
+    images = tf.map_fn(random_rotation_batch, images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
@@ -322,7 +328,7 @@ def geometric_augmentation(images, zoom, final_size, central):
 def random_rotation_batch(images):
     return tfa.image.rotate(
         images,
-        tf.random.uniform(shape=[len(images)]),
+        tf.random.uniform(shape=[1]),
         interpolation='BILINEAR'
     )
 
@@ -339,7 +345,7 @@ def np_random_rotation(im):
 
 def crop_random_size(im, zoom, central, final_size):
     original_width = int(im.shape[1]) # int cast allows division of Dimension
-    new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))
+    new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))  # WARNING may actually be fixed
     if central:
         lost_width = int((original_width - new_width) / 2)
         cropped_im = im[lost_width:original_width-lost_width, lost_width:original_width-lost_width]
