@@ -85,7 +85,7 @@ class InputConfig():
     def copy(self):
         return copy.deepcopy(self)
 
-@tf.function
+# @tf.function
 def get_input(config):
     """
     Load tfrecord as dataset. Stratify and transform_3d images as directed. Batch with queues for Estimator input.
