@@ -225,7 +225,7 @@ def preprocess_batch(batch, config):
     # tf.summary.image('c_augmented', augmented_images)
 
     batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
-    return augmented_images, batch_labels # labels are unchanged
+    return channel_images, batch_labels # labels are unchanged
 
 
 def stratify_images(image, label, batch_size, init_probs):
