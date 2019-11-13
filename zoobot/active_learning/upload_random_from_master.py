@@ -3,7 +3,7 @@ import tempfile
 
 import pandas as pd
 
-from zoobot.active_learning import oracles
+from zoobot.active_learning import mock_panoptes
 
 if __name__ == '__main__':
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     # galaxy zoo (and mobile app) will work forwards
     unlabelled = unlabelled.sort_values('file_loc')
-    selected = slice(55000, 65000)
+    selected = slice(65000, 75000)
     name = 'random'
     retirement = 3
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         unlabelled_loc = os.path.join(tempdir, 'unlabelled.csv')
 
         unlabelled[selected].to_csv(unlabelled_loc)
-        panoptes = oracles.Panoptes(
+        panoptes = mock_panoptes.Panoptes(
             catalog_loc=unlabelled_loc,
             login_loc=login_loc,
             project_id=project_id,
