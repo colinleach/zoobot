@@ -186,3 +186,6 @@ docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobo
 export EXPERIMENT_DIR=/home/data/experiments/multiquestion_smooth_spiral_feat10_tf2_$SHARD_IMG_SIZE
 export EPOCHS=100
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python offline_training.py --experiment-dir $EXPERIMENT_DIR --train-dir $SHARD_DIR/train --eval-dir $SHARD_DIR/eval --shard-img-size=$SHARD_IMG_SIZE --epochs $EPOCHS
+
+# tensorboard
+docker run -it --runtime=nvidia -v $MNT_DIR:/home/data -p 6006:6006 gcr.io/zoobot-223419/zoobot:latest bash

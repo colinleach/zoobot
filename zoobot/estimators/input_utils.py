@@ -85,6 +85,7 @@ class InputConfig():
     def copy(self):
         return copy.deepcopy(self)
 
+# This causes weird op error - see my issues
 # @tf.function
 def get_input(config):
     """
@@ -308,12 +309,6 @@ def geometric_augmentation(images, zoom, final_size, central):
 
     # flip functions support batch dimension, but it must be precisely fixed
     # let's take the performance hit for now and use map_fn to allow variable length batches
-    # images = tf.image.random_flip_left_right(images)
-    # print(images.shape)
-    # images = tf.image.random_flip_up_down(images)
-    # print(images.shape)
-    # images = random_rotation_batch(images)
-    # print(images.shape)
     images = tf.map_fn(tf.image.random_flip_left_right, images)
     images = tf.map_fn(tf.image.random_flip_up_down, images)
     images = tf.map_fn(random_rotation_batch, images)
@@ -345,7 +340,7 @@ def np_random_rotation(im):
 
 def crop_random_size(im, zoom, central, final_size):
     original_width = int(im.shape[1]) # int cast allows division of Dimension
-    new_width = int(original_width / np.random.uniform(zoom[0], zoom[1]))  # WARNING may actually be fixed
+    new_width = int(original_width / tf.random.uniform(shape=[1], minval=zoom[0], maxval=zoom[1]))  # updated from np to avoid fixed value from tracing. Not yet tested!
     if central:
         lost_width = int((original_width - new_width) / 2)
         cropped_im = im[lost_width:original_width-lost_width, lost_width:original_width-lost_width]

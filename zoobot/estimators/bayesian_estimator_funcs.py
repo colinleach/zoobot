@@ -374,8 +374,6 @@ class CustomSpiralMSE(tf.keras.metrics.Metric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         values = custom_spiral_mse(y_true, y_pred)
-        # print(self.mse, self.mse.shape)
-        # print(values, values.shape)
         self.mse.assign_add(tf.reduce_sum(values))
 
     def result(self):

@@ -285,7 +285,6 @@ def test_predict_input_func_subbatch_no_labels(tfrecord_matrix_loc, size):
     )
     assert subjects.shape == (n_galaxies, size, size, 3)  # does not do augmentations, that happens at predict time
 
-
 # if only this fails, it's because of graph vs. eager input
 def test_get_input(example_input_config):
     dataset = input_utils.get_input(example_input_config)
