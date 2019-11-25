@@ -10,10 +10,11 @@ import pandas as pd
 
 def get_finalized_labels(classifications):
         # science logic needs to remain inside define_experiment, not here
-        retired, _ = split_retired_and_not(all_classifications, self.question)
-        retired = define_identifiers(retired)  # add iauname
-        retired = define_labels(retired, self.question)  # add 'label' and 'total_votes', drop low n bars
-        retired = drop_duplicates(retired)
+        raise NotImplementedError
+        # retired, _ = split_retired_and_not(all_classifications, self.question)
+        # retired = define_identifiers(retired)  # add iauname
+        # retired = define_labels(retired, self.question)  # add 'label' and 'total_votes', drop low n bars
+        # retired = drop_duplicates(retired)
 
 
 def get_experiment_catalogs(catalog, question, save_dir):

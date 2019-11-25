@@ -8,6 +8,7 @@ from astropy.table import Table
 
 from zoobot.science_logic import define_experiment
 
+
 def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
     """Convert zooniverse/decals joint catalog (from decals repo) for active learning and join to previous classifications
     
