@@ -19,10 +19,12 @@ seaborn==0.9.0
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
 photutils
 pymc3
+python-dateutil==2.8.1  # for boto3
 boto3
 dvc
 gitpython
 statsmodels
+requests>=2.4.2  # for panoptes-client
 panoptes-client
 requests
 # tensorflow-addons==0.6.0
