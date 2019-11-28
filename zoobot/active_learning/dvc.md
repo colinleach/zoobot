@@ -5,9 +5,9 @@
 
 *Check get_latest.py carefully first to make sure you're not deleting anything!*
 
-`dvc run -o data/decals/classifications/classifications.csv python -f data/decals/classifications.csv.dvc ../gzreduction/get_latest.py`
+`dvc run -o data/decals/classifications/classifications.csv python -f data/decals/classifications.csv.dvc ../gzreduction/main.py`
 
-`dvc push -r s3 data/decals/classifications.dvc`
+<!-- `dvc push -r s3 data/decals/classifications.dvc` -->
 
 ## EC2
 
@@ -18,6 +18,10 @@
 `experiment_dir=data/experiments/simulation/decals_weak_bars_launch_test` -->
 
 **Specify what you'd like to do**
+
+`INITIAL_CATALOG=/media/mike/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv`
+
+`INITIAL_CLASSIFICATIONS=/media/mike/beta/decals/results/classifications_2019_11_27.csv`
 
 `master_catalog=data/decals/decals_master_catalog.csv`
 
@@ -31,7 +35,7 @@
 
 **Create master catalog** (could give command-line args)
 
-`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/active_learning/prepare_catalogs.py -d data/decals/disk_catalog.fits -d data/decals/classifications/streaming/classifications.csv python zoobot/active_learning/prepare_catalogs.py`
+`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/science_logic/prepare_catalogs.py -d $INITIAL_CATALOG -d $INITIAL_CLASSIFICATIONS python zoobot/science_logic/prepare_catalogs.py $INITIAL_CATALOG $INITIAL_CLASSIFICATIONS $master_catalog`
 
 **Define experiment (create experiment catalogs)**
 
