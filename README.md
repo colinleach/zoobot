@@ -22,13 +22,37 @@ I feel like there was a script to run models on GZ2, but I'm not sure where it's
 
 This is the Python package. **All scripts should be run from this directory.**
 
-### Important Folders
+## Installation
+
+Clone the repo
+
+    git clone git@github.com:mwalmsley/zoobot.git
+    pip install -r zoobot/requirements.txt
+    pip install -e zoobot
+
+## Usage
+
+We provide example scripts for using the `zoobot` package in the root directory. 
+
+- `run_zoobot_on_panoptes.py` trains and evaluates a model on a train/test split of either GZ2 or GZ DECALS galaxies. This is useful for developing models. 
+- `panoptes_to_tfrecord.py` and `gz2_to_tfrecord.py` convert the respective download catalogs into tfrecords suitable for models.
+
+To simulate active learning, see the readme in `zoobot/active_learning`.
+
+*Note that the Galaxy Zoo 2 and Nasa Sloan Atlas galaxy catalogs required are available externally from [here](data.galaxyzoo.org) and [here](https://www.sdss.org/dr13/manga/manga-target-selection/nsa/).*
+
+## Zoobot Folders
 - `estimators` includes custom TensorFlow models (and associated training routines and input utilities) for galaxy classification. 
-- `active_learning` applies those models and routines in an active learning loop. Currently, previous classifications are used as an oracle. See the Readme in this folder for more details.
+- `active_learning` applies those models and routines in an active learning loop. Currently, previous classifications are used as an oracle. **See the Readme in this folder for more details.**
 - `get_catalogs` is used to download GZ2 classifications. Panoptes classifications have been refactored to the repo `gz-panoptes-reduction`.
 - `tests` contains unit tests for the package. Look here for examples!
 - `tfrecord` has various useful utilities for reading and writing galaxy catalogs to tfrecords.
 - `uncertainty` has code to find the coverage fractions of trained models
+
+
+## Contact Us
+
+This code was written by [Mike Walmsley](walmsley.dev). Please get in touch by [email](mailto:mike.walmsley@physics.ox.ac.uk).
 
 ### Legacy Code
 - `embeddings` is ancient code to visualse galaxies in tensorboard. *Not currently used.*
@@ -56,3 +80,10 @@ This is a bit of a mess and I should ponder how to do this cleanly.
 
 - `bayesian_cnn` (which should be renamed) has some early results using dropout, including timings
 - `uncertainty` uses `check_uncertainty.py` and `zoobot/uncertainty` to investigate how trained models perform and select new subjects
+
+
+## Legal Stuff
+
+Copyright (C) 2019 - Mike Walmsley
+
+This program is NOT free software and you MAY NOT use it in any way without express permission of the license holder(s).

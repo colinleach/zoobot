@@ -62,3 +62,8 @@ notebooks/estimators
 notebooks/molly_galaxies
 data/experiments/multilabel_64
 notebooks/*.parquet
+
+notebooks/estimators
+notebooks/molly_galaxies
+
+notebooks/decals_may_test_set_predictions.parquet
