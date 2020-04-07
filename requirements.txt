@@ -6,7 +6,7 @@ pytest-cov
 pytest-mock
 pytest-xdist
 codecov
-tensorflow-gpu==2.0
+# tensorflow>=2.0 do manually to avoid messing with other installs on server
 tqdm
 pillow
 numpy
