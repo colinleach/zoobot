@@ -4,7 +4,6 @@ import functools
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib import predictor
 import scipy
 import matplotlib
 matplotlib.use('Agg')
@@ -24,11 +23,14 @@ def load_predictor(predictor_loc):
     Returns:
         function: callable expecting parsed subjects according to saved model input configuration
     """
-    model_unwrapped = predictor.from_saved_model(predictor_loc)
+    model_unwrapped = tf.saved_model.load(predictor_loc)
     # wrap to avoid having to pass around dicts all the time
     # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
-    return lambda x: model_unwrapped({'examples': x})['prediction']
+    example = tf.train.Example()
+    example.features.feature['examples'].float_list.value.extend([x])
+    # warning, modified for tf2
+    return lambda x: model_unwrapped.signatures['prediction'](examples=tf.constant([example.SerializeToString()]))
 
 
 def get_samples_of_images(model, images, n_samples):
@@ -58,9 +60,8 @@ def get_samples_of_images(model, images, n_samples):
     return results
 
 
-def binomial_likelihood(labels, predictions, total_votes):
+def binomial_likelihood(true_prob, predictions, n_trials):
     """
-    
     In our formalism:
     Labels are v, and labels * total votes are k.
     Predictions are rho.
@@ -69,18 +70,20 @@ def binomial_likelihood(labels, predictions, total_votes):
     Args:
         labels ([type]): [description]
         predictions ([type]): [description]
-        total_votes ([type]): [description]
+        n_trials ([type]): [description]
     
     Returns:
         [type]: [description]
     """
-    yes_votes = labels * total_votes
+    logging.warning('This function may not be working correctly - outdated!')
+    # assert true_prob < 1.
     # must be within meaningful limits, or fail loudly
     assert predictions.min() >= 0.
     assert predictions.max() <= 1.
     est_p_yes = predictions  # rename for clarity
     epsilon = 1e-8
-    return yes_votes * np.log(est_p_yes + epsilon) + (total_votes - yes_votes) * np.log(1. - est_p_yes + epsilon)
+    successes = true_prob * n_trials
+    return successes * np.log(est_p_yes + epsilon) + (n_trials - successes) * np.log(1. - est_p_yes + epsilon)
 
 
 def bin_prob_of_samples(samples, total_votes):

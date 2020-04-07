@@ -68,7 +68,7 @@ def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name, ini
         results: model predictions, as ndarray of shape (image, sample)
     """
     images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=inital_size, mode='id_str')  # tf graph
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         images, id_strs = sess.run([images_g, id_str_g])
     predictor_loc = os.path.join(results_dir, model_name)
     model = make_predictions.load_predictor(predictor_loc)

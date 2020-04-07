@@ -1,9 +1,11 @@
 import pytest
 
+import sqlite3
 import copy
 import os
 import time
 import json
+import hashlib
 
 import numpy as np
 import pandas as pd
@@ -11,6 +13,7 @@ from PIL import Image
 
 from astropy.io import fits
 from zoobot.active_learning import make_shards, create_instructions
+from zoobot.tests import TEST_EXAMPLE_DIR
 
 
 @pytest.fixture()
@@ -66,7 +69,8 @@ def catalog_random_images(size, channels, n_subjects, id_strs, fits_native_dir, 
 def labelled_catalog(catalog_random_images):
     catalog = catalog_random_images.copy()
     catalog['id_str'] = catalog_random_images['id_str'] + '_from_labelled'  # must be unique
-    catalog['label'] = np.random.rand(len(catalog))
+    catalog['label_a'] = np.random.rand(len(catalog))
+    catalog['label_b'] = np.random.rand(len(catalog))
     catalog['total_votes'] = np.random.randint(low=1, high=41, size=len(catalog))
     return catalog
 
@@ -100,6 +104,13 @@ def shard_config_ready(shard_config, labelled_catalog, unlabelled_catalog):
 @pytest.fixture()
 def db_loc(tmpdir):
     return os.path.join(tmpdir.mkdir('db_dir').strpath, 'db_is_here.db')
+
+
+@pytest.fixture()
+def existing_db_loc(db_loc):
+    with open(db_loc, 'w') as f:
+        f.write('Some db file is here')
+    return db_loc
 
 
 def mock_acquisition_func(samples):
@@ -230,3 +241,214 @@ def test(request):
 @pytest.fixture(params=[True, False])
 def warm_start(request):
     return request.param
+
+
+
+@pytest.fixture()
+def unknown_subject(size, channels):
+    return {
+        'matrix': np.random.rand(size, size, channels),
+        'id_str': hashlib.sha256(b'some_id_bytes').hexdigest()
+    }
+
+
+@pytest.fixture()
+def known_subject(known_subject):
+    known_subject = unknown_subject.copy()
+    known_subject['label'] = np.random.randint(1)
+    return known_subject
+
+
+@pytest.fixture()
+def test_dir(tmpdir):
+    return tmpdir.strpath
+
+
+@pytest.fixture(params=['fits', 'png'])
+def file_loc_of_image(request):
+    if request.param == 'fits':
+        loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.fits')
+    elif request.param == 'png':
+        loc = os.path.join(TEST_EXAMPLE_DIR, 'example_a.png')
+    else:
+        raise ValueError(request.param)
+    assert os.path.isfile(loc)
+    return loc
+
+
+@pytest.fixture()
+def filled_shard_db(empty_shard_db, file_loc_of_image):
+    # some_hash, some_other_hash and yet_another_hash are unlabelled but exist
+    db = empty_shard_db
+    cursor = db.cursor()
+
+    cursor.execute(
+        '''
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
+        ''',
+        {
+            'id_str': 'some_hash',
+            'file_loc': file_loc_of_image
+        }
+    )
+    db.commit()
+    cursor.execute(
+        '''
+        INSERT INTO shards(id_str, tfrecord_loc)
+                  VALUES(:id_str, :tfrecord_loc)
+        ''',
+        {
+            'id_str': 'some_hash',
+            'tfrecord_loc': 'tfrecord_a'
+        }
+    )
+    db.commit()
+
+    cursor.execute(
+        '''
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
+        ''',
+        {
+            'id_str': 'some_other_hash',
+            'file_loc': file_loc_of_image
+        }
+    )
+    db.commit()
+    cursor.execute(
+        '''
+        INSERT INTO shards(id_str, tfrecord_loc)
+                  VALUES(:id_str, :tfrecord_loc)
+        ''',
+        {
+            'id_str': 'some_other_hash',
+            'tfrecord_loc': 'tfrecord_b'
+        }
+    )
+    db.commit()
+
+    cursor.execute(
+        '''
+        INSERT INTO catalog(id_str, file_loc)
+                  VALUES(:id_str, :file_loc)
+        ''',
+        {
+            'id_str': 'yet_another_hash',
+            'file_loc': file_loc_of_image
+        }
+    )
+    db.commit()
+    cursor.execute(
+        '''
+        INSERT INTO shards(id_str, tfrecord_loc)
+                  VALUES(:id_str, :tfrecord_loc)
+        ''',
+        {
+            'id_str': 'yet_another_hash',
+            'tfrecord_loc': 'tfrecord_a'  # same as first entry, should be selected if filter on rec a
+        }
+    )
+    db.commit()
+    return db
+
+
+def make_db(db, rows):
+    cursor = db.cursor()
+    for row in rows:
+        cursor.execute(
+            '''
+            UPDATE catalog SET labels = ?
+            WHERE id_str = ?
+            ''',
+            (row['labels'], row['id_str'])
+        )
+        db.commit()
+    return db
+
+
+@pytest.fixture()
+def filled_shard_db_with_partial_labels(filled_shard_db):
+    # some_hash is labelled, some_other_hash and yet_another_hash are unlabelled but exist
+    rows = [
+        {
+            'id_str': 'some_hash',
+            'labels': json.dumps({'column': 1})
+         },
+         {
+            'id_str': 'some_other_hash',
+            'labels': None
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'labels': None
+        }
+    ]
+    db = make_db(filled_shard_db, rows)
+    # trust but verify
+    cursor = db.cursor()
+    cursor.execute(
+        '''
+        SELECT id_str, labels FROM catalog
+        '''
+    )
+    catalog = cursor.fetchall()
+    assert catalog == [('some_hash', json.dumps({'column': 1})), ('some_other_hash', None), ('yet_another_hash', None)]
+    return db
+
+
+@pytest.fixture()
+def filled_shard_db_with_labels(filled_shard_db):
+    # all subjects labelled
+    rows = [
+        {
+            'id_str': 'some_hash',
+            'labels': json.dumps({'column': 1})
+         },
+         {
+            'id_str': 'some_other_hash',
+            'labels': json.dumps({'column': 1})
+        },
+        {
+            'id_str': 'yet_another_hash',
+            'labels': json.dumps({'column': 1})
+        }
+    ]
+    db = make_db(filled_shard_db, rows)
+    # trust but verify
+    cursor = db.cursor()
+    cursor.execute(
+        '''
+        SELECT id_str, labels FROM catalog
+        '''
+    )
+    catalog = cursor.fetchall()
+    assert catalog == [('some_hash', json.dumps({'column': 1})), ('some_other_hash', json.dumps({'column': 1})), ('yet_another_hash', json.dumps({'column': 1}))]
+    return db
+
+@pytest.fixture()
+def empty_shard_db():
+    db = sqlite3.connect(':memory:')
+
+    cursor = db.cursor()
+
+    cursor.execute(
+        '''
+        CREATE TABLE catalog(
+            id_str STRING PRIMARY KEY,
+            labels STRING DEFAULT NULL,
+            file_loc STRING)
+        '''
+    )
+    db.commit()
+
+    cursor.execute(
+        '''
+        CREATE TABLE shards(
+            id_str STRING PRIMARY KEY,
+            tfrecord_loc TEXT)
+        '''
+    )
+    db.commit()
+    return db
+

@@ -15,6 +15,13 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
+def get_train_test_fraction(total_size, eval_size):
+    # in memory for now, but will be serialized for later/logs
+    train_test_fraction = (total_size - int(eval_size))/total_size  # always eval on random 2500 galaxies
+    logging.info('Train test fraction: {}'.format(train_test_fraction))
+    return train_test_fraction
+
+
 # TODO refactor to make sure this aligns with downloader
 def load_decals_as_pil(subject):
     try:
@@ -61,7 +68,8 @@ def get_reader(paths):
     # check for consistency
     assert all([loc.split('.')[-1] == file_format for loc in paths])
     # check that file paths resolve correctly
-    assert all(os.path.isfile(loc) for loc in paths)
+    if not all(os.path.isfile(loc) for loc in paths):
+        raise FileNotFoundError('Check file paths: currently prefixed like {}'.format(paths[0]))
     if file_format == 'png':
         reader = load_png_as_pil
     elif file_format == 'fits':
@@ -106,7 +114,7 @@ def write_catalog_to_train_test_tfrecords(df, train_loc, test_loc, img_size, col
 
 
 def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, reader, append=False):
-    # TODO tfrecord does not support appending :'(
+    # tfrecord does not support appending :'(
     if append:
         raise NotImplementedError('tfrecord does not support appending')
     else:
@@ -114,7 +122,7 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, read
             logging.warning('{} already exists - deleting'.format(tfrecord_loc))
             os.remove(tfrecord_loc)
 
-    writer = tf.python_io.TFRecordWriter(tfrecord_loc)
+    writer = tf.io.TFRecordWriter(tfrecord_loc)
     for _, subject in tqdm(df.iterrows(), total=len(df), unit=' subjects saved'):
         serialized_example = row_to_serialized_example(subject, img_size, columns_to_save, reader)
         writer.write(serialized_example)
@@ -122,7 +130,21 @@ def write_image_df_to_tfrecord(df, tfrecord_loc, img_size, columns_to_save, read
 
 
 def row_to_serialized_example(row, img_size, columns_to_save, reader):
-    # row should have columns that exactly match a read_tfrecord feature spec function
+    """
+    Row should have columns that exactly match a read_tfrecord feature spec function
+    Serialised example will have columns ['matrix] + columns_to_save
+    e.g. ['matrix', 'smooth-or-featured_smooth', 'smooth-or-featured_featured', 'smooth-or-featured_total']
+    
+    Args:
+        row ([type]): [description]
+        img_size ([type]): [description]
+        columns_to_save ([type]): [description]
+        reader ([type]): [description]
+    
+    Returns:
+        [type]: [description]
+    """
+    #
 
     pil_img = reader(row)
     # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')

@@ -5,8 +5,8 @@
 		}
 	],
 	"settings": {
-		"python.pythonPath": "/media/mike/internal/virtualenv/py36/bin/python",
-		"python.venvPath": "/media/mike/internal"
+		"python.pythonPath": "/media/mike/Windows/linux_cache/py36/bin/python",
+		// "python.venvPath": "/media/mike/internal"
 		// Do not add interpreter here, add to folder settings, else will sync
 	},
 }

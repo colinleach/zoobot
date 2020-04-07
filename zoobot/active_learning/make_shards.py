@@ -1,4 +1,9 @@
-"""No knowledge of oracle allowed!
+"""
+Save catalog columns and images to tfrecord shards.
+No knowledge of oracle allowed! Similarly, no knowledge of labels allowed. 
+Allowed to assume:
+- Each catalog entry has an image under `file_loc`
+- Each catalog entry has an identifier under `id_str`
 """
 import argparse
 import os
@@ -11,12 +16,11 @@ import numpy as np
 import pandas as pd
 import git
 
-from shared_astro_utils import matching_utils, object_utils
+from shared_astro_utils import object_utils
 
 from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, mock_panoptes, prepare_catalogs
-from zoobot.tests import TEST_EXAMPLE_DIR
+from zoobot.science_logic import prepare_catalogs
+from zoobot.active_learning import database
 
 
 class ShardConfig():
@@ -75,13 +79,14 @@ class ShardConfig():
             if loc.endswith('.tfrecord')]
 
 
-    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction):
+    def prepare_shards(self, labelled_catalog, unlabelled_catalog, train_test_fraction, columns_to_save):
         """[summary]
         
         Args:
             labelled_catalog (pd.DataFrame): labelled galaxies, including fits_loc column
             unlabelled_catalog (pd.DataFrame): unlabelled galaxies, including fits_loc column
             train_test_fraction (float): fraction of labelled catalog to use as training data
+            columns_to_save list: Save catalog cols to tfrecord, under same name. 
         """
         if os.path.isdir(self.shard_dir):
             shutil.rmtree(self.shard_dir)  # always fresh
@@ -112,11 +117,11 @@ class ShardConfig():
         # training and eval galaxies are labelled and should never be read by db
         # just write them directly as shards, don't enter into db
         for (df, save_dir) in [(train_df, self.train_dir), (eval_df, self.eval_dir)]:
-            active_learning.write_catalog_to_tfrecord_shards(
+            database.write_catalog_to_tfrecord_shards(
                 df,
                 db=None,
                 img_size=self.size,
-                columns_to_save=['id_str', 'label', 'total_votes'],
+                columns_to_save=columns_to_save,
                 save_dir=save_dir,
                 shard_size=self.shard_size
             )
@@ -153,7 +158,7 @@ class ShardConfig():
             json.dump(self.to_dict(), f)
 
 
-def load_shard_config(shard_config_loc):
+def load_shard_config(shard_config_loc: str):
     # shards to use
     shard_config = load_shard_config_naive(shard_config_loc)
     # update shard paths in case shard dir was moved since creation
@@ -185,9 +190,9 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
     if os.path.exists(db_loc):
         os.remove(db_loc)
     # set up db and shards using unknown catalog data
-    db = active_learning.create_db(catalog, db_loc)
+    db = database.create_db(catalog, db_loc)
     columns_to_save = ['id_str']
-    active_learning.write_catalog_to_tfrecord_shards(
+    database.write_catalog_to_tfrecord_shards(
         catalog,
         db,
         size,
@@ -195,7 +200,6 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
         shard_dir,
         shard_size
     )
-
 
 
 if __name__ == '__main__':
@@ -222,6 +226,8 @@ if __name__ == '__main__':
                     help='Max galaxies (for debugging/speed')
     parser.add_argument('--max-labelled', dest='max_labelled', type=int,
                     help='Max galaxies (for debugging/speed')
+    parser.add_argument('--columns', dest='columns', type=str, default='single_question',
+                    help='Control which catalog columns to save to tfrecords')
 
     args = parser.parse_args()
 
@@ -245,15 +251,21 @@ if __name__ == '__main__':
     logging.info('Labelled: {}, unlabelled: {}'.format(len(labelled_catalog), len(unlabelled_catalog)))
 
     # in memory for now, but will be serialized for later/logs
-    train_test_fraction = (len(labelled_catalog) - int(args.eval_size))/len(labelled_catalog)  # always eval on random 2500 galaxies
-    logging.info('Train test fraction: {}'.format(train_test_fraction))
+    train_test_fraction = catalog_to_tfrecord.get_train_test_fraction(len(labelled_catalog), args.eval_size)
+
+    if args.columns == 'single_question':
+        columns_to_save = ['id_str', 'label', 'total_votes']  # deprecated and will be removed TODO
+    else:
+        columns_to_save = labelled_catalog.columns.values
+    logging.info('Saving {} columns)'.format(columns_to_save))
 
     shard_config = ShardConfig(shard_dir=args.shard_dir)
 
     shard_config.prepare_shards(
         labelled_catalog,
         unlabelled_catalog,
-        train_test_fraction=train_test_fraction
+        train_test_fraction=train_test_fraction,
+        columns_to_save=columns_to_save
     )
     
     # finally, tidy up by moving the log into the shard directory

@@ -53,9 +53,15 @@ data/shards/si128_sf64_ss4096
 data/2018-11-05_panoptes_predictions_with_catalog
 data/fits_native
 data/decals/classifications
+data/experiments/*.json
 
 zooniverse_login.json
 .vscode/settings.json
+.vscode/*
+notebooks/estimators
+notebooks/molly_galaxies
+data/experiments/multilabel_64
+notebooks/*.parquet
 
 notebooks/estimators
 notebooks/molly_galaxies
