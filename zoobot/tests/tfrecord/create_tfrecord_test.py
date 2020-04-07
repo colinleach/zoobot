@@ -13,20 +13,20 @@ from zoobot.tfrecord.tfrecord_io import load_dataset
 @pytest.fixture()
 def extra_data_feature_spec(size, channels):
     return {
-        'label': tf.FixedLenFeature([], tf.float32),
-        'matrix': tf.FixedLenFeature([], tf.string),
-        'an_int': tf.FixedLenFeature([], tf.int64),
-        'a_float': tf.FixedLenFeature([], tf.float32),
-        'some_floats': tf.FixedLenFeature([3], tf.float32),
-        'a_string': tf.FixedLenFeature([], tf.string)}
+        'label': tf.io.FixedLenFeature([], tf.float32),
+        'matrix': tf.io.FixedLenFeature([], tf.string),
+        'an_int': tf.io.FixedLenFeature([], tf.int64),
+        'a_float': tf.io.FixedLenFeature([], tf.float32),
+        'some_floats': tf.io.FixedLenFeature([3], tf.float32),
+        'a_string': tf.io.FixedLenFeature([], tf.string)}
 
 
 def test_serialize_image_example(visual_check_image_data, size, channels):
     serialized_example = create_tfrecord.serialize_image_example(visual_check_image_data, label=1.)
     # parse back and confirm it matches. Must be within session for tensors to be comparable to np
-    with tf.Session() as sess:
-        example = tf.parse_single_example(
-            serialized_example, 
+    with tf.compat.v1.Session() as sess:
+        example = tf.io.parse_single_example(
+            serialized=serialized_example, 
             features=read_tfrecord.matrix_label_feature_spec(size, channels, float_label=True)
             )
         recovered_matrix = tf.io.decode_raw(example['matrix'], out_type=tf.uint8).eval()
@@ -51,8 +51,8 @@ def test_serialize_image_example_extra_data(visual_check_image_data, extra_data_
         label=label, 
         **extra_kwargs
     )
-    with tf.Session() as sess:
-        example = tf.parse_single_example(serialized_example, extra_data_feature_spec)
+    with tf.compat.v1.Session() as sess:
+        example = tf.io.parse_single_example(serialized=serialized_example, features=extra_data_feature_spec)
         recovered_matrix = tf.io.decode_raw(example['matrix'], out_type=tf.uint8).eval()
         assert np.allclose(recovered_matrix, visual_check_image_data.flatten())
         assert example['label'].eval() == label

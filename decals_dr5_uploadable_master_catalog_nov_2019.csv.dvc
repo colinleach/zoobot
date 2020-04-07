@@ -1,0 +1,7 @@
+md5: 80d4cdee963af7391a9a2adcdb9413a6
+outs:
+- md5: 80aeec78ecfca9655884fcb223a5b118
+  path: /media/mike/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv
+  cache: true
+  metric: false
+  persist: false

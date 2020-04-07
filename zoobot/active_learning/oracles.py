@@ -57,20 +57,14 @@ class Panoptes(Oracle):
             subject_ids ([type]): [description]
         """
         selected_catalog = self._full_catalog[self._full_catalog['id_str'].isin(subject_ids)]  # getting really messy with this...
-        #restrict to key columns
-        upload_cols = ['iauname', 'nsa_id', 'ra', 'dec', 'petrotheta', 'petroth50', 'petroth90', 'redshift', 'nsa_version', 'file_loc']
-        upload_catalog = selected_catalog[upload_cols]
-        upload_catalog['#retirement_limit'] = retirement
-        upload_catalog['#uploader'] = 'panoptes_oracle'
-
-        logging.info('Uploading {} subjects to {}'.format(len(subject_ids), name))
-        manifest = upload_utils.create_manifest_from_catalog(upload_catalog)
-        upload_utils.upload_manifest_to_galaxy_zoo(
-            subject_set_name=name,
-            manifest=manifest,
+        upload_utils.upload_to_gz(
+            login_loc=self._login_loc,
+            selected_catalog=selected_catalog,
+            name=name,
+            retirement=retirement,
             project_id=self._project_id,
-            login_loc=self._login_loc)
-        logging.info('Upload complete')
+            uploader='panoptes_oracle'
+        )
 
     def get_labels(self, working_dir):
         """Get all recent labels from Panoptes. 

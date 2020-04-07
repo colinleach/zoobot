@@ -272,7 +272,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
                 initial_size=size,
                 mode='id_str'
             )
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         images, id_str_bytes = sess.run([batch_images, batch_id_str])
         if len(images) == max_images:
             logging.critical(

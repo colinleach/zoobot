@@ -4,7 +4,6 @@ import functools
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib import predictor
 import scipy
 import matplotlib
 matplotlib.use('Agg')
@@ -24,11 +23,14 @@ def load_predictor(predictor_loc):
     Returns:
         function: callable expecting parsed subjects according to saved model input configuration
     """
-    model_unwrapped = predictor.from_saved_model(predictor_loc)
+    model_unwrapped = tf.saved_model.load(predictor_loc)
     # wrap to avoid having to pass around dicts all the time
     # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
     # model returns several columns, select 'predictions_for_true' and flip
-    return lambda x: model_unwrapped({'examples': x})['prediction']
+    example = tf.train.Example()
+    example.features.feature['examples'].float_list.value.extend([x])
+    # warning, modified for tf2
+    return lambda x: model_unwrapped.signatures['prediction'](examples=tf.constant([example.SerializeToString()]))
 
 
 def get_samples_of_images(model, images, n_samples):

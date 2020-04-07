@@ -8,102 +8,17 @@ import tensorflow as tf
 
 from zoobot.tfrecord import create_tfrecord
 from zoobot.estimators.estimator_params import default_four_layer_architecture, default_params
-from zoobot.estimators import run_estimator, estimator_funcs, bayesian_estimator_funcs, dummy_image_estimator
+from zoobot.estimators import run_estimator, estimator_funcs, bayesian_estimator_funcs, dummy_image_estimator, losses
+from zoobot.active_learning import default_estimator_params
 
 
 @pytest.fixture()
-def true_image_values():
-    return 3.
-
-
-@pytest.fixture()
-def false_image_values():
-    return -3.
-
-
-@pytest.fixture()
-def example_data(size, true_image_values, false_image_values):
-    n_true_examples = 100
-    n_false_examples = 400
-
-    true_images = [np.ones((size, size, 3), dtype=float) * true_image_values for n in range(n_true_examples)]
-    false_images = [np.ones((size, size, 3), dtype=float) * false_image_values for n in range(n_false_examples)]
-    true_labels = [1 for n in range(n_true_examples)]
-    false_labels = [0 for n in range(n_false_examples)]
-
-    true_data = list(zip(true_images, true_labels))
-    false_data = list(zip(false_images, false_labels))
-    all_data = true_data + false_data
-    random.shuffle(all_data)
-    return all_data
-
-
-@pytest.fixture()
-def tfrecord_dir(tmpdir):
-    return tmpdir.mkdir('tfrecord_dir').strpath
-
+def size():
+    return 64  # override to be a bit bigger
 
 @pytest.fixture()
 def log_dir(tmpdir):
     return tmpdir.mkdir('log_dir').strpath  # also includes saved model
-
-
-@pytest.fixture()
-def tfrecord_train_loc(tfrecord_dir):
-    return '{}/train.tfrecords'.format(tfrecord_dir)
-
-
-@pytest.fixture()
-def tfrecord_test_loc(tfrecord_dir):
-    return '{}/test.tfrecords'.format(tfrecord_dir)
-
-
-# TODO investigate how to share fixtures across test files?
-@pytest.fixture()
-def example_tfrecords(tfrecord_train_loc, tfrecord_test_loc, example_data):
-    tfrecord_locs = [
-        tfrecord_train_loc,
-        tfrecord_test_loc
-    ]
-    for tfrecord_loc in tfrecord_locs:
-        if os.path.exists(tfrecord_loc):
-            os.remove(tfrecord_loc)
-        writer = tf.python_io.TFRecordWriter(tfrecord_loc)
-
-        for example in example_data:
-            writer.write(create_tfrecord.serialize_image_example(matrix=example[0], label=example[1]))
-        writer.close()
-
-
-@pytest.fixture(params=[
-    # 'dummy',
-    # 'basic', 
-    'bayesian_binary', 
-    'bayesian_regression'
-    ])
-def model(request, size):
-    # if request.param == 'dummy':
-    #     return dummy_image_estimator.dummy_model_fn
-    # if request.param == 'basic':
-    #     return estimator_funcs.four_layer_binary_classifier  # TODO move elsewhere?
-    if request.param == 'bayesian_binary':
-        return bayesian_estimator_funcs.BayesianModel(image_dim=size, regression=False)
-    if request.param == 'bayesian_regression':
-        return bayesian_estimator_funcs.BayesianModel(image_dim=size, regression=True)
-
-
-@pytest.fixture()
-def run_config(size, log_dir):
-    return run_estimator.RunEstimatorConfig(
-        initial_size=size,
-        final_size=size - 10,
-        channels=3,
-        label_col='',  # not sure about this
-        epochs=2,
-        min_epochs=2,
-        log_dir=log_dir,
-        warm_start=True
-    )
 
 
 @pytest.fixture()
@@ -123,16 +38,8 @@ def features(n_examples):
         }
 
 
-@pytest.fixture(params=[
-    'binary', 
-    'continuous'
-    ])
+@pytest.fixture
 def labels(request, n_examples):
-    if request.param == 'binary':
-        return tf.constant(
-            np.random.randint(low=0, high=2, size=n_examples),
-            shape=[n_examples],
-            dtype=tf.int32)
     if request.param == 'continuous':
         return tf.constant(
             np.random.uniform(size=n_examples),
@@ -140,32 +47,75 @@ def labels(request, n_examples):
             dtype=tf.float32)
 
 
+@pytest.fixture
+def output_dim():
+    return 4
+
+
+@pytest.fixture
+def fake_data(size, channels, output_dim):
+    dataset_len = 1000
+    features = np.random.rand(dataset_len, size, size, channels).astype(np.float32)
+    true_labels = np.array([np.random.choice([0, 1, 2, 3, 4]) for n in range(dataset_len)]).astype(np.float32)
+    false_labels = 4 - true_labels
+    labels = np.stack((true_labels, false_labels, false_labels, true_labels), axis=1)   # TODO hacky dimension for smooth/spiral
+    assert labels.shape[1] == output_dim
+    return features, labels
+
+
+@pytest.fixture()
+def model(size, output_dim):
+    model = bayesian_estimator_funcs.BayesianModel(
+        output_dim=output_dim,
+        conv1_filters=4,
+        conv1_kernel=3,
+        conv2_filters=8,
+        conv2_kernel=3,
+        conv3_filters=16,
+        conv3_kernel=3,
+        dense1_units=16,
+        dense1_dropout=0.5,
+        predict_dropout=0.5,  # change this to calibrate
+        regression=True,  # important!
+        log_freq=10,
+        image_dim=size,
+    )
+    model.compile(
+        loss=losses.multinomial_loss,
+        optimizer=tf.keras.optimizers.Adam(),
+        metrics=[bayesian_estimator_funcs.CustomSmoothMSE()]
+    )
+    return model
+
+@pytest.fixture()
+def run_config(size, channels, model, log_dir):
+    config = default_estimator_params.RunEstimatorConfig(
+        initial_size=size,
+        final_size=size,
+        channels=channels,
+        label_cols=['label_a', 'label_b'],
+        log_dir=log_dir
+    )
+    config.model = model
+    config.epochs = 2
+    return config
+
+
 def test_run_experiment(
-    run_config, 
-    model, 
-    features, 
-    labels, 
-    n_examples, 
-    train_input_fn, 
+    run_config,
+    fake_data,
     monkeypatch):
 
     # TODO need to test estimator with input functions!
     # mock both input functions
-    def dummy_input(input_config=None):
-        return train_input_fn(
-            features=features,
-            labels=labels,
-            batch_size=n_examples)
-    monkeypatch.setattr(run_estimator, 'train_input', dummy_input)
-    monkeypatch.setattr(run_estimator, 'eval_input', dummy_input)
+    # no need to wrap with tf.function
+    def dummy_input(config=None):
+        dataset = tf.data.Dataset.from_tensor_slices(fake_data)
+        return dataset.batch(16)  #.shuffle(100) causes strange op error
+    dummy_input_tf = tf.function(dummy_input)  # probably doesnt do anything, I think dataset is graph by default? Unclear
+
+    monkeypatch.setattr(run_estimator.input_utils, 'get_input', dummy_input_tf)
     monkeypatch.setattr(run_config, 'is_ready_to_train', lambda: True)
-
-    def dummy_save(estimator, params, epoch_n, serving_input_receiver_fn):
-        pass
-    monkeypatch.setattr(run_estimator, 'save_model', dummy_save)  # does not test saving the model
-
-    # no need to add input configs to run_config, they've been monkeypatched
-    run_config.model = model
 
     run_estimator.run_estimator(run_config)
     assert os.path.exists(run_config.log_dir)

@@ -6,6 +6,8 @@ import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.active_learning import database
+from zoobot.tests.estimators.input_utils_test import label_cols
+from gzreduction.deprecated import dr5_schema  # not deprecated any more...
 
 
 if __name__ == '__main__':
@@ -13,7 +15,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('--labelled-catalog', dest='labelled_catalog_loc', type=str,
                         help='Path to csv catalog of previous labels and file_loc, for shards')
-    parser.add_argument('--eval-size', dest='eval_size', type=str,
+    parser.add_argument('--eval-size', dest='eval_size', type=int,
                         help='Path to csv catalog of previous labels and file_loc, for shards')
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
                         help='Directory into which to place shard directory')
@@ -55,7 +57,7 @@ if __name__ == '__main__':
     if len(train_df) < len(eval_df):
         print('More eval subjects than training subjects - is this intended?')
 
-    label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk', 'smooth-or-featured_artifact', 'smooth-or-featured_total-votes', 'bar_strong', 'bar_weak', 'bar_no', 'bar_total-votes',  'has-spiral-arms_yes', 'has-spiral-arms_no', 'has-spiral-arms_total-votes']
+    label_cols = TODO  # will fail. Work out label cols from schema object. Be careful to preserve order.
     columns_to_save = ['id_str'] + label_cols
     for (df, save_dir) in [(train_df, train_dir), (eval_df, eval_dir)]:
         database.write_catalog_to_tfrecord_shards(

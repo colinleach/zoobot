@@ -12,7 +12,7 @@ def restart_estimator(config):
         """
         An input receiver that expects an image array
         """
-        images = tf.placeholder(
+        images = tf.compat.v1.placeholder(
             dtype=tf.float32,
             shape=(None, config.initial_size, config.initial_size, config.channels), 
             name='images')
@@ -39,7 +39,7 @@ def restart_estimator(config):
 
 def save_model(estimator, config, epoch_n, serving_input_receiver_fn):
     logging.info('Saving model at epoch {}'.format(epoch_n))
-    estimator.export_savedmodel(
+    estimator.export_saved_model(
         export_dir_base=config.log_dir,
         serving_input_receiver_fn=serving_input_receiver_fn)
 

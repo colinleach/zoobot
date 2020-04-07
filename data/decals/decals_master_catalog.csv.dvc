@@ -1,12 +1,17 @@
-cmd: python zoobot/active_learning/prepare_catalogs.py
-deps:
-- md5: 933f235fd638f8197a2ab71d8491d58c
-  path: zoobot/active_learning/prepare_catalogs.py
-md5: 06f98eddc98e4e3a00cec834970758ae
-outs:
-- cache: true
-  md5: 203ca129441c2f8e52a0739e2bc70056
-  metric: false
-  path: data/decals/decals_master_catalog.csv
-  persist: false
+md5: cfce4fefa7d2ebca1152e541965f42b8
+cmd: python zoobot/science_logic/prepare_catalogs.py /media/mike/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv
+  /media/mike/beta/decals/results/classifications_2019_11_27.csv data/decals/decals_master_catalog.csv
 wdir: ../..
+deps:
+- md5: b00ae94e9b8c712ce73e907823e4d65d
+  path: zoobot/science_logic/prepare_catalogs.py
+- md5: 80aeec78ecfca9655884fcb223a5b118
+  path: /media/mike/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv
+- md5: ec9b2df256ab1b16d2236c5b10b1f1c7
+  path: /media/mike/beta/decals/results/classifications_2019_11_27.csv
+outs:
+- md5: 895078ea18fdeacfbeda8e6fbb704937
+  path: data/decals/decals_master_catalog.csv
+  cache: true
+  metric: false
+  persist: false

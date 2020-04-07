@@ -15,6 +15,7 @@ docker rm $(docker ps -aq)
 # Build shards locally (needed rarely)
 
 docker run  \
+    --rm \
     --name shards \
     -v /Volumes/alpha/decals:/home/data/decals \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -23,6 +24,7 @@ docker run  \
 
 # run locally
 docker run \
+    --rm \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -31,7 +33,8 @@ docker run \
 
 
 # pr pull, build, and run locally in one command
-cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker rm $(docker ps -aq) ; docker run \
+cd zoobot && git pull && cd ../ && cp zoobot/Dockerfile Dockerfile && docker build -f Dockerfile -t $IMAGE_URI ./ && docker run \
+    --rm \
     --name offline \
     -m 8GB \
     -v /Data/repos/zoobot/data:/home/zoobot/data \
@@ -180,6 +183,9 @@ export LABELLED_CATALOG=/home/data/prepared_catalogs/mac_catalog_feat10_correct_
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python make_decals_tfrecords.py --labelled-catalog $LABELLED_CATALOG --eval-size=2500 --shard-dir=$SHARD_DIR --img-size=$SHARD_IMG_SIZE --png-prefix=/home/data
 
 # export EXPERIMENT_DIR=/home/data/experiments/multilabel_feat10_$SHARD_IMG_SIZE
-export EXPERIMENT_DIR=/home/data/experiments/multiquestion_smooth_spiral_feat10_$SHARD_IMG_SIZE
+export EXPERIMENT_DIR=/home/data/experiments/multiquestion_smooth_spiral_feat10_tf2_$SHARD_IMG_SIZE
 export EPOCHS=100
 docker run -d --runtime=nvidia -v $MNT_DIR:/home/data gcr.io/zoobot-223419/zoobot:latest python offline_training.py --experiment-dir $EXPERIMENT_DIR --train-dir $SHARD_DIR/train --eval-dir $SHARD_DIR/eval --shard-img-size=$SHARD_IMG_SIZE --epochs $EPOCHS
+
+# tensorboard
+docker run -it --runtime=nvidia -v $MNT_DIR:/home/data -p 6006:6006 gcr.io/zoobot-223419/zoobot:latest bash
