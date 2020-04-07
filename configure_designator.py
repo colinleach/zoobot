@@ -1,4 +1,4 @@
-
+# TODO move this script to gz_utils. It shouldn't be part of Zoobot.
 import os
 import json
 import requests
@@ -10,7 +10,7 @@ from zoobot.active_learning import mock_panoptes
 from gzreduction.panoptes.api import api_to_json, reformat_api_like_exports
 
 
-def configure_designator(subject_set_chances, workflow_id, login_loc, debug=False):
+def configure(subject_set_chances, workflow_id, login_loc, debug=False):
     if debug:
         os.environ['PANOPTES_DEBUG'] = 'True'
 
@@ -62,11 +62,12 @@ if __name__ == '__main__':
     # catalog_loc = 'data/decals/decals_master_catalog.csv'
     # upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc)
 
+    # this is NOT the current configuration - instead, we have 20% EAGLE sims, and the remainder have these chances
     subject_set_chances = {
         '74909': 0.8,  # priority
         '74905': 0.2  # random
     }
-    configure_designator(
+    configure(
         subject_set_chances,
         workflow_id,
         login_loc,

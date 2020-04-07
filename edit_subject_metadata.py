@@ -1,9 +1,11 @@
+# TODO move this to gz utils
 import json
 from tqdm import tqdm
 
 from panoptes_client import Panoptes, Workflow, SubjectSet, Subject
 
 from gzreduction.panoptes.api.get_chunk_ids import get_chunk_files
+
 
 def edit_subjects_with_api(subject_set_id, login_loc, func_to_apply):
     with open(login_loc, 'r') as f:

@@ -3,6 +3,7 @@ import shutil
 import logging
 import json
 import sqlite3
+from typing import List
 
 import numpy as np
 
@@ -14,21 +15,35 @@ class Iteration():
 
     def __init__(
         self,
-        iteration_dir,
-        prediction_shards,
-        initial_db_loc,
-        initial_train_tfrecords,
-        eval_tfrecords,
+        iteration_dir: str,
+        prediction_shards: List,
+        initial_db_loc: str,
+        initial_train_tfrecords: List,
+        eval_tfrecords: List,
         train_callable,
         acquisition_func,
-        n_samples,  # may need more samples?
-        n_subjects_to_acquire,
-        initial_size,
-        learning_rate,
-        epochs,
+        n_samples: int,  # may need more samples?
+        n_subjects_to_acquire: int,
+        initial_size: int,
+        learning_rate: float,
+        epochs: int,
         oracle,
         initial_estimator_ckpt=None
     ):
+    """
+    Do some sanity checks in the args, then save them as properties.
+
+    Using iteration_dir, create the directory tree needed:
+    - {iteration_dir}
+        - acquired_tfrecords
+        - metrics
+        - estimators
+    Copy the estimator from initial_estimator_ckpt, if provided.
+
+    Copy the database from initial_db_loc to {iteration_dir}/iteration.db, and connect.
+
+    Prepare to record the tfrecords used under {iteration_dir}/train_tfrecords_index.json
+    """
 
         self.iteration_dir = iteration_dir
 
@@ -95,6 +110,7 @@ class Iteration():
             # [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
 
             # remove this log from the copy, to save space
+            # may have changed in TF2?
             [os.remove(os.path.join(dest, f)) for f in os.listdir(
                 dest) if f.startswith('events.out.tfevents')]
         else:
@@ -138,6 +154,20 @@ class Iteration():
             self.iteration_dir, subjects, samples, acquisitions)
 
     def run(self):
+        """
+        Actually run an active learning step!
+
+        Get the latest labels from the oracle
+        
+        Record the train tfrecords used
+        Execute train_callable (i.e. train the model)
+
+        Make new predictions on the unlabelled shards
+        From the predictions, calculate acquisition function values
+        Record both the predictions and acquisition values to the database
+        Get the id's of the unlabelled subjects with the highest acquisition values,
+        and request labels for them.
+        """
         all_subject_ids, all_labels = self.oracle.get_labels(
             self.labels_dir)
         # can't allow overwriting of previous labels, as may have been written to tfrecord

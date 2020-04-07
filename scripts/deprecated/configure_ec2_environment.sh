@@ -1,3 +1,5 @@
+# 
+
 # cannot be run directly, copy instead!
 # need to press 'yes' for now at clone, will pipe later
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
@@ -25,7 +27,7 @@ aws s3 cp s3://galaxy-zoo/decals/png_native.tar repos/zoobot/data/decals/png_nat
 # attach the volume working_volume to /dev/xvdb
 
 
-
+# paste-able startup script for EC2 instance
 ZOOBOT_BRANCH=production-prototype && \
 sudo mount /dev/xvdb root && \
 sudo chown -R ubuntu root && \
