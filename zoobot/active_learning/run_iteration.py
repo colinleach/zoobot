@@ -1,4 +1,3 @@
-
 import os
 import logging
 import itertools
@@ -13,7 +12,7 @@ import git
 import numpy as np
 
 from zoobot.estimators import run_estimator
-from zoobot.active_learning import active_learning, iterations, default_estimator_params, acquisition_utils, create_instructions, mock_panoptes
+from zoobot.active_learning import database, iterations, default_estimator_params, acquisition_utils, create_instructions, oracles
 
 InitialState = namedtuple(
     'InitialState',
@@ -107,20 +106,24 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             epochs=get_epochs(this_iteration_n)  # duplication
         )
     else:
-        with open(os.path.join(previous_iteration_dir, 'final_state.json'), 'r') as f:  # coupled to saving of final state
-            previous_final_state = FinalState(**json.load(f))
-            this_iteration_n = previous_final_state.iteration_n + 1
-            initial_state = InitialState(
-                iteration_dir=this_iteration_dir,  # duplication
-                iteration_n=this_iteration_n,  # duplication
-                initial_train_tfrecords=previous_final_state.train_records,
-                initial_estimator_ckpt=previous_final_state.estimators_dir,
-                initial_db_loc=previous_final_state.db_loc,
-                prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
-                learning_rate=get_learning_rate(this_iteration_n),  # duplication
-                epochs=get_epochs(this_iteration_n)  # duplication
-            )
+        previous_final_state = load_final_state(previous_iteration_dir)
+        this_iteration_n = previous_final_state.iteration_n + 1
+        initial_state = InitialState(
+            iteration_dir=this_iteration_dir,  # duplication
+            iteration_n=this_iteration_n,  # duplication
+            initial_train_tfrecords=previous_final_state.train_records,
+            initial_estimator_ckpt=previous_final_state.estimators_dir,
+            initial_db_loc=previous_final_state.db_loc,
+            prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
+            learning_rate=get_learning_rate(this_iteration_n),  # duplication
+            epochs=get_epochs(this_iteration_n)  # duplication
+        )
     return initial_state
+
+
+def load_final_state(iteration_dir):
+    with open(os.path.join(iteration_dir, 'final_state.json'), 'r') as f:
+        return FinalState(**json.load(f))
 
 
 def save_final_state(final_state, save_dir):
@@ -130,7 +133,7 @@ def save_final_state(final_state, save_dir):
 
 def get_prediction_shards(iteration_n, instructions):
     db = sqlite3.connect(instructions.db_loc)
-    all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in active_learning.get_all_shard_locs(db)]
+    all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in database.get_all_shard_locs(db)]
     shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
     for n in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.
         prediction_shards = [next(shards_iterable) for n in range(instructions.shards_per_iter)]
@@ -159,7 +162,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
         instructions.use_test_mode()
         train_callable.test = True
 
-    oracle = mock_panoptes.load_oracle(instructions_dir)  # decoupled whether real or simulated
+    oracle = oracles.load_oracle(instructions_dir)  # decoupled whether real or simulated
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
     final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
     save_final_state(final_state, this_iteration_dir)

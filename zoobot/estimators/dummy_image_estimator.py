@@ -10,7 +10,7 @@ def dummy_model_fn(
 
     input_layer = features["x"]
 
-    conv = tf.layers.conv2d(
+    conv = tf.compat.v1.layers.conv2d(
         inputs=input_layer,
         filters=32,
         kernel_size=[5, 5],
@@ -18,7 +18,7 @@ def dummy_model_fn(
         activation=tf.nn.relu,
         name='conv')
 
-    pool = tf.layers.max_pooling2d(
+    pool = tf.compat.v1.layers.max_pooling2d(
         inputs=conv,
         pool_size=[2, 2],
         strides=2,
@@ -27,17 +27,17 @@ def dummy_model_fn(
     pool_flat = tf.reshape(pool, [-1, params['image_dim'] * 224], name='flat')
 
     # Dense Layer
-    dense = tf.layers.dense(
+    dense = tf.compat.v1.layers.dense(
         inputs=pool_flat,
         units=1064,
         activation=tf.nn.relu,
         name='dense')
 
     # Logits layer
-    logits = tf.layers.dense(inputs=dense, units=2, name='logits')
+    logits = tf.compat.v1.layers.dense(inputs=dense, units=2, name='logits')
     probabilities = tf.nn.softmax(logits, name="softmax_tensor")
     scores = tf.nn.softmax(logits, name='score')[:, 0]
-    predicted_classes = tf.argmax(logits, 1)
+    predicted_classes = tf.argmax(input=logits, axis=1)
 
     predictions = {
         "probabilities": probabilities,
@@ -59,19 +59,19 @@ def dummy_model_fn(
         }
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
-    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
     # Compute evaluation metrics.
-    accuracy = tf.metrics.accuracy(labels=labels,  # convenience library for common metrics
+    accuracy = tf.compat.v1.metrics.accuracy(labels=labels,  # convenience library for common metrics
                                    predictions=predicted_classes,
                                    name='acc_op')
     metrics = {'accuracy': accuracy}  # package in dict to return
-    tf.summary.scalar('accuracy', accuracy[1])  # record metric for tensorboard
+    tf.compat.v1.summary.scalar('accuracy', accuracy[1])  # record metric for tensorboard
 
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(
             mode, loss=loss, eval_metric_ops=metrics)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
-        train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.01)
+        train_op = optimizer.minimize(loss, global_step=tf.compat.v1.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)  # must return training operation

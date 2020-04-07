@@ -1,39 +1,92 @@
 import pytest
 
 import os
+import json
 
 from zoobot.active_learning import run_iteration
 # Functional test for running a single iteration TODO
 
-# may save this for a functional test
 
-# @pytest.fixture()
-# def initial_state(tmpdir, initial_estimator_ckpt):
-#     iteration_dir = tmpdir.mkdir('initial_iteration_dir').strpath
-#     return run_iteration.InitialState(
-#         iteration_dir=iteration_dir,
-#         iteration_n=12,
-#         initial_estimator_ckpt=initial_estimator_ckpt,
-#         initial_train_tfrecords='some_train_tfrecords',
-#         initial_db_loc='some.db',
-#         prediction_shards='some_prediction_shards',
-#         learning_rate=0.001,
-#         epochs=14
-#     )
 
-# @pytest.fixture()
-# def this_iteration_dir(tmpdir):
-#     return tmpdir.mkdir('this_iteration_dir').strpath
+def initial_state(request, initial_estimator_ckpt):
+    iteration_dir = tmpdir.mkdir('initial_iteration_dir').strpath
+    return run_iteration.InitialState(
+        iteration_dir=iteration_dir,
+        iteration_n=12,
+        initial_estimator_ckpt=initial_estimator_ckpt,
+        initial_train_tfrecords='some_train_tfrecords',
+        initial_db_loc='some.db',
+        prediction_shards='some_prediction_shards',
+        learning_rate=0.001,
+        epochs=14
+    )
 
-# @pytest.fixture()
-# def previous_iteration_dir(tmpdir):
-#     return tmpdir.mkdir('previous_iteration_dir').strpath
 
-# def test_get_initial_state():
-#     pass
+@pytest.fixture()
+def final_state(tmpdir):
+    return run_iteration.FinalState(
+        iteration_n=7,
+        estimators_dir='some_estimator_dir',
+        train_records=['train_a.tfrecord', 'train_b.tfrecord'],
+        db_loc='some_db_loc.db'
+    )
 
-# def test_run():
-#     pass
+
+@pytest.fixture()
+def this_iteration_dir(tmpdir):
+    return tmpdir.mkdir('this_iteration_dir').strpath
+
+
+@pytest.fixture(params=[None, "", 'stuff/iteration_4'])
+def previous_iteration_dir(request):
+    return request.param
+
+
+def test_get_initial_state(monkeypatch, instructions, this_iteration_dir, previous_iteration_dir, final_state):
+    def mock_load_final_state(x):
+        return final_state
+    monkeypatch.setattr(run_iteration, 'load_final_state', mock_load_final_state)
+    def mock_get_prediction_shards(x, y):
+        return ['prediction_shard_a', 'prediction_shard_b']
+    monkeypatch.setattr(run_iteration, 'get_prediction_shards', mock_get_prediction_shards)
+    
+    initial_state = run_iteration.get_initial_state(
+        instructions, this_iteration_dir, previous_iteration_dir)
+    
+    assert this_iteration_dir == this_iteration_dir
+    
+    if (previous_iteration_dir is None) or (previous_iteration_dir is ""):
+        assert initial_state.iteration_n == 0
+        assert initial_state.initial_estimator_ckpt == instructions.initial_estimator_ckpt
+        # etc
+    else:
+        assert initial_state.initial_estimator_ckpt == final_state.estimators_dir
+        assert initial_state.iteration_n == final_state.iteration_n + 1
+        # etc
+
+
+def test_save_final_state(final_state, tmpdir):
+    save_dir = tmpdir.mkdir('save_dir').strpath
+    run_iteration.save_final_state(
+        final_state=final_state,
+        save_dir=save_dir
+    )
+
+    with open(os.path.join(save_dir, 'final_state.json')) as f: 
+        saved_state = json.load(f)
+        assert saved_state['iteration_n'] == final_state.iteration_n
+        assert saved_state['estimators_dir'] == final_state.estimators_dir
+        assert saved_state['train_records'] == final_state.train_records
+        assert saved_state['db_loc'] == final_state.db_loc
+
+
+@pytest.mark.skip(reason="not implemented")
+def test_main():
+    pass
+
+@pytest.mark.skip(reason="not implemented")
+def test_get_prediction_shards(instructions):
+    pass
 
 
 

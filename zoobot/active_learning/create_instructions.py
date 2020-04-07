@@ -1,25 +1,22 @@
+"""Control what each active learning iteration will do. 
+    Active learning parameters are expected (e.g. n subjects per iteration)
+    Science parameters should not be included here!
+    Oracle parameters (e.g. which zooniverse project) are okay
+"""
 import argparse
 import os
 import shutil
 import logging
 import json
 import time
-import sqlite3
 import json
-import subprocess
-import itertools
-from collections import namedtuple
 
 import numpy as np
-import pandas as pd
-import git
 
 from shared_astro_utils import object_utils
 
-from zoobot.tfrecord import catalog_to_tfrecord
-from zoobot.estimators import run_estimator, make_predictions
-from zoobot.active_learning import active_learning, default_estimator_params, make_shards, analysis, iterations, acquisition_utils, mock_panoptes
-from zoobot.tests import TEST_EXAMPLE_DIR
+from zoobot.estimators import run_estimator
+from zoobot.active_learning import default_estimator_params, make_shards, acquisition_utils, oracles
 
 
 class Instructions():
@@ -126,9 +123,9 @@ class TrainCallableFactory():
         Returns:
             callable: callable expecting per-iteration args, training a model when called
         """
-        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs):
+        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, **kw_args):
             logging.info('Training model on: {}'.format(train_records))
-            run_config = default_estimator_params.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs)
+            run_config = default_estimator_params.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, **kw_args)
             if self.test: # overrides warm_start
                 run_config.epochs = 2  # minimal training, for speed
 
@@ -225,7 +222,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
 
     Args:
         shard_config_loc (str): 
-        catalog_dir (str):
+        catalog_dir (str): dir holding catalogs to use. Needed to make oracle. See `prepare_catalogs.py`
         instructions_dir (str): directory to save the above parameters
         baseline (bool): if True, use random subject acquisition prioritisation
         warm_start (bool): if True, continue training the latest estimator from any log_dir provided to a train callable
@@ -270,7 +267,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     )
     acquisition_func_obj.save(instructions_dir)
     if panoptes: # use live Panoptes oracle
-        oracle = mock_panoptes.Panoptes(
+        oracle = oracles.Panoptes(
             catalog_loc=catalog_dir + '/unlabelled_catalog.csv',
             login_loc='zooniverse_login.json', 
             project_id='5733',
@@ -281,7 +278,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     else:  # use mock Panoptes oracle
         oracle_loc = catalog_dir + '/simulation_context/oracle.csv'
         assert os.path.isfile(oracle_loc)
-        oracle = mock_panoptes.PanoptesMock(
+        oracle = oracles.PanoptesMock(
             oracle_loc=oracle_loc,
             subjects_requested_loc=os.path.join(instructions_dir, 'subjects_requested.json')
         )

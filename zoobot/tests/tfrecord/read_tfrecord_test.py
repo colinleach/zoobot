@@ -12,14 +12,14 @@ from zoobot.tfrecord import read_tfrecord
 
 
 def test_matrix_label_feature_spec(size, channels, serialized_matrix_label_example):
-    example = tf.parse_single_example(
-        serialized_matrix_label_example, 
+    example = tf.io.parse_single_example(
+        serialized=serialized_matrix_label_example, 
         features=read_tfrecord.matrix_label_feature_spec(size, channels))
 
 
 def test_matrix_label_id_feature_spec(size, channels, serialized_matrix_id_example):
-    example = tf.parse_single_example(
-        serialized_matrix_id_example, 
+    example = tf.io.parse_single_example(
+        serialized=serialized_matrix_id_example, 
         features=read_tfrecord.matrix_id_feature_spec(size, channels)
     )
 

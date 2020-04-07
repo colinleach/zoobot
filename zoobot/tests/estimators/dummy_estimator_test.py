@@ -35,7 +35,7 @@ def train_input_fn(features, labels, batch_size):
     # Shuffle, repeat, and batch the examples.
     dataset = dataset.shuffle(1000).repeat().batch(batch_size)
 
-    return dataset.make_one_shot_iterator().get_next()
+    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
 
 
 def eval_input_fn(features, labels, batch_size):
@@ -54,7 +54,7 @@ def eval_input_fn(features, labels, batch_size):
     assert batch_size is not None, "batch_size must not be None"
     dataset = dataset.batch(batch_size)
 
-    return dataset.make_one_shot_iterator().get_next()
+    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
 
 
 # Build estimator from model function

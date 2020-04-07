@@ -10,7 +10,7 @@ import numpy as np
 from zoobot.tests.active_learning import conftest
 from zoobot.estimators import run_estimator
 from zoobot.tfrecord import read_tfrecord
-from zoobot.active_learning import active_learning, make_shards, iterations, create_instructions
+from zoobot.active_learning import make_shards, iterations, create_instructions
 
 
 @pytest.fixture()
@@ -26,9 +26,6 @@ def train_callable_factory(request):
         warm_start=request.param['warm_start'],
         test=False
     )
-
-
-
 
 
 @pytest.fixture()
@@ -114,7 +111,14 @@ def test_main(mocker, shard_config_loc, instructions_dir, baseline, warm_start, 
         'zoobot.active_learning.create_instructions.AcquisitionCallableFactory', 
         autospec=True
     )
-    create_instructions.main(shard_config_loc, instructions_dir, baseline, warm_start, test)
+    mocker.patch(
+        'zoobot.active_learning.create_instructions.oracles.Panoptes', 
+        autospec=True
+    )
+    panoptes = True  # for now, just test this TODO
+    catalog_dir = 'some_catalog_dir'
+    
+    create_instructions.main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, test, panoptes)
 
 
 # Functional test for running several iterations TODO?
