@@ -17,4 +17,6 @@ clone repo
 
 module load python/anaconda3/2019.03
 
+source activate /data/phys-zooniverse/chri5177/envs/zoobot
+
 rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/data/latest_labelled_catalog_256.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data

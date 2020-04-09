@@ -6,7 +6,7 @@ pytest-cov
 pytest-mock
 pytest-xdist
 codecov
-# tensorflow>=2.0 do manually to avoid messing with other installs on server
+tensorflow==2.2 # or do manually to avoid messing with other installs on server
 tqdm
 pillow
 numpy
@@ -26,7 +26,6 @@ gitpython
 statsmodels
 requests>=2.4.2  # for panoptes-client
 panoptes-client
-requests
 # tensorflow-addons==0.6.0
 # tfa-nightly
 # also requires personal package shared_astro_utils, pip install -e ../shared-astro-utilities
