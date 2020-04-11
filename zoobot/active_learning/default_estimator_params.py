@@ -72,7 +72,7 @@ class RunEstimatorConfig():
         return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
 
-def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, label_cols, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
+def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, label_cols, questions, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
     # TODO enforce keyword only arguments
     channels = 3
 
@@ -139,9 +139,8 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # zoom_central=True  # BAR MODE
     )
 
-    # schema = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=['smooth', 'spiral'])
-    questions = ['smooth', 'spiral']
-    question_groups = losses.get_schema_from_label_cols(label_cols=run_config.label_cols, questions=questions)
+    schema = losses.Schema(label_cols, questions)
+    question_groups = schema.question_index_groups
     model = bayesian_estimator_funcs.BayesianModel(
         output_dim=len(run_config.label_cols),
         conv1_filters=32,
@@ -159,7 +158,7 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         # calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
     )  # WARNING will need to be updated for multiquestion
     model.compile(
-        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_groups, num_questions=len(questions)),
+        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_groups),
         optimizer=tf.keras.optimizers.Adam(),
         metrics=[
             bayesian_estimator_funcs.CustomSmoothMSE(),

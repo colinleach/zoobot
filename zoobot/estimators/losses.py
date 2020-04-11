@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+from typing import List
 
 def calculate_binomial_loss(labels, predictions):
     scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
@@ -11,25 +11,35 @@ def get_scalar_prediction(prediction):
     return tf.nn.softmax(prediction)[:, 1]
 
 
-# requires that labels be continguous by question - easily satisfied
-def get_schema_from_label_cols(label_cols, questions):
-    print('label_cols: {}'.format(label_cols))
-
-    # current
-    schema = []
-    # if 'smooth' in questions:
-    schema.append([
-            label_cols.index('smooth-or-featured_smooth'),
-            label_cols.index('smooth-or-featured_featured-or-disk')
-            # TODO add artifact?
-    ])
-    # if 'spiral' in questions:
-    schema.append([
-            label_cols.index('has-spiral-arms_yes'),
-            label_cols.index('has-spiral-arms_no')
-    ])
-    print('schema: {}'.format(schema))
-    return schema  # do not convert to tensor, use tf.function() to trace np and make many graphs
+class Schema():
+    """
+    Relate the df label columns to question/answer groups and to tfrecod label indices
+    """
+    def __init__(self, label_cols: List, questions: List):
+        """
+        Requires that labels be continguous by question - easily satisfied
+        
+        Args:
+            label_cols (List): columns (strings) which record k successes for each galaxy for each answer
+            questions (List): semantic names of questions which group those answers
+        """
+        self.label_cols = label_cols
+        self.questions = questions
+        self.question_index_groups = []  # start and end indices of answers to each question in label_cols e.g. [[0, 1]. [1, 3]] 
+        if 'smooth-or-featured' in questions:
+            self.question_index_groups.append([
+                label_cols.index('smooth-or-featured_smooth'),
+                label_cols.index('smooth-or-featured_featured-or-disk')
+                # TODO add artifact?
+            ])
+        if 'has-spiral-arms' in questions:
+            self.question_index_groups.append([
+                label_cols.index('has-spiral-arms_yes'),
+                label_cols.index('has-spiral-arms_no')
+            ])
+        assert len(self.question_index_groups) > 0
+    # TODO write to disk
+    
 
 
 def get_indices_from_label_cols(label_cols, questions):
@@ -52,10 +62,19 @@ def get_indices_from_label_cols(label_cols, questions):
     # return tf.constant(indices.astype(int), dtype=tf.int32)
 
 
-@tf.function
-def multiquestion_loss(labels, predictions, question_index_groups, num_questions):
+# @tf.function
+def multiquestion_loss(labels, predictions, question_index_groups):
+    """[summary]
+    
+    Args:
+        labels (tf.Tensor): (galaxy, k successes) where k successes dimension is indexed by question_index_groups
+        predictions (tf.Tensor): coin-toss probabilities of success, matching shape of labels
+        question_index_groups (list): Paired (tuple) integers of (first, last) indices of answers to each question, listed for all questions
+    
+    Returns:
+        [type]: [description]
+    """
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
-
     q_losses = []
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
@@ -71,10 +90,19 @@ def multiquestion_loss(labels, predictions, question_index_groups, num_questions
 
 
 def multinomial_loss(successes, expected_probs, output_dim=2):
-    # for this to be correct, predictions must sum to 1 and successes must sum to n_trials
-    # negative log loss, of course
+    """
+    For this to be correct, predictions must sum to 1 and successes must sum to n_trials (i.e. all answers to each question are known)
+    Negative log loss, of course
+    
+    Args:
+        successes (tf.Tensor): (galaxy, k_successes) where k_successes is indexed by each answer (e.g. [:, 0] = smooth votes, [:, 1] = featured votes)
+        expected_probs (tf.Tensor): coin-toss probability of success, same dimensions as successes
+        output_dim (int, optional): Number of answers (i.e. successes.shape[1]). Defaults to 2. TODO may remove?
+    
+    Returns:
+        tf.Tensor: neg log likelihood of k_successes observed across all answers. With batch dimension.
+    """
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
-
     loss = -tf.reduce_sum(input_tensor=successes * tf.math.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
     for n in range(output_dim):  # careful, output_dim must be fixed
         tf.compat.v1.summary.histogram('successes_{}'.format(n), successes[:, n])

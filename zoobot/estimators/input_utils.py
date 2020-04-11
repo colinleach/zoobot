@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import tensorflow_addons as tfa
+import tensorflow_addons as tfa  # for rotations
 import scipy.ndimage as ndimage  # use this instead
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
@@ -121,6 +121,8 @@ def load_dataset_with_labels(config):
     """
     requested_features = {'matrix': 'string'}
     # We only support float labels!
+    # add key-value pairs like (col: float) for each col in config.label_cols
+    # the order of config.label_cols will be the order that labels (axis=1) is indexed
     requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
     feature_spec = get_feature_spec(requested_features)
     return get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
@@ -147,7 +149,7 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
 
     dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
     if shuffle:
-        dataset = dataset.shuffle(1500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
+        dataset = dataset.shuffle(500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
     if repeat:
         dataset = dataset.repeat()  # careful, don't repeat forever for eval
     dataset = dataset.batch(batch_size)
@@ -327,25 +329,28 @@ def random_rotation_batch(images):
         interpolation='BILINEAR'
     )
 
-def random_rotation_py(im):
-    # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
-    im_shape = im.shape
-    im = tf.py_function(np_random_rotation, [im], tf.float32)
-    im.set_shape(im_shape)
-    return im
+# def random_rotation_py(im):
+#     # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+#     im_shape = im.shape
+#     im = tf.py_function(np_random_rotation, [im], tf.float32)
+#     im.set_shape(im_shape)
+#     return im
 
 
 def np_random_rotation(im):
+    # tracing may be a problem
     return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
 
 def crop_random_size(im, zoom, central, final_size):
-    original_width = int(im.shape[1]) # int cast allows division of Dimension
-    new_width = int(original_width / tf.random.uniform(shape=[1], minval=zoom[0], maxval=zoom[1]))  # updated from np to avoid fixed value from tracing. Not yet tested!
+    original_width = tf.cast(im.shape[1], tf.float32) # cast allows division of Dimension
+    new_width = tf.squeeze(tf.cast(original_width / tf.random.uniform(shape=[1], minval=zoom[0], maxval=zoom[1]), dtype=tf.int32))
+    # updated from np to avoid fixed value from tracing. Not yet tested!
     if central:
         lost_width = int((original_width - new_width) / 2)
         cropped_im = im[lost_width:original_width-lost_width, lost_width:original_width-lost_width]
     else:
-        cropped_shape = tf.constant([new_width, new_width, int(im.shape[2])], dtype=tf.int32)
+        n_channels = tf.constant(im.shape[2], dtype=tf.int32)
+        cropped_shape = tf.stack([new_width, new_width, n_channels], axis=0)
         cropped_im = tf.image.random_crop(im, cropped_shape)
 
     # resize to final desired size (may match crop size)

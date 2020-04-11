@@ -295,7 +295,7 @@ class BayesianModel(tf.keras.Model):
     #         return response, mean_loss
 
 
-def custom_smooth_mse(labels, predictions):
+def squared_smooth_error(labels, predictions):
     # TODO again, hardcoded!
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
@@ -322,7 +322,7 @@ def custom_smooth_mse(labels, predictions):
 
 
 
-def custom_spiral_mse(labels, predictions):
+def squared_spiral_error(labels, predictions):
     # TODO again, hardcoded!
     # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
@@ -354,10 +354,13 @@ class CustomSmoothMSE(tf.keras.metrics.Metric):
     def __init__(self, name='custom_smooth_MSE', **kwargs):
         super(CustomSmoothMSE, self).__init__(name=name, **kwargs)
         self.mse = self.add_weight(name='smooth_mse', initializer='zeros')
+        self.batch_count = tf.Variable(0, dtype=tf.int32)
+        self.total_se = tf.Variable(0., dtype=tf.float32)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        values = custom_smooth_mse(y_true, y_pred)
-        self.mse.assign_add(tf.reduce_sum(values))
+        self.total_se.assign_add(tf.reduce_sum(squared_smooth_error(y_true, y_pred)))
+        self.batch_count.assign_add(tf.shape(y_true)[0])
+        self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
 
     def result(self):
         return self.mse
@@ -365,16 +368,21 @@ class CustomSmoothMSE(tf.keras.metrics.Metric):
     def reset_states(self):
       # The state of the metric will be reset at the start of each epoch.
         self.mse.assign(0.)
+        self.batch_count.assign(0)
+        self.total_se.assign(0.)
 
 class CustomSpiralMSE(tf.keras.metrics.Metric):
 
     def __init__(self, name='custom_spiral_MSE', **kwargs):
         super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
         self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
+        self.batch_count = tf.Variable(0, dtype=tf.int32)
+        self.total_se = tf.Variable(0., dtype=tf.float32)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        values = custom_spiral_mse(y_true, y_pred)
-        self.mse.assign_add(tf.reduce_sum(values))
+        self.total_se.assign_add(tf.reduce_sum(squared_spiral_error(y_true, y_pred)))
+        self.batch_count.assign_add(tf.shape(y_true)[0])
+        self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
 
     def result(self):
         return self.mse
@@ -382,8 +390,8 @@ class CustomSpiralMSE(tf.keras.metrics.Metric):
     def reset_states(self):
       # The state of the metric will be reset at the start of each epoch.
         self.mse.assign(0.)
-
-
+        self.batch_count.assign(0)
+        self.total_se.assign(0.)
 
     # train_accuracy = tf.keras.metrics.MeanSquaredError('train_mse')
     # test_accuracy = tf.keras.metrics.MeanSquaredError('test_mse')

@@ -1,11 +1,23 @@
   
 import os
 import argparse
+import tensorflow as tf
 
 from zoobot.active_learning import create_instructions
 
-
+  
 if __name__ == '__main__':
+    """
+    Testing:
+
+    python offline_training.py --experiment-dir results/latest_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 2 
+    """
+
+    # useful to avoid errors on small GPU
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        for gpu in gpus:
+          tf.config.experimental.set_memory_growth(gpu, True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-dir', dest='save_dir', type=str)
@@ -29,13 +41,13 @@ if __name__ == '__main__':
     eval_records = [os.path.join(eval_records_dir, x) for x in os.listdir(eval_records_dir) if x.endswith('.tfrecord')]
 
     if test:
-      batch_size = 4
+      batch_size = 32
     else:
-      batch_size = 256
+      batch_size = 64  # small for now for laptop GPU, was 256
 
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
-  
+
     # parameters that only affect train_callable
     train_callable_obj = create_instructions.TrainCallableFactory(
         initial_size=shard_img_size,
@@ -46,8 +58,15 @@ if __name__ == '__main__':
     train_callable_obj.save(save_dir)
 
     train_callable = train_callable_obj.get()
-    # label_cols = ['bar_strong', 'bar_weak', 'bar_no']
-    # label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk']
-    # label_cols = ['has-spiral-arms_yes', 'has-spiral-arms_no']
-    label_cols = ['smooth-or-featured_smooth', 'smooth-or-featured_featured-or-disk', 'has-spiral-arms_yes', 'has-spiral-arms_no']
-    train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size, label_cols=label_cols)  # can override default args here
+    questions = [
+        'smooth-or-featured',
+        'has-spiral-arms'
+    ]
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no'
+    ]
+     # can add to or override default args of train_callable here
+    train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size, label_cols=label_cols, questions=questions) 

@@ -169,7 +169,8 @@ def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir
     """
     assert not df.empty
     assert 'id_str' in columns_to_save
-    assert all(column in df.columns.values for column in columns_to_save)
+    if not all(column in df.columns.values for column in columns_to_save):
+        raise IndexError('Columns not found in df: {}'.format(set(columns_to_save) - set(df.columns.values)))
 
     df = df.copy().sample(frac=1).reset_index(drop=True)  # shuffle
     # split into shards
