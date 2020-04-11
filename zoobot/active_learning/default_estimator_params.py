@@ -140,9 +140,10 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
     )
 
     schema = losses.Schema(label_cols, questions)
-    question_groups = schema.question_index_groups
     model = bayesian_estimator_funcs.BayesianModel(
+        image_dim=run_config.final_size, # not initial size
         output_dim=len(run_config.label_cols),
+        schema=schema,
         conv1_filters=32,
         conv1_kernel=3,
         conv2_filters=64,
@@ -153,17 +154,13 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         dense1_dropout=0.5,
         predict_dropout=0.5,  # change this to calibrate
         regression=True,  # important!
-        log_freq=10,
-        image_dim=run_config.final_size,  # not initial size
-        # calculate_loss=lambda x, y: losses.multinomial_loss(x, y, output_dim=len(run_config.label_cols))  # assumes labels are columns of successes and predictions are cols of prob.
+        log_freq=10
     )  # WARNING will need to be updated for multiquestion
+    
     model.compile(
-        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=question_groups),
+        loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam(),
-        metrics=[
-            bayesian_estimator_funcs.CustomSmoothMSE(),
-            bayesian_estimator_funcs.CustomSpiralMSE()
-        ]
+        metrics=[bayesian_estimator_funcs.CustomMSEByColumn(name=q, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     )
 
     run_config.assemble(train_config, eval_config, model)

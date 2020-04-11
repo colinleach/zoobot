@@ -38,10 +38,16 @@ class Schema():
                 label_cols.index('has-spiral-arms_no')
             ])
         assert len(self.question_index_groups) > 0
-    # TODO write to disk
+        assert len(self.questions) == len(self.question_index_groups)
     
+    @property
+    def named_index_groups(self):
+        return dict(zip(self.questions, self.question_index_groups))
+    
+    # TODO write to disk
 
 
+    
 def get_indices_from_label_cols(label_cols, questions):
     """
     Get indices for use with tf.dynamic_slice

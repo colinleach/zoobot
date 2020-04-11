@@ -12,6 +12,7 @@ class BayesianModel(tf.keras.Model):
             self,
             image_dim,
             output_dim,
+            schema,
             conv1_filters=32,
             conv1_kernel=1,
             conv1_activation=tf.nn.relu,
@@ -27,28 +28,13 @@ class BayesianModel(tf.keras.Model):
             predict_dropout=0.5,
             regression=False,
             log_freq=10,
+
     ):
         super(BayesianModel, self).__init__()
 
         self.output_dim = output_dim  # n final neuron
         self.image_dim = image_dim
-        # self.calculate_loss = calculate_loss # callable loss = calculate_loss(labels, predictions) (or can subclass)
-        # self.optimizer = optimizer
-        # self.learning_rate = learning_rate
-        # self.conv1_filters = conv1_filters
-        # self.conv1_kernel = conv1_kernel
-        # self.conv2_filters = conv2_filters
-        # self.conv2_kernel = conv2_kernel
-        self.conv3_filters = conv3_filters  # actually useful for the reshape
-        # self.conv3_kernel = conv3_kernel
-        # self.dense1_units = dense1_units
-        # self.dense1_dropout = dense1_dropout
-        # self.conv1_activation = conv1_activation
-        # self.conv2_activation = conv2_activation
-        # self.conv3_activation = conv3_activation
-        # self.dense1_activation = dense1_activation
-        # self.predict_dropout = predict_dropout  # dropout rate for predict mode
-        # self.regression = regression
+        self.conv3_filters = conv3_filters  # actually useful elsewhere for the reshape
         self.log_freq = log_freq
         # self.logging_hooks = logging_hooks(self)  # TODO strange error with passing this to estimator in params
         self.logging_hooks = [None, None, None]
@@ -193,152 +179,29 @@ class BayesianModel(tf.keras.Model):
         excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
         return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
+@tf.function
+def squared_error(labels, predictions):
+    # already filtered to have only the appropriate columns
+    # print(tf.shape(labels, name='labels_shape'))
+    # print(tf.shape(predictions, name='predictions_shape'))
+    # assert tf.shape(labels)[1] == tf.shape(predictions)[1]
 
-    # def main_estimator(self, features, labels, mode):
-    #     """
-    #     Estimator wrapper function for four-layer cnn performing classification or regression
-    #     Shows the general actions for each Estimator mode
-    #     Details (e.g. neurons, activation funcs, etc) controlled by 'params'
-
-    #     Args:
-    #         features (tf.constant): images, shape (batch, x, y, 1)
-    #         labels (tf.constant): labels, shape (batch, label_col)
-    #         mode ():
-
-    #     Returns:
-
-    #     """
-    #     if labels is not None:
-    #         for n in range(self.output_dim):
-    #             tf.summary.histogram('labels_{}'.format(n), labels[:, n])
-
-    #     # TODO check args
-    #     response, loss = self.bayesian_regressor(features, labels, mode)
-        
-        # TODO no longer needed?
-        # if mode == tf.estimator.ModeKeys.PREDICT:
-        #     with tf.compat.v1.variable_scope('predict'):
-        #         export_outputs = {
-        #             signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput(response)
-        #         }
-        #     return tf.estimator.EstimatorSpec(mode=mode, predictions=response, export_outputs=export_outputs)
-
-        # assert labels is not None
-
-        # if mode == tf.estimator.ModeKeys.TRAIN:
-        #     with tf.compat.v1.variable_scope('train'):
-        #         lr = tf.identity(self.learning_rate)
-        #         tf.compat.v1.summary.scalar('learning_rate', lr)
-        #         optimizer = self.optimizer(learning_rate=lr)
-
-        #         # important to explicitly use within update_ops for batch norm to work
-        #         # see https://www.tensorflow.org/api_docs/python/tf/layers/batch_normalization
-        #         update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
-        #         logging.warning(update_ops)
-        #         with tf.control_dependencies(update_ops):
-        #             train_op = optimizer.minimize(
-        #                 loss=loss,
-        #                 global_step=tf.compat.v1.train.get_global_step())
-                
-        #         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
-
-        # else:  # must be EVAL mode
-        #     with tf.compat.v1.variable_scope('eval'):
-        #         # Add evaluation metrics (for EVAL mode)
-        #         # eval_metric_ops = get_eval_metric_ops(self, labels, response)
-        #         # return tf.estimator.EstimatorSpec(
-        #         #     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-        #         eval_metric_ops = log_custom_metrics(labels, response['prediction'])
-        #         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
-
-
-    # def bayesian_regressor(self, features, labels, mode):
-    #     """
-    #     Model function of four-layer CNN
-    #     Can be used in isolation or called within an estimator e.g. four_layer_binary_classifier
-
-    #     Args:
-    #         features ():
-    #         labels ():
-    #         mode ():
-    #         params ():
-
-    #     Returns:
-
-    #     """
-
-    #     dropout_rate = self.dense1_dropout
-    #     if mode == tf.estimator.ModeKeys.PREDICT:
-    #         dropout_rate = self.predict_dropout
-
-    #     # eval mode will have a lower loss than train mode, because dropout is off
-    #     dropout_on = (mode == tf.estimator.ModeKeys.TRAIN) or (mode == tf.estimator.ModeKeys.PREDICT)
-    #     tf.compat.v1.summary.scalar('dropout_on', tf.cast(dropout_on, tf.float32))
-    #     tf.compat.v1.summary.scalar('dropout_rate', dropout_rate)
-
-    #     dense1 = input_to_dense(features, mode, self)  # use batch normalisation
-    #     predictions = dense_to_output(dense1, output_dim=self.output_dim, dropout_on=dropout_on, dropout_rate=dropout_rate)
-    #     response = {'prediction': predictions}
-
-    #     # if predict mode, feedforward from dense1 SEVERAL TIMES. Save all predictions under 'all_predictions'.
-    #     if mode == tf.estimator.ModeKeys.PREDICT:
-    #         return response, None  # no loss, as labels not known (in general)
-
-    #     else: # calculate loss for TRAIN/EVAL with binomial
-    #         # print_op = tf.print('labels', labels)
-    #         # with tf.control_dependencies([print_op]):
-    #         labels = tf.stop_gradient(labels)
-    #         loss = self.calculate_loss(labels, predictions)
-    #         mean_loss = tf.reduce_mean(input_tensor=loss)
-    #         tf.compat.v1.losses.add_loss(mean_loss)
-    #         return response, mean_loss
-
-
-def squared_smooth_error(labels, predictions):
-    # TODO again, hardcoded!
-    # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
-    # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
-    smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
-    # spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
-    # tf.summary.histogram('smooth_total', smooth_total)
-    # tf.summary.histogram('spiral_total', spiral_total)
-    smooth_observed_fracs = labels[:, 0]/smooth_total
-    # spiral_observed_fracs = labels[:, 2]/spiral_total
-    # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
-    # tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
-    # tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
-
-    squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
-    # squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
-
-    # tf.summary.histogram('squared_smooth_error', squared_smooth_error)
-    # tf.summary.histogram('squared_spiral_error', squared_spiral_error)
-
-    # tf.summary.scalar('squared_smooth_mse', tf.reduce_mean(squared_smooth_error))
-    # tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
-
-    return squared_smooth_error
-
-
-
-def squared_spiral_error(labels, predictions):
-    # TODO again, hardcoded!
-    # smooth_observed_fracs = labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1)
     # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
     # smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
     # print(labels[:, 2:])
-    spiral_total = tf.reduce_sum(input_tensor=labels[:, 2:], axis=1)
+    total = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     # tf.summary.histogram('smooth_total', smooth_total)
-    # tf.summary.histogram('spiral_total', spiral_total)
+    # tf.summary.histogram('total', total)
     # smooth_observed_fracs = labels[:, 0]/smooth_total
-    spiral_observed_fracs = tf.math.divide_no_nan(labels[:, 2], spiral_total)  # WARNING need to check into this
+
+
+    observed_fracs = tf.math.divide_no_nan(labels, total)  # WARNING need to check into this
     # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
     # tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
-    # tf.summary.histogram('spiral_observed_fracs', spiral_observed_fracs)
+    # tf.summary.histogram('observed_fracs', observed_fracs)
 
     # squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
-    squared_spiral_error = (spiral_observed_fracs - predictions[:, 2]) ** 2
+    sq_error = (observed_fracs - predictions) ** 2
 
     # tf.summary.histogram('squared_smooth_error', squared_smooth_error)
     # tf.summary.histogram('squared_spiral_error', squared_spiral_error)
@@ -346,19 +209,22 @@ def squared_spiral_error(labels, predictions):
     # tf.summary.scalar('squared_smooth_mse', tf.reduce_mean(squared_smooth_error))
     # tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
 
-    return squared_spiral_error
+    return sq_error
 
 
-class CustomSmoothMSE(tf.keras.metrics.Metric):
+class CustomMSEByColumn(tf.keras.metrics.Metric):
 
-    def __init__(self, name='custom_smooth_MSE', **kwargs):
-        super(CustomSmoothMSE, self).__init__(name=name, **kwargs)
-        self.mse = self.add_weight(name='smooth_mse', initializer='zeros')
+    def __init__(self, name, start_col, end_col, **kwargs):
+        print(f'Name: {name}, start {start_col}, end {end_col}')
+        super(CustomMSEByColumn, self).__init__(name=name, **kwargs)
+        self.mse = self.add_weight(name=name, initializer='zeros')
         self.batch_count = tf.Variable(0, dtype=tf.int32)
         self.total_se = tf.Variable(0., dtype=tf.float32)
+        self.start_col = start_col
+        self.end_col = end_col
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        self.total_se.assign_add(tf.reduce_sum(squared_smooth_error(y_true, y_pred)))
+        self.total_se.assign_add(tf.reduce_sum(squared_error(y_true[:, self.start_col:self.end_col+1], y_pred[:, self.start_col:self.end_col+1])))
         self.batch_count.assign_add(tf.shape(y_true)[0])
         self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
 
@@ -366,32 +232,55 @@ class CustomSmoothMSE(tf.keras.metrics.Metric):
         return self.mse
 
     def reset_states(self):
-      # The state of the metric will be reset at the start of each epoch.
+        # The state of the metric will be reset at the start of each epoch.
         self.mse.assign(0.)
         self.batch_count.assign(0)
-        self.total_se.assign(0.)
+        self.total_se.assign(0.)  
 
-class CustomSpiralMSE(tf.keras.metrics.Metric):
 
-    def __init__(self, name='custom_spiral_MSE', **kwargs):
-        super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
-        self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
-        self.batch_count = tf.Variable(0, dtype=tf.int32)
-        self.total_se = tf.Variable(0., dtype=tf.float32)
+# class CustomSmoothMSE(tf.keras.metrics.Metric):
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        self.total_se.assign_add(tf.reduce_sum(squared_spiral_error(y_true, y_pred)))
-        self.batch_count.assign_add(tf.shape(y_true)[0])
-        self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
+#     def __init__(self, name='custom_smooth_MSE', **kwargs):
+#         super(CustomSmoothMSE, self).__init__(name=name, **kwargs)
+#         self.mse = self.add_weight(name='smooth_mse', initializer='zeros')
+#         self.batch_count = tf.Variable(0, dtype=tf.int32)
+#         self.total_se = tf.Variable(0., dtype=tf.float32)
 
-    def result(self):
-        return self.mse
+#     def update_state(self, y_true, y_pred, sample_weight=None):
+#         self.total_se.assign_add(tf.reduce_sum(squared_smooth_error(y_true, y_pred)))
+#         self.batch_count.assign_add(tf.shape(y_true)[0])
+#         self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
 
-    def reset_states(self):
-      # The state of the metric will be reset at the start of each epoch.
-        self.mse.assign(0.)
-        self.batch_count.assign(0)
-        self.total_se.assign(0.)
+#     def result(self):
+#         return self.mse
+
+#     def reset_states(self):
+#       # The state of the metric will be reset at the start of each epoch.
+#         self.mse.assign(0.)
+#         self.batch_count.assign(0)
+#         self.total_se.assign(0.)
+
+# class CustomSpiralMSE(tf.keras.metrics.Metric):
+
+#     def __init__(self, name='custom_spiral_MSE', **kwargs):
+#         super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
+#         self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
+#         self.batch_count = tf.Variable(0, dtype=tf.int32)
+#         self.total_se = tf.Variable(0., dtype=tf.float32)
+
+#     def update_state(self, y_true, y_pred, sample_weight=None):
+#         self.total_se.assign_add(tf.reduce_sum(squared_spiral_error(y_true, y_pred)))
+#         self.batch_count.assign_add(tf.shape(y_true)[0])
+#         self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
+
+#     def result(self):
+#         return self.mse
+
+#     def reset_states(self):
+#       # The state of the metric will be reset at the start of each epoch.
+#         self.mse.assign(0.)
+#         self.batch_count.assign(0)
+#         self.total_se.assign(0.)
 
     # train_accuracy = tf.keras.metrics.MeanSquaredError('train_mse')
     # test_accuracy = tf.keras.metrics.MeanSquaredError('test_mse')
