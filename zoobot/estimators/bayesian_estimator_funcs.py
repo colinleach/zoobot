@@ -5,7 +5,8 @@ import tensorflow as tf
 
 from zoobot.estimators import losses
 
-
+# https://www.tensorflow.org/guide/keras/overview#model_subclassing
+# https://www.tensorflow.org/guide/keras/custom_layers_and_models#building_models
 class BayesianModel(tf.keras.Model):
 
     def __init__(
@@ -34,10 +35,12 @@ class BayesianModel(tf.keras.Model):
 
         self.output_dim = output_dim  # n final neuron
         self.image_dim = image_dim
+        self.schema = schema
         self.conv3_filters = conv3_filters  # actually useful elsewhere for the reshape
         self.log_freq = log_freq
         # self.logging_hooks = logging_hooks(self)  # TODO strange error with passing this to estimator in params
         self.logging_hooks = [None, None, None]
+        # self.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)  # will be updated by callback
  
         dropout_rate = 0  # no dropout on conv layers
         regularizer = None
@@ -128,9 +131,21 @@ class BayesianModel(tf.keras.Model):
             units=self.output_dim,  # num outputs
             name='model/layer5/dense1')
 
+    def build(self, input_shape):
+        # self.step = 0
+        self.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)  # will be updated by callback
+
+        super().build(input_shape)
+
     # really important to use call, not __call__, or the dataset won't be made in graph mode and you'll get eager/symbolic mismatch error
-    @tf.function
+    # do not decorate, it messes up the tf.summary writing. Keras will automatically convert to graph mode anyway
+    # https://github.com/tensorflow/tensorflow/issues/32889
     def call(self, x, training=None):
+
+        x = x / 256.  # rescale 0->1 from 0->256
+
+        tf.summary.image('input_image', x, step=self.step)
+        tf.summary.histogram('input_image_hist', x, step=self.step)
 
         dropout_on = True  # dropout always on, regardless of training arg (required by keras)
         x = self.conv1(x)
@@ -165,10 +180,13 @@ class BayesianModel(tf.keras.Model):
         x = self.dropout_final(x, training=dropout_on)
         x = self.dense_final(x)
 
-        # normalise predictions by question (TODO hardcoded!)
-        x = tf.concat([ tf.nn.softmax(x[:, :2]), tf.nn.softmax(x[:, 2:]) ], axis=1)
-        # tf.summary.histogram('normalised_smooth_prediction', x[:, 0])
-        # tf.summary.histogram('normalised_spiral_prediction', x[:, 2])
+        # normalise predictions by question
+        # list comp is allowed since schema is pure python, not tensors, but note that it must be static or graph will be wrong
+        x = tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in self.schema.question_index_groups], axis=1)
+        # tf.summary.histogram('x', x, step=self.step)
+        for q, (start_index, end_index) in self.schema.named_index_groups.items():
+            for i in range(start_index, end_index+1):
+                tf.summary.histogram(f'prediction_{self.schema.label_cols[i]}', x[i], step=self.step)
 
         return x
 
@@ -238,55 +256,30 @@ class CustomMSEByColumn(tf.keras.metrics.Metric):
         self.total_se.assign(0.)  
 
 
-# class CustomSmoothMSE(tf.keras.metrics.Metric):
 
-#     def __init__(self, name='custom_smooth_MSE', **kwargs):
-#         super(CustomSmoothMSE, self).__init__(name=name, **kwargs)
-#         self.mse = self.add_weight(name='smooth_mse', initializer='zeros')
-#         self.batch_count = tf.Variable(0, dtype=tf.int32)
-#         self.total_se = tf.Variable(0., dtype=tf.float32)
+# use any custom callback to keras.backend.set_value self.epoch=epoch, and then read that on each summary call
+# if this doesn't get train/test right, could similarly use the callbacks to set self.mode
+# https://www.tensorflow.org/guide/keras/custom_callback
+class UpdateStepCallback(tf.keras.callbacks.Callback):
 
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         self.total_se.assign_add(tf.reduce_sum(squared_smooth_error(y_true, y_pred)))
-#         self.batch_count.assign_add(tf.shape(y_true)[0])
-#         self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
+    def __init__(self, batch_size):
+        super(UpdateStepCallback, self).__init__()
+        self.batch_size = batch_size
 
-#     def result(self):
-#         return self.mse
+    def on_epoch_end(self, epoch, logs=None):
+        # print('\n\nStarting epoch', epoch, '\n\n')
+        # # access model with self.model, tf.ketas.backend.get/set_value
+        # # e.g. lr = float(tf.keras.backend.get_value(self.model.optimizer.lr))
 
-#     def reset_states(self):
-#       # The state of the metric will be reset at the start of each epoch.
-#         self.mse.assign(0.)
-#         self.batch_count.assign(0)
-#         self.total_se.assign(0.)
+        # print('\n epoch ', epoch, type(epoch))
+        step = epoch * self.batch_size
+        # # self.model.step = step
+        # # self.model.step.assign(step)
+        tf.keras.backend.set_value(self.model.step, step)
+        print('\n Ending step: ', float(tf.keras.backend.get_value(self.model.step)))
+        # # print(f'Step {step}')
 
-# class CustomSpiralMSE(tf.keras.metrics.Metric):
 
-#     def __init__(self, name='custom_spiral_MSE', **kwargs):
-#         super(CustomSpiralMSE, self).__init__(name=name, **kwargs)
-#         self.mse = self.add_weight(name='spiral_mse', initializer='zeros')
-#         self.batch_count = tf.Variable(0, dtype=tf.int32)
-#         self.total_se = tf.Variable(0., dtype=tf.float32)
-
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         self.total_se.assign_add(tf.reduce_sum(squared_spiral_error(y_true, y_pred)))
-#         self.batch_count.assign_add(tf.shape(y_true)[0])
-#         self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
-
-#     def result(self):
-#         return self.mse
-
-#     def reset_states(self):
-#       # The state of the metric will be reset at the start of each epoch.
-#         self.mse.assign(0.)
-#         self.batch_count.assign(0)
-#         self.total_se.assign(0.)
-
-    # train_accuracy = tf.keras.metrics.MeanSquaredError('train_mse')
-    # test_accuracy = tf.keras.metrics.MeanSquaredError('test_mse')
-    # 'smooth_observed_fracs_eval': tf.metrics.root_mean_squared_error(),
-    # 'spiral_observed_fracs_eval': tf.metrics.root_mean_squared_error()
-        
 # def get_gz_binomial_eval_metric_ops(self, labels, predictions):
     # raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
     # will probably be callable/subclass rather than implemented here 

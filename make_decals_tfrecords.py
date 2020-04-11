@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     Labelled catalog must include id_str (aka iauname) and png_loc as well as any desired label columns
     Testing:
-        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog_256.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_256 --img-size 256 --max 5000  --png-prefix /media/walml/beta/decals/png_native
+        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_128 --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
 
     """
 
@@ -37,11 +37,23 @@ if __name__ == '__main__':
                         help='Max galaxies (for debugging/speed')
     parser.add_argument('--png-prefix', dest='png_prefix', type=str, default='', help='prefix to use before dr5/J00, replacing any existing prefix')
 
+    # order is not important here, just keying the serialise_example dict, but it matters in offline_training.py
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
-        'has-spiral-arms_no'
+        'has-spiral-arms_no',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose'
     ]
 
     args = parser.parse_args()

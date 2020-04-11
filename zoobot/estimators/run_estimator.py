@@ -41,12 +41,13 @@ def run_estimator(config):
         ),
         tf.keras.callbacks.ModelCheckpoint(
             filepath=os.path.join(config.log_dir, 'models'),
-            save_weights_only=True)
+            save_weights_only=True),
+        bayesian_estimator_funcs.UpdateStepCallback(
+            batch_size=64
+        )
     ]
 
-    # if this doesn't get the steps right, can use any custom callback to keras.backend.set_value self.epoch=epoch, and then read that on each summary call
-    # if this doesn't get train/test right, could similarly use the callbacks to set self.mode
-
+    # https://www.tensorflow.org/tensorboard/scalars_and_keras
     fit_summary_writer = tf.summary.create_file_writer(os.path.join(config.log_dir, 'manual_summaries'))
     with fit_summary_writer.as_default():
         config.model.fit(

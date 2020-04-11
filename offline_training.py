@@ -1,6 +1,7 @@
   
 import os
 import argparse
+
 import tensorflow as tf
 
 from zoobot.active_learning import create_instructions
@@ -60,13 +61,28 @@ if __name__ == '__main__':
     train_callable = train_callable_obj.get()
     questions = [
         'smooth-or-featured',
-        'has-spiral-arms'
+        'has-spiral-arms',
+        'spiral-winding',
+        'bar',
+        'bulge-size'
     ]
+    # network input x will eventually contain columns in this order
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
-        'has-spiral-arms_no'
+        'has-spiral-arms_no',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
     ]
      # can add to or override default args of train_callable here
     train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size, label_cols=label_cols, questions=questions) 

@@ -1,6 +1,9 @@
+import logging
+from typing import List
+
 import numpy as np
 import tensorflow as tf
-from typing import List
+
 
 def calculate_binomial_loss(labels, predictions):
     scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
@@ -23,22 +26,50 @@ class Schema():
             label_cols (List): columns (strings) which record k successes for each galaxy for each answer
             questions (List): semantic names of questions which group those answers
         """
+        logging.info(f'Label cols: {label_cols} \n Questions: {questions}')
         self.label_cols = label_cols
         self.questions = questions
         self.question_index_groups = []  # start and end indices of answers to each question in label_cols e.g. [[0, 1]. [1, 3]] 
+
+        """
+        Be careful:
+        - first entry should be the first answer to that question, by df column order
+        - second entry should be the last answer to that question, similarly
+        - answers in between will be included: these are used to slice
+        - df columns must be contigious by question (e.g. not smooth_yes, bar_no, smooth_no) for this to work!
+        """
         if 'smooth-or-featured' in questions:
             self.question_index_groups.append([
                 label_cols.index('smooth-or-featured_smooth'),
                 label_cols.index('smooth-or-featured_featured-or-disk')
-                # TODO add artifact?
+                # TODO add artifact to shards?
             ])
         if 'has-spiral-arms' in questions:
             self.question_index_groups.append([
                 label_cols.index('has-spiral-arms_yes'),
                 label_cols.index('has-spiral-arms_no')
             ])
+        if 'spiral-winding' in questions:
+            self.question_index_groups.append([
+                label_cols.index('spiral-winding_tight'),
+                label_cols.index('spiral-winding_loose')
+        ])
+        if 'bar' in questions:
+            self.question_index_groups.append([
+                label_cols.index('bar_strong'),
+                label_cols.index('bar_no')
+            ])
+        if 'bulge-size' in questions:
+            self.question_index_groups.append([
+                label_cols.index('bulge-size_dominant'),
+                label_cols.index('bulge-size_none')
+            ])
         assert len(self.question_index_groups) > 0
         assert len(self.questions) == len(self.question_index_groups)
+        # TODO add checks for no overlapping indices
+        # TODO add checks for no unrecognised questions
+
+        print(self.named_index_groups)
     
     @property
     def named_index_groups(self):
