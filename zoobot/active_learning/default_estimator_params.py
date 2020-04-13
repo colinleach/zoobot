@@ -6,7 +6,7 @@ from typing import List
 import tensorflow as tf
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+# 
 
 from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses
 
@@ -93,10 +93,22 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         warm_start=params.warm_start
     )
 
+    train_config = get_train_config(train_records, run_config.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
+
+    eval_config = get_eval_config(eval_records, run_config.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
+
+    model = get_model(label_cols, questions, run_config.final_size)
+
+    run_config.assemble(train_config, eval_config, model)
+    return run_config
+
+
+def get_train_config(train_records, label_cols, batch_size, initial_size, final_size, channels):
+    # tiny func, refactored for easy reuse
     train_config = input_utils.InputConfig(
         name='train',
         tfrecord_loc=train_records,
-        label_cols=run_config.label_cols,
+        label_cols=label_cols,
         stratify=False,
         shuffle=False,  # temporarily turned off due to shuffle op error
         repeat=False,  # Changed from True for keras, which understands to restart a dataset
@@ -107,19 +119,23 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         zoom=(1.1, 1.3),  # SMOOTH MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
-        batch_size=run_config.batch_size,
-        initial_size=run_config.initial_size,
-        final_size=run_config.final_size,
-        channels=run_config.channels,
+        batch_size=batch_size,
+        initial_size=initial_size,
+        final_size=final_size,
+        channels=channels,
         greyscale=True,
         zoom_central=False  # SMOOTH MODE
         # zoom_central=True  # BAR MODE
     )
+    return train_config
 
+
+def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_size, channels):
+    # tiny func, refactored for easy reuse
     eval_config = input_utils.InputConfig(
         name='eval',
         tfrecord_loc=eval_records,
-        label_cols=run_config.label_cols,
+        label_cols=label_cols,
         stratify=False,
         shuffle=False,  # see above
         repeat=False,
@@ -130,19 +146,21 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         zoom=(1.1, 1.3),  # SMOOTH MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
-        batch_size=run_config.batch_size,
-        initial_size=run_config.initial_size,
-        final_size=run_config.final_size,
-        channels=run_config.channels,
+        batch_size=batch_size,
+        initial_size=initial_size,
+        final_size=final_size,
+        channels=channels,
         greyscale=True,
         zoom_central=False  # SMOOTH MODE
         # zoom_central=True  # BAR MODE
     )
+    return eval_config
 
+def get_model(label_cols, questions, final_size):
     schema = losses.Schema(label_cols, questions)
     model = bayesian_estimator_funcs.BayesianModel(
-        image_dim=run_config.final_size, # not initial size
-        output_dim=len(run_config.label_cols),
+        image_dim=final_size, # not initial size
+        output_dim=len(label_cols),  # will predict all label columns, in this order
         schema=schema,
         conv1_filters=32,
         conv1_kernel=3,
@@ -156,12 +174,10 @@ def get_run_config(params, log_dir, train_records, eval_records, learning_rate, 
         regression=True,  # important!
         log_freq=10
     )  # WARNING will need to be updated for multiquestion
-    
+
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam(),
         metrics=[bayesian_estimator_funcs.CustomMSEByColumn(name=q, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     )
-
-    run_config.assemble(train_config, eval_config, model)
-    return run_config
+    return model

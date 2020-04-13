@@ -4,7 +4,7 @@ import argparse
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+# 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
@@ -67,9 +67,7 @@ def calculate_predictions(tfrecord_loc, n_galaxies, results_dir, model_name, ini
         id_strs: list of id_strs for those images, loaded from tfrecord_loc
         results: model predictions, as ndarray of shape (image, sample)
     """
-    images_g, _, id_str_g = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=inital_size, mode='id_str')  # tf graph
-    with tf.compat.v1.Session() as sess:
-        images, id_strs = sess.run([images_g, id_str_g])
+    images, _, id_str = input_utils.predict_input_func(tfrecord_loc, n_galaxies=n_galaxies, initial_size=inital_size, mode='id_str')  # tf graph
     predictor_loc = os.path.join(results_dir, model_name)
     model = make_predictions.load_predictor(predictor_loc)
     results = make_predictions.get_samples_of_images(model, images, n_samples=n_samples)

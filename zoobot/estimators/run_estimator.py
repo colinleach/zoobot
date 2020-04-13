@@ -50,6 +50,11 @@ def run_estimator(config):
     # https://www.tensorflow.org/tensorboard/scalars_and_keras
     fit_summary_writer = tf.summary.create_file_writer(os.path.join(config.log_dir, 'manual_summaries'))
     with fit_summary_writer.as_default():
+
+        # for debugging
+        # config.model.run_eagerly = True
+        # https://www.tensorflow.org/api_docs/python/tf/keras/Model
+
         config.model.fit(
             train_dataset,
             validation_data=test_dataset,

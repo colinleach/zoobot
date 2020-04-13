@@ -6,7 +6,7 @@ import shutil
 import tensorflow as tf
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+# 
 import git
 
 from zoobot.estimators import bayesian_estimator_funcs, run_estimator, input_utils, warm_start

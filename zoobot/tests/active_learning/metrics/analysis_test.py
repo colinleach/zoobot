@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 
 from zoobot.tests import TEST_FIGURE_DIR, TEST_EXAMPLE_DIR

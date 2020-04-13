@@ -63,6 +63,8 @@ if __name__ == '__main__':
     train_callable_obj.save(save_dir)
 
     train_callable = train_callable_obj.get()
+
+    # must match label cols below
     questions = [
         'smooth-or-featured',
         'has-spiral-arms',
@@ -70,7 +72,9 @@ if __name__ == '__main__':
         'bar',
         'bulge-size'
     ]
-    # network input x will eventually contain columns in this order
+
+    # will load labels from shard, in this order
+    # will predict all label columns, in this order
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',

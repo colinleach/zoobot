@@ -3,10 +3,11 @@ import json
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+# 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
+import pandas as pd
 
 from zoobot.estimators import make_predictions
 from zoobot.uncertainty import discrete_coverage
@@ -14,6 +15,7 @@ from zoobot.tfrecord import read_tfrecord
 from zoobot.uncertainty import discrete_coverage
 from zoobot.active_learning import acquisition_utils
 from zoobot.tfrecord import catalog_to_tfrecord
+from zoobot.active_learning import metrics
 
 
 class SimulatedModel():
@@ -22,7 +24,14 @@ class SimulatedModel():
     Useful to create more info from a Model, or for internal use within Timeline
     """
 
-    def __init__(self, model, full_catalog, bin_probs=None):
+    def __init__(self, model: metrics.Model, full_catalog: pd.DataFrame, bin_probs=None):
+        """[summary]
+        
+        Args:
+            model ([type]): [description]
+            full_catalog ([type]): [description]
+            bin_probs ([type], optional): [description]. Defaults to None.
+        """
         self.model = model
         self.catalog = match_id_strs_to_catalog(model.id_strs, full_catalog)
 

@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import matplotlib
-matplotlib.use('Agg')  # don't actually show any figures
+  # don't actually show any figures
 import matplotlib.pyplot as plt
 
 from zoobot.estimators import input_utils

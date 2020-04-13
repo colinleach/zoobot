@@ -11,7 +11,7 @@ module purge
 module load python/anaconda3/2019.03
 # module load gpu/cuda/10.1.243
 # module load gpu/cudnn/7.6.0__cuda-9.0
-module load gpu/cuda/10.0.130
+# module load gpu/cuda/10.0.130
 module load gpu/cudnn/7.5.0__cuda-10.0
 
 # source activate /data/phys-zooniverse/chri5177/envs/zoobot

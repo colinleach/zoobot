@@ -1,7 +1,7 @@
 # from scipy import stats
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') # TODO move this to .matplotlibrc
+#  # TODO move this to .matplotlibrc
 import matplotlib.pyplot as plt
 import seaborn as sns
 

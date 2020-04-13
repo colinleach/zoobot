@@ -167,6 +167,10 @@ This is a bit of a mess and I should ponder how to do this cleanly.
 - `uncertainty` uses `check_uncertainty.py` and `zoobot/uncertainty` to investigate how trained models perform and select new subjects
 
 
+## Troubleshooting
+
+Getting TF 2.1 profiler permission errors? See https://github.com/tensorflow/tensorflow/issues/35860
+
 ## Legal Stuff
 
 Copyright (C) 2019 - Mike Walmsley

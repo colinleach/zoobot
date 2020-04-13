@@ -113,10 +113,12 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     """
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
     q_losses = []
+    print(question_index_groups)
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
         q_start = q_indices[0]
         q_end = q_indices[1]
+        print(q_start, q_end)
         q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
         # tf.summary.histogram('question_{}_loss'.format(q_n), q_loss)
         q_losses.append(q_loss)
@@ -141,10 +143,6 @@ def multinomial_loss(successes, expected_probs, output_dim=2):
     """
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
     loss = -tf.reduce_sum(input_tensor=successes * tf.math.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
-    for n in range(output_dim):  # careful, output_dim must be fixed
-        tf.compat.v1.summary.histogram('successes_{}'.format(n), successes[:, n])
-        tf.compat.v1.summary.histogram('expected_probs_{}', expected_probs[:, n])
-    tf.compat.v1.summary.histogram('loss', loss)
     # print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
     # with tf.control_dependencies([print_op]):
     return loss

@@ -1,7 +1,6 @@
 import ast
 
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') # TODO move this to .matplotlibrc
+#  # TODO move this to .matplotlibrc
 import statsmodels.api as sm
 import pymc3
 
