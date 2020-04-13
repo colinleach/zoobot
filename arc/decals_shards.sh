@@ -11,4 +11,4 @@ module load python/anaconda3/2019.03
 
 source activate /data/phys-zooniverse/chri5177/envs/zoobot
 
-python /data/phys-zooniverse/chri5177/repos/zoobot/make_decals_tfrecords.py --labelled-catalog=/data/phys-zooniverse/chri5177/repos/zoobot/data/latest_labelled_catalog.csv --eval-size=3000 --shard-dir=/data/phys-zooniverse/chri5177/repos/zoobot/data/decals/shards/multilabel_256 --img-size 256
+python /data/phys-zooniverse/chri5177/repos/zoobot/make_decals_tfrecords.py --labelled-catalog=/data/phys-zooniverse/chri5177/repos/zoobot/data/latest_labelled_catalog.csv --eval-size=3000 --shard-dir=/data/phys-zooniverse/chri5177/repos/zoobot/data/decals/shards/multilabel_256 --img-size 256 --png-prefix /data/phys-zooniverse/chri5177/png_native 
