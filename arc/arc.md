@@ -27,3 +27,5 @@ sinfo -n arcus-htc-gpu023 --long
 squeue -n arcus-htc-gpu023
 
 GPU023 has 8 cpu and 2 P100s
+
+"adev[9-10]"

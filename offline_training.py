@@ -20,6 +20,10 @@ if __name__ == '__main__':
         for gpu in gpus:
           tf.config.experimental.set_memory_growth(gpu, True)
 
+    # check which GPU we're using, helpful on ARC
+    physical_devices = tf.config.list_physical_devices('GPU') 
+    print("GPUs:",  physical_devices)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-dir', dest='save_dir', type=str)
     parser.add_argument('--shard-img-size', dest='shard_img_size', type=int, default=256)
