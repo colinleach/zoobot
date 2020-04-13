@@ -19,4 +19,11 @@ module load python/anaconda3/2019.03
 
 source activate /data/phys-zooniverse/chri5177/envs/zoobot
 
-rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/data/latest_labelled_catalog_256.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/data/latest_labelled_catalog.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data
+
+
+sinfo -n arcus-htc-gpu023 --long
+
+squeue -n arcus-htc-gpu023
+
+GPU023 has 8 cpu and 2 P100s
