@@ -9,9 +9,12 @@ from zoobot.active_learning import create_instructions
   
 if __name__ == '__main__':
     """
-    Testing:
 
-    python offline_training.py --experiment-dir results/latest_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 2 
+      python offline_training.py --experiment-dir results/latest_offline_retired --shard-img-size 128 --train-dir data/decals/shards/multilabel_128_retired/train --eval-dir data/decals/shards/multilabel_128_retired/eval --epochs 150 
+      python offline_training.py --experiment-dir results/latest_offline_schema --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 150 
+
+    Testing:
+      python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 2 
     """
 
     # useful to avoid errors on small GPU

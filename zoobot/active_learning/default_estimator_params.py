@@ -178,6 +178,6 @@ def get_model(label_cols, questions, final_size):
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam(),
-        metrics=[bayesian_estimator_funcs.CustomMSEByColumn(name=q, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+        metrics=[bayesian_estimator_funcs.CustomMSEByColumn(name=q.text, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     )
     return model

@@ -186,7 +186,7 @@ class BayesianModel(tf.keras.Model):
         # tf.summary.histogram('x', x, step=self.step)
         for q, (start_index, end_index) in self.schema.named_index_groups.items():
             for i in range(start_index, end_index+1):
-                tf.summary.histogram(f'prediction_{self.schema.label_cols[i]}', x[i], step=self.step)
+                tf.summary.histogram(f'prediction_{self.schema.label_cols[i]}', x[:, i], step=self.step)
 
         return x
 

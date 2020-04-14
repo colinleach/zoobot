@@ -5,20 +5,79 @@ import numpy as np
 import tensorflow as tf
 
 
-def calculate_binomial_loss(labels, predictions):
-    scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
-    return binomial_loss(labels, scalar_predictions)
+
+class Question():
+
+    def __init__(self, text, label_cols):
+        self.text = text
+
+        self.answers = create_answers(self, label_cols)
+
+        self.start_index = min(a.index for a in self.answers)
+        self.end_index = max(a.index for a in self.answers)
+        assert [self.start_index <= a.index <= self.end_index for a in self.answers]
+
+        self._asked_after = None
+
+    @property
+    def asked_after(self):
+        return self._asked_after
+
+    def __repr__(self):
+        return f'{self.text}, indices {self.start_index} to {self.end_index}, asked after {self.asked_after}'
+
+class Answer():
+
+    def __init__(self, text, question, index):
+        self.text = text
+        self.question = question
+
+        self.index = index
+        self._next_question = None
+
+    @property
+    def next_question(self):
+        return self._next_question
 
 
-def get_scalar_prediction(prediction):
-    return tf.nn.softmax(prediction)[:, 1]
+def create_answers(question, label_cols):
+    question_text = question.text
+    if question_text == 'smooth-or-featured':
+        answer_substrings = ['_smooth', '_featured-or-disk']
+    elif question_text == 'has-spiral-arms':
+        answer_substrings = ['_yes', '_no']
+    elif question_text == 'spiral-winding':
+        answer_substrings = ['_tight', '_medium', '_loose']
+    elif question_text == 'bar':
+        answer_substrings = ['_strong', '_weak', '_no']
+    elif question_text == 'bulge-size':
+        answer_substrings = ['_dominant', '_large', '_moderate', '_small', '_none']
+    else:
+        raise ValueError(question + ' not recognised')
+    return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
 
+
+def set_dependencies(questions):
+    dependencies = {
+        'smooth-or-featured': None,
+        'has-spiral-arms': 'smooth-or-featured_featured-or-disk',
+        'spiral-winding': 'has-spiral-arms_yes',
+        'bar': 'smooth-or-featured_featured-or-disk',
+        'bulge-size': 'smooth-or-featured_featured-or-disk'
+    }
+    for question in questions:
+        prev_answer_text = dependencies[question.text]
+        if prev_answer_text is not None:
+            prev_answer = [a for q in questions for a in q.answers if a.text == prev_answer_text][0]  # will be exactly one match
+            prev_answer._next_question = question
+            question._asked_after = prev_answer
+    # acts inplace
 
 class Schema():
     """
     Relate the df label columns to question/answer groups and to tfrecod label indices
     """
-    def __init__(self, label_cols: List, questions: List):
+    def __init__(self, label_cols: List, question_texts: List):
         """
         Requires that labels be continguous by question - easily satisfied
         
@@ -26,10 +85,9 @@ class Schema():
             label_cols (List): columns (strings) which record k successes for each galaxy for each answer
             questions (List): semantic names of questions which group those answers
         """
-        logging.info(f'Label cols: {label_cols} \n Questions: {questions}')
+        logging.info(f'Label cols: {label_cols} \n Questions: {question_texts}')
         self.label_cols = label_cols
-        self.questions = questions
-        self.question_index_groups = []  # start and end indices of answers to each question in label_cols e.g. [[0, 1]. [1, 3]] 
+        # self.questions = questions
 
         """
         Be careful:
@@ -38,44 +96,65 @@ class Schema():
         - answers in between will be included: these are used to slice
         - df columns must be contigious by question (e.g. not smooth_yes, bar_no, smooth_no) for this to work!
         """
-        if 'smooth-or-featured' in questions:
-            self.question_index_groups.append([
-                label_cols.index('smooth-or-featured_smooth'),
-                label_cols.index('smooth-or-featured_featured-or-disk')
-                # TODO add artifact to shards?
-            ])
-        if 'has-spiral-arms' in questions:
-            self.question_index_groups.append([
-                label_cols.index('has-spiral-arms_yes'),
-                label_cols.index('has-spiral-arms_no')
-            ])
-        if 'spiral-winding' in questions:
-            self.question_index_groups.append([
-                label_cols.index('spiral-winding_tight'),
-                label_cols.index('spiral-winding_loose')
-        ])
-        if 'bar' in questions:
-            self.question_index_groups.append([
-                label_cols.index('bar_strong'),
-                label_cols.index('bar_no')
-            ])
-        if 'bulge-size' in questions:
-            self.question_index_groups.append([
-                label_cols.index('bulge-size_dominant'),
-                label_cols.index('bulge-size_none')
-            ])
+        self.questions = [Question(question_text, label_cols) for question_text in question_texts]
+        if len(self.questions) > 1:
+            set_dependencies(self.questions)
+
         assert len(self.question_index_groups) > 0
         assert len(self.questions) == len(self.question_index_groups)
-        # TODO add checks for no overlapping indices
-        # TODO add checks for no unrecognised questions
 
         print(self.named_index_groups)
+
+    def get_answer(self, answer_text):
+        try:
+            return [a for q in self.questions for a in q.answers if a.text == answer_text][0]  # will be exactly one match
+        except IndexError:
+            raise ValueError('Answer not found: ', answer_text)
+
+    def get_question(self, question_text):
+        try:
+            return [q for q in self.questions if q.text == question_text][0]  # will be exactly one match
+        except  IndexError:
+            raise ValueError('Question not found: ', question_text)
     
+    @property
+    def question_index_groups(self):
+         # start and end indices of answers to each question in label_cols e.g. [[0, 1]. [1, 3]] 
+        return [(q.start_index, q.end_index) for q in self.questions]
+
+
     @property
     def named_index_groups(self):
         return dict(zip(self.questions, self.question_index_groups))
-    
+
+
+    def joint_p(self, samples, answer_text):
+        assert samples.ndim == 2  # batch, p. No 'per model', marginalise first
+        # prob(answer) = p(that answer|that q asked) * p(that q_asked) i.e...
+        # prob(answer) = p(that answer|that q asked) * p(answer before that q)
+        answer = self.get_answer(answer_text)
+        p_answer_given_question = samples[:, answer.index]
+
+        question = answer.question
+        prev_answer = question.asked_after
+        if prev_answer is None:
+            return p_answer_given_question
+        else:
+            p_prev_answer = self.joint_p(samples, prev_answer.text)  # recursive
+            return p_answer_given_question * p_prev_answer
+
     # TODO write to disk
+
+
+
+
+def calculate_binomial_loss(labels, predictions):
+    scalar_predictions = get_scalar_prediction(predictions)  # softmax, get the 2nd neuron
+    return binomial_loss(labels, scalar_predictions)
+
+
+def get_scalar_prediction(prediction):
+    return tf.nn.softmax(prediction)[:, 1]
 
 
     

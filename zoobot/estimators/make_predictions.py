@@ -89,6 +89,7 @@ def binomial_likelihood(true_prob, predictions, n_trials):
 def bin_prob_of_samples(samples, total_votes):
     # designed to operate on (n_subjects, n_samples) standard response
     assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 2
     assert len(samples) > 1
     assert len(total_votes) == len(samples)
     # nested lists of dim samples, with elements of another list of variable length (p of k)
@@ -97,9 +98,10 @@ def bin_prob_of_samples(samples, total_votes):
         binomial_probs_of_samples = []
         for sample_n in range(samples.shape[1]):
             rho = samples[subject_n, sample_n]
-            n_draws = total_votes[subject_n]
-            rho_rounded = np.around(rho, decimals=3)  # round to use caching, some precision loss
-            binomial_probs_of_samples.append(binomial_prob_per_k(rho_rounded, n_draws))
+            n_draws = int(total_votes[subject_n])  # will round to int, is only expected draws so not a big deal
+            rho_rounded = float(np.around(rho, decimals=3))  # round to use caching, some precision loss
+            bin_prob_per_k = binomial_prob_per_k(rho_rounded, n_draws)
+            binomial_probs_of_samples.append(bin_prob_per_k)
         binomial_probs_of_subjects.append(binomial_probs_of_samples)
     # nested lists of shape (n_subject, n_samples, k) where k varies
     return binomial_probs_of_subjects
@@ -116,8 +118,13 @@ def binomial_prob_per_k(rho, n_draws):
     Returns:
         (np.array): p(k|rho, n_draws) for all possible k, starting with k=0 through k=n_draws
     """
-    assert isinstance(rho, float)
-    assert isinstance(n_draws, int) or isinstance(n_draws, np.int64)
+    try:
+        assert isinstance(rho, float)
+        assert isinstance(n_draws, int) or isinstance(n_draws, np.int64)
+    except AssertionError:
+        print(rho)
+        print(n_draws)
+        raise AssertionError
     k = np.arange(0, n_draws + 1)  # include k=n
     bin_probs = np.array(scipy.stats.binom.pmf(k=k, p=rho, n=int(n_draws)))
     assert np.allclose(bin_probs.sum(), 1.)  # must be one k in (0, ..., n_draws)

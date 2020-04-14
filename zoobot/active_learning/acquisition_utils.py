@@ -78,7 +78,33 @@ def expected_binomial_entropy(bin_probs_of_samples):
     return np.mean(binomial_entropy_of_samples, axis=1) 
 
 
-def mutual_info_acquisition_func(samples, expected_votes):
+def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):
+    assert samples.ndim == 3  # batch, p, model
+    all_expected_mi = []
+    for q in schema.questions:
+        prev_q = q.asked_after
+        if prev_q is None:
+            expected_votes = retirement
+        else:
+            joint_p_of_asked = schema.joint_p(samples.mean(axis=-1), prev_q.text)  # prob of getting the answer needed to ask this question
+            expected_votes = joint_p_of_asked * retirement
+        for a in q.answers:
+            all_expected_mi.append(mutual_info_acquisition_func(samples[:, a.index], expected_votes=expected_votes))
+    # return np.sum(all_expected_mi)
+    return np.array(all_expected_mi).swapaxes(0, 1)  # keep (batch, answer) convention. Note: not yet summed over answers
+
+
+def mutual_info_acquisition_func(samples: np.ndarray, expected_votes):
+    """Calculate BALD based on binomial p's estimated from several 'models'
+    
+    Args:
+        samples (np.ndarray): (batch, model)-shape bin probs. No answer dim!
+        expected_votes ([type]): Use as N in bin probs. If int, will be copied across batch dimension.
+    
+    Returns:
+        [type]: [description]
+    """
+    assert samples.ndim == 2  # no answer dim allowed!
     if isinstance(expected_votes, int):
         typical_votes = expected_votes
         expected_votes = [typical_votes for n in range(len(samples))]

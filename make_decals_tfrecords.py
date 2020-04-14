@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     Labelled catalog must include id_str (aka iauname) and png_loc as well as any desired label columns
     Testing:
-        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_128 --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
+        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_all_128 --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
 
     """
 
