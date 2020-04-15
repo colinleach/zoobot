@@ -17,6 +17,10 @@ if __name__ == '__main__':
     data = np.random.random((1000, 32))
     labels = np.random.random((1000, 10))
 
-    model.fit(data, labels, epochs=10, batch_size=32)
+    callbacks = [tf.keras.callbacks.TensorBoard(
+        log_dir='temp', profile_batch=2
+    )]
+
+    model.fit(data, labels, epochs=10, batch_size=32, callbacks=callbacks)
 
     print('Success - exiting')
