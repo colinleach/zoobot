@@ -13,4 +13,4 @@ module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.5.0__cuda-10.0
 
 # source activate $DATA/envs/zoobot
-$DATA/envs/zoobot/bin/python $DATA/envs/zoobot/minimal_tensorflow.py
+$DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
