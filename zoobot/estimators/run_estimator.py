@@ -37,7 +37,8 @@ def run_estimator(config):
         tf.keras.callbacks.TensorBoard(
             log_dir=os.path.join(config.log_dir, 'tensorboard'),
             histogram_freq=1,
-            write_images=True
+            write_images=True,
+            profile_batch=0  # i.e. disable profiling
         ),
         tf.keras.callbacks.ModelCheckpoint(
             filepath=os.path.join(config.log_dir, 'models'),
