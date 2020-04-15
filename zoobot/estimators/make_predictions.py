@@ -119,11 +119,11 @@ def binomial_prob_per_k(rho, n_draws):
         (np.array): p(k|rho, n_draws) for all possible k, starting with k=0 through k=n_draws
     """
     try:
-        assert isinstance(rho, float)
-        assert isinstance(n_draws, int) or isinstance(n_draws, np.int64)
+        assert isinstance(rho, float) or isinstance(rho, np.float32)
+        assert isinstance(n_draws, int) or isinstance(n_draws, np.int64) or isinstance(n_draws, int)
     except AssertionError:
-        print(rho)
-        print(n_draws)
+        print(rho, type(rho))
+        print(n_draws, type(n_draws))
         raise AssertionError
     k = np.arange(0, n_draws + 1)  # include k=n
     bin_probs = np.array(scipy.stats.binom.pmf(k=k, p=rho, n=int(n_draws)))

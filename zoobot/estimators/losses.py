@@ -143,6 +143,14 @@ class Schema():
             p_prev_answer = self.joint_p(samples, prev_answer.text)  # recursive
             return p_answer_given_question * p_prev_answer
 
+    @property
+    def answers(self):
+        answers = []
+        for q in self.questions:
+            for a in q.answers:
+                answers.append(a)
+        return answers
+
     # TODO write to disk
 
 
