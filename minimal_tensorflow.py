@@ -18,7 +18,7 @@ if __name__ == '__main__':
     labels = np.random.random((1000, 10))
 
     callbacks = [tf.keras.callbacks.TensorBoard(
-        log_dir='temp', profile_batch=2
+        log_dir='temp', profile_batch=0  # or 2 to cause CUPTI permissions error
     )]
 
     model.fit(data, labels, epochs=10, batch_size=32, callbacks=callbacks)

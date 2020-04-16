@@ -1,0 +1,15 @@
+md5: 964c3b52a1bc162a8ce2aca38e29ece2
+cmd: python zoobot/science_logic/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv
+  --save-dir=data/decals/prepared_catalogs/decals_multiq
+wdir: ../../..
+deps:
+- md5: a1c026d95f3c0784ad8e155053b00a72
+  path: data/decals/decals_master_catalog.csv
+- md5: 91e804682d5396db93a03de4b8c88e81
+  path: zoobot/science_logic/define_experiment.py
+outs:
+- md5: ba53896da83f6af08981c4008a4d9e6e.dir
+  path: data/decals/prepared_catalogs/decals_multiq
+  cache: true
+  metric: false
+  persist: false
