@@ -6,7 +6,7 @@ pytest-cov
 pytest-mock
 pytest-xdist
 codecov
-tensorflow==2.2.0rc2 # or do manually to avoid messing with other installs on server
+# tensorflow==2.2.0rc2 # or do manually to avoid messing with other installs on server
 tqdm
 pillow
 numpy
