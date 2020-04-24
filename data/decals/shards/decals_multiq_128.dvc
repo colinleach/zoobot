@@ -1,0 +1,17 @@
+md5: 0c0a0761550666741ebe5152a38b5df3
+cmd: python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv
+  --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv
+  --eval-size=5000 --shard-dir=data/decals/shards/decals_multiq_128 --max-unlabelled=40000
+  --img-size 128
+wdir: ../../..
+deps:
+- md5: ddf8368dd86d44737762c2742066fced.dir
+  path: data/decals/prepared_catalogs/decals_multiq
+- md5: c0da90c6a50b709fed3695d2e25f5cce
+  path: zoobot/active_learning/make_shards.py
+outs:
+- md5: 11710a3dbb278998377ff8de48cf65b0.dir
+  path: data/decals/shards/decals_multiq_128
+  cache: true
+  metric: false
+  persist: false

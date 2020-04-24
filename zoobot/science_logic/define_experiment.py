@@ -2,31 +2,22 @@ import os
 import shutil
 import logging
 import argparse
+import glob
 
 import pandas as pd
 
 """Shared logic to refine catalogs. All science decisions should have happened after this script"""
 
-
-def get_finalized_labels(classifications):
-        # science logic needs to remain inside define_experiment, not here
-        raise NotImplementedError
-        # retired, _ = split_retired_and_not(all_classifications, self.question)
-        # retired = define_identifiers(retired)  # add iauname
-        # retired = define_labels(retired, self.question)  # add 'label' and 'total_votes', drop low n bars
-        # retired = drop_duplicates(retired)
-
-
-def get_experiment_catalogs(catalog, question, save_dir):
+def get_experiment_catalogs(catalog, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
-    labelled, unlabelled = split_retired_and_not(catalog, question)
-    # unlabelled and catalog have no 'label' column
-    labelled = define_labels(labelled, question)
+    filtered_catalog = apply_custom_filter(catalog)  # science logic lives here
+    labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36, ignore galaxies with less labels
+    # unlabelled and catalog will have no 'label' column
     return catalog, labelled, unlabelled
 
 
-def split_retired_and_not(catalog, question):
+def split_retired_and_not(catalog):
     retired = catalog.apply(subject_is_retired, axis=1)
     labelled = catalog[retired]
     unlabelled = catalog[~retired]
@@ -46,29 +37,26 @@ def define_identifiers(catalog):
     return catalog
 
 
+def apply_custom_filter(catalog):
+    # expect to change this a lot
+    # for now, expect a 'smooth-or-featured_featured-or-disk_prediction_mean' col and filter > 0.25 (i.e. 10 of 40)
+    # predicted beforehand by existing model TODO
+
+    min_featured = 0.4  # roughly the half most featured - the current model very rarely predicts < 0.25 featured, which is a bit odd...
+    previous_prediction_locs = glob.glob('temp/master_256_predictions_*.csv')
+    previous_predictions = pd.concat([pd.read_csv(loc, usecols=['id_str', 'smooth-or-featured_featured-or-disk_prediction_mean']) for loc in previous_prediction_locs])
+    len_before = len(catalog)
+    catalog = pd.merge(catalog, previous_predictions, on='id_str', how='inner')
+    len_merged = len(catalog)
+    print(catalog['smooth-or-featured_featured-or-disk_prediction_mean'])
+    filtered_catalog = catalog[catalog['smooth-or-featured_featured-or-disk_prediction_mean'] > min_featured]
+    logging.info(f'{len_before} before filter, {len_merged} after merge, {len(filtered_catalog)} after filter at min_featured={min_featured}')
+    print(f'{len_before} before filter, {len_merged} after merge, {len(filtered_catalog)} after filter at min_featured={min_featured}')
+    return filtered_catalog
+
+
 def subject_is_retired(subject):
     return subject['smooth-or-featured_total-votes'] > 36
-
-
-def define_labels(labelled, question):
-    labelled['total_votes'] = labelled['smooth-or-featured_total-votes'].astype(
-        int)
-    # otherwise, can't be labelled! and will cause nans
-    assert all(labelled['total_votes'] > 0)
-    if question == 'smooth':
-        labelled['label'] = labelled['smooth-or-featured_smooth'].astype(int)
-    elif question == 'bar':
-        labelled['total_votes'] = labelled['bar_total-votes'].astype(int)
-        # drop anything with n < 10
-        labelled = labelled[labelled['total_votes'] > 10]
-        try:
-            labelled['label'] = labelled['bar_weak'].astype(int)  #  DECALS
-        except KeyError:
-            labelled['label'] = labelled['bar_yes'].astype(int)  # GZ2
-    else:
-        raise ValueError('question {} not understood'.format(question))
-
-    return labelled
 
 
 def drop_duplicates(df):
@@ -81,15 +69,18 @@ def drop_duplicates(df):
     return df.drop_duplicates(subset=['iauname'], keep=False)
 
 
-def get_mock_catalogs(labelled_catalog, save_dir, labelled_size):
+def get_mock_catalogs(labelled_catalog, save_dir, labelled_size, label_cols):
     # given a (historical) labelled catalog, pretend split into labelled and unlabelled
-    assert not any(pd.isnull(labelled_catalog['label']))
+    for label_col in label_cols:
+        if any(pd.isnull(labelled_catalog[label_col])):
+            logging.critical(labelled_catalog[label_col])
+            raise ValueError(f'Missing at least one label for {label_col}')
     # oracle has everything in real labelled catalog
-    oracle = labelled_catalog[['id_str', 'total_votes', 'label']]
+    oracle = labelled_catalog.copy()  # could filter cols here if needed
     mock_labelled = labelled_catalog[:labelled_size]  # for training and eval
     mock_unlabelled = labelled_catalog[labelled_size:]  # for pool
-    del mock_unlabelled['label']
-    del mock_unlabelled['total_votes']
+    for label_col in label_cols:
+        del mock_unlabelled[label_col]
     return mock_labelled, mock_unlabelled, oracle
 
 
@@ -98,18 +89,38 @@ if __name__ == '__main__':
     # master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # currently with all galaxies but only a few classifications
     # catalog_dir = 'data/decals/prepared_catalogs/{}'.format(name)
 
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
     parser = argparse.ArgumentParser(
         description='Define experiment (labelled catalog, question, etc) from master catalog')
     parser.add_argument('--master-catalog', dest='master_catalog_loc', type=str,
                         help='Name of experiment (save to data')
-    parser.add_argument('--question', dest='question', type=str,
-                        help='Question to answer: smooth or bar')
     parser.add_argument('--save-dir', dest='save_dir', type=str,
                         help='Save experiment catalogs here')
     args = parser.parse_args()
     master_catalog_loc = args.master_catalog_loc
-    question = args.question
     save_dir = args.save_dir
+
+    # used to delete these columns from mock unlabelled catalog
+    # could perhaps extract somewhere
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
+    ]
 
     if os.path.isdir(save_dir):
         shutil.rmtree(save_dir)
@@ -117,7 +128,7 @@ if __name__ == '__main__':
 
     master_catalog = pd.read_csv(master_catalog_loc)
     catalog, labelled, unlabelled = get_experiment_catalogs(
-        master_catalog, question, save_dir)
+        master_catalog, save_dir)
 
     # ad hoc filtering here
     # catalog = catalog[:20000]
@@ -132,9 +143,9 @@ if __name__ == '__main__':
     if not os.path.isdir(simulation_dir):
         os.mkdir(simulation_dir)
 
-    labelled_size = len(labelled) - 6000  # pretend unlabelled, to be acquired
+    labelled_size = int(len(labelled) / 5.)  # pretend unlabelled, to be acquired
     mock_labelled, mock_unlabelled, oracle = get_mock_catalogs(
-        labelled, simulation_dir, labelled_size)
+        labelled, simulation_dir, labelled_size, label_cols)
 
     mock_labelled.to_csv(os.path.join(
         simulation_dir, 'labelled_catalog.csv'), index=False)

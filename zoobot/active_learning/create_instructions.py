@@ -15,8 +15,7 @@ import numpy as np
 
 from shared_astro_utils import object_utils
 
-from zoobot.estimators import run_estimator
-from zoobot.active_learning import default_estimator_params, make_shards, acquisition_utils, oracles
+from zoobot.active_learning import run_estimator_config, make_shards, acquisition_utils, oracles
 
 
 class Instructions():
@@ -87,6 +86,7 @@ class Instructions():
             json.dump(data, f)
 
 def load_instructions(save_dir):
+    logging.info(f'Loading instructions from {save_dir}')
     # necessary to reconstruct the instructions from disk in a new process before starting an iteration
     with open(os.path.join(save_dir, 'instructions.json'), 'r') as f:  # path must match save_instructions
         instructons_dict = json.load(f)
@@ -123,14 +123,14 @@ class TrainCallableFactory():
         Returns:
             callable: callable expecting per-iteration args, training a model when called
         """
-        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, **kw_args):
+        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, questions, label_cols, **kw_args):
             logging.info('Training model on: {}'.format(train_records))
-            run_config = default_estimator_params.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, **kw_args)
+            run_config = run_estimator_config.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, questions, label_cols, **kw_args)
             if self.test: # overrides warm_start
                 run_config.epochs = 2  # minimal training, for speed
 
             # Do NOT update eval_config: always eval on the same fixed shard
-            return run_estimator.run_estimator(run_config)
+            return run_config.run_estimator()
         return train_callable
 
     def to_dict(self):
@@ -179,12 +179,12 @@ class AcquisitionCallableFactory():
             return self.get_mock_acquisition_func()
         else:  # callable expecting samples np.ndarray, returning list
             logging.critical('Using mutual information acquisition function')
-            return lambda x: acquisition_utils.mutual_info_acquisition_func(x, self.expected_votes)  
+            return  lambda *args, **kwargs: np.mean(acquisition_utils.mutual_info_acquisition_func_multiq(*args, **kwargs), axis=-1)  # requires schema and retirement limit  
 
     def get_mock_acquisition_func(self):
         """Callable will return random subject priorities. Useful for baselines"""
         logging.critical('Retrieving MOCK random acquisition function')
-        return lambda samples: [np.random.rand() for n in range(len(samples))]
+        return lambda samples, *args, **kwargs: np.random.rand(len(samples))
 
     def to_dict(self):
         return object_utils.object_to_dict(self)
@@ -230,8 +230,8 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         panoptes (bool): if True, use Panoptes as oracle (upload subjects, download responses). Else, mock with historical responses.
     """
     # hardcoded defaults, for now
-    subjects_per_iter = 128
-    shards_per_iter = 1  # will be 4
+    subjects_per_iter = 512
+    shards_per_iter = 4
     final_size = 128  # for both modes
     if baseline:
         n_samples = 2
@@ -239,6 +239,24 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         n_samples = 15
 
     expected_votes = 40  # SMOOTH MODE
+
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
+    ]
 
     # record instructions
     instructions = Instructions(
@@ -280,7 +298,8 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         assert os.path.isfile(oracle_loc)
         oracle = oracles.PanoptesMock(
             oracle_loc=oracle_loc,
-            subjects_requested_loc=os.path.join(instructions_dir, 'subjects_requested.json')
+            subjects_requested_loc=os.path.join(instructions_dir, 'subjects_requested.json'),
+            label_cols=label_cols
         )
     oracle.save(instructions_dir)
 

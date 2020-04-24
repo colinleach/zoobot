@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def load_predictor(predictor_loc):
+def load_predictor(train_callable: tf.keras.Model, weights_loc: str):
     """Load a saved model as a callable mapping parsed subjects to class scores
     PredictorFromSavedModel expects feeddict of form {examples: batch of data}
     Batch of data should match predict input of estimator, e.g. (?, size, size, channels) shape
@@ -23,14 +23,15 @@ def load_predictor(predictor_loc):
     Returns:
         function: callable expecting parsed subjects according to saved model input configuration
     """
-    model_unwrapped = tf.saved_model.load(predictor_loc)
-    # wrap to avoid having to pass around dicts all the time
-    # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
-    # model returns several columns, select 'predictions_for_true' and flip
-    example = tf.train.Example()
-    example.features.feature['examples'].float_list.value.extend([x])
-    # warning, modified for tf2
-    return lambda x: model_unwrapped.signatures['prediction'](examples=tf.constant([example.SerializeToString()]))
+    return train_callable.load_weights(weights_loc)
+    # model_unwrapped = tf.saved_model.load(predictor_loc)
+    # # wrap to avoid having to pass around dicts all the time
+    # # expects image matrix of uint8 type, passes to model within dict of type {examples: matrix}
+    # # model returns several columns, select 'predictions_for_true' and flip
+    # example = tf.train.Example()
+    # example.features.feature['examples'].float_list.value.extend([x])
+    # # warning, modified for tf2
+    # return lambda x: model_unwrapped.signatures['prediction'](examples=tf.constant([example.SerializeToString()]))
 
 
 def get_samples_of_images(model, images, n_samples):

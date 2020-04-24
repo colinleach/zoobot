@@ -21,7 +21,7 @@ import pandas as pd
 
 from zoobot.tfrecord import catalog_to_tfrecord, read_tfrecord
 from zoobot.estimators import input_utils
-from zoobot.active_learning import db_access
+from zoobot.active_learning import db_access, run_estimator_config
 
 
 class Subject:
@@ -79,26 +79,37 @@ def db_fully_labelled(db):
     else:
         return False  # technically, None is considered False, but this is type-consistent
 
+
 def filter_for_new_only(db, subject_ids_to_filter: List, all_labels: List):
+    # oracle may sometimes return subjects that were not in the original unlabelled shards, e.g. if a new subject set is added. 
+    # These should be flagged and ignored.
+    assert subject_ids_to_filter
     # TODO wrap oracle subject as namedtuple?
+    # logging.info('Checking that subject ids are already in the db')
     all_subject_ids_in_db = [x.id_str for x in db_access.get_all_entries(db)]  # strictly, all sharded subjects - ignore train/eval catalog entries
     logging.info('subject_ids_to_filter, {}'.format(subject_ids_to_filter[:3]))
     logging.info('all_subject_ids_in_db, {}, of {}'.format(all_subject_ids_in_db[:3], len(all_subject_ids_in_db)))
-    logging.info('matched: {}'.format(set(subject_ids_to_filter).intersection(all_subject_ids_in_db)))
-    found_in_db = [x in all_subject_ids_in_db for x in subject_ids_to_filter]
-    assert found_in_db  # should always be some galaxies not in train or eval, even if labelled
-    logging.info('Oracle-labelled subjects in db: {}'.format(sum(found_in_db)))
+
+    found_in_db = [x in all_subject_ids_in_db for x in subject_ids_to_filter]  # True if that subject is in the db
+    if not np.all(found_in_db):
+        # all labels returned by oracle must be from the (unlabelled) shards and hence should be in the db
+        logging.warning('Oracle returned these ids not in the db - will be ignored! {}'.format(set(subject_ids_to_filter) - set(all_subject_ids_in_db)))
+        logging.warning('Failed to match {} of {} ids'.format(np.sum(~np.array(found_in_db)), len(found_in_db)))
+        logging.info('Oracle-labelled subjects in db: {}'.format(sum(found_in_db)))
+    if not np.any(found_in_db):
+        logging.warning('Oracle returned NO ids that are in the db - all new labels will be ignored!')
+        return [], []
 
     labelled_id_strs_in_db = [x.id_str for x in db_access.get_all_entries(db, labelled=True)]
-    not_yet_labelled = [x not in labelled_id_strs_in_db for x in subject_ids_to_filter]
-    logging.info('Not yet labelled (or maybe not matched): {}'.format(sum(not_yet_labelled)))
+    not_yet_labelled = [x not in labelled_id_strs_in_db for x in found_in_db]
+    logging.info('Found in db and not yet labelled: {}'.format(sum(not_yet_labelled)))
 
     # lists can't be boolean indexed, so convert to old-fashioned numeric index...
     indices = np.array([n for n in range(len(subject_ids_to_filter))])
-    safe_to_label = np.array(found_in_db) & np.array(not_yet_labelled)
+    safe_to_label = np.array(not_yet_labelled)  # and implicitly, found in db
     indices_safe_to_label = indices[safe_to_label]
     if sum(safe_to_label) == len(subject_ids_to_filter):
-        logging.warning('All oracle labels identified as new - does this make sense?')
+        logging.warning('All oracle labels identified in db and not yet labelled - double check does this make sense')
     logging.info(
         'Galaxies to newly label: {} of {}'.format(len(indices_safe_to_label), len(subject_ids_to_filter))
     )
@@ -155,7 +166,7 @@ def verify_catalog_matches_shards(unlabelled_catalog, db, size, channels):
 
 
 
-def write_catalog_to_tfrecord_shards(df, db, img_size, columns_to_save, save_dir, shard_size=1000):
+def write_catalog_to_tfrecord_shards(df: pd.DataFrame, db, img_size, columns_to_save, save_dir, shard_size=1000):
     """Write galaxy catalog of id_str and file_loc across many tfrecords, and record in db.
     Useful to quickly load images for repeated predictions.
 
@@ -204,7 +215,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size, colum
 
 
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
-def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_images=10000):
+def make_predictions_on_tfrecord(tfrecord_locs, model: tf.keras.Model, run_config, db, n_samples, size, max_images=10000):
     """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
     Load in batches to avoid maxing out GPU memory
     See make_predictions_on_tfrecord_batch for more details.
@@ -223,6 +234,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_
         np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
     """
     assert isinstance(tfrecord_locs, list)
+    logging.info('Making predictions on (unlabelled prediction) shards: {}'.format(tfrecord_locs))
     # TODO review this once images have been made smaller, may be able to have much bigger batches
 
     records_per_batch = 2  # best to be >= num. of CPU, for parallel reading. But at 256px, only fits 2 records.
@@ -233,7 +245,13 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_
     while min_tfrecord < len(tfrecord_locs):
         unlabelled_subjects, samples = make_predictions_on_tfrecord_batch(
             tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
-            model, db, n_samples, size, max_images=10000)
+            model,
+            run_config,
+            db,
+            n_samples,
+            size,
+            max_images=10000
+        )
        
         all_unlabelled_subjects.extend(unlabelled_subjects)
         all_samples.append(samples)
@@ -249,7 +267,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model, db, n_samples, size, max_
     return all_unlabelled_subjects, all_samples_arr
 
 
-def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_samples, size, max_images=10000):
+def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, run_config, db, n_samples, size, max_images=10000):
     """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
     Uses db to identify which subjects are unlabelled by matching on id_str feature.
     Data in tfrecords_batch_locs must fit in memory; otherwise use `make_predictions_on_tfrecord`
@@ -267,27 +285,26 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
         np.ndarray: predictions on those subjects, with shape [n_unlabelled_subjects, n_samples]
     """
     logging.info('Predicting on {}'.format(tfrecords_batch_locs))
-    batch_images, _, batch_id_str = input_utils.predict_input_func(
-                tfrecords_batch_locs,
-                n_galaxies=max_images,
-                initial_size=size,
-                mode='id_str'
-            )
-    with tf.compat.v1.Session() as sess:
-        images, id_str_bytes = sess.run([batch_images, batch_id_str])
-        if len(images) == max_images:
-            logging.critical(
-                'Warning! Shards are larger than memory! Loaded {} images'.format(max_images)
-            )
 
-    # tfrecord will have encoded to bytes, need to decode
-    logging.debug('Constructing subjects from loaded data')
-    subjects = (
-        {'matrix': image, 'id_str': id_str.decode('utf-8')} 
-        for image, id_str in zip(images, id_str_bytes)
-    )  # generator expression to minimise memory
-    # logging.info('Loaded {} subjects from {}'.format(len(subjects), (tfrecords_batch_locs)))
-    del images  # free memory
+    eval_config = run_estimator_config.get_eval_config(
+        eval_records=tfrecords_batch_locs,
+        label_cols=[],  # tfrecord will have no labels, in general
+        batch_size=run_config.batch_size,
+        initial_size=run_config.initial_size,
+        final_size=run_config.final_size,
+        channels=run_config.channels
+    )
+    dataset = input_utils.get_input(config=eval_config)
+
+    feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
+    id_str_dataset = input_utils.get_dataset(tfrecords_batch_locs, feature_spec, batch_size=1, shuffle=False, repeat=False)
+    batch_id_str = [str(d['id_str'].numpy().squeeze())[2:-1] for d in id_str_dataset]
+    
+    batch_predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
+    logging.info('Made batch predictions of shape {}'.format(batch_predictions.shape))
+
+    assert len(batch_id_str) == len(batch_predictions)
+    subjects = [{'id_str': x, 'predictions': y} for (x, y) in zip(batch_id_str, batch_predictions)]
 
     # exclude subjects with labels in db
     logging.info('Filtering for unlabelled subjects')
@@ -301,19 +318,11 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, db, n_sample
     logging.info('Loaded {} unlabelled subjects from {} of size {}'.format(
         len(unlabelled_subjects),
         tfrecords_batch_locs,
-         size)
-        )
+        size)
+    )
     assert unlabelled_subjects
-    del subjects  # free memory
 
-    # make predictions on only those subjects
-    logging.debug('Extracting images from unlabelled subjects')
-    # need to construct array from list: required to have known length
-    unlabelled_subject_data = np.array([subject['matrix'] for subject in unlabelled_subjects])
-    for subject in unlabelled_subjects:
-        del subject['matrix']  # we don't need after this, so long as we skip recording state
-    samples = db_access.make_predictions.get_samples_of_images(model, unlabelled_subject_data, n_samples)
-    return unlabelled_subjects, samples
+    return unlabelled_subjects, [x['predictions'] for x in unlabelled_subjects]
 
 # TODO?
 get_all_shard_locs = db_access.get_all_shard_locs

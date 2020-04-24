@@ -1,6 +1,0 @@
-cmd: ./production/run_simulation.sh
-deps:
-- md5: d87fdf17ce7bc28d26046cecce2af634.dir
-  path: data/decals/shards/smooth_unfiltered
-md5: a68f3a6dec70d0bd778b5e51af6084a3
-wdir: ../../..

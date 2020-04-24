@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from zoobot.estimators.estimator_funcs import four_layer_binary_classifier
-from zoobot.estimators.run_estimator import run_estimator
+# from zoobot.estimators.run_estimator import run_estimator
 
 
 def default_params():
@@ -96,9 +96,9 @@ def default_four_layer_architecture():
     )
 
 
-if __name__ == '__main__':
-    params = default_params()
-    params.update(default_four_layer_architecture())
-    params['image_dim'] = 128
-    params['log_dir'] = 'runs/chollet_128_triple'
-    run_estimator(four_layer_binary_classifier, params)
+# if __name__ == '__main__':
+#     params = default_params()
+#     params.update(default_four_layer_architecture())
+#     params['image_dim'] = 128
+#     params['log_dir'] = 'runs/chollet_128_triple'
+#     run_estimator(four_layer_binary_classifier, params)

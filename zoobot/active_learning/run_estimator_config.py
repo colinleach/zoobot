@@ -1,30 +1,48 @@
 import logging
 import os
+import copy
+import shutil
 import time
+from functools import partial
 from typing import List
 
 import tensorflow as tf
 import pandas as pd
 import matplotlib
-# 
+import numpy as np
 
 from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses
 
-class RunEstimatorConfig():
 
+class FixedEstimatorParams():
+    def __init__(self, initial_size, final_size, questions, label_cols, batch_size):
+        self.initial_size=initial_size
+        self.final_size = final_size
+        self.questions=questions
+        self.label_cols=label_cols
+        self.batch_size=batch_size
+
+    # TODO move to shared utilities
+    def asdict(self):
+        excluded_keys = ['__dict__', '__doc__', '__module__', '__weakref__']
+        return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
+
+
+
+
+class RunEstimatorConfig():
     def __init__(
             self,
             initial_size,
             final_size,
-            channels,
             label_cols: List,
-            epochs=50,
+            channels=3,
+            epochs=250,  # rely on earlystopping callback
             train_steps=30,
             eval_steps=3,
             batch_size=128,
             min_epochs=0,
-            early_stopping_window=10,
-            max_sadness=4.,
+            patience=15,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
             warm_start=True,
@@ -41,8 +59,7 @@ class RunEstimatorConfig():
         self.log_dir = log_dir
         self.save_freq = save_freq
         self.warm_start = warm_start
-        self.max_sadness = max_sadness
-        self.early_stopping_window = early_stopping_window
+        self.patience = patience
         self.min_epochs = min_epochs
         self.train_config = None
         self.eval_config = None
@@ -72,25 +89,88 @@ class RunEstimatorConfig():
         return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
 
-def get_run_config(params, log_dir, train_records, eval_records, learning_rate, epochs, label_cols, questions, train_steps=15, eval_steps=5, batch_size=256, min_epochs=2000, early_stopping_window=10, max_sadness=5., save_freq=10):
-    # TODO enforce keyword only arguments
-    channels = 3
+    # don't decorate, this is session creation point
+    def run_estimator(self):
+        """
+        Train and evaluate an estimator.
+        `self` may well be provided by default_estimator_params.py`
 
+        TODO save every n epochs 
+        TODO enable early stopping
+        TODO enable use with tf.serving
+        TODO enable logging hooks?
+
+        Args:
+            self (RunEstimatorConfig): parameters controlling both estimator and train/test procedure
+
+        Returns:
+            None
+        """
+        if not self.warm_start:  # don't try to load any existing models
+            if os.path.exists(self.log_dir):
+                shutil.rmtree(self.log_dir)
+
+        train_dataset = input_utils.get_input(config=self.train_config)
+        test_dataset = input_utils.get_input(config=self.eval_config)
+
+        callbacks = [
+            tf.keras.callbacks.TensorBoard(
+                log_dir=os.path.join(self.log_dir, 'tensorboard'),
+                histogram_freq=3,
+                write_images=True,
+                profile_batch=0  # i.e. disable profiling
+            ),
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=os.path.join(self.log_dir, 'models'),
+                save_weights_only=True),
+            bayesian_estimator_funcs.UpdateStepCallback(
+                batch_size=self.batch_size
+            ),
+            tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=self.patience),
+            bayesian_estimator_funcs.UpdateStepCallback(
+                batch_size=self.batch_size
+            )
+        ]
+
+        # https://www.tensorflow.org/tensorboard/scalars_and_keras
+        fit_summary_writer = tf.summary.create_file_writer(os.path.join(self.log_dir, 'manual_summaries'))
+        with fit_summary_writer.as_default():
+
+            # for debugging
+            # self.model.run_eagerly = True
+            # https://www.tensorflow.org/api_docs/python/tf/keras/Model
+
+            self.model.fit(
+                train_dataset,
+                validation_data=test_dataset,
+                validation_steps=10,
+                epochs=self.epochs,
+                callbacks=callbacks,
+            )
+
+        logging.info('All epochs completed - finishing gracefully')
+        self.model.save_weights(os.path.join(self.log_dir, 'models/final'))
+        return self.model
+
+
+# batch size changed from 256 for now, for my poor laptop
+# can override less rarely specified RunEstimatorConfig defaults with **kwargs if you like
+def get_run_config(initial_size, final_size, warm_start, log_dir, train_records, eval_records, epochs, questions, label_cols, batch_size, **kwargs):
+
+    # save these to get back the same run config across iterations? But hpefully in instructions already, or can be calculated...
+    # args = {
+    #     'initial_size': initial_size,
+    #     'final_size': final_size,
+    #     'warm_start':
+    # }
     run_config = RunEstimatorConfig(
-        initial_size=params.initial_size,
-        final_size=params.final_size,
-        channels=channels,
+        initial_size=initial_size,
+        final_size=final_size,
         label_cols=label_cols,
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
-        train_steps=train_steps,  # compensating for doubling the batch, still want to measure often
-        eval_steps=eval_steps,
-        batch_size=batch_size,  # increased from 128 for less training noise
-        min_epochs=min_epochs,  # no early stopping, just run it overnight
-        early_stopping_window=early_stopping_window,  # to tweak
-        max_sadness=max_sadness,  # to tweak
         log_dir=log_dir,
-        save_freq=save_freq,
-        warm_start=params.warm_start
+        warm_start=warm_start,
+        batch_size=batch_size
     )
 
     train_config = get_train_config(train_records, run_config.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
@@ -110,13 +190,13 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         tfrecord_loc=train_records,
         label_cols=label_cols,
         stratify=False,
-        shuffle=False,  # temporarily turned off due to shuffle op error
+        shuffle=True,
         repeat=False,  # Changed from True for keras, which understands to restart a dataset
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
         # zoom=(2., 2.2),  # BAR MODE
-        zoom=(1.1, 1.3),  # SMOOTH MODE
+        zoom=(1.15, 1.35),  # SMOOTH MODE
         contrast_range=(0.98, 1.02),
         fill_mode='wrap',
         batch_size=batch_size,

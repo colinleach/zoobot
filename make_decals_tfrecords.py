@@ -12,10 +12,12 @@ from gzreduction.deprecated import dr5_schema  # not deprecated any more...
 
 if __name__ == '__main__':
     """
-
     Labelled catalog must include id_str (aka iauname) and png_loc as well as any desired label columns
     Testing:
         python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_all_128 --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
+        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_all_temp --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
+
+        python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master_256 --img-size 256 --max 5000 --png-prefix /media/walml/beta/decals/png_native
 
     """
 
@@ -73,10 +75,15 @@ if __name__ == '__main__':
         labelled_catalog[col] = labelled_catalog[col].astype(float)
     # remember that if a catalog has both png_loc and file_loc, it will read png_loc
     if args.png_prefix != '':
-        labelled_catalog['file_loc'] = labelled_catalog['png_loc'].apply(lambda x: args.png_prefix + x[32:])
-        del labelled_catalog['png_loc']
-        logging.info('Expected files at: {}'.format(labelled_catalog['file_loc'].iloc[0]))
+        if 'local_png_loc' in labelled_catalog.columns.values:
+            labelled_catalog['file_loc'] = labelled_catalog['local_png_loc'].apply(lambda x: args.png_prefix + x[32:])
+            del labelled_catalog['local_png_loc']
+        else:
+            labelled_catalog['file_loc'] = labelled_catalog['png_loc'].apply(lambda x: args.png_prefix + x[32:])
+            del labelled_catalog['png_loc']
+   
     assert 'file_loc' in labelled_catalog.columns.values
+    logging.info('Expected files at: {}'.format(labelled_catalog['file_loc'].iloc[0]))
 
     if 'id_str' not in labelled_catalog.columns.values:
         labelled_catalog['id_str'] = labelled_catalog['iauname'].astype(str)
@@ -89,12 +96,18 @@ if __name__ == '__main__':
         if not os.path.exists(directory):
             os.mkdir(directory)
 
+    # TEMPORARY throw a warning and add fake labels. Useful for master catalog
+    # logging.critical('Adding fake labels!')
+    # for label_col in label_cols:
+    #     labelled_catalog[label_col] = 0.
+
     train_df, eval_df = catalog_to_tfrecord.split_df(
         labelled_catalog, train_test_fraction=train_test_fraction)
     logging.info('\nTraining subjects: {}'.format(len(train_df)))
     logging.info('Eval subjects: {}'.format(len(eval_df)))
     if len(train_df) < len(eval_df):
         print('More eval subjects than training subjects - is this intended?')
+    # exit()
 
     columns_to_save = ['id_str'] + label_cols
     for (df, save_dir) in [(train_df, train_dir), (eval_df, eval_dir)]:

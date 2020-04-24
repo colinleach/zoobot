@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 from zoobot import shared_utilities
-from zoobot.estimators import estimator_params, run_estimator, make_predictions
+from zoobot.estimators import estimator_params, make_predictions
 
 
 CatalogEntry = namedtuple('CatalogEntry', ['id_str', 'file_loc', 'labels'])
@@ -127,6 +127,18 @@ def add_tfrecord_to_db(tfrecord_loc, db, df):
 
 
 def add_labels_to_db(subject_ids: List, all_labels: List, db):
+    """[summary]
+    
+    Args:
+        subject_ids (List): [description]
+        all_labels (List): each set of labels (element) will be dumped to json
+        db ([type]): [description]
+    
+    Raises:
+        a: [description]
+        ValueError: [description]
+        an: [description]
+    """
     # be careful: don't update any labels that might already have been written to tfrecord!
     logging.info('Adding new labels for {} subjects to db'.format(len(subject_ids)))
     logging.debug('Example subject ids: {}'.format(subject_ids[:3]))

@@ -1,0 +1,17 @@
+md5: b65a99d2257979b3f159de13202df911
+cmd: ./production/create_instructions.sh data/decals/prepared_catalogs/decals_multiq
+  data/decals/shards/decals_multiq_128 data/experiments/decals_multiq_128
+wdir: ../..
+deps:
+- md5: 11710a3dbb278998377ff8de48cf65b0.dir
+  path: data/decals/shards/decals_multiq_128
+- md5: ddf8368dd86d44737762c2742066fced.dir
+  path: data/decals/prepared_catalogs/decals_multiq
+- md5: f0c2effd6455e1519b38f7ebb30fdf97
+  path: production/create_instructions.sh
+outs:
+- md5: cb6ea7bd257de66e9e75247eba5143e1.dir
+  path: data/experiments/decals_multiq_128/instructions
+  cache: true
+  metric: false
+  persist: false

@@ -10,9 +10,9 @@ import json
 
 import git
 import numpy as np
+import tensorflow as tf
 
-from zoobot.estimators import run_estimator
-from zoobot.active_learning import database, iterations, default_estimator_params, acquisition_utils, create_instructions, oracles
+from zoobot.active_learning import database, iterations, acquisition_utils, create_instructions, oracles, run_estimator_config
 
 InitialState = namedtuple(
     'InitialState',
@@ -38,7 +38,7 @@ FinalState = namedtuple(
     ]
 )
 
-def run(initial_state, instructions, train_callable, acquisition_func, oracle):
+def run(initial_state, instructions, fixed_estimator_params, acquisition_func, oracle, questions, label_cols, test=False):
     """Main active learning training loop. 
     
     Learn with train_callable
@@ -52,22 +52,37 @@ def run(initial_state, instructions, train_callable, acquisition_func, oracle):
         train_callable (func): train a tf model. Arg: list of tfrecord locations
         acquisition_func (func): expecting samples of shape [n_subject, n_sample]
     """
+
+    # override a few parameters if test 
+    epochs = initial_state.epochs
+    initial_train_tfrecords = initial_state.initial_train_tfrecords
+    prediction_shards = initial_state.prediction_shards
+    eval_tfrecords = instructions.shards.eval_tfrecord_locs()
+    n_samples = instructions.n_samples
+    if test:
+        epochs = 1
+        prediction_shards = prediction_shards[:2]
+        n_samples = 2
+        eval_tfrecords = eval_tfrecords[:2]
+
     iteration = iterations.Iteration(
         iteration_dir=initial_state.iteration_dir, 
-        prediction_shards=initial_state.prediction_shards,
+        prediction_shards=prediction_shards,
         initial_db_loc=initial_state.initial_db_loc,
-        initial_train_tfrecords=initial_state.initial_train_tfrecords,
-        eval_tfrecords=instructions.shards.eval_tfrecord_locs(),
-        train_callable=train_callable,
+        initial_train_tfrecords=initial_train_tfrecords,
+        eval_tfrecords=eval_tfrecords,
+        fixed_estimator_params=fixed_estimator_params,
         acquisition_func=acquisition_func,
-        n_samples=instructions.n_samples,
+        n_samples=n_samples,
         n_subjects_to_acquire=instructions.subjects_per_iter,
         initial_size=instructions.shards.size,
         learning_rate=initial_state.learning_rate,
-        initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # will only warm start with --warm_start, though
-        epochs=initial_state.epochs,
-        oracle=oracle
-        )
+        initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # currently does nothing
+        epochs=epochs,
+        oracle=oracle,
+        questions=questions,
+        label_cols=label_cols
+    )
 
     # train as usual, with saved_model being placed in estimator_dir
     logging.info('Training iteration {}'.format(initial_state.iteration_n))
@@ -93,8 +108,10 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
     Returns:
         [type]: [description]
     """
-    if (previous_iteration_dir is None) or (previous_iteration_dir is ""):
+    skippable_previous_iteration_dirs = [None, '', ' ', 'None', 'none']
+    if previous_iteration_dir in skippable_previous_iteration_dirs:
         this_iteration_n = 0
+        logging.info('No previous iteration directory - starting from scratch')
         initial_state = InitialState(
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=0,  # duplication
@@ -122,6 +139,7 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
 
 
 def load_final_state(iteration_dir):
+    logging.info(f'Loading final state from {iteration_dir}')
     with open(os.path.join(iteration_dir, 'final_state.json'), 'r') as f:
         return FinalState(**json.load(f))
 
@@ -148,23 +166,31 @@ def get_epochs(iteration_n):
     if iteration_n == 0:
         return 400  # about this long for initial convergence
     else:
-        return 50  # shorter update
+        return 400  # old, still keep it long
 
 
-def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=False):
-
+def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions, label_cols, test=False):
     instructions = create_instructions.load_instructions(instructions_dir)
+    with open(instructions.shard_config_loc, 'r') as f:
+        shard_img_size = json.load(f)['size']
     assert instructions.ready()
-    train_callable = create_instructions.load_train_callable(instructions_dir).get()
+    
+    fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
+        initial_size=shard_img_size,
+        final_size=128,  # hardcode for now
+        questions=questions,
+        label_cols=label_cols,
+        batch_size=16  # kwarg
+    )
+
     acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()
 
     if test:  # override instructions and do a brief run only
         instructions.use_test_mode()
-        train_callable.test = True
 
     oracle = oracles.load_oracle(instructions_dir)  # decoupled whether real or simulated
     initial_state = get_initial_state(instructions, this_iteration_dir, previous_iteration_dir)
-    final_state = run(initial_state, instructions, train_callable, acquisition_func, oracle)
+    final_state = run(initial_state, instructions, fixed_estimator_params, acquisition_func, oracle, questions, label_cols, test=test)
     save_final_state(final_state, this_iteration_dir)
 
     # finally, tidy up by moving the log into the run directory
@@ -176,6 +202,15 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, test=Fals
 
 
 if __name__ == '__main__':
+    """
+    python zoobot/active_learning/run_iteration.py --instructions-dir data/experiments/decals_multiq_sim/instructions --this-iteration-dir data/experiments/decals_multiq_sim/iteration_0 --previous-iteration-dir none  --test
+    python zoobot/active_learning/run_iteration.py --instructions-dir data/experiments/decals_multiq_sim/instructions --this-iteration-dir data/experiments/decals_multiq_sim/iteration_1 --previous-iteration-dir data/experiments/decals_multiq_sim/iteration_0  --test
+    """
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
 
     parser = argparse.ArgumentParser(description='Execute single active learning iteration')
     parser.add_argument('--instructions-dir', dest='instructions_dir', type=str,
@@ -191,14 +226,45 @@ if __name__ == '__main__':
     log_loc = 'run_iteration_{}.log'.format(time.time())
 
     logging.basicConfig(
-        filename=log_loc,
-        filemode='w',
+        # filename=log_loc,
+        # filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.INFO
     )
-    logging.getLogger().addHandler(logging.StreamHandler())
+    # logging.getLogger().addHandler(logging.StreamHandler())
 
-    main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, args.test)
+    # HARDCODED label cols, questions, for now
+
+    # must match label cols below
+    questions = [
+        'smooth-or-featured',
+        'has-spiral-arms',
+        'spiral-winding',
+        'bar',
+        'bulge-size'
+    ]
+
+    # will load labels from shard, in this order
+    # will predict all label columns, in this order
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
+    ]
+
+    main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, args.test)
 
     # TODO move to simulation controller
     # analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

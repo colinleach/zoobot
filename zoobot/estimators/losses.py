@@ -53,7 +53,8 @@ def create_answers(question, label_cols):
     elif question_text == 'bulge-size':
         answer_substrings = ['_dominant', '_large', '_moderate', '_small', '_none']
     else:
-        raise ValueError(question + ' not recognised')
+        print(question_text)
+        raise ValueError(question.text + ' not recognised')
     return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
 
 

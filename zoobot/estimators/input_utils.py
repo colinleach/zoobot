@@ -1,5 +1,6 @@
 import copy
 from typing import List
+import logging
 
 import numpy as np
 import pandas as pd
@@ -119,7 +120,7 @@ def load_dataset_with_labels(config):
     Returns:
         (tf.Tensor, tf.Tensor)
     """
-    requested_features = {'matrix': 'string'}
+    requested_features = {'matrix': 'string', 'id_str': 'string'}  # new - must always have id_str
     # We only support float labels!
     # add key-value pairs like (col: float) for each col in config.label_cols
     # the order of config.label_cols will be the order that labels (axis=1) is indexed
@@ -172,11 +173,8 @@ def get_images_from_batch(batch, size, channels, summary=False):
 def get_labels_from_batch(batch, label_cols: List):
     return tf.stack([batch[col] for col in label_cols], axis=1)   # TODO batch[cols] appears not to work?
 
-
 def get_counts_from_batch(batch):
     raise NotImplementedError('This has been deprecated')
-
-
 
 
 def load_batches_with_counts(config):
@@ -209,6 +207,17 @@ def preprocess_batch(batch, config):
         [type]: [description]
     """
     batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels, summary=True)
+    augmented_images = preprocess_images(batch_images, config)
+    # tf.summary.image('c_augmented', augmented_images)
+
+    if len(config.label_cols) == 0:
+        logging.warning('No labels requested, returning id_str as labels')
+        return augmented_images, batch['id_str']
+    else:
+        batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
+        return augmented_images, batch_labels # labels are unchanged
+
+def preprocess_images(batch_images, config):
     assert len(batch_images.shape) == 4
     assert batch_images.shape[3] == 3  # should still have 3 channels at this point
 
@@ -226,9 +235,7 @@ def preprocess_batch(batch, config):
     assert augmented_images.shape[1] == config.final_size
     assert augmented_images.shape[2] == config.final_size
     # tf.summary.image('c_augmented', augmented_images)
-
-    batch_labels = get_labels_from_batch(batch, label_cols=config.label_cols)
-    return augmented_images, batch_labels # labels are unchanged
+    return augmented_images
 
 
 def stratify_images(image, label, batch_size, init_probs):
@@ -409,38 +416,38 @@ def predict_input_func(tfrecord_loc, n_galaxies, initial_size, mode='labels', la
         labels: np.array of shape (batch)
     """
     raise NotImplementedError('Deprecated, check to see how/if this is useful')
-    # config = InputConfig(
-    #     name='predict',
-    #     tfrecord_loc=tfrecord_loc,
-    #     label_cols=label_cols,
-    #     stratify=False,
-    #     shuffle=False,  # important - preserve the order
-    #     repeat=False,
-    #     regression=True,
-    #     geometric_augmentation=None,
-    #     photographic_augmentation=None,
-    #     zoom=None,
-    #     fill_mode=None,
-    #     batch_size=n_galaxies,
-    #     initial_size=initial_size,
-    #     final_size=None,
-    #     channels=3
-    # )
-    # # dataset = get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat)
-    # if mode == 'labels':
-    #     assert label_cols is not None
-    #     # batch_images = batch['matrix'] for batch for batch in dataset
-    #     id_strs = None
-    # elif mode == 'id_str':
-    #     batch_images, id_strs = load_batches_with_id_str(config)
-    #     batch_labels = None
-    # elif mode == 'matrix':
-    #     batch_images = load_batches_without_labels(config)
-    #     batch_labels = None
-    #     id_strs = None
-    # else:
-    #     raise ValueError('Predict input func. mode not recognised: {}'.format(mode))
+    config = InputConfig(
+        name='predict',
+        tfrecord_loc=tfrecord_loc,
+        label_cols=label_cols,
+        stratify=False,
+        shuffle=False,  # important - preserve the order
+        repeat=False,
+        regression=True,
+        geometric_augmentation=None,
+        photographic_augmentation=None,
+        zoom=None,
+        fill_mode=None,
+        batch_size=n_galaxies,
+        initial_size=initial_size,
+        final_size=None,
+        channels=3
+    )
+    # dataset = get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat)
+    if mode == 'labels':
+        assert label_cols is not None
+        # batch_images = batch['matrix'] for batch for batch in dataset
+        id_strs = None
+    elif mode == 'id_str':
+        batch_images, id_strs = load_batches_with_id_str(config)
+        batch_labels = None
+    elif mode == 'matrix':
+        batch_images = load_batches_without_labels(config)
+        batch_labels = None
+        id_strs = None
+    else:
+        raise ValueError('Predict input func. mode not recognised: {}'.format(mode))
 
-    # # don't do this! preprocessing is done at predict time, expects raw-ish images
-    # # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
-    # return batch_images, batch_labels, id_strs
+    # don't do this! preprocessing is done at predict time, expects raw-ish images
+    # preprocessed_batch_images = preprocess_batch(batch_images, config)['x']
+    return batch_images, batch_labels, id_strs

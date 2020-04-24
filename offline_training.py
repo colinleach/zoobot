@@ -1,10 +1,11 @@
   
 import os
 import argparse
+import time
 
 import tensorflow as tf
 
-from zoobot.active_learning import create_instructions
+from zoobot.active_learning import create_instructions, run_estimator_config
 
   
 if __name__ == '__main__':
@@ -56,17 +57,6 @@ if __name__ == '__main__':
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
 
-    # parameters that only affect train_callable
-    train_callable_obj = create_instructions.TrainCallableFactory(
-        initial_size=shard_img_size,
-        final_size=final_size,
-        warm_start=warm_start,
-        test=test,
-    )
-    train_callable_obj.save(save_dir)
-
-    train_callable = train_callable_obj.get()
-
     # must match label cols below
     questions = [
         'smooth-or-featured',
@@ -95,5 +85,18 @@ if __name__ == '__main__':
         'bulge-size_small',
         'bulge-size_none'
     ]
-     # can add to or override default args of train_callable here
-    train_callable(os.path.join(save_dir, 'results'), train_records, eval_records, learning_rate=0.001, epochs=epochs, batch_size=batch_size, label_cols=label_cols, questions=questions) 
+
+    run_config = run_estimator_config.get_run_config(
+      initial_size=shard_img_size,
+      final_size=final_size,
+      warm_start=warm_start,
+      log_dir='runs/default_run_{}'.format(time.time()),
+      train_records=train_records,
+      eval_records=eval_records,
+      epochs=epochs,
+      questions=questions,
+      label_cols=label_cols,
+      batch_size=batch_size
+    )
+    
+    run_config.run_estimator() 

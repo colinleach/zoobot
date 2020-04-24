@@ -3,7 +3,7 @@ import statistics  # thanks Python 3.4!
 
 import numpy as np
 import matplotlib
-# 
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 

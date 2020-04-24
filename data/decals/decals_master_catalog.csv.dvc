@@ -1,9 +1,9 @@
-md5: 19c26bcc5d5ebec8ed04884da0e149b0
+md5: 50be43b53db180808ffac0fbfe13e5db
 cmd: python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv
   /media/walml/beta/decals/results/classifications_2019_11_27.csv data/decals/decals_master_catalog.csv
 wdir: ../..
 deps:
-- md5: c04e5acac4ee9933629c5fd5b64470bb
+- md5: a583ecca095960b8322d51ffad299e93
   path: zoobot/science_logic/prepare_catalogs.py
 - md5: 80aeec78ecfca9655884fcb223a5b118
   path: /media/walml/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv

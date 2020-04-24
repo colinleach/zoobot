@@ -11,6 +11,7 @@ import shutil
 import logging
 import json
 import time
+import glob
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ from shared_astro_utils import object_utils
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.science_logic import prepare_catalogs
 from zoobot.active_learning import database
+from zoobot.estimators import input_utils
 
 
 class ShardConfig():
@@ -39,7 +41,7 @@ class ShardConfig():
     def __init__(
         self,
         shard_dir,  # to hold a new folder, named after the shard config 
-        size=256,  # IMPORTANT
+        size,  # IMPORTANT image size
         shard_size=4096,
         **overflow_args  # TODO review removing this
         ):
@@ -102,6 +104,7 @@ class ShardConfig():
         # assume the catalog is true, don't modify halfway through
         logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
         logging.info('Unlabelled subjects: {}'.format(len(unlabelled_catalog)))
+        logging.info(f'Train-test fraction: {train_test_fraction}')
         labelled_catalog.to_csv(self.labelled_catalog_loc)
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
@@ -126,7 +129,7 @@ class ShardConfig():
                 shard_size=self.shard_size
             )
 
-        # unlabelled galaxies should be written to db as well as to shards
+        # all unlabelled galaxies should be written to db as well as to shards
         make_database_and_shards(
             unlabelled_catalog, 
             self.db_loc, 
@@ -200,9 +203,31 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
         shard_dir,
         shard_size
     )
+    # verify db contains all the id_strs in the shards
+    check_all_ids_are_in_db(shard_dir, db)
+
+
+def check_all_ids_are_in_db(shard_dir, db):
+    # verify db contains all the id_strs in the shards
+    feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
+    id_str_dataset = input_utils.get_dataset(glob.glob(shard_dir + '/*.tfrecord'), feature_spec, batch_size=1, shuffle=False, repeat=False)
+    id_strs_in_shards = set([str(d['id_str'].numpy().squeeze())[2:-1] for d in id_str_dataset])
+    id_strs_in_db = set([x.id_str for x in database.get_all_subjects(db, labelled=None)])  # i.e. labelled or not
+    logging.info('{} ids in shards, {} ids in db')
+    missing_ids = id_strs_in_shards - id_strs_in_db
+    if missing_ids:
+        raise ValueError('{} ids from shards were not correctly written to db'.format(len(missing_ids)))
 
 
 if __name__ == '__main__':
+
+    """
+    Sim shards:
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --max-unlabelled 40000 --img-size 128
+    
+    Testing:
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size=100 --shard-dir=data/decals/shards/debug_sim --max-labelled 500 --max-unlabelled=300 --img-size 32
+    """
 
     # only responsible for making the shards. 
     # Assumes catalogs are shuffled and have id_str, file_loc, label, total_votes columns
@@ -216,8 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--unlabelled-catalog', dest='unlabelled_catalog_loc', type=str,
                 help='Path to csv catalog of previous labels and file_loc, for shards')
 
-    parser.add_argument('--eval-size', dest='eval_size', type=str,
-            help='Path to csv catalog of previous labels and file_loc, for shards')
+    parser.add_argument('--eval-size', dest='eval_size', type=int)
 
     # Write catalog to shards (tfrecords as catalog chunks) here for use in active learning
     parser.add_argument('--shard-dir', dest='shard_dir', type=str,
@@ -226,17 +250,17 @@ if __name__ == '__main__':
                     help='Max galaxies (for debugging/speed')
     parser.add_argument('--max-labelled', dest='max_labelled', type=int,
                     help='Max galaxies (for debugging/speed')
-    parser.add_argument('--columns', dest='columns', type=str, default='single_question',
-                    help='Control which catalog columns to save to tfrecords')
+    parser.add_argument('--img-size', dest='size', type=int,
+                    help='Max galaxies (for debugging/speed')
 
     args = parser.parse_args()
 
-    log_loc = 'make_shards_{}.log'.format(time.time())
+    # log_loc = 'make_shards_{}.log'.format(time.time())
     logging.basicConfig(
-        filename=log_loc,
-        filemode='w',
+        # filename=log_loc,
+        # filemode='w',
         format='%(asctime)s %(message)s',
-        level=logging.DEBUG
+        level=logging.INFO
     )
 
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
@@ -253,13 +277,28 @@ if __name__ == '__main__':
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = catalog_to_tfrecord.get_train_test_fraction(len(labelled_catalog), args.eval_size)
 
-    if args.columns == 'single_question':
-        columns_to_save = ['id_str', 'label', 'total_votes']  # deprecated and will be removed TODO
-    else:
-        columns_to_save = labelled_catalog.columns.values
+    # columns_to_save = labelled_catalog.columns.values  # save all the columns, because why not (possible trouble with nans?)
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'spiral-winding_tight',
+        'spiral-winding_medium',
+        'spiral-winding_loose',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
+    ]
+    columns_to_save = ['id_str'] + label_cols
     logging.info('Saving {} columns)'.format(columns_to_save))
 
-    shard_config = ShardConfig(shard_dir=args.shard_dir)
+    shard_config = ShardConfig(shard_dir=args.shard_dir, size=args.size)
 
     shard_config.prepare_shards(
         labelled_catalog,
@@ -270,6 +309,6 @@ if __name__ == '__main__':
     
     # finally, tidy up by moving the log into the shard directory
     # could not be create here because shard directory did not exist at start of script
-    repo = git.Repo(search_parent_directories=True)
-    sha = repo.head.object.hexsha
-    shutil.move(log_loc, os.path.join(args.shard_dir, '{}.log'.format(sha)))
+    # repo = git.Repo(search_parent_directories=True)
+    # sha = repo.head.object.hexsha
+    # shutil.move(log_loc, os.path.join(args.shard_dir, '{}.log'.format(sha)))

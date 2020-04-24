@@ -7,8 +7,8 @@ from typing import List
 
 import numpy as np
 
-from zoobot.estimators import make_predictions
-from zoobot.active_learning import database, db_access, metrics, misc
+from zoobot.estimators import make_predictions, losses
+from zoobot.active_learning import database, db_access, metrics, misc, run_estimator_config
 
 
 class Iteration():
@@ -20,7 +20,7 @@ class Iteration():
         initial_db_loc: str,
         initial_train_tfrecords: List,
         eval_tfrecords: List,
-        train_callable,
+        fixed_estimator_params,
         acquisition_func,
         n_samples: int,  # may need more samples?
         n_subjects_to_acquire: int,
@@ -28,22 +28,24 @@ class Iteration():
         learning_rate: float,
         epochs: int,
         oracle,
+        questions,
+        label_cols,
         initial_estimator_ckpt=None
     ):
-    """
-    Do some sanity checks in the args, then save them as properties.
+        """
+        Do some sanity checks in the args, then save them as properties.
 
-    Using iteration_dir, create the directory tree needed:
-    - {iteration_dir}
-        - acquired_tfrecords
-        - metrics
-        - estimators
-    Copy the estimator from initial_estimator_ckpt, if provided.
+        Using iteration_dir, create the directory tree needed:
+        - {iteration_dir}
+            - acquired_tfrecords
+            - metrics
+            - estimators
+        Copy the estimator from initial_estimator_ckpt, if provided.
 
-    Copy the database from initial_db_loc to {iteration_dir}/iteration.db, and connect.
+        Copy the database from initial_db_loc to {iteration_dir}/iteration.db, and connect.
 
-    Prepare to record the tfrecords used under {iteration_dir}/train_tfrecords_index.json
-    """
+        Prepare to record the tfrecords used under {iteration_dir}/train_tfrecords_index.json
+        """
 
         self.iteration_dir = iteration_dir
 
@@ -66,8 +68,8 @@ class Iteration():
                 logging.critical(tfrecords)
             setattr(self, attr, tfrecords)
 
-        assert callable(train_callable)
-        self.train_callable = train_callable
+        # assert callable(fixed_estimator_params)
+        self.fixed_estimator_params = fixed_estimator_params
         assert callable(acquisition_func)
         self.acquisition_func = acquisition_func
         self.n_samples = n_samples
@@ -78,7 +80,7 @@ class Iteration():
         self.epochs = epochs
 
         self.oracle = oracle
-
+        
         self.estimators_dir = os.path.join(self.iteration_dir, 'estimators')
         self.acquired_tfrecords_dir = os.path.join(
             self.iteration_dir, 'acquired_tfrecords')
@@ -90,7 +92,22 @@ class Iteration():
         os.mkdir(self.metrics_dir)
         # TODO have a test that verifies new folder structure?
 
-        self.db = get_db(self.iteration_dir, initial_db_loc)
+        self.run_config = run_estimator_config.get_run_config(
+            initial_size=self.fixed_estimator_params.initial_size, 
+            final_size=self.fixed_estimator_params.final_size,
+            questions=self.fixed_estimator_params.questions,
+            label_cols=self.fixed_estimator_params.label_cols,
+            batch_size=self.fixed_estimator_params.batch_size,
+            warm_start=False,  # for now 
+            log_dir=self.estimators_dir,
+            train_records=self.get_train_records(),
+            eval_records=self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
+            learning_rate=self.learning_rate,
+            epochs=self.epochs,
+
+        )  # could be docker container to run, save model
+
+        self.db, self.db_loc = get_db(self.iteration_dir, initial_db_loc)
 
         self.initial_estimator_ckpt = initial_estimator_ckpt
 
@@ -126,28 +143,23 @@ class Iteration():
     def get_train_records(self):
         return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
-    def make_predictions(self, shard_locs, initial_size):
-        predictor = self.get_latest_model()
-        logging.debug('Loaded predictor {}'.format(predictor))
+    def make_predictions(self, model):
+        # logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
-        logging.info('Using shard_locs {}'.format(shard_locs))
+        logging.info('Using shard_locs {}'.format(self.prediction_shards))
         unlabelled_subjects, samples = database.make_predictions_on_tfrecord(
-            shard_locs,
-            predictor,
+            self.prediction_shards,
+            model,
+            self.run_config,
             self.db,
             n_samples=self.n_samples,
-            size=initial_size
+            size=self.initial_size
         )
         # subjects should all be unique, otherwise there's a bug
         id_strs = [subject['id_str'] for subject in unlabelled_subjects]
         assert len(id_strs) == len(set(id_strs))
         assert isinstance(unlabelled_subjects, list)
         return unlabelled_subjects, samples
-
-    def get_latest_model(self):
-        predictor_loc = misc.get_latest_checkpoint_dir(self.estimators_dir)
-        logging.info('Loading model from {}'.format(predictor_loc))
-        return make_predictions.load_predictor(predictor_loc)
 
     def record_state(self, subjects, samples, acquisitions):
         metrics.save_iteration_state(
@@ -171,29 +183,32 @@ class Iteration():
         all_subject_ids, all_labels = self.oracle.get_labels(
             self.labels_dir)
         # can't allow overwriting of previous labels, as may have been written to tfrecord
-        subject_ids, labels = database.filter_for_new_only(
-            self.db,
-            all_subject_ids,
-            all_labels
-        )
-        if len(subject_ids) > 0:
-            # record in db
-            # TODO should be via database.py?
-            db_access.add_labels_to_db(subject_ids, labels, self.db)
-            # write to disk
-            top_subject_df = database.get_specific_subjects(
-                self.db, subject_ids)
-            database.write_catalog_to_tfrecord_shards(
-                top_subject_df,
-                db=None,  # don't record again in db as simply a fixed train record
-                img_size=self.initial_size,
-                columns_to_save=['id_str', 'labels'],
-                save_dir=self.acquired_tfrecords_dir,
-                shard_size=4096  # hardcoded, awkward TODO
+        if len(all_subject_ids) > 0:
+            subject_ids, labels = database.filter_for_new_only(
+                self.db,
+                all_subject_ids,
+                all_labels
             )
+            if len(subject_ids) > 0:
+                # record in db
+                # TODO should be via database.py?
+                db_access.add_labels_to_db(subject_ids, labels, self.db)
+                # write to disk
+                top_subject_df = database.get_specific_subjects_df(
+                    self.db, subject_ids)
+                database.write_catalog_to_tfrecord_shards(
+                    top_subject_df,
+                    db=None,  # don't record again in db as simply a fixed train record
+                    img_size=self.initial_size,
+                    columns_to_save=['id_str'] + self.fixed_estimator_params.label_cols,
+                    save_dir=self.acquired_tfrecords_dir,
+                    shard_size=4096  # hardcoded, awkward TODO
+                )
+            else:
+                logging.warning('All acquired subjects are already labelled - does this make sense?')
+            assert not database.db_fully_labelled(self.db)
         else:
-            logging.warning('No new subjects acquired - does this make sense?')
-        assert not database.db_fully_labelled(self.db)
+            logging.warning('No subjects have been returned from the oracle - does this make sense?')
 
         """Callable should expect 
         - log dir to train models in
@@ -203,21 +218,17 @@ class Iteration():
         - epochs to train for"""
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
-        self.train_callable(
-            self.estimators_dir,
-            self.get_train_records(),
-            self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
-            self.learning_rate,
-            self.epochs
-        )  # could be docker container to run, save model
+
+        best_model = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
-        subjects, predictions = self.make_predictions(
-            self.prediction_shards, self.initial_size)
+        subjects, predictions = self.make_predictions(best_model)
 
         # returns list of acquisition values
-        acquisitions = self.acquisition_func(predictions)
+        # warning, duplication
+        schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions)
+        acquisitions = self.acquisition_func(predictions, schema, retirement=40)
         self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))
@@ -251,4 +262,4 @@ def get_db(iteration_dir, initial_db_loc):
     shutil.copy(initial_db_loc, new_db_loc)
     db = sqlite3.connect(new_db_loc)
     assert not database.db_fully_labelled(db)
-    return db
+    return db, new_db_loc

@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 
 
 def get_train_test_fraction(total_size, eval_size):
+    assert eval_size < total_size
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = (total_size - int(eval_size))/total_size  # always eval on random 2500 galaxies
     logging.info('Train test fraction: {}'.format(train_test_fraction))
