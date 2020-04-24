@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import tensorflow_addons as tfa  # for rotations
+# import tensorflow_addons as tfa  # for rotations
 import scipy.ndimage as ndimage  # use this instead
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
@@ -320,7 +320,7 @@ def geometric_augmentation(images, zoom, final_size, central):
     # let's take the performance hit for now and use map_fn to allow variable length batches
     images = tf.map_fn(tf.image.random_flip_left_right, images)
     images = tf.map_fn(tf.image.random_flip_up_down, images)
-    images = tf.map_fn(random_rotation_batch, images)
+    # images = tf.map_fn(random_rotation_batch, images)
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
