@@ -329,12 +329,12 @@ def geometric_augmentation(images, zoom, final_size, central):
     return images
 
 
-def random_rotation_batch(images):
-    return tfa.image.rotate(
-        images,
-        tf.random.uniform(shape=[1]),
-        interpolation='BILINEAR'
-    )
+# def random_rotation_batch(images):
+#     return tfa.image.rotate(
+#         images,
+#         tf.random.uniform(shape=[1]),
+#         interpolation='BILINEAR'
+#     )
 
 # def random_rotation_py(im):
 #     # see https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
