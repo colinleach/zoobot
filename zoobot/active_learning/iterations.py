@@ -87,6 +87,9 @@ class Iteration():
         self.labels_dir = os.path.join(self.iteration_dir, 'acquired_labels')
         self.metrics_dir = os.path.join(self.iteration_dir, 'metrics')
 
+        if os.path.isdir(self.iteration_dir):
+            logging.warning(f'{self.iteration_dir} already exists - deleting!')
+            shutil.rmtree(self.iteration_dir)
         os.mkdir(self.iteration_dir)
         os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
