@@ -143,7 +143,7 @@ class RunEstimatorConfig():
             self.model.fit(
                 train_dataset,
                 validation_data=test_dataset,
-                validation_steps=10,
+                validation_steps=int(1000/self.batch_size),
                 epochs=self.epochs,
                 callbacks=callbacks,
             )

@@ -349,7 +349,7 @@ def wrapped_augmentation(im, max_shift, max_shear, patches, min_size, max_size):
 def py_augmentation(im, max_shift, max_shear, patches, min_size, max_size):
     im_np = im.numpy()
     im_np = np_affine_augmentation(im_np, max_shift, max_shear)
-    im_np = np_multiple_cutout(im_np, patches, min_size, max_size)
+    # im_np = np_multiple_cutout(im_np, patches, min_size, max_size)
     return im_np
 
 
