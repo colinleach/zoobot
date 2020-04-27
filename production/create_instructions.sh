@@ -20,7 +20,8 @@ mkdir $EXPERIMENT_DIR
 mkdir $INSTRUCTIONS_DIR
 
 # warm start is always on?
-python zoobot/active_learning/create_instructions.py  --catalog-dir=$CATALOG_DIR --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --warm-start $BASELINE $TEST $PANOPTES
+echo $PYTHON
+$PYTHON zoobot/active_learning/create_instructions.py  --catalog-dir=$CATALOG_DIR --shard-config=$SHARD_CONFIG --instructions-dir=$INSTRUCTIONS_DIR --warm-start $BASELINE $TEST $PANOPTES
 RESULT=$?
 if [ $RESULT -gt 0 ]
 then

@@ -12,7 +12,8 @@ module load python/anaconda3/2019.03
 module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.5.0__cuda-10.0
 
-source activate $DATA/envs/zoobot
+# source activate $DATA/envs/zoobot  # only works in THIS script
+export PYTHON=$DATA/envs/zoobot/bin/python
 
 catalog_dir=data/decals/prepared_catalogs/decals_multiq
 shard_dir=data/decals/shards/decals_multiq_128_sim_init_2500_featp4
