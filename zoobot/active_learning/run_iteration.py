@@ -124,7 +124,7 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
         )
     else:
         previous_final_state = load_final_state(previous_iteration_dir)
-    this_iteration_n = previous_final_state.iteration_n + 1
+        this_iteration_n = previous_final_state.iteration_n + 1
         initial_state = InitialState(
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=this_iteration_n,  # duplication
