@@ -18,7 +18,7 @@ source activate $DATA/envs/zoobot
 $DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
 
 catalog_dir=data/decals/prepared_catalogs/decals_multiq
-shard_dir=data/decals/shards/decals_multiq_128
+shard_dir=data/decals/shards/decals_multiq_128_sim_init_2500_featp4
 experiment_dir=data/experiments/live/latest
 instructions_dir=$experiment_dir/instructions
 n_iterations=5
