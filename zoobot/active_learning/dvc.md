@@ -58,7 +58,7 @@ Sim:
 
 **Run Simulation**
 
-`experiment_dir=data/experiments/decals_multiq_sim`
+`experiment_dir=data/experiments/live/latest`
 
 `instructions_dir=$experiment_dir/instructions`
 

@@ -19,6 +19,13 @@ module load python/anaconda3/2019.03
 
 source activate /data/phys-zooniverse/chri5177/envs/zoobot
 
+pip install -r repos/gz-panoptes-reduction/requirements.txt
+pip install -r repos/shared-astro-utilities/requirements.txt
+pip install -e repos/gz-panoptes-reduction
+pip install -e repos/shared-astro-utilities
+pip install -r repos/zoobot/requirements.txt
+pip install -e repos/zoobot
+
 rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/data/latest_labelled_catalog.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data
 
 

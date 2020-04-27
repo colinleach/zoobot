@@ -116,21 +116,21 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=0,  # duplication
             initial_estimator_ckpt=instructions.initial_estimator_ckpt,  # for first iteration, the first model is the one passed to ActiveConfig
-            initial_db_loc=instructions.db_loc,
-            initial_train_tfrecords=instructions.shards.train_tfrecord_locs(),
+            initial_db_loc=instructions.db_loc,  # will copy the db from instructions
+            initial_train_tfrecords=instructions.shards.train_tfrecord_locs(),  # only the initial train shards
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
             epochs=get_epochs(this_iteration_n)  # duplication
         )
     else:
         previous_final_state = load_final_state(previous_iteration_dir)
-        this_iteration_n = previous_final_state.iteration_n + 1
+    this_iteration_n = previous_final_state.iteration_n + 1
         initial_state = InitialState(
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=this_iteration_n,  # duplication
-            initial_train_tfrecords=previous_final_state.train_records,
+            initial_train_tfrecords=previous_final_state.train_records,  # everything trained on by last iteration, i.e. initial train shards + newly acquired shards (from ALL prev iterations)
             initial_estimator_ckpt=previous_final_state.estimators_dir,
-            initial_db_loc=previous_final_state.db_loc,
+            initial_db_loc=previous_final_state.db_loc,  # will copy the db from the last iteration
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
             epochs=get_epochs(this_iteration_n)  # duplication
@@ -153,7 +153,7 @@ def get_prediction_shards(iteration_n, instructions):
     db = sqlite3.connect(instructions.db_loc)
     all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in database.get_all_shard_locs(db)]
     shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
-    for n in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.
+    for _ in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.
         prediction_shards = [next(shards_iterable) for n in range(instructions.shards_per_iter)]
     return prediction_shards
 
