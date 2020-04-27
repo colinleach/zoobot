@@ -14,6 +14,7 @@ pandas
 astropy
 scipy
 scikit-optimize
+scikit-image
 matplotlib
 seaborn==0.9.0
 # note: photutils requires a c compiler. For Mac/xcode, run `xcode-select --install`
@@ -31,4 +32,3 @@ panoptes-client
 # also requires personal package shared_astro_utils, pip install -e ../shared-astro-utilities
 # also requires personal package gzreduction, pip install -e ../gz-panoptes-reduction
 # pip install -r ../gz-panoptes-reduction/requirements.txt
-tensorflow-addons  # may not be needed any more

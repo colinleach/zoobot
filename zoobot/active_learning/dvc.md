@@ -58,6 +58,8 @@ Sim:
 
 **Run Simulation**
 
+`export PYTHON=/home/walml/anaconda3/envs/zoobot/bin/python`
+
 `experiment_dir=data/experiments/live/latest`
 
 `instructions_dir=$experiment_dir/instructions`
