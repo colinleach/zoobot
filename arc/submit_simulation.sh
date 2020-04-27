@@ -10,7 +10,11 @@
 module purge
 module load python/anaconda3/2019.03
 module load gpu/cuda/10.1.243
-module load gpu/cudnn/7.5.0__cuda-10.0
+
+# gpu/cudnn/7.5.0__cuda-10.0
+# fails with: Loaded runtime CuDNN library: 7.5.0 but source was compiled with: 7.6.4.  CuDNN library major and minor version needs to match or have higher minor version in case of CuDNN 7.0 or later version. If using a binary install (I am), upgrade your CuDNN library.
+
+# module load gpu/cudnn/7.6.0__cuda-9.0
 
 # source activate $DATA/envs/zoobot  # only works in THIS script
 export PYTHON=$DATA/envs/zoobot/bin/python
