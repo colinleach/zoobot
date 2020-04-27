@@ -22,8 +22,8 @@ shard_dir=data/decals/shards/decals_multiq_128_sim_init_2500_featp4
 experiment_dir=data/experiments/live/latest
 instructions_dir=$experiment_dir/instructions
 n_iterations=5
-baseline = '--baseline'
-test_flag = '--test'
+baseline='--baseline'
+test_flag='--test'
 
 dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $experiment_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir
 dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $baseline $test_flag ''
