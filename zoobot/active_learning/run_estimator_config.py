@@ -182,6 +182,8 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
     run_config.assemble(train_config, eval_config, model)
     return run_config
 
+MAX_SHIFT = 30
+MAX_SHEAR = np.pi/4.
 
 def get_train_config(train_records, label_cols, batch_size, initial_size, final_size, channels):
     # tiny func, refactored for easy reuse
@@ -197,8 +199,9 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         photographic_augmentation=True,
         # zoom=(2., 2.2),  # BAR MODE
         zoom=(1.15, 1.35),  # SMOOTH MODE
+        max_shift=MAX_SHIFT,
+        max_shear=MAX_SHEAR,
         contrast_range=(0.98, 1.02),
-        fill_mode='wrap',
         batch_size=batch_size,
         initial_size=initial_size,
         final_size=final_size,
@@ -224,8 +227,9 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
         photographic_augmentation=True,
         # zoom=(2., 2.2),  # BAR MODE
         zoom=(1.1, 1.3),  # SMOOTH MODE
+        max_shift=MAX_SHIFT,
+        max_shear=MAX_SHEAR,
         contrast_range=(0.98, 1.02),
-        fill_mode='wrap',
         batch_size=batch_size,
         initial_size=initial_size,
         final_size=final_size,

@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 # import tensorflow_addons as tfa  # for rotations
-import scipy.ndimage as ndimage  # use this instead
+# import scipy.ndimage as ndimage  # use this instead
+from skimage.transform import warp, AffineTransform, SimilarityTransform
 
 from zoobot.tfrecord.tfrecord_io import load_dataset
 from zoobot.tfrecord.read_tfrecord import get_feature_spec
@@ -30,9 +31,9 @@ class InputConfig():
             stratify_probs=None,
             regression=True,
             geometric_augmentation=True,
-            shift_range=None,  # not implemented
+            max_shift=15,
+            max_shear=30.,
             zoom=(1., 1.1),
-            fill_mode=None,  # not implemented
             photographic_augmentation=True,
             max_brightness_delta=0.05,
             contrast_range=(0.95, 1.05),
@@ -61,9 +62,9 @@ class InputConfig():
             assert not regression
 
         self.geometric_augmentation = geometric_augmentation  # use geometric augmentations
-        self.shift_range = shift_range  # not yet implemented
+        self.max_shift = max_shift
+        self.max_shear = max_shear
         self.zoom = zoom
-        self.fill_mode = fill_mode  # not yet implemented, 'pad' or 'zoom'
 
         self.photographic_augmentation = photographic_augmentation
         self.max_brightness_delta = max_brightness_delta
@@ -279,6 +280,8 @@ def augment_images(images, input_config):
     if input_config.geometric_augmentation:
         images = geometric_augmentation(
             images,
+            max_shift=input_config.max_shift,
+            max_shear=input_config.max_shear,
             zoom=input_config.zoom,
             final_size=input_config.final_size,
             central=input_config.zoom_central)
@@ -292,7 +295,7 @@ def augment_images(images, input_config):
     return images
 
 
-def geometric_augmentation(images, zoom, final_size, central):
+def geometric_augmentation(images, max_shift, max_shear, zoom, final_size, central):
     """
     Runs best if image is originally significantly larger than final target size
     for example: load at 256px, rotate/flip, crop to 246px, then finally resize to 64px
@@ -320,13 +323,87 @@ def geometric_augmentation(images, zoom, final_size, central):
     # let's take the performance hit for now and use map_fn to allow variable length batches
     images = tf.map_fn(tf.image.random_flip_left_right, images)
     images = tf.map_fn(tf.image.random_flip_up_down, images)
-    # images = tf.map_fn(random_rotation_batch, images)
+
+
+    # images = tf.map_fn(random_rotation_batch, images)  No, tfa causes segfault on many CPU...
+    images = tf.map_fn(lambda x: wrapped_augmentation(x, max_shift, max_shear, patches=4, min_size=2, max_size=5), images)
+
+    # cutout http://arxiv.org/abs/1708.04552
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
     images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central, final_size=final_size), images)
 
     return images
+
+
+
+def wrapped_augmentation(im, max_shift, max_shear, patches, min_size, max_size):
+    im_shape = im.shape
+    # im = tf.py_function(lambda x: keras_np_augmentation(x, max_shift=max_shift, max_shear=max_shear), [im], tf.float32)
+    im = tf.py_function(lambda x: py_augmentation(x, max_shift=max_shift, max_shear=max_shear, patches=patches, min_size=min_size, max_size=max_size), [im], tf.float32)
+    im.set_shape(im_shape)
+    return im
+
+
+def py_augmentation(im, max_shift, max_shear, patches, min_size, max_size):
+    im_np = im.numpy()
+    im_np = np_affine_augmentation(im_np, max_shift, max_shear)
+    im_np = np_multiple_cutout(im_np, patches, min_size, max_size)
+    return im_np
+
+
+def np_affine_augmentation(im_np, max_shift, max_shear):
+    # https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.AffineTransform
+
+    # https://stackoverflow.com/questions/25895587/python-skimage-transform-affinetransform-rotation-center
+    shift_y, shift_x = np.array(im_np.shape[:2]) / 2.
+    tf_shift = SimilarityTransform(translation=[-shift_x, -shift_y])
+    tf_shift_inv = SimilarityTransform(translation=[shift_x, shift_y])
+
+    tf_rotate = AffineTransform(
+        # scale=(1.3, 1.1),
+        rotation=np.random.uniform(low=0., high=np.pi/2.),  # 90 deg, enough when you consider flips
+        shear=np.random.uniform(low=0., high=max_shear),
+        translation=np.random.uniform(low=0, high=max_shift, size=2)
+    )
+    # https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.warp
+    return warp(im_np, (tf_shift + (tf_rotate + tf_shift_inv)).inverse, output_shape=im_np.shape)
+
+
+def np_multiple_cutout(im_np, patches, min_size, max_size):
+    for _ in range(patches):
+        im_np = cutout_patch(im_np, sizes=np.random.randint(size=[2], low=min_size, high=max_size))
+    return im_np
+
+
+def cutout_patch(im_np, sizes):
+    x_size, y_size = sizes[0], sizes[1]
+    x0 = np.random.randint(low=0, high=im_np.shape[0]-x_size)  # will execute eagerly, should be okay to actually randomise
+    x1 = x0 + x_size
+    y0 = np.random.randint(low=0, high=im_np.shape[1]-y_size)
+    y1 = y0 + y_size
+    im_np[x0:x1, y0:y1] = 0.
+    return im_np
+
+
+
+# #  will be replaced in TF 2.2
+# def keras_np_augmentation(im, max_shift, max_shear):
+#     return tf.keras.preprocessing.image.apply_affine_transform(
+#         # theta=tf.random.uniform(shape=[1], minval=0, maxval=45, dtype=tf.int32),
+#         # tx=tf.random.uniform(shape=[1], minval=0, maxval=max_shift, dtype=tf.int32),
+#         # ty=tf.random.uniform(shape=[1], minval=0, maxval=max_shift, dtype=tf.int32),
+#         shear=tf.random.uniform(shape=[1], minval=0, maxval=max_shear, dtype=tf.float32),
+#         # zx=1,  # I deal with zoom below already
+#         # zy=1,
+#         row_axis=0,
+#         col_axis=1,
+#         channel_axis=2,
+#         # fill_mode='constant',  # might consider reflecting or wrapping?
+#         # cval=0.0
+# )
+#     return tf.keras.preprocessing.image.random_rotation(im.numpy(), rg=180., row_axis=0, col_axis=1, channel_axis=2, fill_mode='constant')
 
 
 # def random_rotation_batch(images):
@@ -344,9 +421,10 @@ def geometric_augmentation(images, zoom, final_size, central):
 #     return im
 
 
-def np_random_rotation(im):
-    # tracing may be a problem
-    return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
+# def np_random_rotation(im):
+#     # tracing may be a problem
+#     return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
+
 
 def crop_random_size(im, zoom, central, final_size):
     original_width = tf.cast(im.shape[1], tf.float32) # cast allows division of Dimension
@@ -391,6 +469,11 @@ def photographic_augmentation(images, max_brightness_delta, contrast_range):
     images = tf.map_fn(
         lambda im: tf.image.random_contrast(im, lower=contrast_range[0], upper=contrast_range[1]),
         images)
+
+    # experimental
+    # images = tf.map_fn(
+    #     lambda im: im + tf.random.normal(tf.shape(im), mean=0., stddev=.01)  # image values are 0->1 
+    # )
 
     return images
 

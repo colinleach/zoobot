@@ -239,7 +239,7 @@ if __name__ == '__main__':
     questions = [
         'smooth-or-featured',
         'has-spiral-arms',
-        'spiral-winding',
+        # 'spiral-winding',
         'bar',
         'bulge-size'
     ]
@@ -251,9 +251,9 @@ if __name__ == '__main__':
         'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
         'has-spiral-arms_no',
-        'spiral-winding_tight',
-        'spiral-winding_medium',
-        'spiral-winding_loose',
+        # 'spiral-winding_tight',
+        # 'spiral-winding_medium',
+        # 'spiral-winding_loose',
         'bar_strong',
         'bar_weak',
         'bar_no',
