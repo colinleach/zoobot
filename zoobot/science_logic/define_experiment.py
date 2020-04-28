@@ -45,7 +45,7 @@ def apply_custom_filter(catalog):
     min_featured = 0.5  # see errors.ipynb
     # previous_prediction_locs = glob.glob('temp/master_256_predictions_*.csv')
     # previous_predictions = pd.concat([pd.read_csv(loc, usecols=['id_str', 'smooth-or-featured_featured-or-disk_prediction_mean']) for loc in previous_prediction_locs])
-    previous_predictions = pd.read_csv('temp/smooth_or_featured_labelled_latest_dummy.csv', usecols=['id_str', 'smooth-of-featured_featured-or-disk_prediction_mean', 'disk-edge-on_yes_prediction_mean_dummy'])
+    previous_predictions = pd.read_csv('temp/smooth_or_featured_labelled_latest_with_edge.csv', usecols=['id_str', 'smooth-or-featured_featured-or-disk_prediction_mean', 'disk-edge-on_yes_prediction_mean_dummy'])
     len_before = len(catalog)
     catalog = pd.merge(catalog, previous_predictions, on='id_str', how='inner')
     len_merged = len(catalog)
