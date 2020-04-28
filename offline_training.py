@@ -12,7 +12,9 @@ if __name__ == '__main__':
     """
 
       python offline_training.py --experiment-dir results/latest_offline_retired --shard-img-size 128 --train-dir data/decals/shards/multilabel_128_retired/train --eval-dir data/decals/shards/multilabel_128_retired/eval --epochs 150 
-      python offline_training.py --experiment-dir results/latest_offline_schema --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 150 
+      
+      To make model for smooth/featured (also change cols below):
+      python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 150 
 
     Testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 2 
@@ -39,7 +41,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     shard_img_size = args.shard_img_size
-    final_size = int(shard_img_size / 2) # temp
+    # final_size = int(shard_img_size / 2) # temp
+    final_size = 64
     warm_start = args.warm_start
     test = args.test
     epochs = args.epochs
@@ -60,10 +63,10 @@ if __name__ == '__main__':
     # must match label cols below
     questions = [
         'smooth-or-featured',
-        'has-spiral-arms',
-        'spiral-winding',
-        'bar',
-        'bulge-size'
+        # 'has-spiral-arms',
+        # 'spiral-winding',
+        # 'bar',
+        # 'bulge-size'
     ]
 
     # will load labels from shard, in this order
@@ -71,26 +74,26 @@ if __name__ == '__main__':
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
-        'has-spiral-arms_yes',
-        'has-spiral-arms_no',
-        'spiral-winding_tight',
-        'spiral-winding_medium',
-        'spiral-winding_loose',
-        'bar_strong',
-        'bar_weak',
-        'bar_no',
-        'bulge-size_dominant',
-        'bulge-size_large',
-        'bulge-size_moderate',
-        'bulge-size_small',
-        'bulge-size_none'
+        # 'has-spiral-arms_yes',
+        # 'has-spiral-arms_no',
+        # 'spiral-winding_tight',
+        # 'spiral-winding_medium',
+        # 'spiral-winding_loose',
+        # 'bar_strong',
+        # 'bar_weak',
+        # 'bar_no',
+        # 'bulge-size_dominant',
+        # 'bulge-size_large',
+        # 'bulge-size_moderate',
+        # 'bulge-size_small',
+        # 'bulge-size_none'
     ]
 
     run_config = run_estimator_config.get_run_config(
       initial_size=shard_img_size,
       final_size=final_size,
       warm_start=warm_start,
-      log_dir='runs/default_run_{}'.format(time.time()),
+      log_dir=save_dir,
       train_records=train_records,
       eval_records=eval_records,
       epochs=epochs,

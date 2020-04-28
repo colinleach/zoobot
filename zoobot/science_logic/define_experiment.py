@@ -42,14 +42,16 @@ def apply_custom_filter(catalog):
     # for now, expect a 'smooth-or-featured_featured-or-disk_prediction_mean' col and filter > 0.25 (i.e. 10 of 40)
     # predicted beforehand by existing model TODO
 
-    min_featured = 0.4  # roughly the half most featured - the current model very rarely predicts < 0.25 featured, which is a bit odd...
-    previous_prediction_locs = glob.glob('temp/master_256_predictions_*.csv')
-    previous_predictions = pd.concat([pd.read_csv(loc, usecols=['id_str', 'smooth-or-featured_featured-or-disk_prediction_mean']) for loc in previous_prediction_locs])
+    min_featured = 0.5  # see errors.ipynb
+    # previous_prediction_locs = glob.glob('temp/master_256_predictions_*.csv')
+    # previous_predictions = pd.concat([pd.read_csv(loc, usecols=['id_str', 'smooth-or-featured_featured-or-disk_prediction_mean']) for loc in previous_prediction_locs])
+    previous_predictions = pd.read_csv('temp/smooth_or_featured_labelled_latest_dummy.csv', usecols=['id_str', 'smooth-of-featured_featured-or-disk_prediction_mean', 'disk-edge-on_yes_prediction_mean_dummy'])
     len_before = len(catalog)
     catalog = pd.merge(catalog, previous_predictions, on='id_str', how='inner')
     len_merged = len(catalog)
-    print(catalog['smooth-or-featured_featured-or-disk_prediction_mean'])
-    filtered_catalog = catalog[catalog['smooth-or-featured_featured-or-disk_prediction_mean'] > min_featured]
+    # print(catalog['smooth-or-featured_featured-or-disk_prediction_mean'])
+    featured = catalog[catalog['smooth-or-featured_featured-or-disk_prediction_mean'] > min_featured]
+    filtered_catalog = featured[featured['disk-edge-on_yes_prediction_mean_dummy'] < 0.5]
     logging.info(f'{len_before} before filter, {len_merged} after merge, {len(filtered_catalog)} after filter at min_featured={min_featured}')
     print(f'{len_before} before filter, {len_merged} after merge, {len(filtered_catalog)} after filter at min_featured={min_featured}')
     return filtered_catalog
