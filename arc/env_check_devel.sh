@@ -12,8 +12,10 @@ module load python/anaconda3/2019.03
 module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.5.0__cuda-10.0
 
-# source activate $DATA/envs/zoobot
+# minimal Tensorflow example:
 
-# minimal example, works but profiler cannot load without CUPTI
+# with my env (TF 2.1), cannot load CUDA without cudnnn >7.6.4
 # $DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
+
+# Yassamine's env only has TF 1.10
 $DATA/tensor-env/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
