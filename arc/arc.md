@@ -9,6 +9,7 @@ sbatch script.sh
 squeue -u chri5177
 
 cd /data/phys-zooniverse/chri5177
+cd $DATA
 
 Setup
 

@@ -15,4 +15,5 @@ module load gpu/cudnn/7.5.0__cuda-10.0
 # source activate $DATA/envs/zoobot
 
 # minimal example, works but profiler cannot load without CUPTI
-$DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
+# $DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
+$DATA/tensor-env/bin/python $DATA/repos/zoobot/minimal_tensorflow.py

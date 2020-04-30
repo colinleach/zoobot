@@ -5,6 +5,8 @@ from tensorflow.keras import layers
 
 if __name__ == '__main__':
 
+    print('TF version: ', tf.__version__)
+
     model = tf.keras.Sequential([
     layers.Dense(64, activation='relu', input_shape=(32,)),
     layers.Dense(64, activation='relu'),
