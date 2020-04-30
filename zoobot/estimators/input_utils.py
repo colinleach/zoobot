@@ -26,6 +26,7 @@ class InputConfig():
             batch_size: int,
             shuffle: bool,
             repeat: bool,
+            drop_remainder: bool,
             stratify: bool,
             stratify_col=None,
             stratify_probs=None,
@@ -50,6 +51,7 @@ class InputConfig():
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.repeat = repeat
+        self.drop_remainder = drop_remainder
         self.stratify = stratify
         self.stratify_col = stratify_col
         self.stratify_probs = stratify_probs
@@ -127,13 +129,13 @@ def load_dataset_with_labels(config):
     # the order of config.label_cols will be the order that labels (axis=1) is indexed
     requested_features.update(zip(config.label_cols, ['float' for col in config.label_cols]))
     feature_spec = get_feature_spec(requested_features)
-    return get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    return get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat, config.drop_remainder)
 
 def make_labels_noisy(labels):
     raise NotImplementedError('This has been deprecated')
 
 
-def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
+def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat, drop_remainder):
     """
     Use feature_spec to load data from tfrecord_loc, and shuffle/batch according to args.
     Does NOT apply any preprocessing.
@@ -154,7 +156,7 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat):
         dataset = dataset.shuffle(500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
     if repeat:
         dataset = dataset.repeat()  # careful, don't repeat forever for eval
-    dataset = dataset.batch(batch_size)
+    dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)  # ensure that a batch is always ready to go
     # warning, no longer one shot iterator
     return dataset
@@ -185,14 +187,14 @@ def load_batches_with_counts(config):
 def load_batches_without_labels(config):
     # does not fetch id - unclear if this is important
     feature_spec = get_feature_spec({'matrix': 'string'})
-    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat, config.drop_remainder)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True)
 
 
 def load_batches_with_id_str(config):
     # does not fetch id - unclear if this is important
     feature_spec = get_feature_spec({'matrix': 'string', 'id_str': 'string'})
-    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat)
+    batch = get_dataset(config.tfrecord_loc, feature_spec, config.batch_size, config.shuffle, config.repeat, config.drop_remainder)
     return get_images_from_batch(batch, config.initial_size, config.channels, summary=True), batch['id_str']
 
 

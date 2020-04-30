@@ -32,3 +32,4 @@ panoptes-client
 # also requires personal package shared_astro_utils, pip install -e ../shared-astro-utilities
 # also requires personal package gzreduction, pip install -e ../gz-panoptes-reduction
 # pip install -r ../gz-panoptes-reduction/requirements.txt
+keras-tuner  # if you want to design new architectures

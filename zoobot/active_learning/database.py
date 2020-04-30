@@ -297,7 +297,7 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, run_config, 
     dataset = input_utils.get_input(config=eval_config)
 
     feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
-    id_str_dataset = input_utils.get_dataset(tfrecords_batch_locs, feature_spec, batch_size=1, shuffle=False, repeat=False)
+    id_str_dataset = input_utils.get_dataset(tfrecords_batch_locs, feature_spec, batch_size=1, shuffle=False, repeat=False, drop_remainder=False)
     batch_id_str = [str(d['id_str'].numpy().squeeze())[2:-1] for d in id_str_dataset]
     
     batch_predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)

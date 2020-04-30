@@ -210,7 +210,7 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
 def check_all_ids_are_in_db(shard_dir, db):
     # verify db contains all the id_strs in the shards
     feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
-    id_str_dataset = input_utils.get_dataset(glob.glob(shard_dir + '/*.tfrecord'), feature_spec, batch_size=1, shuffle=False, repeat=False)
+    id_str_dataset = input_utils.get_dataset(glob.glob(shard_dir + '/*.tfrecord'), feature_spec, batch_size=1, shuffle=False, repeat=False, drop_remainder=False)
     id_strs_in_shards = set([str(d['id_str'].numpy().squeeze())[2:-1] for d in id_str_dataset])
     id_strs_in_db = set([x.id_str for x in database.get_all_subjects(db, labelled=None)])  # i.e. labelled or not
     logging.info('{} ids in shards, {} ids in db')

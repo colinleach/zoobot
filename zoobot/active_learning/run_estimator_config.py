@@ -193,6 +193,7 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         label_cols=label_cols,
         stratify=False,
         shuffle=True,
+        drop_remainder=True,
         repeat=False,  # Changed from True for keras, which understands to restart a dataset
         stratify_probs=None,
         geometric_augmentation=True,
@@ -222,6 +223,7 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
         stratify=False,
         shuffle=False,  # see above
         repeat=False,
+        drop_remainder=True,
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
