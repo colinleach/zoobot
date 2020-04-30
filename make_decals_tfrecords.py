@@ -14,10 +14,12 @@ if __name__ == '__main__':
     """
     Labelled catalog must include id_str (aka iauname) and png_loc as well as any desired label columns
     Testing:
-        python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_all_128 --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
         python make_decals_tfrecords.py --labelled-catalog=data/latest_labelled_catalog.csv --eval-size=2000 --shard-dir=data/decals/shards/multilabel_all_temp --img-size 128 --max 5000  --png-prefix /media/walml/beta/decals/png_native
+        add --feat for filter
 
-        python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master_256 --img-size 256 --max 5000 --png-prefix /media/walml/beta/decals/png_native
+    Real:
+        python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master_filtered_128 --img-size 128 --png-prefix /media/walml/beta/decals/png_native --feat
+        python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master__filtered_256 --img-size 256 --png-prefix /media/walml/beta/decals/png_native  --feat
 
     """
 
@@ -38,6 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--max', dest='max_labelled', type=int, default=10000000000,
                         help='Max galaxies (for debugging/speed')
     parser.add_argument('--png-prefix', dest='png_prefix', type=str, default='', help='prefix to use before dr5/J00, replacing any existing prefix')
+    parser.add_argument('--feat', dest='featured_filter', action='store_true', default=False, help='Apply filter to featured face-on. Not quite identical to usual shards.')
 
     # order is not important here, just keying the serialise_example dict, but it matters in offline_training.py
     label_cols = [
@@ -67,6 +70,21 @@ if __name__ == '__main__':
     shard_size = 4096
 
     labelled_catalog = pd.read_csv(labelled_catalog_loc)
+
+    # copied from define_experiment.py
+    is_retired = (36 < labelled_catalog['smooth-or-featured_total-votes']) & (labelled_catalog['smooth-or-featured_total-votes'] < 45)
+    labelled_catalog = labelled_catalog[is_retired]
+    if args.featured_filter:
+        print(labelled_catalog.columns.values)
+        len_before = len(labelled_catalog)
+        min_featured = 0.5  # will be a bit different, volunteers here
+        is_featured = (labelled_catalog['smooth-or-featured_featured-or-disk'] / labelled_catalog['smooth-or-featured_total-votes']) > min_featured
+        featured = labelled_catalog[is_featured]
+        is_face_on = (featured['disk-edge-on_yes'] / featured['smooth-or-featured_featured-or-disk']) < 0.5
+        labelled_catalog = featured[is_face_on]
+        logging.info(f'{len_before} before filter, {len(labelled_catalog)} after filter')
+        print(f'{len_before} before filter, {len(labelled_catalog)} after filter')
+
     labelled_catalog = labelled_catalog.sample(
         min(len(labelled_catalog), max_labelled))  # shuffle and cut (if needed)
     assert len(labelled_catalog) > 0

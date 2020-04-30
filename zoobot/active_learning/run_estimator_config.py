@@ -90,7 +90,7 @@ class RunEstimatorConfig():
 
 
     # don't decorate, this is session creation point
-    def run_estimator(self):
+    def run_estimator(self, extra_callbacks=[]):
         """
         Train and evaluate an estimator.
         `self` may well be provided by default_estimator_params.py`
@@ -130,7 +130,7 @@ class RunEstimatorConfig():
             bayesian_estimator_funcs.UpdateStepCallback(
                 batch_size=self.batch_size
             )
-        ]
+        ] + extra_callbacks
 
         # https://www.tensorflow.org/tensorboard/scalars_and_keras
         fit_summary_writer = tf.summary.create_file_writer(os.path.join(self.log_dir, 'manual_summaries'))
