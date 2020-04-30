@@ -170,6 +170,7 @@ def get_epochs(iteration_n):
 
 
 def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions, label_cols, test=False):
+    
     instructions = create_instructions.load_instructions(instructions_dir)
     with open(instructions.shard_config_loc, 'r') as f:
         shard_img_size = json.load(f)['size']
@@ -207,8 +208,9 @@ if __name__ == '__main__':
     python zoobot/active_learning/run_iteration.py --instructions-dir data/experiments/decals_multiq_sim/instructions --this-iteration-dir data/experiments/decals_multiq_sim/iteration_1 --previous-iteration-dir data/experiments/decals_multiq_sim/iteration_0  --test
     """
 
-    gpus = tf.config.experimental.list_physical_devices('GPU')
+    gpus = tf.config.experimental.list_physical_devices('GPU')    
     if gpus:
+        print('Using GPU: ', gpus)
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
 

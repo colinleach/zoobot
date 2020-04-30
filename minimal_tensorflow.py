@@ -7,6 +7,8 @@ if __name__ == '__main__':
 
     print('TF version: ', tf.__version__)
 
+    print('Using GPU: ', tf.config.experimental.list_physical_devices('GPU'))
+
     model = tf.keras.Sequential([
     layers.Dense(64, activation='relu', input_shape=(32,)),
     layers.Dense(64, activation='relu'),
