@@ -5,13 +5,14 @@
 #SBATCH --time=00:10:00
 #SBATCH --gres=gpu:1
 #SBATCH --mem=12288
-#SBATCH --job-name=offline_training_devel
+#SBATCH --job-name=submit_simulation_devel
 
 module purge
 module load python/anaconda3/2019.03
 module load gpu/cuda/10.1.243
+module load gpu/cudnn/7.5.0__cuda-10.0
 
-# module load gpu/cudnn/7.5.0__cuda-10.0
+# _____module load gpu/cudnn/7.5.0__cuda-10.0
 # fails with: Loaded runtime CuDNN library: 7.5.0 but source was compiled with: 7.6.4.  CuDNN library major and minor version needs to match or have higher minor version in case of CuDNN 7.0 or later version. If using a binary install (I am), upgrade your CuDNN library.
 
 # ____ module load gpu/cudnn/7.6.0__cuda-9.0

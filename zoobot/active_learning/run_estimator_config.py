@@ -37,12 +37,12 @@ class RunEstimatorConfig():
             final_size,
             label_cols: List,
             channels=3,
-            epochs=250,  # rely on earlystopping callback
+            epochs=1500,  # rely on earlystopping callback
             train_steps=30,
             eval_steps=3,
             batch_size=128,
             min_epochs=0,
-            patience=30,
+            patience=200,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
             warm_start=True,
