@@ -18,9 +18,13 @@ if __name__ == '__main__':
         add --feat for filter
 
     Real:
+        python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master_filtered_64 --img-size 64 --png-prefix /media/walml/beta/decals/png_native --feat
         python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master_filtered_128 --img-size 128 --png-prefix /media/walml/beta/decals/png_native --feat
         python make_decals_tfrecords.py --labelled-catalog=data/decals/decals_master_catalog.csv --eval-size=1000 --shard-dir=data/decals/shards/multilabel_master__filtered_256 --img-size 256 --png-prefix /media/walml/beta/decals/png_native  --feat
 
+    And for GZ2:
+
+        python make_decals_tfrecords.py --labelled-catalog=data/gz2/gz2_master_catalog.csv --eval-size=1000 --shard-dir=data/gz2/shards/multilabel_master_filtered_64 --img-size 64 --png-prefix /media/walml/beta/gz2/png --feat
     """
 
     logging.basicConfig(

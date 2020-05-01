@@ -11,7 +11,7 @@ import pandas as pd
 def get_experiment_catalogs(catalog, save_dir):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
-    filtered_catalog = apply_custom_filter(catalog)  # science logic lives here
+    filtered_catalog = apply_custom_filter_cheat(catalog)  # science logic lives here
     labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36, ignore galaxies with less labels
     # unlabelled and catalog will have no 'label' column
     return catalog, labelled, unlabelled
@@ -30,14 +30,13 @@ def shuffle(df):
 
 
 def define_identifiers(catalog):
-    if any(catalog.duplicated(subset=['iauname'])):
+    if any(catalog.duplicated(subset=['id_str'])):
         logging.warning('Found duplicated iaunames - dropping!')
-        catalog = catalog.drop_duplicates(subset=['iauname'], keep=False)
-    catalog['id_str'] = catalog['iauname']
+        catalog = catalog.drop_duplicates(subset=['id_str'], keep=False)
     return catalog
 
 
-def apply_custom_filter(catalog):
+def apply_custom_filter_ml(catalog):
     # expect to change this a lot
     # for now, expect a 'smooth-or-featured_featured-or-disk_prediction_mean' col and filter > 0.25 (i.e. 10 of 40)
     # predicted beforehand by existing model TODO
@@ -56,6 +55,15 @@ def apply_custom_filter(catalog):
     print(f'{len_before} before filter, {len_merged} after merge, {len(filtered_catalog)} after filter at min_featured={min_featured}')
     return filtered_catalog
 
+# duplicate in make_decals_tfrecords.py
+def apply_custom_filter_cheat(catalog):
+    min_featured = 0.5  # will be a bit different, volunteers here
+    is_featured = (catalog['smooth-or-featured_featured-or-disk'] / catalog['smooth-or-featured_total-votes']) > min_featured
+    featured = catalog[is_featured]
+    is_face_on = (featured['disk-edge-on_yes'] / featured['smooth-or-featured_featured-or-disk']) < 0.5
+    catalog = featured[is_face_on]
+    return catalog
+
 
 def subject_is_retired(subject):
     return subject['smooth-or-featured_total-votes'] > 36
@@ -63,12 +71,12 @@ def subject_is_retired(subject):
 
 def drop_duplicates(df):
     #  to be safe, could improve TODO
-    if any(df['iauname'].duplicated()):
+    if any(df['id_str'].duplicated()):
         logging.warning('Duplicated:')
-        counts = df['iauname'].value_counts()
+        counts = df['id_str'].value_counts()
         logging.warning(counts[counts > 1])
     # no effect if no duplicates
-    return df.drop_duplicates(subset=['iauname'], keep=False)
+    return df.drop_duplicates(subset=['id_str'], keep=False)
 
 
 def get_mock_catalogs(labelled_catalog, save_dir, labelled_size, label_cols):
@@ -88,6 +96,13 @@ def get_mock_catalogs(labelled_catalog, save_dir, labelled_size, label_cols):
 
 if __name__ == '__main__':
 
+    """
+    
+    Decals: see dvc.md
+
+    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5 --sim-fraction 3.5
+    """
+
     # master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # currently with all galaxies but only a few classifications
     # catalog_dir = 'data/decals/prepared_catalogs/{}'.format(name)
 
@@ -100,28 +115,42 @@ if __name__ == '__main__':
                         help='Name of experiment (save to data')
     parser.add_argument('--save-dir', dest='save_dir', type=str,
                         help='Save experiment catalogs here')
+    parser.add_argument('--sim-fraction', dest='sim_fraction', type=float, default=4.,
+                        help='Save experiment catalogs here')
     args = parser.parse_args()
     master_catalog_loc = args.master_catalog_loc
     save_dir = args.save_dir
 
     # used to delete these columns from mock unlabelled catalog
     # could perhaps extract somewhere
+    # label_cols = [
+    #     'smooth-or-featured_smooth',
+    #     'smooth-or-featured_featured-or-disk',
+    #     'has-spiral-arms_yes',
+    #     'has-spiral-arms_no',
+    #     'spiral-winding_tight',
+    #     'spiral-winding_medium',
+    #     'spiral-winding_loose',
+    #     'bar_strong',
+    #     'bar_weak',
+    #     'bar_no',
+    #     'bulge-size_dominant',
+    #     'bulge-size_large',
+    #     'bulge-size_moderate',
+    #     'bulge-size_small',
+    #     'bulge-size_none'
+    # ]
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
         'has-spiral-arms_no',
-        'spiral-winding_tight',
-        'spiral-winding_medium',
-        'spiral-winding_loose',
-        'bar_strong',
-        'bar_weak',
+        'bar_yes',
         'bar_no',
         'bulge-size_dominant',
-        'bulge-size_large',
-        'bulge-size_moderate',
-        'bulge-size_small',
-        'bulge-size_none'
+        'bulge-size_obvious',
+        'bulge-size_just-noticeable',
+        'bulge-size_no'
     ]
 
     if os.path.isdir(save_dir):
@@ -145,7 +174,7 @@ if __name__ == '__main__':
     if not os.path.isdir(simulation_dir):
         os.mkdir(simulation_dir)
 
-    labelled_size = int(len(labelled) / 5.)  # pretend unlabelled, to be acquired
+    labelled_size = int(len(labelled) / args.sim_fraction)  # pretend unlabelled, to be acquired
     mock_labelled, mock_unlabelled, oracle = get_mock_catalogs(
         labelled, simulation_dir, labelled_size, label_cols)
 

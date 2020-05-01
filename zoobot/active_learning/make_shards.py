@@ -98,8 +98,8 @@ class ShardConfig():
 
         # check that file paths resolve correctly
         print(labelled_catalog['file_loc'][:3].values)
-        prepare_catalogs.check_no_missing_files(labelled_catalog['file_loc'])
-        prepare_catalogs.check_no_missing_files(unlabelled_catalog['file_loc'])
+        prepare_catalogs.check_no_missing_files(labelled_catalog['file_loc'], max_to_check=2000)
+        prepare_catalogs.check_no_missing_files(unlabelled_catalog['file_loc'], max_to_check=2000)
 
         # assume the catalog is true, don't modify halfway through
         logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
@@ -222,8 +222,11 @@ def check_all_ids_are_in_db(shard_dir, db):
 if __name__ == '__main__':
 
     """
-    Sim shards:
-        python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --max-unlabelled 40000 --img-size 128
+    Sim shards: add simulation_context
+        # python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --max-unlabelled 40000 --img-size 128
+    
+    GZ2 sim:
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim --max-unlabelled 40000 --img-size 128
     
     Testing:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size=100 --shard-dir=data/decals/shards/debug_sim --max-labelled 500 --max-unlabelled=300 --img-size 32
@@ -255,6 +258,40 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # decals cols
+    # label_cols = [
+    #     'smooth-or-featured_smooth',
+    #     'smooth-or-featured_featured-or-disk',
+    #     'has-spiral-arms_yes',
+    #     'has-spiral-arms_no',
+    #     'spiral-winding_tight',
+    #     'spiral-winding_medium',
+    #     'spiral-winding_loose',
+    #     'bar_strong',
+    #     'bar_weak',
+    #     'bar_no',
+    #     'bulge-size_dominant',
+    #     'bulge-size_large',
+    #     'bulge-size_moderate',
+    #     'bulge-size_small',
+    #     'bulge-size_none'
+    # ]
+
+    # gz2 cols
+    label_cols = [
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'bar_yes',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_obvious',
+        'bulge-size_just-noticeable',
+        'bulge-size_no'
+    ]
+    
+
     # log_loc = 'make_shards_{}.log'.format(time.time())
     logging.basicConfig(
         # filename=log_loc,
@@ -277,24 +314,6 @@ if __name__ == '__main__':
     # in memory for now, but will be serialized for later/logs
     train_test_fraction = catalog_to_tfrecord.get_train_test_fraction(len(labelled_catalog), args.eval_size)
 
-    # columns_to_save = labelled_catalog.columns.values  # save all the columns, because why not (possible trouble with nans?)
-    label_cols = [
-        'smooth-or-featured_smooth',
-        'smooth-or-featured_featured-or-disk',
-        'has-spiral-arms_yes',
-        'has-spiral-arms_no',
-        'spiral-winding_tight',
-        'spiral-winding_medium',
-        'spiral-winding_loose',
-        'bar_strong',
-        'bar_weak',
-        'bar_no',
-        'bulge-size_dominant',
-        'bulge-size_large',
-        'bulge-size_moderate',
-        'bulge-size_small',
-        'bulge-size_none'
-    ]
     columns_to_save = ['id_str'] + label_cols
     logging.info('Saving {} columns)'.format(columns_to_save))
 
