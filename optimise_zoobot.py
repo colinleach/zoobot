@@ -177,8 +177,8 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
 
     save_dir = 'temp'
 
-    max_epochs = 1000
-    patience = 50
+    max_epochs = 1  # use early stopping
+    patience = 15
 
     shard_img_size = 128  # will give the wrong batch sizes if this is incorrect!
     if os.path.isdir('/home/walml'):
@@ -224,15 +224,15 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
     #     validation_data=test_dataset
     # )
 
-    model = build_efficientnet(hp=None)
-    model.run_eagerly = True
-    model.fit(
-        train_dataset,
-        callbacks=[early_stopping],
-        validation_data=test_dataset
-    )
+    # model = build_efficientnet(hp=None)
+    # model.run_eagerly = True
+    # model.fit(
+    #     train_dataset,
+    #     callbacks=[early_stopping],
+    #     validation_data=test_dataset
+    # )
 
-    exit()
+    # exit()
 
     tuner = Hyperband(
         build_efficientnet,
@@ -240,7 +240,7 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
         hyperband_iterations=hyperband_iterations,
         max_epochs=max_epochs,
         directory='results/hyperband',
-        project_name='zoobot_latest'
+        project_name='zoobot_efficientnet'
     )
 
     tuner.search(
@@ -295,6 +295,6 @@ if __name__ == '__main__':
     # optimising on all decals galaxies (made w/ make_decals_tfrecords, not sim shards)
     shard_dir = os.path.join(base_dir, 'repos/zoobot/data/decals/shards/multilabel_master_filtered_128')
 
-    hyperband_iterations = 5
+    hyperband_iterations = 1
     max_epochs = 1000
     main(shard_dir, hyperband_iterations, max_epochs, schema)
