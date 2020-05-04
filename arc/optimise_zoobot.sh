@@ -5,7 +5,7 @@
 #SBATCH --time=00:10:00
 #SBATCH --gres=gpu:1
 #SBATCH --mem=12288
-#SBATCH --job-name=offline_training_devel
+#SBATCH --job-name=optimise_zoobot
 
 module purge
 module load python/anaconda3/2019.03

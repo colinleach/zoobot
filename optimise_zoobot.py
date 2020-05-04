@@ -207,10 +207,10 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
     train_dataset = input_utils.get_input(config=run_config.train_config)
     test_dataset = input_utils.get_input(config=run_config.eval_config)
 
-    print(run_config.train_config.batch_size)
-    for x, y in train_dataset.take(5):
-        print(x.shape)
-    exit()
+    # print(run_config.train_config.batch_size)
+    # for x, y in train_dataset.take(5):
+    #     print(x.shape)
+    # exit()
 
     early_stopping = keras.callbacks.EarlyStopping(restore_best_weights=True, patience=patience)
 
