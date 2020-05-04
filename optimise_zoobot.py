@@ -126,7 +126,7 @@ def build_conv_model(hp=None):
         metrics=['mean_absolute_error'])
     return model
 
-def main(shard_dir, hyperband_iterations, max_epochs, schema):
+def main(shard_dir, hyperband_iterations, schema):
 
 
     def build_efficientnet(hp=None):
@@ -177,8 +177,8 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
 
     save_dir = 'temp'
 
-    max_epochs = 1  # use early stopping
-    patience = 15
+    max_epochs = 1000  # use early stopping
+    patience = 10
 
     shard_img_size = 128  # will give the wrong batch sizes if this is incorrect!
     if os.path.isdir('/home/walml'):
@@ -186,7 +186,7 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
         batch_size = 32
     else:  # ARC
         resolution = 128
-        batch_size = 64
+        batch_size = 256
 
     warm_start = False
     train_records_dir = os.path.join(shard_dir, 'train')
@@ -296,5 +296,4 @@ if __name__ == '__main__':
     shard_dir = os.path.join(base_dir, 'repos/zoobot/data/decals/shards/multilabel_master_filtered_128')
 
     hyperband_iterations = 1
-    max_epochs = 1000
-    main(shard_dir, hyperband_iterations, max_epochs, schema)
+    main(shard_dir, hyperband_iterations, schema)
