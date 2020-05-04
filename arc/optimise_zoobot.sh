@@ -19,6 +19,6 @@ nvidia-smi
 # minimal Tensorflow example:
 $DATA/envs/zoobot/bin/python $DATA/repos/zoobot/minimal_tensorflow.py
 
-# minimal Tensorflow example:
-$DATA/envs/zoobot/bin/python $DATA/repos/zoobot/optimise_zoobot.py
+# research code:
+# $DATA/envs/zoobot/bin/python $DATA/repos/zoobot/optimise_zoobot.py
 
