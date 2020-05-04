@@ -186,7 +186,7 @@ def main(shard_dir, hyperband_iterations, schema):
         batch_size = 32
     else:  # ARC
         resolution = 128
-        batch_size = 256
+        batch_size = 200
 
     warm_start = False
     train_records_dir = os.path.join(shard_dir, 'train')
@@ -295,5 +295,5 @@ if __name__ == '__main__':
     # optimising on all decals galaxies (made w/ make_decals_tfrecords, not sim shards)
     shard_dir = os.path.join(base_dir, 'repos/zoobot/data/decals/shards/multilabel_master_filtered_128')
 
-    hyperband_iterations = 1
+    hyperband_iterations = 5
     main(shard_dir, hyperband_iterations, schema)
