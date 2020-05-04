@@ -212,7 +212,7 @@ def main(shard_dir, hyperband_iterations, schema):
     test_dataset = input_utils.get_input(config=run_config.eval_config)
 
     # check for bad shard_img_size leading to bad batch size
-    for x, _ in train_dataset.take(5):
+    for x, _ in train_dataset.take(2):
         assert x.shape[0] == batch_size
 
     early_stopping = keras.callbacks.EarlyStopping(restore_best_weights=True, patience=patience)
@@ -243,11 +243,14 @@ def main(shard_dir, hyperband_iterations, schema):
         project_name='zoobot_efficientnet'
     )
 
+    print(tuner.search_space_summary())
+
     tuner.search(
         train_dataset,
         callbacks=[early_stopping],
         validation_data=test_dataset,
-        # batch_size=batch_size
+        # chooses epochs automatically
+        # batch_size=batch_size  # batch size fixed when model created, can' specify twice
     )
 
     tuner.results_summary()
