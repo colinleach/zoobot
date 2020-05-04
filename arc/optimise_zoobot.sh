@@ -9,7 +9,7 @@
 
 module purge
 module load python/anaconda3/2019.03
-module load gpu/cuda/10.1.243
+# module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.6.5__cuda-10.1
 
 # minimal Tensorflow example:
