@@ -180,9 +180,13 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
     max_epochs = 1000
     patience = 50
 
-    shard_img_size = 64
-    resolution = 64
-    batch_size = 6
+    shard_img_size = 128  # will give the wrong batch sizes if this is incorrect!
+    if os.path.isdir('/home/walml'):
+        resolution = 64
+        batch_size = 32
+    else:  # ARC
+        resolution = 128
+        batch_size = 64
 
     warm_start = False
     train_records_dir = os.path.join(shard_dir, 'train')
@@ -207,10 +211,9 @@ def main(shard_dir, hyperband_iterations, max_epochs, schema):
     train_dataset = input_utils.get_input(config=run_config.train_config)
     test_dataset = input_utils.get_input(config=run_config.eval_config)
 
-    # print(run_config.train_config.batch_size)
-    # for x, y in train_dataset.take(5):
-    #     print(x.shape)
-    # exit()
+    # check for bad shard_img_size leading to bad batch size
+    for x, _ in train_dataset.take(5):
+        assert x.shape[0] == batch_size
 
     early_stopping = keras.callbacks.EarlyStopping(restore_best_weights=True, patience=patience)
 
