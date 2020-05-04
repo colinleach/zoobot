@@ -194,6 +194,7 @@ def make_database_and_shards(catalog, db_loc, size, shard_dir, shard_size):
         os.remove(db_loc)
     # set up db and shards using unknown catalog data
     db = database.create_db(catalog, db_loc)
+    catalog['id_str'] = catalog['id_str'].astype(str)
     columns_to_save = ['id_str']
     database.write_catalog_to_tfrecord_shards(
         catalog,
@@ -213,9 +214,11 @@ def check_all_ids_are_in_db(shard_dir, db):
     id_str_dataset = input_utils.get_dataset(glob.glob(shard_dir + '/*.tfrecord'), feature_spec, batch_size=1, shuffle=False, repeat=False, drop_remainder=False)
     id_strs_in_shards = set([str(d['id_str'].numpy().squeeze())[2:-1] for d in id_str_dataset])
     id_strs_in_db = set([x.id_str for x in database.get_all_subjects(db, labelled=None)])  # i.e. labelled or not
-    logging.info('{} ids in shards, {} ids in db')
+    logging.info(f'{len(id_strs_in_shards)} ids in shards, {len(id_strs_in_db)} ids in db')
     missing_ids = id_strs_in_shards - id_strs_in_db
     if missing_ids:
+        logging.critical('example ids in shards: {}'.format(np.random.choice(list(id_strs_in_shards), 5)))
+        logging.critical('example ids in db: {}'.format(np.random.choice(list(id_strs_in_db), 5)))
         raise ValueError('{} ids from shards were not correctly written to db'.format(len(missing_ids)))
 
 
@@ -223,10 +226,10 @@ if __name__ == '__main__':
 
     """
     Sim shards: add simulation_context
-        # python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --max-unlabelled 40000 --img-size 128
+        # python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --img-size 128
     
     GZ2 sim:
-        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim --max-unlabelled 40000 --img-size 128
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_128 --img-size 128
     
     Testing:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size=100 --shard-dir=data/decals/shards/debug_sim --max-labelled 500 --max-unlabelled=300 --img-size 32
@@ -300,8 +303,10 @@ if __name__ == '__main__':
         level=logging.INFO
     )
 
-    labelled_catalog = pd.read_csv(args.labelled_catalog_loc)
-    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc)
+    dtypes = dict(zip(label_cols, [float for _ in label_cols]))
+    dtypes['id_str'] = str
+    labelled_catalog = pd.read_csv(args.labelled_catalog_loc, dtype=dtypes)
+    unlabelled_catalog = pd.read_csv(args.unlabelled_catalog_loc, dtype=dtypes)
 
     # limit catalogs to random subsets
     if args.max_labelled:

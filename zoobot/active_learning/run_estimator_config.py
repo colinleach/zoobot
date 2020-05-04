@@ -35,7 +35,7 @@ class RunEstimatorConfig():
             self,
             initial_size,
             final_size,
-            label_cols: List,
+            schema: losses.Schema,
             channels=3,
             epochs=1500,  # rely on earlystopping callback
             train_steps=30,
@@ -51,7 +51,7 @@ class RunEstimatorConfig():
         self.initial_size = initial_size
         self.final_size = final_size
         self.channels = channels
-        self.label_cols = label_cols
+        self.schema = schema
         self.epochs = epochs
         self.train_batches = train_steps
         self.eval_batches = eval_steps
@@ -155,7 +155,7 @@ class RunEstimatorConfig():
 
 # batch size changed from 256 for now, for my poor laptop
 # can override less rarely specified RunEstimatorConfig defaults with **kwargs if you like
-def get_run_config(initial_size, final_size, warm_start, log_dir, train_records, eval_records, epochs, questions, label_cols, batch_size, **kwargs):
+def get_run_config(initial_size, final_size, warm_start, log_dir, train_records, eval_records, epochs, schema, batch_size, **kwargs):
 
     # save these to get back the same run config across iterations? But hpefully in instructions already, or can be calculated...
     # args = {
@@ -166,18 +166,18 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
     run_config = RunEstimatorConfig(
         initial_size=initial_size,
         final_size=final_size,
-        label_cols=label_cols,
+        schema=schema,
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         log_dir=log_dir,
         warm_start=warm_start,
         batch_size=batch_size
     )
 
-    train_config = get_train_config(train_records, run_config.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
+    train_config = get_train_config(train_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    eval_config = get_eval_config(eval_records, run_config.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
+    eval_config = get_eval_config(eval_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    model = get_model(label_cols, questions, run_config.final_size)
+    model = get_model(schema, run_config.final_size)
 
     run_config.assemble(train_config, eval_config, model)
     return run_config
@@ -242,11 +242,11 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
     )
     return eval_config
 
-def get_model(label_cols, questions, final_size):
-    schema = losses.Schema(label_cols, questions)
+
+def get_model(schema, final_size):
     model = bayesian_estimator_funcs.BayesianModel(
         image_dim=final_size, # not initial size
-        output_dim=len(label_cols),  # will predict all label columns, in this order
+        output_dim=len(schema.label_cols),  # will predict all label columns, in this order
         schema=schema,
         conv1_filters=32,
         conv1_kernel=3,

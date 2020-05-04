@@ -8,10 +8,15 @@ import tensorflow as tf
 
 class Question():
 
-    def __init__(self, text, label_cols):
+    def __init__(self, text:str, label_cols: List, version: str):
         self.text = text
 
-        self.answers = create_answers(self, label_cols)
+        if version == 'decals':
+            self.answers = create_answers_decals(self, label_cols)
+        elif version == 'gz2':
+            self.answers = create_answers_gz2(self, label_cols)
+        else:
+            raise ValueError(f'Version {version} not recognised')
 
         self.start_index = min(a.index for a in self.answers)
         self.end_index = max(a.index for a in self.answers)
@@ -40,7 +45,7 @@ class Answer():
         return self._next_question
 
 
-def create_answers(question, label_cols):
+def create_answers_decals(question, label_cols):
     question_text = question.text
     if question_text == 'smooth-or-featured':
         answer_substrings = ['_smooth', '_featured-or-disk']
@@ -58,6 +63,24 @@ def create_answers(question, label_cols):
     return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
 
 
+def create_answers_gz2(question, label_cols):
+    question_text = question.text
+    if question_text == 'smooth-or-featured':
+        answer_substrings = ['_smooth', '_featured-or-disk']
+    elif question_text == 'has-spiral-arms':
+        answer_substrings = ['_yes', '_no']
+    elif question_text == 'spiral-winding':
+        answer_substrings = ['_tight', '_medium', '_loose']
+    elif question_text == 'bar':
+        answer_substrings = ['_yes', '_no']
+    elif question_text == 'bulge-size':
+        answer_substrings = ['_dominant', '_obvious', '_just-noticeable', '_no']
+    else:
+        print(question_text)
+        raise ValueError(question.text + ' not recognised')
+    return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
+
+# luckily, these are the same in GZ2 and decals
 def set_dependencies(questions):
     dependencies = {
         'smooth-or-featured': None,
@@ -76,9 +99,9 @@ def set_dependencies(questions):
 
 class Schema():
     """
-    Relate the df label columns to question/answer groups and to tfrecod label indices
+Relate the df label columns tor question/answer groups and to tfrecod label indices
     """
-    def __init__(self, label_cols: List, question_texts: List):
+    def __init__(self, label_cols: List, question_texts: List, version):
         """
         Requires that labels be continguous by question - easily satisfied
         
@@ -89,6 +112,7 @@ class Schema():
         logging.info(f'Label cols: {label_cols} \n Questions: {question_texts}')
         self.label_cols = label_cols
         # self.questions = questions
+        self.version = version
 
         """
         Be careful:
@@ -97,7 +121,7 @@ class Schema():
         - answers in between will be included: these are used to slice
         - df columns must be contigious by question (e.g. not smooth_yes, bar_no, smooth_no) for this to work!
         """
-        self.questions = [Question(question_text, label_cols) for question_text in question_texts]
+        self.questions = [Question(question_text, label_cols, version=version) for question_text in question_texts]
         if len(self.questions) > 1:
             set_dependencies(self.questions)
 

@@ -126,7 +126,7 @@ class BayesianModel(tf.keras.Model):
             activation=dense1_activation,
             kernel_regularizer=regularizer,
             name='model/layer4/dense1')
-        self.dropout_final = tf.keras.layers.Dropout(rate=dropout_rate)
+        self.dropout_final = tf.keras.layers.Dropout(rate=dropout_rate)  # possible massive typo - this has no dropout!
         self.dense_final = tf.keras.layers.Dense(
             units=self.output_dim,  # num outputs
             name='model/layer5/dense1')

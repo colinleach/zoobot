@@ -94,12 +94,13 @@ class Iteration():
         os.mkdir(self.acquired_tfrecords_dir)
         os.mkdir(self.metrics_dir)
         # TODO have a test that verifies new folder structure?
+        
+        self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions)
 
         self.run_config = run_estimator_config.get_run_config(
             initial_size=self.fixed_estimator_params.initial_size, 
             final_size=self.fixed_estimator_params.final_size,
-            questions=self.fixed_estimator_params.questions,
-            label_cols=self.fixed_estimator_params.label_cols,
+            schema=self.schema,
             batch_size=self.fixed_estimator_params.batch_size,
             warm_start=False,  # for now 
             log_dir=self.estimators_dir,
@@ -230,8 +231,8 @@ class Iteration():
 
         # returns list of acquisition values
         # warning, duplication
-        schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions)
-        acquisitions = self.acquisition_func(predictions, schema, retirement=40)
+        
+        acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
         self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))

@@ -6,6 +6,7 @@ import time
 import tensorflow as tf
 
 from zoobot.active_learning import create_instructions, run_estimator_config
+from zoobot.estimators import schema
 
   
 if __name__ == '__main__':
@@ -88,6 +89,7 @@ if __name__ == '__main__':
         # 'bulge-size_small',
         # 'bulge-size_none'
     ]
+    schema = losses.Schema(label_cols, questions, version='decals')
 
     run_config = run_estimator_config.get_run_config(
       initial_size=shard_img_size,
@@ -97,8 +99,7 @@ if __name__ == '__main__':
       train_records=train_records,
       eval_records=eval_records,
       epochs=epochs,
-      questions=questions,
-      label_cols=label_cols,
+      schema=schema
       batch_size=batch_size
     )
     

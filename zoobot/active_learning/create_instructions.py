@@ -123,9 +123,9 @@ class TrainCallableFactory():
         Returns:
             callable: callable expecting per-iteration args, training a model when called
         """
-        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, questions, label_cols, **kw_args):
+        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args):
             logging.info('Training model on: {}'.format(train_records))
-            run_config = run_estimator_config.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, questions, label_cols, **kw_args)
+            run_config = run_estimator_config.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args)
             if self.test: # overrides warm_start
                 run_config.epochs = 2  # minimal training, for speed
 

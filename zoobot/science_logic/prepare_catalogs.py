@@ -101,7 +101,7 @@ def create_gz2_master_catalog(catalog_loc: str, save_loc: str):
     df['disk-edge-on_total-votes'] = df['disk-edge-on_yes'] + df['disk-edge-on_no']
     df['has-spiral-arms_total-votes'] = df['has-spiral-arms_yes'] + df['has-spiral-arms_no']
     df['bulge-size_total-votes'] = df['bulge-size_no'] + df['bulge-size_just-noticeable'] + df['bulge-size_obvious'] + df['bulge-size_dominant']
-    df['id_str'] = df['dr7objid'].astype(str)
+    df['id_str'] = df['dr7objid'].apply(lambda x: 'dr7objid_' + str(x))  # useful to describe, and  avoids automatic string->int conversion problems
     # change to be inside data folder, specified relative to repo root. Use local_png_loc (later) for absolute path
     df['png_loc'] = df['local_png_loc'].apply(lambda x: x.replace('/Volumes/alpha/', '').replace('gz2/', '').replace('decals/', ''))
     print(df['png_loc'])

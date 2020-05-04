@@ -156,6 +156,7 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat, drop_re
         dataset = dataset.shuffle(500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
     if repeat:
         dataset = dataset.repeat()  # careful, don't repeat forever for eval
+    print(batch_size, batch_size)
     dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)  # ensure that a batch is always ready to go
     # warning, no longer one shot iterator
