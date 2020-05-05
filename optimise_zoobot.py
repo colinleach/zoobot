@@ -186,7 +186,7 @@ def main(shard_dir, hyperband_iterations, schema):
         batch_size = 32
     else:  # ARC
         resolution = 128
-        batch_size = 200
+        batch_size = 100
 
     warm_start = False
     train_records_dir = os.path.join(shard_dir, 'train')
@@ -234,6 +234,7 @@ def main(shard_dir, hyperband_iterations, schema):
 
     # exit()
 
+    print('Iterations: {}, Max epochs: {}')
     tuner = Hyperband(
         build_efficientnet,
         objective='val_loss',
@@ -243,7 +244,8 @@ def main(shard_dir, hyperband_iterations, schema):
         project_name='zoobot_efficientnet'
     )
 
-    print(tuner.search_space_summary())
+    tuner.search_space_summary()
+
 
     tuner.search(
         train_dataset,
