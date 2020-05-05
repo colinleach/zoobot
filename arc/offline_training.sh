@@ -12,7 +12,7 @@ module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.6.5__cuda-10.1
 
 epochs=1000
-batch_size=256  # up from 128 currently running
+batch_size=128  # fits on V100, not my laptop...
 shard_img_size=256
 final_size=224
 shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
