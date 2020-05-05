@@ -132,6 +132,10 @@ class RunEstimatorConfig():
             )
         ] + extra_callbacks
 
+        if os.path.isdir('/home/walml'):
+            verbose=1
+        else:
+            verbose=2
         # https://www.tensorflow.org/tensorboard/scalars_and_keras
         fit_summary_writer = tf.summary.create_file_writer(os.path.join(self.log_dir, 'manual_summaries'))
         with fit_summary_writer.as_default():
@@ -146,6 +150,7 @@ class RunEstimatorConfig():
                 validation_steps=int(1000/self.batch_size),
                 epochs=self.epochs,
                 callbacks=callbacks,
+                verbose=verbose
             )
 
         logging.info('All epochs completed - finishing gracefully')
@@ -177,7 +182,7 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
 
     eval_config = get_eval_config(eval_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    model = get_model(schema, run_config.final_size)
+    model = get_model(schema, run_config.final_size, run_config.batch_size)
 
     run_config.assemble(train_config, eval_config, model)
     return run_config
@@ -243,7 +248,7 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
     return eval_config
 
 
-def get_model(schema, final_size):
+def get_model(schema, final_size, batch_size=16):
 
     # dropout_rate = 0.3
     # drop_connect_rate = 0.2  # gets scaled by num blocks, 0.6ish = 1
@@ -251,7 +256,6 @@ def get_model(schema, final_size):
     model = efficientnet.EfficientNet_custom_top(
         schema=schema,
         input_shape=(final_size, final_size, 1),
-        batch_size=16, # TODO
         get_effnet=efficientnet.EfficientNetB0
         # further kwargs will be passed to get_effnet
         # dropout_rate=dropout_rate,

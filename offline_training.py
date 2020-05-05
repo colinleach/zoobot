@@ -12,14 +12,14 @@ from zoobot.estimators import losses, input_utils
   
 if __name__ == '__main__':
     """
+    To make model for smooth/featured (also change cols below):
+      python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 1000 
 
-      python offline_training.py --experiment-dir results/latest_offline_retired --shard-img-size 128 --train-dir data/decals/shards/multilabel_128_retired/train --eval-dir data/decals/shards/multilabel_128_retired/eval --epochs 150 
+    To make model for predictions on all cols, for appropriate galaxies only:
+      python offline_training.py --experiment-dir results/latest_offline_featured --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 1000 
       
-      To make model for smooth/featured (also change cols below):
-      python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 150 
-
     Testing:
-      python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 2 
+      python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 
     """
 
     # useful to avoid errors on small GPU
