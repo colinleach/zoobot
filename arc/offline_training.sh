@@ -4,7 +4,6 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=02:00:00
 #SBATCH --gres=gpu:v100:1
-#SBATCH --mem=12288
 #SBATCH --job-name=offline_training_v100x1
 
 module purge
