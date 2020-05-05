@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib
 import numpy as np
 
-from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses
+from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses, efficientnet
 
 
 class FixedEstimatorParams():
@@ -244,22 +244,36 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
 
 
 def get_model(schema, final_size):
-    model = bayesian_estimator_funcs.BayesianModel(
-        image_dim=final_size, # not initial size
-        output_dim=len(schema.label_cols),  # will predict all label columns, in this order
+
+    # dropout_rate = 0.3
+    # drop_connect_rate = 0.2  # gets scaled by num blocks, 0.6ish = 1
+
+    model = efficientnet.EfficientNet_custom_top(
         schema=schema,
-        conv1_filters=32,
-        conv1_kernel=3,
-        conv2_filters=64,
-        conv2_kernel=3,
-        conv3_filters=128,
-        conv3_kernel=3,
-        dense1_units=128,
-        dense1_dropout=0.5,
-        predict_dropout=0.5,  # change this to calibrate
-        regression=True,  # important!
-        log_freq=10
-    )  # WARNING will need to be updated for multiquestion
+        input_shape=(final_size, final_size, 1),
+        batch_size=16, # TODO
+        get_effnet=efficientnet.EfficientNetB0
+        # further kwargs will be passed to get_effnet
+        # dropout_rate=dropout_rate,
+        # drop_connect_rate=drop_connect_rate
+    )
+
+    # model = bayesian_estimator_funcs.BayesianModel(
+    #     image_dim=final_size, # not initial size
+    #     output_dim=len(schema.label_cols),  # will predict all label columns, in this order
+    #     schema=schema,
+    #     conv1_filters=32,
+    #     conv1_kernel=3,
+    #     conv2_filters=64,
+    #     conv2_kernel=3,
+    #     conv3_filters=128,
+    #     conv3_kernel=3,
+    #     dense1_units=128,
+    #     dense1_dropout=0.5,
+    #     predict_dropout=0.5,  # change this to calibrate
+    #     regression=True,  # important!
+    #     log_freq=10
+    # )  # WARNING will need to be updated for multiquestion
 
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),

@@ -129,7 +129,7 @@ def build_conv_model(hp=None):
 def main(shard_dir, hyperband_iterations, schema):
 
 
-    def build_efficientnet(hp=None):
+    def build_efficientnet(hp=None): 
             # https://keras-team.github.io/keras-tuner/documentation/hyperparameters/#float-method
 
             #     flops = depth_coefficient * width_coefficient ** 2 * resolution ** 2
@@ -253,6 +253,7 @@ def main(shard_dir, hyperband_iterations, schema):
         validation_data=test_dataset,
         # chooses epochs automatically
         # batch_size=batch_size  # batch size fixed when model created, can' specify twice
+        verbose=2  # no pbar
     )
 
     tuner.results_summary()

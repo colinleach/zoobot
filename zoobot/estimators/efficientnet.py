@@ -84,6 +84,11 @@ def get_swish():
 
     return swish
 
+class PermaDropout(layers.Dropout):
+
+    def call(self, x, training=None):
+        return super().call(x, training=True)  # ME, force dropout on at test time
+
 
 def get_dropout():
     """Wrapper over custom dropout. Fix problem of ``None`` shape for tf.keras.
@@ -92,7 +97,7 @@ def get_dropout():
     Issue:
         https://github.com/tensorflow/tensorflow/issues/30946
     """
-    class FixedDropout(layers.Dropout):
+    class FixedDropout(PermaDropout):  # inherit from mine instead of layers.Dropout
         def _get_noise_shape(self, inputs):
             if self.noise_shape is None:
                 return self.noise_shape
@@ -101,6 +106,8 @@ def get_dropout():
             noise_shape = [symbolic_shape[axis] if shape is None else shape
                            for axis, shape in enumerate(self.noise_shape)]
             return tuple(noise_shape)
+
+
 
     return FixedDropout
 
@@ -320,7 +327,7 @@ def EfficientNet(width_coefficient,
         drop_rate = drop_connect_rate * float(block_num) / num_blocks_total
         x = mb_conv_block(x, block_args,
                           activation=activation,
-                          drop_rate=drop_rate,
+                          drop_rate=drop_rate,  # actually related to drop_connect_rate
                           prefix='block{}a_'.format(idx + 1))
         block_num += 1
         if block_args.num_repeat > 1:
@@ -351,7 +358,10 @@ def EfficientNet(width_coefficient,
     if include_top:
         x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
         if dropout_rate and dropout_rate > 0:
-            x = layers.Dropout(dropout_rate, name='top_dropout')(x)
+            # x = layers.Dropout(dropout_rate, name='top_dropout')(x)
+            # use constantly-on dropout instead
+            # top layer dropout needs to be high to do anything much
+            x = PermaDropout(dropout_rate, name='top_dropout')(x)  
         x = layers.Dense(classes,
                          activation='softmax',
                          kernel_initializer=DENSE_KERNEL_INITIALIZER,
@@ -369,7 +379,7 @@ def EfficientNet(width_coefficient,
     else:
         inputs = img_input
 
-    # Create model.
+    # Create model
     model = models.Model(inputs, x, name=model_name)
 
     return model
@@ -400,9 +410,10 @@ def EfficientNetB3(include_top=True,
                    input_shape=None,
                    pooling=None,
                    classes=1000,
+                   dropout_rate=0.3,  # added here  as it has an explicit default
                    **kwargs):
     return EfficientNet(
-        1.2, 1.4, 300, 0.3,
+        1.2, 1.4, 300, dropout_rate,
         model_name='efficientnet-b3',
         include_top=include_top, weights=weights,
         input_tensor=input_tensor, input_shape=input_shape,
@@ -419,9 +430,15 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=16, add_channel
       model = tf.keras.Sequential([tf.keras.layers.Lambda(lambda x: tf.stack([x, x, x], axis=3))])  # need channel dim for imagenet
     else:
       model = tf.keras.Sequential()
-
     # classes probably does nothing without include_top
-    effnet = get_effnet(input_shape=input_shape, input_tensor=tf.keras.Input(shape=input_shape, batch_size=batch_size), weights=None, include_top=False, classes=output_dim, **kwargs)
+    effnet = get_effnet(
+        input_shape=input_shape,
+        # input_tensor=tf.keras.Input(shape=input_shape, batch_size=batch_size),
+        weights=None,
+        include_top=False,
+        classes=output_dim,
+        **kwargs
+    )
     model.add(effnet)
 
     model.add(tf.keras.layers.GlobalAveragePooling2D())

@@ -3,17 +3,20 @@
 #SBATCH --partition=htc
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=02:00:00
-#SBATCH --gres=gpu:p100:2
+#SBATCH --gres=gpu:v100:1
 #SBATCH --mem=12288
-#SBATCH --job-name=offline_training
+#SBATCH --job-name=offline_training_v100x1
 
 module purge
 module load python/anaconda3/2019.03
-# module load gpu/cuda/10.1.243
-# module load gpu/cudnn/7.6.0__cuda-9.0
-module load gpu/cuda/10.0.130
-module load gpu/cudnn/7.5.0__cuda-10.0
+module load gpu/cuda/10.1.243
 
-# source activate /data/phys-zooniverse/chri5177/envs/zoobot
+module load gpu/cudnn/7.5.5__cuda-10.1
 
-/data/phys-zooniverse/chri5177/envs/zoobot/bin/python offline_training.py --experiment-dir /data/phys-zooniverse/chri5177/repos/zoobot/results/latest_offline --shard-img-size 256 --train-dir /data/phys-zooniverse/chri5177/repos/zoobot/data/decals/shards/multilabel_256/train --eval-dir /data/phys-zooniverse/chri5177/repos/zoobot/data/decals/shards/multilabel_256/eval --epochs 150 
+epochs=1000
+batch_size=64
+shard_img_size=256
+final_size=128
+shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
+
+$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline --shard-img-size $shard_img_size --train-dir $shard_dir/train --eval-dir $shard_dir/eval --epochs $EPOCHS --batch-size $BATCH_SIZE --final-size $final_size  

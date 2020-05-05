@@ -2,11 +2,12 @@
 import os
 import argparse
 import time
+import logging
 
 import tensorflow as tf
 
 from zoobot.active_learning import create_instructions, run_estimator_config
-from zoobot.estimators import schema
+from zoobot.estimators import losses, input_utils
 
   
 if __name__ == '__main__':
@@ -34,16 +35,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-dir', dest='save_dir', type=str)
     parser.add_argument('--shard-img-size', dest='shard_img_size', type=int, default=256)
+    parser.add_argument('--final-size', dest='final_size', type=int, default=64)
     parser.add_argument('--train-dir', dest='train_records_dir', type=str)
     parser.add_argument('--eval-dir', dest='eval_records_dir', type=str)
     parser.add_argument('--epochs', dest='epochs', type=int)
+    parser.add_argument('--batch-size', dest='batch_size', default=64, type=int)
     parser.add_argument('--warm-start', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
     args = parser.parse_args()
 
     shard_img_size = args.shard_img_size
-    # final_size = int(shard_img_size / 2) # temp
-    final_size = 64
+    final_size = args.final_size  # step time prop. to resolution
+    batch_size = args.batch_size
+    logging.info('Batch {}, final size {}'.format(batch_size, final_size))
     warm_start = args.warm_start
     test = args.test
     epochs = args.epochs
@@ -53,21 +57,15 @@ if __name__ == '__main__':
     train_records = [os.path.join(train_records_dir, x) for x in os.listdir(train_records_dir) if x.endswith('.tfrecord')]
     eval_records = [os.path.join(eval_records_dir, x) for x in os.listdir(eval_records_dir) if x.endswith('.tfrecord')]
 
-    if test:
-      batch_size = 32
-    else:
-      batch_size = 64  # small for now for laptop GPU, was 256
-
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
 
     # must match label cols below
     questions = [
         'smooth-or-featured',
-        # 'has-spiral-arms',
-        # 'spiral-winding',
-        # 'bar',
-        # 'bulge-size'
+        'has-spiral-arms',
+        'bar',
+        'bulge-size'
     ]
 
     # will load labels from shard, in this order
@@ -75,19 +73,16 @@ if __name__ == '__main__':
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
-        # 'has-spiral-arms_yes',
-        # 'has-spiral-arms_no',
-        # 'spiral-winding_tight',
-        # 'spiral-winding_medium',
-        # 'spiral-winding_loose',
-        # 'bar_strong',
-        # 'bar_weak',
-        # 'bar_no',
-        # 'bulge-size_dominant',
-        # 'bulge-size_large',
-        # 'bulge-size_moderate',
-        # 'bulge-size_small',
-        # 'bulge-size_none'
+        'has-spiral-arms_yes',
+        'has-spiral-arms_no',
+        'bar_strong',
+        'bar_weak',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
     ]
     schema = losses.Schema(label_cols, questions, version='decals')
 
@@ -99,8 +94,15 @@ if __name__ == '__main__':
       train_records=train_records,
       eval_records=eval_records,
       epochs=epochs,
-      schema=schema
+      schema=schema,
       batch_size=batch_size
     )
+
+    # check for bad shard_img_size leading to bad batch size
+    # train_dataset = input_utils.get_input(config=run_config.train_config)
+    # test_dataset = input_utils.get_input(config=run_config.eval_config)
+    # for x, y in train_dataset.take(2):
+    #     print(x.shape, y.shape)
+    #     assert x.shape[0] == batch_size
     
-    run_config.run_estimator() 
+    trained_model = run_config.run_estimator() 
