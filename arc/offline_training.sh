@@ -18,4 +18,4 @@ shard_img_size=256
 final_size=128
 shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
 
-$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline --shard-img-size $shard_img_size --train-dir $shard_dir/train --eval-dir $shard_dir/eval --epochs $EPOCHS --batch-size $BATCH_SIZE --final-size $final_size  
+$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline --shard-img-size $shard_img_size --train-dir $shard_dir/train --eval-dir $shard_dir/eval --epochs $epochs --batch-size $batch_size --final-size $final_size  
