@@ -86,6 +86,8 @@ if __name__ == '__main__':
     ]
     schema = losses.Schema(label_cols, questions, version='decals')
 
+    print('Epochs: {}'.format(epochs))
+
     run_config = run_estimator_config.get_run_config(
       initial_size=shard_img_size,
       final_size=final_size,
@@ -95,7 +97,8 @@ if __name__ == '__main__':
       eval_records=eval_records,
       epochs=epochs,
       schema=schema,
-      batch_size=batch_size
+      batch_size=batch_size,
+      patience=5
     )
 
     # check for bad shard_img_size leading to bad batch size

@@ -42,7 +42,7 @@ class RunEstimatorConfig():
             eval_steps=3,
             batch_size=128,
             min_epochs=0,
-            patience=200,
+            patience=10,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
             warm_start=True,
