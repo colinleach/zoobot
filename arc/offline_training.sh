@@ -17,6 +17,6 @@ shard_img_size=256
 final_size=224
 shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
 
-echo epochs batch_size shard_img_size final_size shard_dir
+echo $epochs $batch_size $shard_img_size $final_size $shard_dir
 
 $DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline_full --shard-img-size $shard_img_size --train-dir $shard_dir/train --eval-dir $shard_dir/eval --epochs $epochs --batch-size $batch_size --final-size $final_size  
