@@ -142,7 +142,7 @@ class BayesianModel(tf.keras.Model):
     # https://github.com/tensorflow/tensorflow/issues/32889
     def call(self, x, training=None):
 
-        x = x / 256.  # rescale 0->1 from 0->256
+        # x = x / 256.  # rescale 0->1 from 0->256
 
         tf.summary.image('input_image', x, step=self.step)
         tf.summary.histogram('input_image_hist', x, step=self.step)

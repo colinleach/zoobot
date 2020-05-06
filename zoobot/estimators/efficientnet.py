@@ -422,14 +422,22 @@ def EfficientNetB3(include_top=True,
     )
 
 
+
+class CustomSequential(tf.keras.Sequential):
+
+    def call(self, x, training):
+        tf.summary.image('model_input', x, step=self.step)
+        return super().call(x, training)
+
+
 def EfficientNet_custom_top(schema, input_shape=None, batch_size=16, add_channels=False, get_effnet=EfficientNetB0, **kwargs):
 
     output_dim = len(schema.answers)
 
     if add_channels:
-      model = tf.keras.Sequential([tf.keras.layers.Lambda(lambda x: tf.stack([x, x, x], axis=3))])  # need channel dim for imagenet
+      model = CustomSequential([tf.keras.layers.Lambda(lambda x: tf.stack([x, x, x], axis=3))])  # need channel dim for imagenet
     else:
-      model = tf.keras.Sequential()
+      model = CustomSequential()
     # classes probably does nothing without include_top
     effnet = get_effnet(
         input_shape=input_shape,

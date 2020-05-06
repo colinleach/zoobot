@@ -189,6 +189,7 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
 
 MAX_SHIFT = 30
 MAX_SHEAR = np.pi/4.
+ZOOM = (1/1.65, 1/1.4)  # keras interprets zoom the other way around to normal humans, for some reason - zoom < 1 = magnification
 
 def get_train_config(train_records, label_cols, batch_size, initial_size, final_size, channels):
     # tiny func, refactored for easy reuse
@@ -203,8 +204,7 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         stratify_probs=None,
         geometric_augmentation=True,
         photographic_augmentation=True,
-        # zoom=(2., 2.2),  # BAR MODE
-        zoom=(1.15, 1.35),  # SMOOTH MODE
+        zoom=ZOOM,
         max_shift=MAX_SHIFT,
         max_shear=MAX_SHEAR,
         contrast_range=(0.98, 1.02),
@@ -213,8 +213,7 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         final_size=final_size,
         channels=channels,
         greyscale=True,
-        zoom_central=False  # SMOOTH MODE
-        # zoom_central=True  # BAR MODE
+        zoom_central=False  # deprecated
     )
     return train_config
 
@@ -233,7 +232,7 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
         geometric_augmentation=True,
         photographic_augmentation=True,
         # zoom=(2., 2.2),  # BAR MODE
-        zoom=(1.1, 1.3),  # SMOOTH MODE
+        zoom=(ZOOM),  # SMOOTH MODE
         max_shift=MAX_SHIFT,
         max_shear=MAX_SHEAR,
         contrast_range=(0.98, 1.02),

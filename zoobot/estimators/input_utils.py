@@ -153,7 +153,7 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat, drop_re
 
     dataset = load_dataset(tfrecord_loc, feature_spec, shuffle=shuffle)
     if shuffle:
-        dataset = dataset.shuffle(500)  # should be > len of each tfrecord, but for local dev, no more than 2000ish
+        dataset = dataset.shuffle(batch_size * 2)  # should be > len of each tfrecord, ideally, but that's hard
     if repeat:
         dataset = dataset.repeat()  # careful, don't repeat forever for eval
     print(batch_size, batch_size)
@@ -210,7 +210,7 @@ def preprocess_batch(batch, config):
     Returns:
         [type]: [description]
     """
-    batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels, summary=True)
+    batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels, summary=True) / 255.  # set to 0->1 here, and don't later in the model
     augmented_images = preprocess_images(batch_images, config)
     # tf.summary.image('c_augmented', augmented_images)
 
@@ -319,8 +319,8 @@ def geometric_augmentation(images, max_shift, max_shear, zoom, final_size, centr
 
     assert images.shape[1] == images.shape[2]  # must be square
     assert len(zoom) == 2
-    assert zoom[0] <= zoom[1]
-    assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
+    assert zoom[0] <= zoom[1] 
+    # assert zoom[1] > 1. and zoom[1] < 10.  # catch user accidentally putting in pixel values here
 
     # flip functions support batch dimension, but it must be precisely fixed
     # let's take the performance hit for now and use map_fn to allow variable length batches
@@ -329,22 +329,33 @@ def geometric_augmentation(images, max_shift, max_shear, zoom, final_size, centr
 
 
     # images = tf.map_fn(random_rotation_batch, images)  No, tfa causes segfault on many CPU...
-    images = tf.map_fn(lambda x: wrapped_augmentation(x, max_shift, max_shear, patches=4, min_size=2, max_size=5), images)
+    images = tf.map_fn(lambda x: wrapped_augmentation(x, max_shift, max_shear, zoom, patches=4, min_size=2, max_size=5), images)
 
     # cutout http://arxiv.org/abs/1708.04552
 
     # if zoom = (1., 1.3), zoom randomly between 1x to 1.3x
     # images has a fixed size due to final_size
-    images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central, final_size=final_size), images)
+    # images = tf.map_fn(lambda x: crop_random_size(x, zoom=zoom, central=central), images)
+
+
+    # resize to final desired size (may match crop size)
+    images = tf.map_fn(
+        lambda x: tf.image.resize(
+            x,
+            tf.constant([final_size, final_size], dtype=tf.int32),
+            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
+        ),
+        images
+    )
 
     return images
 
 
 
-def wrapped_augmentation(im, max_shift, max_shear, patches, min_size, max_size):
+def wrapped_augmentation(im, max_shift, max_shear, zoom, patches, min_size, max_size):
     im_shape = im.shape
-    # im = tf.py_function(lambda x: keras_np_augmentation(x, max_shift=max_shift, max_shear=max_shear), [im], tf.float32)
-    im = tf.py_function(lambda x: py_augmentation(x, max_shift=max_shift, max_shear=max_shear, patches=patches, min_size=min_size, max_size=max_size), [im], tf.float32)
+    im = tf.py_function(lambda x: keras_np_augmentation(x, max_shift=max_shift, max_shear=max_shear, zoom=zoom), [im], tf.float32)
+    # im = tf.py_function(lambda x: py_augmentation(x, max_shift=max_shift, max_shear=max_shear, patches=patches, min_size=min_size, max_size=max_size), [im], tf.float32)
     im.set_shape(im_shape)
     return im
 
@@ -390,23 +401,43 @@ def cutout_patch(im_np, sizes):
     return im_np
 
 
-
 # #  will be replaced in TF 2.2
-# def keras_np_augmentation(im, max_shift, max_shear):
-#     return tf.keras.preprocessing.image.apply_affine_transform(
-#         # theta=tf.random.uniform(shape=[1], minval=0, maxval=45, dtype=tf.int32),
-#         # tx=tf.random.uniform(shape=[1], minval=0, maxval=max_shift, dtype=tf.int32),
-#         # ty=tf.random.uniform(shape=[1], minval=0, maxval=max_shift, dtype=tf.int32),
-#         shear=tf.random.uniform(shape=[1], minval=0, maxval=max_shear, dtype=tf.float32),
-#         # zx=1,  # I deal with zoom below already
-#         # zy=1,
-#         row_axis=0,
-#         col_axis=1,
-#         channel_axis=2,
-#         # fill_mode='constant',  # might consider reflecting or wrapping?
-#         # cval=0.0
-# )
-#     return tf.keras.preprocessing.image.random_rotation(im.numpy(), rg=180., row_axis=0, col_axis=1, channel_axis=2, fill_mode='constant')
+def keras_np_augmentation(im, max_shift, max_shear, zoom):
+    
+    
+    # np random is okay here in python/eager context, don't overoptimise - tf 2.2. should solve for me
+
+    rotated = tf.keras.preprocessing.image.random_rotation(
+        im.numpy(), 
+        rg=90.,
+        row_axis=0,
+        col_axis=1,
+        channel_axis=2,
+        fill_mode='reflect',  # might consider reflecting or wrapping?
+        # cval=0.0
+    )
+    # return rotated
+
+    return tf.keras.preprocessing.image.apply_affine_transform(
+        rotated, 
+        # theta=np.random.uniform(low=0, high=90),  # enough, when you also consider flips
+        tx=np.random.randint(low=0, high=max_shift+1),  # +1 as high is exclusive
+        ty=np.random.randint(low=0, high=max_shift+1),  # similarly
+        shear=np.random.uniform(low=0., high=max_shear),
+        # can have different zoom in each axis, a bit like shear
+        zx=np.random.uniform(low=zoom[0], high=zoom[1]),
+        zy=np.random.uniform(low=zoom[0], high=zoom[1]),
+        row_axis=0,
+        col_axis=1,
+        channel_axis=2,
+        fill_mode='reflect',  # might consider reflecting or wrapping?
+        # cval=0.0
+    )
+    # im = im.numpy()
+    # print(im.mean())
+    # print(im.shape)
+    # return im
+    # return tf.keras.preprocessing.image.random_rotation(im, rg=10., row_axis=0, col_axis=1, channel_axis=2, interpolation_order=2, fill_mode='constant')
 
 
 # def random_rotation_batch(images):
@@ -429,7 +460,7 @@ def cutout_patch(im_np, sizes):
 #     return ndimage.rotate(im, np.random.uniform(-180, 180), reshape=False)
 
 
-def crop_random_size(im, zoom, central, final_size):
+def crop_random_size(im, zoom, central):
     original_width = tf.cast(im.shape[1], tf.float32) # cast allows division of Dimension
     new_width = tf.squeeze(tf.cast(original_width / tf.random.uniform(shape=[1], minval=zoom[0], maxval=zoom[1]), dtype=tf.int32))
     # updated from np to avoid fixed value from tracing. Not yet tested!
@@ -441,13 +472,7 @@ def crop_random_size(im, zoom, central, final_size):
         cropped_shape = tf.stack([new_width, new_width, n_channels], axis=0)
         cropped_im = tf.image.random_crop(im, cropped_shape)
 
-    # resize to final desired size (may match crop size)
-    final_im = tf.image.resize(
-        cropped_im,
-        tf.constant([final_size, final_size], dtype=tf.int32),
-        method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
-    )
-    return final_im
+    return cropped_im
 
 
 def photographic_augmentation(images, max_brightness_delta, contrast_range):
