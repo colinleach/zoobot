@@ -56,6 +56,8 @@ class InputConfig():
         self.stratify_col = stratify_col
         self.stratify_probs = stratify_probs
         self.regression = regression
+        self.greyscale = greyscale
+        self.permute_channels = ~self.greyscale
 
         if regression:
             assert not stratify
@@ -269,7 +271,7 @@ def stratify_images(image, label, batch_size, init_probs):
     # )
     # return data_batch, label_batch
 
-
+# @tf.function
 def augment_images(images, input_config):
     """
 
@@ -295,7 +297,18 @@ def augment_images(images, input_config):
             max_brightness_delta=input_config.max_brightness_delta,
             contrast_range=input_config.contrast_range)
 
+    if input_config.permute_channels:
+        assert not input_config.greyscale
+        # assert tf.shape(images)[-1] > 1
+        images = tf.map_fn(permute_channels, images)  # map to each image in batch
+
     return images
+
+
+def permute_channels(im):
+    # assert tf.shape(im)[-1] == 3
+    # tf.random.shuffle shuffles 0th dimension, so need to temporarily swap channel to 0th, shuffle, and swap back
+    return tf.transpose(tf.random.shuffle(tf.transpose(im, perm=[2, 1, 0])), perm=[2, 1, 0])
 
 
 def geometric_augmentation(images, max_shift, max_shear, zoom, final_size, central):

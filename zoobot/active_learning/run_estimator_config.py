@@ -212,7 +212,7 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         initial_size=initial_size,
         final_size=final_size,
         channels=channels,
-        greyscale=True,
+        greyscale=False,
         zoom_central=False  # deprecated
     )
     return train_config
@@ -240,7 +240,7 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
         initial_size=initial_size,
         final_size=final_size,
         channels=channels,
-        greyscale=True,
+        greyscale=False,
         zoom_central=False  # SMOOTH MODE
         # zoom_central=True  # BAR MODE
     )
@@ -254,7 +254,7 @@ def get_model(schema, final_size, batch_size=16):
 
     model = efficientnet.EfficientNet_custom_top(
         schema=schema,
-        input_shape=(final_size, final_size, 1),
+        input_shape=(final_size, final_size, 3),
         get_effnet=efficientnet.EfficientNetB0
         # further kwargs will be passed to get_effnet
         # dropout_rate=dropout_rate,

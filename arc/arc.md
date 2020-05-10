@@ -29,6 +29,8 @@ pip install -e repos/zoobot
 
 rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/data/latest_labelled_catalog.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data
 
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/results/... /home/walml/repos/zoobot/results
+
 
 sinfo -n arcus-htc-gpu023 --long
 
