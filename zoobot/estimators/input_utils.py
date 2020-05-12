@@ -57,7 +57,7 @@ class InputConfig():
         self.stratify_probs = stratify_probs
         self.regression = regression
         self.greyscale = greyscale
-        self.permute_channels = ~self.greyscale
+        self.permute_channels = not self.greyscale
 
         if regression:
             assert not stratify
