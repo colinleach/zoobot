@@ -146,8 +146,7 @@ class RunEstimatorConfig():
 
             self.model.fit(
                 train_dataset,
-                validation_data=test_dataset,
-                validation_steps=int(1000/self.batch_size),
+                validation_data=test_dataset.repeat(2),  # reduce variance from dropout, augs
                 epochs=self.epochs,
                 callbacks=callbacks,
                 verbose=verbose
