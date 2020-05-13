@@ -19,8 +19,8 @@ export PYTHON=$DATA/envs/zoobot/bin/python
 # shard_dir=data/decals/shards/decals_multiq_128_sim_init_2500_featp4
 
 # and switch label cols in create_instructions, and version in iterations.py, for now
-catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5
-shard_dir=data/gz2/shards/all_featp5_facep5_sim_128
+catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5_arc
+shard_dir=data/gz2/shards/all_featp5_facep5_sim_128_arc
 
 experiment_dir=data/experiments/live/latest
 instructions_dir=$experiment_dir/instructions
