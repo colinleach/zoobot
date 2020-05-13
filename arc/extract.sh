@@ -7,5 +7,8 @@
 
 module purge
 
-tar -xvzf /data/phys-zooniverse/chri5177/png_native.tar.gz -C /data/phys-zooniverse/chri5177
+# decals
+# tar -xvzf /data/phys-zooniverse/chri5177/png_native.tar.gz -C /data/phys-zooniverse/chri5177
 
+# gz2
+tar -xvzf /data/phys-zooniverse/chri5177/gz2.tar -C /data/phys-zooniverse/chri5177
