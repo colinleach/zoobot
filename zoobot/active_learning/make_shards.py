@@ -230,6 +230,7 @@ if __name__ == '__main__':
     
     GZ2 sim:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_128 --img-size 128
+        $PYTHON zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_arc/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_arc/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_128_arc --img-size 128
     
     Testing:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size=100 --shard-dir=data/decals/shards/debug_sim --max-labelled 500 --max-unlabelled=300 --img-size 32

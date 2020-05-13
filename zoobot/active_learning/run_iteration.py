@@ -235,9 +235,6 @@ if __name__ == '__main__':
     )
     # logging.getLogger().addHandler(logging.StreamHandler())
 
-    # HARDCODED label cols, questions, for now
-
-    # must match label cols below
     questions = [
         'smooth-or-featured',
         'has-spiral-arms',
@@ -246,25 +243,41 @@ if __name__ == '__main__':
         'bulge-size'
     ]
 
+    # decals
     # will load labels from shard, in this order
     # will predict all label columns, in this order
+    # label_cols = [
+    #     'smooth-or-featured_smooth',
+    #     'smooth-or-featured_featured-or-disk',
+    #     'has-spiral-arms_yes',
+    #     'has-spiral-arms_no',
+    #     # 'spiral-winding_tight',
+    #     # 'spiral-winding_medium',
+    #     # 'spiral-winding_loose',
+    #     'bar_strong',
+    #     'bar_weak',
+    #     'bar_no',
+    #     'bulge-size_dominant',
+    #     'bulge-size_large',
+    #     'bulge-size_moderate',
+    #     'bulge-size_small',
+    #     'bulge-size_none'
+    # ]
+
+    # gz2
     label_cols = [
-        'smooth-or-featured_smooth',
-        'smooth-or-featured_featured-or-disk',
-        'has-spiral-arms_yes',
-        'has-spiral-arms_no',
-        # 'spiral-winding_tight',
-        # 'spiral-winding_medium',
-        # 'spiral-winding_loose',
-        'bar_strong',
-        'bar_weak',
-        'bar_no',
-        'bulge-size_dominant',
-        'bulge-size_large',
-        'bulge-size_moderate',
-        'bulge-size_small',
-        'bulge-size_none'
+    'smooth-or-featured_smooth',
+    'smooth-or-featured_featured-or-disk',
+    'has-spiral-arms_yes',
+    'has-spiral-arms_no',
+    'bar_yes',
+    'bar_no',
+    'bulge-size_dominant',
+    'bulge-size_obvious',
+    'bulge-size_just-noticeable',
+    'bulge-size_no'
     ]
+
 
     main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, args.test)
 
