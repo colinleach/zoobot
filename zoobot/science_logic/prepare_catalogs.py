@@ -105,7 +105,7 @@ def create_gz2_master_catalog(catalog_loc: str, save_loc: str):
     # change to be inside data folder, specified relative to repo root. Use local_png_loc (later) for absolute path
     df['png_loc'] = df['local_png_loc'].apply(lambda x: x.replace('/Volumes/alpha/', '').replace('gz2/', '').replace('decals/', ''))
     print(df['png_loc'])
-    # df = specify_file_locs(df, 'gz2')
+    df = specify_file_locs(df, 'gz2')
     df.to_csv(save_loc, index=False)
 
 
