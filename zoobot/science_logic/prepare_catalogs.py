@@ -105,8 +105,27 @@ def create_gz2_master_catalog(catalog_loc: str, save_loc: str):
     # change to be inside data folder, specified relative to repo root. Use local_png_loc (later) for absolute path
     df['png_loc'] = df['local_png_loc'].apply(lambda x: x.replace('/Volumes/alpha/', '').replace('gz2/', '').replace('decals/', ''))
     print(df['png_loc'])
-    df = specify_file_locs(df, 'gz2')  # expected absolute file loc on EC2
+    # df = specify_file_locs(df, 'gz2')
     df.to_csv(save_loc, index=False)
+
+
+def specify_file_locs(df, target):
+    """
+    Add 'file_loc' which points to pngs at expected absolute EC2 path
+    Remove 'png_loc (png relative to repo root) to avoid confusion
+    """
+    png_root_loc =  get_png_root_loc(target)
+    # change to be inside data folder, specified relative to repo root
+    df['local_png_loc'] = df['png_loc'].apply(
+        lambda x: os.path.join(png_root_loc, x)
+    )
+
+    df['file_loc'] = df['local_png_loc']
+    assert all(loc for loc in df['file_loc'])
+    del df['png_loc']  # else may load this by default
+    print(df['file_loc'].sample(5))
+    check_no_missing_files(df['file_loc'], max_to_check=1000)
+    return df
 
 
 def get_png_root_loc(target):
@@ -128,25 +147,6 @@ def get_png_root_loc(target):
         return f'/data/phys-zooniverse/chri5177/{target}'
     else:
         raise ValueError('Cannot work out appropriate png root')
-
-
-def specify_file_locs(df, target):
-    """
-    Add 'file_loc' which points to pngs at expected absolute EC2 path
-    Remove 'png_loc (png relative to repo root) to avoid confusion
-    """
-    png_root_loc =  get_png_root_loc(target)
-    # change to be inside data folder, specified relative to repo root
-    df['local_png_loc'] = df['png_loc'].apply(
-        lambda x: png_root_loc + x  # extra / is temporary?
-    )
-
-    df['file_loc'] = df['local_png_loc']
-    assert all(loc for loc in df['file_loc'])
-    del df['png_loc']  # else may load this by default
-    print(df['file_loc'].sample(5))
-    check_no_missing_files(df['file_loc'], max_to_check=1000)
-    return df
 
 
 def check_no_missing_files(locs, max_to_check=None):
