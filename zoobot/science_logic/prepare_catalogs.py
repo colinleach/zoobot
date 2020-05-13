@@ -123,6 +123,9 @@ def get_png_root_loc(target):
     elif os.path.isdir('/data/repos'):
         # logging.critical('Local master catalog - do not use on EC2!')
         return f'/Volumes/alpha/{target}'
+    # ARC
+    elif os.path.isdir('/data/phys-zooniverse/chri5177'):
+        return f'/data/phys-zooniverse/chri5177/{target}'
     else:
         raise ValueError('Cannot work out appropriate png root')
 
@@ -175,6 +178,7 @@ if __name__ == '__main__':
 
     GZ2:
         python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/galaxy_zoo/gz2/subjects/gz2_classifications_and_subjects.csv '' data/gz2/gz2_master_catalog.csv
+        python zoobot/science_logic/prepare_catalogs.py $DATA/repos/zoobot/data/gz2/gz2_classifications_and_subjects.csv '' data/gz2/gz2_master_catalog_arc.csv
     """
     parser = argparse.ArgumentParser(description='Make shards')
     parser.add_argument('catalog_loc', type=str,

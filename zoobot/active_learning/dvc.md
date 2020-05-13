@@ -59,6 +59,8 @@ Sim:
 **Run Simulation**
 
 `export PYTHON=/home/walml/anaconda3/envs/zoobot/bin/python`
+or
+    export PYTHON=$DATA/envs/zoobot/bin/python
 
 `experiment_dir=data/experiments/live/latest`
 
@@ -66,7 +68,7 @@ Sim:
 
 `n_iterations=5`
 
-`dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir '' '' ''`
+`dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir --baseline --test ''`
 
 **Run Live**
 

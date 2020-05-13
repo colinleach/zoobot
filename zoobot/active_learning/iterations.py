@@ -96,7 +96,7 @@ class Iteration():
         # TODO have a test that verifies new folder structure?
         
         # decals schema for now, but will likely switch to GZ2
-        self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions, version='decals')
+        self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions, version='gz2')
 
         self.run_config = run_estimator_config.get_run_config(
             initial_size=self.fixed_estimator_params.initial_size, 
