@@ -95,7 +95,8 @@ class Iteration():
         os.mkdir(self.metrics_dir)
         # TODO have a test that verifies new folder structure?
         
-        self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions)
+        # decals schema for now, but will likely switch to GZ2
+        self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions, version='decals')
 
         self.run_config = run_estimator_config.get_run_config(
             initial_size=self.fixed_estimator_params.initial_size, 
