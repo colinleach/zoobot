@@ -241,34 +241,34 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     expected_votes = 40  # SMOOTH MODE
 
     # decals
-    # label_cols = [
-    #     'smooth-or-featured_smooth',
-    #     'smooth-or-featured_featured-or-disk',
-    #     'has-spiral-arms_yes',
-    #     'has-spiral-arms_no',
-    #     'bar_strong',
-    #     'bar_weak',
-    #     'bar_no',
-    #     'bulge-size_dominant',
-    #     'bulge-size_large',
-    #     'bulge-size_moderate',
-    #     'bulge-size_small',
-    #     'bulge-size_none'
-    # ]
-
-    # gz2 cols
     label_cols = [
         'smooth-or-featured_smooth',
         'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
         'has-spiral-arms_no',
-        'bar_yes',
+        'bar_strong',
+        'bar_weak',
         'bar_no',
         'bulge-size_dominant',
-        'bulge-size_obvious',
-        'bulge-size_just-noticeable',
-        'bulge-size_no'
+        'bulge-size_large',
+        'bulge-size_moderate',
+        'bulge-size_small',
+        'bulge-size_none'
     ]
+
+    # gz2 cols
+    # label_cols = [
+    #     'smooth-or-featured_smooth',
+    #     'smooth-or-featured_featured-or-disk',
+    #     'has-spiral-arms_yes',
+    #     'has-spiral-arms_no',
+    #     'bar_yes',
+    #     'bar_no',
+    #     'bulge-size_dominant',
+    #     'bulge-size_obvious',
+    #     'bulge-size_just-noticeable',
+    #     'bulge-size_no'
+    # ]
 
     # record instructions
     instructions = Instructions(
