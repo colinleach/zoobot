@@ -150,6 +150,10 @@ class PanoptesMock(Oracle):
             print(f'Missing ids: {missing_ids}')
             raise ValueError(f'{len(missing_ids)} ids not found in oracle catalog')
         labels = list(matching_df[self._label_cols].to_dict(orient='records'))
+        # ensure these are explicitly floats, or tf will complain when loading them
+        for label_dict in labels:
+            for k in label_dict.keys():
+                label_dict[k] = float(label_dict[k])  # modify inplace 
         logging.info(f'{len(labels)} matching labels returned from known catalog')
         assert len(subject_ids) == len(labels)
         return subject_ids, labels

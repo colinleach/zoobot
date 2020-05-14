@@ -304,6 +304,7 @@ if __name__ == '__main__':
         level=logging.INFO
     )
 
+    # labels will always be floats, int conversion confuses tf.data
     dtypes = dict(zip(label_cols, [float for _ in label_cols]))
     dtypes['id_str'] = str
     labelled_catalog = pd.read_csv(args.labelled_catalog_loc, dtype=dtypes)
