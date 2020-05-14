@@ -178,10 +178,10 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
         initial_size=shard_img_size,
-        final_size=64,  # hardcode for now
+        final_size=224,  # hardcode for now
         questions=questions,
         label_cols=label_cols,
-        batch_size=16  # kwarg
+        batch_size=128  # kwarg
     )
 
     acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()

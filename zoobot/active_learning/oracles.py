@@ -153,7 +153,7 @@ class PanoptesMock(Oracle):
         # ensure these are explicitly floats, or tf will complain when loading them
         for label_dict in labels:
             for k in label_dict.keys():
-                label_dict[k] = float(label_dict[k])  # modify inplace 
+                label_dict[k] = float(label_dict[k])
         logging.info(f'{len(labels)} matching labels returned from known catalog')
         assert len(subject_ids) == len(labels)
         return subject_ids, labels
