@@ -1,5 +1,6 @@
 import os
 import statistics  # thanks Python 3.4!
+import logging
 
 import numpy as np
 import matplotlib
@@ -94,6 +95,7 @@ def multimodel_bald(model_predictions, min_entropy=-5.5, max_entropy=10):
 
 
 def calculate_reliable_multimodel_mean_acq(samples_list, schema):
+    logging.info('Using multi-model acquisition function')
     acq = get_multimodel_acq(samples_list)
     acq_with_nans = sense_check_multimodel_acq(acq, schema)
     mean_acq = np.mean(acq_with_nans, axis=1)
@@ -106,11 +108,13 @@ def get_multimodel_acq(samples_list, n_processes=8):  # e.g. [samples_a, samples
     n_subjects = samples.shape[0]
     n_answers = samples.shape[1]
     acq = np.zeros((n_subjects, n_answers))
+    logging.info('Beginning acquisition calculations ({} models, {} subjects, {} answers)'.format(len(samples_list), n_subjects, n_answers))
     for subject_n in range(n_subjects):
         model_predictions_by_answer = [samples[subject_n, answer_n].transpose() for answer_n in range(n_answers)]  # shape (model, rho)
         with Pool(processes=n_processes) as pool:
             acq_by_answer = pool.map(multimodel_bald, model_predictions_by_answer)
         acq[subject_n, :] = acq_by_answer
+    logging.info('Acquisition calculations complete')
     return acq
 
 
@@ -122,9 +126,11 @@ def get_kde(x):
 
 def sense_check_multimodel_acq(acq, schema, min_acq=-0.5):
     assert acq.shape[1] == len(schema.answers)
-    equal_binary_responses = [check_equal_binary_responses(row, schema) for row in acq]
+    equal_binary_responses = np.array([check_equal_binary_responses(row, schema) for row in acq])
     above_min = np.all(acq > min_acq, axis=1)
-    acq[~equal_binary_responses | ~above_min] = np.nan  # set row to nan to preserve order
+    acq_is_sensible = equal_binary_responses & above_min
+    logging.info('{} sensible acq values ({} equal binary, {} above min {})'.format(acq_is_sensible.mean(), equal_binary_responses.mean(), above_min.mean(), min_acq))
+    acq[acq_is_sensible] = np.nan  # set row to nan to preserve order
     return acq  # be sure to remove nans before applying argsort!
 
 

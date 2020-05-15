@@ -1,6 +1,7 @@
 
 import collections
 import time
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -430,14 +431,13 @@ class CustomSequential(tf.keras.Sequential):
         return super().call(x, training)
 
 
-def EfficientNet_custom_top(schema, input_shape=None, batch_size=16, add_channels=False, get_effnet=EfficientNetB0, **kwargs):
+def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_channels=False, get_effnet=EfficientNetB0, **kwargs):
+    # batch size arg does nothing
+    # add_channels arg does nothing
 
     output_dim = len(schema.answers)
-
-    if add_channels:
-      model = CustomSequential([tf.keras.layers.Lambda(lambda x: tf.stack([x, x, x], axis=3))])  # need channel dim for imagenet
-    else:
-      model = CustomSequential()
+    model = CustomSequential()
+    logging.info('Building efficientnet to expect input {}'.format(input_shape))
     # classes probably does nothing without include_top
     effnet = get_effnet(
         input_shape=input_shape,

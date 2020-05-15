@@ -15,7 +15,8 @@ epochs=1000
 batch_size=128  # fits on V100, not my laptop...
 shard_img_size=256
 final_size=224
-shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
+# shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
+shard_dir=$DATA/repos/zoobot/data/gz2/shards/multilabel_master_filtered_$shard_img_size
 
 echo $epochs $batch_size $shard_img_size $final_size $shard_dir
 

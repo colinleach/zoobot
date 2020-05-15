@@ -93,45 +93,43 @@ def load_instructions(save_dir):
     return Instructions(**instructons_dict)
 
 
-class TrainCallableFactory():
+# class TrainCallableFactory():
 
-    def __init__(self, initial_size, final_size, warm_start, test):
-        """
-        Iteration (`iteration.py`) requires a callable that:
-        - takes args which (may) that change each iteration (log_dir, train_records, etc)
-        - trains a model
+#     def __init__(self, final_size, warm_start, test):
+#         """
+#         Iteration (`iteration.py`) requires a callable that:
+#         - takes args which (may) that change each iteration (log_dir, train_records, etc)
+#         - trains a model
 
-        TrainCallableFactory creates that callable via .get().
-        TrainCallableFactory stores args which do *not* change every iteration (initial size, final_size, etc) 
+#         TrainCallableFactory creates that callable via .get().
+#         TrainCallableFactory stores args which do *not* change every iteration (initial size, final_size, etc) 
 
-        Note: highly coupled to iteration.py. Refactor inside?
+#         Note: highly coupled to iteration.py. Refactor inside?
         
-        Args:
-            initial_size (int): (fixed) size of galaxy images as serialized to tfrecord
-            final_size (int): (desired) size of galaxy images after input pipeline
-            warm_start (bool): If True, continue from the latest estimator in `log_dir`
-            test (bool): If True, train on tiny images for a few epochs (i.e. run a functional test)
-        """
-        self.initial_size = initial_size
-        self.final_size = final_size
-        self.warm_start = warm_start
-        self.test = test
+#         Args:
+#             final_size (int): (desired) size of galaxy images after input pipeline
+#             warm_start (bool): If True, continue from the latest estimator in `log_dir`
+#             test (bool): If True, train on tiny images for a few epochs (i.e. run a functional test)
+#         """
+#         self.final_size = final_size
+#         self.warm_start = warm_start
+#         self.test = test
 
-    def get(self):
-        """Using the fixed params stored in self, create a train callable (see class def).
+#     def get(self):
+#         """Using the fixed params stored in self, create a train callable (see class def).
         
-        Returns:
-            callable: callable expecting per-iteration args, training a model when called
-        """
-        def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args):
-            logging.info('Training model on: {}'.format(train_records))
-            run_config = run_estimator_config.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args)
-            if self.test: # overrides warm_start
-                run_config.epochs = 2  # minimal training, for speed
+#         Returns:
+#             callable: callable expecting per-iteration args, training a model when called
+#         """
+#         def train_callable(log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args):
+#             logging.info('Training model on: {}'.format(train_records))
+#             run_config = run_estimator_config.get_run_config(self, log_dir, train_records, eval_records, learning_rate, epochs, schema, **kw_args)
+#             if self.test: # overrides warm_start
+#                 run_config.epochs = 2  # minimal training, for speed
 
-            # Do NOT update eval_config: always eval on the same fixed shard
-            return run_config.run_estimator()
-        return train_callable
+#             # Do NOT update eval_config: always eval on the same fixed shard
+#             return run_config.run_estimator()
+#         return train_callable
 
     def to_dict(self):
         return object_utils.object_to_dict(self)
@@ -290,13 +288,13 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     instructions.save(instructions_dir)
 
     # parameters that only affect train_callable
-    train_callable_obj = TrainCallableFactory(
-        initial_size=instructions.shards.size,
-        final_size=final_size,
-        warm_start=warm_start,
-        test=test
-    )
-    train_callable_obj.save(instructions_dir)
+    # train_callable_obj = TrainCallableFactory(
+    #     initial_size=instructions.shards.size,
+    #     final_size=final_size,
+    #     warm_start=warm_start,
+    #     test=test
+    # )
+    # train_callable_obj.save(instructions_dir)
 
     # parameters that only affect acquistion_func
     acquisition_func_obj = AcquisitionCallableFactory(
@@ -347,8 +345,8 @@ if __name__ == '__main__':
     log_loc = 'create_instructions_{}.log'.format(time.time())
 
     logging.basicConfig(
-        filename=log_loc,
-        filemode='w',
+        # filename=log_loc,
+        # filemode='w',
         format='%(asctime)s %(message)s',
         level=logging.INFO
     )

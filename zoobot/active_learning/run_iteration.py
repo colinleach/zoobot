@@ -43,7 +43,6 @@ FinalState = namedtuple(
 def run(initial_state, instructions, fixed_estimator_params, acquisition_func, oracle, questions, label_cols, test=False):
     """Main active learning training loop. 
     
-    Learn with train_callable
     Calculate acquisition functions for each subject in the shards
     Load .fits of top subjects and save to a new shard
     Repeat for instructions.iterations
@@ -51,8 +50,6 @@ def run(initial_state, instructions, fixed_estimator_params, acquisition_func, o
     Designed to work with tensorflow estimators
     
     Args:
-        train_callable (func): train a tf model. Arg: list of tfrecord locations
-        acquisition_func (func): expecting samples of shape [n_subject, n_sample]
     """
 
     # override a few parameters if test 
@@ -125,7 +122,7 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
             epochs=get_epochs(this_iteration_n),  # duplication
-            prediction_checkpoints=[]
+            prediction_checkpoints=get_initial_prediction_checkpoint(instructions)  # previously trained model to cold start multi-model acquisition without training two every first sim iteration
         )
     else:
         previous_final_state = load_final_state(previous_iteration_dir)
@@ -174,6 +171,16 @@ def get_epochs(iteration_n):
     else:
         return 1500  # old, still keep it long
 
+def get_initial_prediction_checkpoint(instructions):
+    shard_dir = os.path.dirname(instructions.shards.config_save_loc)
+    initial_checkpoint_loc = shard_dir + '_pretrained/final'  # for now TODO
+    if os.path.isfile(initial_checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
+        logging.info(f'Will use weights from {initial_checkpoint_loc} as first predictor')
+        return [initial_checkpoint_loc]
+    else:
+        logging.critical(f'No initial prediction checkpoint found in {initial_checkpoint_loc}, not attempting to load')
+        return []
+
 
 def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions, label_cols, test=False):
     
@@ -181,13 +188,21 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     with open(instructions.shard_config_loc, 'r') as f:
         shard_img_size = json.load(f)['size']
     assert instructions.ready()
+
+
+    if os.path.isdir('/home/walml'):
+        batch_size = 10 # 10 is the minimum possible size. 
+    else:  # hopefully v100
+        batch_size = 128
+    #  batch_norm etc fail explictly below 10, and maybe don't work so great until larger batch sizes. Paper (MnasNet) uses 4000!
     
+    # TODO move this to create_instructions.py, replace train_callable
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
         initial_size=shard_img_size,
-        final_size=64,  # hardcode for now
+        final_size=224,  # hardcode for now
         questions=questions,
         label_cols=label_cols,
-        batch_size=16  # kwarg
+        batch_size=batch_size 
     )
 
     acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()

@@ -40,7 +40,7 @@ class RunEstimatorConfig():
             epochs=1500,  # rely on earlystopping callback
             train_steps=30,
             eval_steps=3,
-            batch_size=128,
+            batch_size=10,
             min_epochs=0,
             patience=10,
             log_dir='runs/default_run_{}'.format(time.time()),
@@ -106,12 +106,21 @@ class RunEstimatorConfig():
         Returns:
             None
         """
+
+        logging.info('Batch {}, final size {}'.format(self.batch_size, self.final_size))
+
         if not self.warm_start:  # don't try to load any existing models
             if os.path.exists(self.log_dir):
                 shutil.rmtree(self.log_dir)
 
         train_dataset = input_utils.get_input(config=self.train_config)
         test_dataset = input_utils.get_input(config=self.eval_config)
+
+        # for im_batch, _ in train_dataset.take(1):
+        #     print(im_batch.shape)
+        # for im_batch, _ in test_dataset.take(1):
+        #     print(im_batch.shape)
+        # exit()
 
         callbacks = [
             tf.keras.callbacks.TensorBoard(
@@ -182,7 +191,7 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
 
     eval_config = get_eval_config(eval_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    model = get_model(schema, run_config.final_size, run_config.batch_size)
+    model = get_model(schema, run_config.final_size)
 
     run_config.assemble(train_config, eval_config, model)
     return run_config
@@ -247,36 +256,21 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
     return eval_config
 
 
-def get_model(schema, final_size, batch_size=16, weights_loc=None):
+def get_model(schema, final_size, weights_loc=None):
 
     # dropout_rate = 0.3
     # drop_connect_rate = 0.2  # gets scaled by num blocks, 0.6ish = 1
 
+    input_shape = (final_size, final_size, 1)
+    logging.info(f'Model will expect images like {input_shape}')
     model = efficientnet.EfficientNet_custom_top(
         schema=schema,
-        input_shape=(final_size, final_size, 1),
+        input_shape=input_shape,
         get_effnet=efficientnet.EfficientNetB0
         # further kwargs will be passed to get_effnet
         # dropout_rate=dropout_rate,
         # drop_connect_rate=drop_connect_rate
     )
-
-    # model = bayesian_estimator_funcs.BayesianModel(
-    #     image_dim=final_size, # not initial size
-    #     output_dim=len(schema.label_cols),  # will predict all label columns, in this order
-    #     schema=schema,
-    #     conv1_filters=32,
-    #     conv1_kernel=3,
-    #     conv2_filters=64,
-    #     conv2_kernel=3,
-    #     conv3_filters=128,
-    #     conv3_kernel=3,
-    #     dense1_units=128,
-    #     dense1_dropout=0.5,
-    #     predict_dropout=0.5,  # change this to calibrate
-    #     regression=True,  # important!
-    #     log_freq=10
-    # )  # WARNING will need to be updated for multiquestion
 
     abs_metrics = [bayesian_estimator_funcs.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     q_loss_metrics = [bayesian_estimator_funcs.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]

@@ -115,17 +115,15 @@ class Iteration():
 
         self.db, self.db_loc = get_db(self.iteration_dir, initial_db_loc)
 
+        # currently not implemented
+        assert initial_estimator_ckpt is None
         self.initial_estimator_ckpt = initial_estimator_ckpt
-
-        src = self.initial_estimator_ckpt
-        dest = self.estimators_dir
-        if initial_estimator_ckpt is not None:
-            logging.info('Copying {} initial estimator ckpt - actually, doing nothing!'.format(
-                initial_estimator_ckpt))
-        else:
-            os.mkdir(self.estimators_dir)
+        
+        os.mkdir(self.estimators_dir)
 
         self.prediction_checkpoints = prediction_checkpoints
+        if self.prediction_checkpoints == []:
+            logging.warning('No previous prediction checkpoints found - multimodel acquisition will not work!')
 
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(
@@ -138,11 +136,13 @@ class Iteration():
         return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
     def get_prediction_models(self, max_models=3):
-        all_models = [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.final_size, self.fixed_estimator_params.batch_size, weights_loc=loc) for loc in self.prediction_checkpoints]
-        if max_models < len(all_models):
-            return all_models[-max_models::]
+        if max_models < len(self.prediction_checkpoints):
+            logging.info('Loading only {} of {} predictors'.format(max_models, len(self.prediction_checkpoints)))
+            checkpoints = self.prediction_checkpoints[-max_models::]
         else:
-            return all_models
+            checkpoints = self.prediction_checkpoints
+        logging.info(f'Loading predictors: {checkpoints}')
+        return [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.final_size, weights_loc=loc) for loc in checkpoints]
 
     def make_predictions(self, model):
         # logging.debug('Loaded predictor {}'.format(predictor))
@@ -173,7 +173,7 @@ class Iteration():
         Get the latest labels from the oracle
         
         Record the train tfrecords used
-        Execute train_callable (i.e. train the model)
+        Train the model
 
         Make new predictions on the unlabelled shards
         From the predictions, calculate acquisition function values
@@ -221,27 +221,30 @@ class Iteration():
         logging.info('Saving to {}'.format(self.estimators_dir))
 
         _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
-        exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
+        # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
         self.prediction_checkpoints.append(self.estimators_dir + '/models/final')  # hacky duplication
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
         subject_ids = None
         all_predictions = []
-        for model in self.get_prediction_models(max_models=3): # N most recent models
+        for model_n, model in enumerate(self.get_prediction_models(max_models=3)): # N most recent models
+            logging.info(f'Predicting with model {model_n}')
             subjects, predictions = self.make_predictions(model)
             if subject_ids is not None:
                 # double check that subjects remains consistent
                 new_subject_ids = [s['id_str'] for s in subjects]
                 assert all([s_new == s_old for (s_new, s_old) in zip(subject_ids, new_subject_ids)])
                 subject_ids = new_subject_ids  # for next time
-            all_predictions.append(predictions)
-        print([p.shape for p in all_predictions])
+            all_predictions.append(predictions[:100])  # TEMP for now, to debug
+        logging.info('All model predictions: {}'.format([p.shape for p in all_predictions]))
 
         # returns list of acquisition values
         # warning, duplication
         # acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
         acquisitions = self.acquisition_func(all_predictions, self.schema)
+        print(acquisitions)
+        exit()
         self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))

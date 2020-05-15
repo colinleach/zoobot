@@ -158,7 +158,6 @@ def get_dataset(tfrecord_loc, feature_spec, batch_size, shuffle, repeat, drop_re
         dataset = dataset.shuffle(batch_size * 2)  # should be > len of each tfrecord, ideally, but that's hard
     if repeat:
         dataset = dataset.repeat()  # careful, don't repeat forever for eval
-    print(batch_size, batch_size)
     dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)  # ensure that a batch is always ready to go
     # warning, no longer one shot iterator
@@ -212,6 +211,7 @@ def preprocess_batch(batch, config):
     Returns:
         [type]: [description]
     """
+    # logging.info('Loading image size {}'.format(config.initial_size))
     batch_images = get_images_from_batch(batch, size=config.initial_size, channels=config.channels, summary=True) / 255.  # set to 0->1 here, and don't later in the model
     augmented_images = preprocess_images(batch_images, config)
     # tf.summary.image('c_augmented', augmented_images)
