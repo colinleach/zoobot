@@ -193,7 +193,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     if os.path.isdir('/home/walml'):
         batch_size = 10 # 10 is the minimum possible size. 
     else:  # hopefully v100
-        batch_size = 128
+        batch_size = 64
     #  batch_norm etc fail explictly below 10, and maybe don't work so great until larger batch sizes. Paper (MnasNet) uses 4000!
     
     # TODO move this to create_instructions.py, replace train_callable
