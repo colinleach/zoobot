@@ -238,7 +238,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     # hardcoded defaults, for now
     subjects_per_iter = 512
     shards_per_iter = 2
-    final_size = 224  # for both modes
+    # final_size = 224  # for both modes
     if baseline:
         n_samples = 2
     else:
