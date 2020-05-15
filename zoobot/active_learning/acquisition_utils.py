@@ -3,9 +3,11 @@ import statistics  # thanks Python 3.4!
 
 import numpy as np
 import matplotlib
+from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.api as sm
 
 from shared_astro_utils import plotting_utils
 from zoobot.estimators import make_predictions
@@ -76,6 +78,65 @@ def expected_binomial_entropy(bin_probs_of_samples):
             binomial_entropy_of_samples[subject_n, sample_n] = entropy_of_sample
     # average over samples (reduce axis 1)
     return np.mean(binomial_entropy_of_samples, axis=1) 
+
+
+# new kde mutual info func, requires genuinely several models
+def multimodel_bald(model_predictions, min_entropy=-5.5, max_entropy=10):
+    individual_entropies = np.array([get_kde(predictions).entropy for predictions in model_predictions])
+    mean_individual_entropy = individual_entropies.mean()
+    expected_entropy = get_kde(model_predictions.flatten()).entropy
+    if individual_entropies.min() < min_entropy:  # occasionally, very nearby predictions can cause insanely spiked kdes
+        return np.nan
+    elif individual_entropies.max() > max_entropy:
+        return np.nan
+    else:
+        return expected_entropy - mean_individual_entropy
+
+
+def calculate_reliable_multimodel_mean_acq(samples_list, schema):
+    acq = get_multimodel_acq(samples_list)
+    acq_with_nans = sense_check_multimodel_acq(acq, schema)
+    mean_acq = np.mean(acq_with_nans, axis=1)
+    mean_acq[np.isnan(mean_acq)] = -99.  # never acquire these. nan are a pain for argsort and db.
+    return mean_acq
+
+
+def get_multimodel_acq(samples_list, n_processes=8):  # e.g. [samples_a, samples_b], each of shape(galaxy, answer, rho)
+    samples = np.stack(samples_list, axis=-1)  # add new final axis, which model
+    n_subjects = samples.shape[0]
+    n_answers = samples.shape[1]
+    acq = np.zeros((n_subjects, n_answers))
+    for subject_n in range(n_subjects):
+        model_predictions_by_answer = [samples[subject_n, answer_n].transpose() for answer_n in range(n_answers)]  # shape (model, rho)
+        with Pool(processes=n_processes) as pool:
+            acq_by_answer = pool.map(multimodel_bald, model_predictions_by_answer)
+        acq[subject_n, :] = acq_by_answer
+    return acq
+
+
+def get_kde(x):
+    estimator = sm.nonparametric.KDEUnivariate(x)
+    estimator.fit(fft=True)
+    return estimator
+
+
+def sense_check_multimodel_acq(acq, schema, min_acq=-0.5):
+    assert acq.shape[1] == len(schema.answers)
+    equal_binary_responses = [check_equal_binary_responses(row, schema) for row in acq]
+    above_min = np.all(acq > min_acq, axis=1)
+    acq[~equal_binary_responses | ~above_min] = np.nan  # set row to nan to preserve order
+    return acq  # be sure to remove nans before applying argsort!
+
+
+def check_equal_binary_responses(acq_row, schema):
+    binary_questions = [q for q in schema.questions if len(q.answers) == 2]
+    for q in binary_questions:
+        indices = schema.named_index_groups[q]
+        if not np.isclose(acq_row[indices[0]], acq_row[indices[1]], rtol=.01):
+            return False
+    return True
+
+
 
 
 def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):

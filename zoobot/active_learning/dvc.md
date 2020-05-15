@@ -54,21 +54,22 @@ Sim:
 
 `shard_dir=data/decals/shards/decals_multiq_128_sim_init_1800_featp5_facep5`
 
+
 `dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/simulation_context/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/simulation_context/unlabelled_catalog.csv --eval-size=1000 --shard-dir=$shard_dir --img-size 128 --max-labelled 5000`
 
 **Run Simulation**
 
-`export PYTHON=/home/walml/anaconda3/envs/zoobot/bin/python`
-or
-    export PYTHON=$DATA/envs/zoobot/bin/python
+    catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5
+    shard_dir=data/gz2/shards/all_featp5_facep5_sim_128
 
-`experiment_dir=data/experiments/live/latest`
+    experiment_dir=data/experiments/live/latest
+    instructions_dir=$experiment_dir/instructions
 
-`instructions_dir=$experiment_dir/instructions`
+    export PYTHON=/home/walml/anaconda3/envs/zoobot/bin/python
 
-`n_iterations=5`
+    n_iterations=1
 
-`dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir --baseline --test ''`
+    dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir '' --test ''
 
 **Run Live**
 

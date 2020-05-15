@@ -457,14 +457,15 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=16, add_channel
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
 
      # my loss only works with run_config shards, the new custom shards are vote fraction labelled
-    loss_func = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
+    # loss_func = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
 
-    custom_mses = [bayesian_estimator_funcs.CustomMSEByColumn(name=q.text, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
-    model.compile(
-        loss=loss_func,
-        optimizer=tf.keras.optimizers.Adam(),
-        metrics=custom_mses
-    )
+    # compile with something like:
+    # custom_mses = [bayesian_estimator_funcs.CustomMSEByColumn(name=q.text, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+    # model.compile(
+    #     loss=loss_func,
+    #     optimizer=tf.keras.optimizers.Adam(),
+    #     metrics=custom_mses
+    # )
 
     return model
 

@@ -112,8 +112,8 @@ if __name__ == '__main__':
 
     train_test_fraction = catalog_to_tfrecord.get_train_test_fraction(
         len(labelled_catalog), eval_size)
-    train_dir = os.path.join(shard_dir, 'train')
-    eval_dir = os.path.join(shard_dir, 'eval')
+    train_dir = os.path.join(shard_dir, 'train_shards')
+    eval_dir = os.path.join(shard_dir, 'eval_shards')
     for directory in [shard_dir, train_dir, eval_dir]:  # order matters
         if not os.path.exists(directory):
             os.mkdir(directory)

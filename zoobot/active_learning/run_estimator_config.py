@@ -132,10 +132,11 @@ class RunEstimatorConfig():
             )
         ] + extra_callbacks
 
-        if os.path.isdir('/home/walml'):
-            verbose=1
-        else:
-            verbose=2
+        # if os.path.isdir('/home/walml'):
+        #     verbose=1
+        # else:
+        #     verbose=2
+        verbose = 2
         # https://www.tensorflow.org/tensorboard/scalars_and_keras
         fit_summary_writer = tf.summary.create_file_writer(os.path.join(self.log_dir, 'manual_summaries'))
         with fit_summary_writer.as_default():
@@ -246,7 +247,7 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
     return eval_config
 
 
-def get_model(schema, final_size, batch_size=16):
+def get_model(schema, final_size, batch_size=16, weights_loc=None):
 
     # dropout_rate = 0.3
     # drop_connect_rate = 0.2  # gets scaled by num blocks, 0.6ish = 1
@@ -277,9 +278,17 @@ def get_model(schema, final_size, batch_size=16):
     #     log_freq=10
     # )  # WARNING will need to be updated for multiquestion
 
+    abs_metrics = [bayesian_estimator_funcs.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+    q_loss_metrics = [bayesian_estimator_funcs.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+    a_loss_metrics = [bayesian_estimator_funcs.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam(),
-        metrics=[bayesian_estimator_funcs.CustomMSEByColumn(name=q.text, start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+        metrics=abs_metrics + q_loss_metrics + a_loss_metrics
     )
+
+    if weights_loc:
+        logging.info('Loading weights from {}'.format(weights_loc))
+        model.load_weights(weights_loc)  # inplace
+
     return model

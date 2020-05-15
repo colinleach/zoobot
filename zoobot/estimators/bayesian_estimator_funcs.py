@@ -199,61 +199,94 @@ class BayesianModel(tf.keras.Model):
 
 @tf.function
 def squared_error(labels, predictions):
-    # already filtered to have only the appropriate columns
-    # print(tf.shape(labels, name='labels_shape'))
-    # print(tf.shape(predictions, name='predictions_shape'))
-    # assert tf.shape(labels)[1] == tf.shape(predictions)[1]
-
-    # spiral_observed_fracs = labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1)
-    # smooth_total = tf.reduce_sum(input_tensor=labels[:, :2], axis=1)
-    # print(labels[:, 2:])
     total = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
-    # tf.summary.histogram('smooth_total', smooth_total)
-    # tf.summary.histogram('total', total)
-    # smooth_observed_fracs = labels[:, 0]/smooth_total
-
-
     observed_fracs = tf.math.divide_no_nan(labels, total)  # WARNING need to check into this
-    # observed_vote_fractions = tf.concat([ labels[:, :2]/tf.expand_dims(tf.reduce_sum(labels[:, :2], axis=1), axis=1), labels[:, 2:]/tf.expand_dims(tf.reduce_sum(labels[:, 2:], axis=1), axis=1) ], axis=1)
-    # tf.summary.histogram('smooth_observed_fracs', smooth_observed_fracs)
-    # tf.summary.histogram('observed_fracs', observed_fracs)
-
-    # squared_smooth_error = (smooth_observed_fracs - predictions[:, 0]) ** 2
     sq_error = (observed_fracs - predictions) ** 2
-
-    # tf.summary.histogram('squared_smooth_error', squared_smooth_error)
-    # tf.summary.histogram('squared_spiral_error', squared_spiral_error)
-
-    # tf.summary.scalar('squared_smooth_mse', tf.reduce_mean(squared_smooth_error))
-    # tf.summary.scalar('squared_spiral_mse', tf.reduce_mean(squared_spiral_error))
-
     return sq_error
 
+@tf.function
+def absolute_error(labels, predictions):
+    total = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    observed_fracs = tf.math.divide_no_nan(labels, total)  # WARNING need to check into this
+    abs_error = tf.math.abs(observed_fracs - predictions)
+    return abs_error
 
-class CustomMSEByColumn(tf.keras.metrics.Metric):
+class CustomLossByQuestion(tf.keras.metrics.Metric):
 
     def __init__(self, name, start_col, end_col, **kwargs):
-        print(f'Name: {name}, start {start_col}, end {end_col}')
-        super(CustomMSEByColumn, self).__init__(name=name, **kwargs)
-        self.mse = self.add_weight(name=name, initializer='zeros')
+        super(CustomLossByQuestion, self).__init__(name=name, **kwargs)
+        self.loss = self.add_weight(name=name, initializer='zeros')
         self.batch_count = tf.Variable(0, dtype=tf.int32)
-        self.total_se = tf.Variable(0., dtype=tf.float32)
+        self.total = tf.Variable(0., dtype=tf.float32)
         self.start_col = start_col
         self.end_col = end_col
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        self.total_se.assign_add(tf.reduce_sum(squared_error(y_true[:, self.start_col:self.end_col+1], y_pred[:, self.start_col:self.end_col+1])))
+        q_loss = losses.multinomial_loss(y_true[:, self.start_col:self.end_col+1], y_pred[:, self.start_col:self.end_col+1])
+        self.total.assign_add(tf.reduce_sum(q_loss))
         self.batch_count.assign_add(tf.shape(y_true)[0])
-        self.mse.assign(self.total_se/tf.cast(self.batch_count, dtype=tf.float32))
+        self.loss.assign(self.total/tf.cast(self.batch_count, dtype=tf.float32))
 
     def result(self):
-        return self.mse
+        return self.loss
 
     def reset_states(self):
         # The state of the metric will be reset at the start of each epoch.
-        self.mse.assign(0.)
+        self.loss.assign(0.)
         self.batch_count.assign(0)
-        self.total_se.assign(0.)  
+        self.total.assign(0.)  
+
+class CustomLossByAnswer(tf.keras.metrics.Metric):
+
+    def __init__(self, name, col, **kwargs):
+        super(CustomLossByAnswer, self).__init__(name=name, **kwargs)
+        self.loss = self.add_weight(name=name, initializer='zeros')
+        self.batch_count = tf.Variable(0, dtype=tf.int32)
+        self.total = tf.Variable(0., dtype=tf.float32)
+        self.col = col
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        expected_probs = y_pred[self.col]
+        successes = y_true[self.col]
+        a_loss = -successes * tf.math.log(expected_probs + tf.constant(1e-8, dtype=tf.float32))
+        self.total.assign_add(tf.reduce_sum(a_loss))
+        self.batch_count.assign_add(tf.shape(y_true)[0])
+        self.loss.assign(self.total/tf.cast(self.batch_count, dtype=tf.float32))
+
+    def result(self):
+        return self.loss
+
+    def reset_states(self):
+        # The state of the metric will be reset at the start of each epoch.
+        self.loss.assign(0.)
+        self.batch_count.assign(0)
+        self.total.assign(0.)  
+
+
+class CustomAbsErrorByColumn(tf.keras.metrics.Metric):
+
+    def __init__(self, name, start_col, end_col, **kwargs):
+        print(f'Name: {name}, start {start_col}, end {end_col}')
+        super(CustomAbsErrorByColumn, self).__init__(name=name, **kwargs)
+        self.abs_error = self.add_weight(name=name, initializer='zeros')
+        self.batch_count = tf.Variable(0, dtype=tf.int32)
+        self.total = tf.Variable(0., dtype=tf.float32)
+        self.start_col = start_col
+        self.end_col = end_col
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        self.total.assign_add(tf.reduce_sum(absolute_error(y_true[:, self.start_col:self.end_col+1], y_pred[:, self.start_col:self.end_col+1])))
+        self.batch_count.assign_add(tf.shape(y_true)[0])
+        self.abs_error.assign(self.total/tf.cast(self.batch_count, dtype=tf.float32))
+
+    def result(self):
+        return self.abs_error
+
+    def reset_states(self):
+        # The state of the metric will be reset at the start of each epoch.
+        self.abs_error.assign(0.)
+        self.batch_count.assign(0)
+        self.total.assign(0.)  
 
 
 
@@ -280,7 +313,7 @@ class UpdateStepCallback(tf.keras.callbacks.Callback):
         # # print(f'Step {step}')
 
 
-# def get_gz_binomial_eval_metric_ops(self, labels, predictions):
+# def get_gz_binomial_eval_metric_ops(self, y_true, predictions):
     # raise NotImplementedError('Needs to be updated for multi-label! Likely to replace in TF2.0')
     # will probably be callable/subclass rather than implemented here 
     # record distribution of predictions for tensorboard

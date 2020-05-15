@@ -30,7 +30,8 @@ class Iteration():
         oracle,
         questions,
         label_cols,
-        initial_estimator_ckpt=None
+        initial_estimator_ckpt=None,
+        prediction_checkpoints=[]
     ):
         """
         Do some sanity checks in the args, then save them as properties.
@@ -119,24 +120,12 @@ class Iteration():
         src = self.initial_estimator_ckpt
         dest = self.estimators_dir
         if initial_estimator_ckpt is not None:
-            logging.info('Copying {} initial estimator ckpt'.format(
+            logging.info('Copying {} initial estimator ckpt - actually, doing nothing!'.format(
                 initial_estimator_ckpt))
-
-            # copy the initial estimator folder inside estimators_dir, keeping the same name
-            shutil.copytree(
-                src=src,
-                dst=dest
-            )
-
-            # copy the files only, subdirs are saved models
-            # [shutil.copy(f, dest) for f in os.listdir(src) if os.path.isfile(f)]
-
-            # remove this log from the copy, to save space
-            # may have changed in TF2?
-            [os.remove(os.path.join(dest, f)) for f in os.listdir(
-                dest) if f.startswith('events.out.tfevents')]
         else:
             os.mkdir(self.estimators_dir)
+
+        self.prediction_checkpoints = prediction_checkpoints
 
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(
@@ -147,6 +136,13 @@ class Iteration():
 
     def get_train_records(self):
         return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
+
+    def get_prediction_models(self, max_models=3):
+        all_models = [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.final_size, self.fixed_estimator_params.batch_size, weights_loc=loc) for loc in self.prediction_checkpoints]
+        if max_models < len(all_models):
+            return all_models[-max_models::]
+        else:
+            return all_models
 
     def make_predictions(self, model):
         # logging.debug('Loaded predictor {}'.format(predictor))
@@ -224,16 +220,28 @@ class Iteration():
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
 
-        best_model = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
+        _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
+        exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
+        self.prediction_checkpoints.append(self.estimators_dir + '/models/final')  # hacky duplication
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
-        subjects, predictions = self.make_predictions(best_model)
+        subject_ids = None
+        all_predictions = []
+        for model in self.get_prediction_models(max_models=3): # N most recent models
+            subjects, predictions = self.make_predictions(model)
+            if subject_ids is not None:
+                # double check that subjects remains consistent
+                new_subject_ids = [s['id_str'] for s in subjects]
+                assert all([s_new == s_old for (s_new, s_old) in zip(subject_ids, new_subject_ids)])
+                subject_ids = new_subject_ids  # for next time
+            all_predictions.append(predictions)
+        print([p.shape for p in all_predictions])
 
         # returns list of acquisition values
         # warning, duplication
-        
-        acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
+        # acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
+        acquisitions = self.acquisition_func(all_predictions, self.schema)
         self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))

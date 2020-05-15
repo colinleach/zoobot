@@ -20,6 +20,7 @@ InitialState = namedtuple(
         'iteration_dir',
         'iteration_n',
         'initial_estimator_ckpt',
+        'prediction_checkpoints',
         'initial_train_tfrecords',
         'initial_db_loc',
         'prediction_shards',
@@ -33,6 +34,7 @@ FinalState = namedtuple(
     [
         'iteration_n',
         'estimators_dir',
+        'prediction_checkpoints',
         'train_records',
         'db_loc',
     ]
@@ -78,6 +80,7 @@ def run(initial_state, instructions, fixed_estimator_params, acquisition_func, o
         initial_size=instructions.shards.size,
         learning_rate=initial_state.learning_rate,
         initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # currently does nothing
+        prediction_checkpoints=initial_state.prediction_checkpoints,
         epochs=epochs,
         oracle=oracle,
         questions=questions,
@@ -92,6 +95,7 @@ def run(initial_state, instructions, fixed_estimator_params, acquisition_func, o
         iteration_n=initial_state.iteration_n,
         estimators_dir=iteration.estimators_dir,  # to become initial_estimator_ckpt'
         train_records=iteration.get_train_records(),  # initial_train_tfrecords
+        prediction_checkpoints=iteration.prediction_checkpoints,
         db_loc=iteration.db_loc
     )
     return final_state
@@ -120,7 +124,8 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             initial_train_tfrecords=instructions.shards.train_tfrecord_locs(),  # only the initial train shards
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
-            epochs=get_epochs(this_iteration_n)  # duplication
+            epochs=get_epochs(this_iteration_n),  # duplication
+            prediction_checkpoints=[]
         )
     else:
         previous_final_state = load_final_state(previous_iteration_dir)
@@ -133,7 +138,8 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             initial_db_loc=previous_final_state.db_loc,  # will copy the db from the last iteration
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
-            epochs=get_epochs(this_iteration_n)  # duplication
+            epochs=get_epochs(this_iteration_n),  # duplication
+            prediction_checkpoints=previous_final_state.prediction_checkpoints
         )
     return initial_state
 
@@ -178,10 +184,10 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
         initial_size=shard_img_size,
-        final_size=224,  # hardcode for now
+        final_size=64,  # hardcode for now
         questions=questions,
         label_cols=label_cols,
-        batch_size=128  # kwarg
+        batch_size=16  # kwarg
     )
 
     acquisition_func = create_instructions.load_acquisition_func(instructions_dir).get()
@@ -278,7 +284,7 @@ if __name__ == '__main__':
     'bulge-size_no'
     ]
 
-
+    logging.info(f'Test mode: {args.test}')
     main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, args.test)
 
     # TODO move to simulation controller

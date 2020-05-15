@@ -9,7 +9,8 @@ baseline=$5
 test=$6  # expects --test or blank
 panoptes=$7  # expects --panoptes or blank
 
-echo '\nN iterations: ' $n_iterations 'Catalog dir' $catalog_dir 'Shard dir' $shard_dir 'Experiment dir' $experiment_dir 'Baseline?' $baseline 'test?' $test 'panoptes?' $panoptes
+echo 'N iterations: ' $n_iterations 'Catalog dir' $catalog_dir 'Shard dir' $shard_dir 'Experiment dir' 
+echo 'Baseline?' $baseline 'test?' $test 'panoptes?' $panoptes
 
 echo 'Creating experiment and instructions:'
 ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir $baseline $test $panoptes

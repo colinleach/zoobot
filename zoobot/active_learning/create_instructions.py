@@ -178,13 +178,21 @@ class AcquisitionCallableFactory():
             logging.critical('Using mock acquisition function, baseline test mode!')
             return self.get_mock_acquisition_func()
         else:  # callable expecting samples np.ndarray, returning list
-            logging.critical('Using mutual information acquisition function')
-            return  lambda *args, **kwargs: np.mean(acquisition_utils.mutual_info_acquisition_func_multiq(*args, **kwargs), axis=-1)  # requires schema and retirement limit  
+            # logging.critical('Using mutual information acquisition function')
+            # return  lambda *args, **kwargs: np.mean(acquisition_utils.mutual_info_acquisition_func_multiq(*args, **kwargs), axis=-1)  # requires schema and retirement limit  
+            logging.critical('Using multi-model acquisition function')
+            return acquisition_utils.calculate_reliable_multimodel_mean_acq  # does the mean itself
 
     def get_mock_acquisition_func(self):
         """Callable will return random subject priorities. Useful for baselines"""
         logging.critical('Retrieving MOCK random acquisition function')
-        return lambda samples, *args, **kwargs: np.random.rand(len(samples))
+        def mock_acquisition_func(samples_or_sample_list, *args, **kwargs):
+            if len(samples_or_sample_list) < 10:  # is list of samples by model
+                n_to_return = len(samples_or_sample_list[0])
+            else:  # is list of samples
+                n_to_return = len(samples_or_sample_list)
+            return np.random.rand(n_to_return)
+        return mock_acquisition_func
 
     def to_dict(self):
         return object_utils.object_to_dict(self)
