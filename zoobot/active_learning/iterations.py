@@ -116,8 +116,7 @@ class Iteration():
 
         self.db, self.db_loc = get_db(self.iteration_dir, initial_db_loc)
 
-        # currently not implemented
-        assert initial_estimator_ckpt is None
+        # currently does nothing
         self.initial_estimator_ckpt = initial_estimator_ckpt
         
         os.mkdir(self.estimators_dir)
