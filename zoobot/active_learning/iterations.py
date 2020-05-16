@@ -224,10 +224,7 @@ class Iteration():
         if os.path.isdir(skip_model_dir):
             logging.warning('Skipping training and loading cheat estimator at {}'.format(skip_model_dir))
             save_dir = os.path.join(self.estimators_dir, 'models')
-            if not os.path.isdir(save_dir):
-                os.mkdir(save_dir)
-            for model_file in glob.glob(skip_model_dir + '/*'):
-                shutil.copyfile(model_file, save_dir) # am sure there's an shutil for this but hey
+            shutil.copytree(skip_model_dir, save_dir)
             logging.info('Copied files: {}'.format(glob.glob(save_dir + '/*')))
             assert os.path.isfile(os.path.join(save_dir, 'final.index'))
         else:
