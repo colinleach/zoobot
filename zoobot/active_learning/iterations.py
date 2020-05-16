@@ -243,7 +243,8 @@ class Iteration():
                 new_subject_ids = [s['id_str'] for s in subjects]
                 assert all([s_new == s_old for (s_new, s_old) in zip(subject_ids, new_subject_ids)])
                 subject_ids = new_subject_ids  # for next time
-            all_predictions.append(predictions[:100])  # TEMP for now, to debug
+            all_predictions.append(predictions)
+            # all_predictions.append(predictions[:100])  # TEMP to debug
         logging.info('All model predictions: {}'.format([p.shape for p in all_predictions]))
 
         # returns list of acquisition values

@@ -130,7 +130,7 @@ def sense_check_multimodel_acq(acq, schema, min_acq=-0.5):
     above_min = np.all(acq > min_acq, axis=1)
     acq_is_sensible = equal_binary_responses & above_min
     logging.info('{} sensible acq values ({} equal binary, {} above min {})'.format(acq_is_sensible.mean(), equal_binary_responses.mean(), above_min.mean(), min_acq))
-    acq[acq_is_sensible] = np.nan  # set row to nan to preserve order
+    acq[~acq_is_sensible] = np.nan  # set row to nan to preserve order
     return acq  # be sure to remove nans before applying argsort!
 
 
