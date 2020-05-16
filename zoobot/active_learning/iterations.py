@@ -223,9 +223,13 @@ class Iteration():
         skip_model_dir = os.path.dirname(self.prediction_shards[0]) + '_final_' + self.iteration_dir[-1]  # e.g. _0, _1
         if os.path.isdir(skip_model_dir):
             logging.warning('Skipping training and loading cheat estimator at {}'.format(skip_model_dir))
-            save_dir = self.estimators_dir + '/models'
-            # os.mkdir(save_dir)
-            [shutil.copyfile(f, save_dir) for f in glob.glob(skip_model_dir + '/*')]  # am sure there's an shutil for this but hey
+            save_dir = os.path.join(self.estimators_dir, 'models')
+            if not os.path.isdir(save_dir):
+                os.mkdir(save_dir)
+            for model_file in glob.glob(skip_model_dir + '/*'):
+                shutil.copyfile(model_file, save_dir) # am sure there's an shutil for this but hey
+            logging.info('Copied files: {}'.format(glob.glob(save_dir + '/*')))
+            assert os.path.isfile(os.path.join(save_dir, 'final.index'))
         else:
             _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
         # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
