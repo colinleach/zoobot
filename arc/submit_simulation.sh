@@ -25,8 +25,8 @@ shard_dir=data/gz2/shards/all_featp5_facep5_sim_256_arc
 experiment_dir=data/experiments/live/latest
 instructions_dir=$experiment_dir/instructions
 n_iterations=2
-baseline='--baseline'
-test_flag='--test'
+baseline='baseline'
+test_flag='test'
 
 ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir $baseline $test_flag
 ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $baseline $test_flag

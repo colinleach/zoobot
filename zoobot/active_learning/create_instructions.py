@@ -332,14 +332,15 @@ if __name__ == '__main__':
                     #  TODO add catalog loc, to here or via shard config, to know which oracle to use
     parser.add_argument('--instructions-dir', dest='instructions_dir', type=str,
                     help='Directory to save instructions')
-    parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
-                    help='Use random subject selection only')
     parser.add_argument('--warm-start', dest='warm_start', action='store_true', default=False,
                     help='After each iteration, continue training the same model')
-    parser.add_argument('--test', dest='test', action='store_true', default=False,
-                    help='Minimal training')
-    parser.add_argument('--panoptes', dest='panoptes', action='store_true', default=False,
-                    help='Use live uploads and responses')
+    parser.add_argument('--options', dest='options', default='')
+    # parser.add_argument('--baseline', dest='baseline', action='store_true', default=False,
+    #                 help='Use random subject selection only')
+    # parser.add_argument('--test', dest='test', action='store_true', default=False,
+    #                 help='Minimal training')
+    # parser.add_argument('--panoptes', dest='panoptes', action='store_true', default=False,
+    #                 help='Use live uploads and responses')
     args = parser.parse_args()
 
     log_loc = 'create_instructions_{}.log'.format(time.time())
@@ -352,8 +353,9 @@ if __name__ == '__main__':
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-    logging.warning('Baseline: {}'.format(args.baseline))
-
-    main(args.shard_config_loc, args.catalog_dir, args.instructions_dir, args.baseline, args.warm_start, args.test, args.panoptes)
+    
+    options = args.options
+    logging.warning('Options: {}'.format(options))
+    main(args.shard_config_loc, args.catalog_dir, args.instructions_dir, 'baseline' in options, args.warm_start, 'test' in options, 'panoptes' in options)
 
     # see run_simulation.sh for example use 
