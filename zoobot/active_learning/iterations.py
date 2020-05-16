@@ -224,7 +224,7 @@ class Iteration():
         if os.path.isdir(skip_model_dir):
             logging.warning('Skipping training and loading cheat estimator at {}'.format(skip_model_dir))
             save_dir = self.estimators_dir + '/models'
-            os.mkdir(save_dir)
+            # os.mkdir(save_dir)
             [shutil.copyfile(f, save_dir) for f in glob.glob(skip_model_dir + '/*')]  # am sure there's an shutil for this but hey
         else:
             _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
