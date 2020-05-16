@@ -242,8 +242,8 @@ if __name__ == '__main__':
                     help='Directory to save this iteration')
     parser.add_argument('--previous-iteration-dir', dest='previous_iteration_dir', type=str,
                     help='Directory with previously-executed iteration from which to begin (if provided)')
-    parser.add_argument('--test', dest='test', action='store_true', default=False,
-                    help='Only do a minimal iteration to verify that everything works')
+    parser.add_argument('--options', dest='options', default='')
+    
     args = parser.parse_args()
 
     log_loc = 'run_iteration_{}.log'.format(time.time())
@@ -299,8 +299,10 @@ if __name__ == '__main__':
     'bulge-size_no'
     ]
 
-    logging.info(f'Test mode: {args.test}')
-    main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, args.test)
+    options = args.options
+    test = 'test' in options
+    logging.info(f'Test mode: {test}')
+    main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, test)
 
     # TODO move to simulation controller
     # analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))

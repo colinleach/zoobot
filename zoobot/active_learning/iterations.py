@@ -4,6 +4,7 @@ import logging
 import json
 import sqlite3
 from typing import List
+import glob
 
 import numpy as np
 
@@ -145,7 +146,6 @@ class Iteration():
         return [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.final_size, weights_loc=loc) for loc in checkpoints]
 
     def make_predictions(self, model):
-        # logging.debug('Loaded predictor {}'.format(predictor))
         logging.info('Making and recording predictions')
         logging.info('Using shard_locs {}'.format(self.prediction_shards))
         unlabelled_subjects, samples = database.make_predictions_on_tfrecord(
@@ -222,6 +222,12 @@ class Iteration():
 
         _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
         # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
+
+        # OR for debugging acquisitions
+        skip_model_dir = os.path.dirname(self.prediction_shards) + '_final'
+        save_dir = self.estimators_dir + '/models/final'
+        [shutil.copyfile(f, save_dir) for f in glob.glob(skip_model_dir)]
+
         self.prediction_checkpoints.append(self.estimators_dir + '/models/final')  # hacky duplication
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
@@ -243,8 +249,8 @@ class Iteration():
         # warning, duplication
         # acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
         acquisitions = self.acquisition_func(all_predictions, self.schema)
-        print(acquisitions)
-        exit()
+        print('Acquistions: ', acquisitions)
+        # exit()
         self.record_state(subjects, predictions, acquisitions)
         logging.debug('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))

@@ -20,7 +20,7 @@ export PYTHON=$DATA/envs/zoobot/bin/python
 
 # and switch label cols in make_shards.py, create_instructions.py, and run_iteration.py, and version in iterations.py, for now
 catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5_arc
-shard_dir=data/gz2/shards/all_featp5_facep5_sim_128_arc
+shard_dir=data/gz2/shards/all_featp5_facep5_sim_256_arc
 
 experiment_dir=data/experiments/live/latest
 instructions_dir=$experiment_dir/instructions
@@ -28,8 +28,8 @@ n_iterations=2
 baseline='--baseline'
 test_flag='--test'
 
-./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir
-./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $baseline $test_flag ''
+./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir $baseline $test_flag
+./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $baseline $test_flag
 
 # dvc run -d $shard_dir -d $catalog_dir -d production/create_instructions.sh -o $instructions_dir -f $experiment_dir.dvc ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir
 # dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $baseline $test_flag ''
