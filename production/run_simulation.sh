@@ -23,7 +23,7 @@ while [ $this_iteration -lt $n_iterations ]
 do  
     echo 'Running iteration:' $this_iteration
 
-    ./production/run_iteration.sh $instructions_dir $this_iteration_dir $previous_iteration_dir --options "$options"
+    ./production/run_iteration.sh $instructions_dir $this_iteration_dir $previous_iteration_dir $options
 
     # update ahead of next iteration
     this_iteration=$[$this_iteration+1]

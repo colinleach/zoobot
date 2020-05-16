@@ -19,7 +19,7 @@ echo 'Instructions' $INSTRUCTIONS_DIR 'Previous: ' $PREVIOUS_ITERATION_DIR 'This
 #     fi
     echo $PYTHON
     echo 'Options:' $OPTIONS
-    $PYTHON zoobot/active_learning/run_iteration.py --instructions-dir=$INSTRUCTIONS_DIR --this-iteration-dir=$THIS_ITERATION_DIR --previous-iteration-dir=$PREVIOUS_ITERATION_DIR $OPTIONS
+    $PYTHON zoobot/active_learning/run_iteration.py --instructions-dir=$INSTRUCTIONS_DIR --this-iteration-dir=$THIS_ITERATION_DIR --previous-iteration-dir=$PREVIOUS_ITERATION_DIR --options "$OPTIONS"
     # stop if any error
     RESULT=$?
     if [ $RESULT -gt 0 ]
