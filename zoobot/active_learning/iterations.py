@@ -224,9 +224,9 @@ class Iteration():
         # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
 
         # OR for debugging acquisitions
-        skip_model_dir = os.path.dirname(self.prediction_shards) + '_final'
-        save_dir = self.estimators_dir + '/models/final'
-        [shutil.copyfile(f, save_dir) for f in glob.glob(skip_model_dir)]
+        # skip_model_dir = os.path.dirname(self.prediction_shards) + '_final'
+        # save_dir = self.estimators_dir + '/models/final'
+        # [shutil.copyfile(f, save_dir) for f in glob.glob(skip_model_dir)]
 
         self.prediction_checkpoints.append(self.estimators_dir + '/models/final')  # hacky duplication
 
