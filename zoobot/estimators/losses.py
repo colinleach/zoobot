@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 
+import tensorflow_probability as tfp
 
 
 class Question():
@@ -211,6 +212,24 @@ def get_indices_from_label_cols(label_cols, questions):
     # return tf.constant(indices.astype(int), dtype=tf.int32)
 
 
+def beta_loss(successes, total_count, alpha, beta):
+    beta_bin_dist = tfp.distributions.BetaBinomial(total_count, alpha, beta)
+    return beta_bin_dist.log_prob(successes)
+
+
+# def multiquestion_beta_loss(labels, predictions, question_index_groups):
+#     q_losses = []
+#     for q_n in range(len(question_index_groups)):
+#         q_indices = question_index_groups[q_n]
+#         q_start = q_indices[0]
+#         q_end = q_indices[1]
+#         total_count = labels[:, q_start:q_end+1]
+#         q_
+    
+#     # TODO binary questions should either skip second loss output or not be calculated/enforced identical
+
+
+
 # @tf.function
 def multiquestion_loss(labels, predictions, question_index_groups):
     """[summary]
@@ -225,18 +244,17 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     """
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
     q_losses = []
-    print(question_index_groups)
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
         q_start = q_indices[0]
         q_end = q_indices[1]
-        print(q_start, q_end)
-        q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
-        # tf.summary.histogram('question_{}_loss'.format(q_n), q_loss)
+
+        # q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
+        q_loss = beta_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1, 0], predictions[:, q_start:q_end+1, 1])
+
         q_losses.append(q_loss)
     
     total_loss = tf.stack(q_losses, axis=1)
-    # tf.summary.histogram('total_loss', total_loss)
     return total_loss  # leave the reduce_sum to the estimator
 
 
