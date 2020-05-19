@@ -200,27 +200,19 @@ def dirichlet_mixture(samples_for_q, expected_votes, n_samples):
     # samples_for_q has shape (batch, answer, dropout)
     # n_samples = samples_for_q.shape[2]  # is a np array so this is okay
 
-    concentrations = tf.transpose(samples_for_q, (0, 2, 1))  # move dropout to (leading) batch dimensions, concentrations to (last) event dim. Now (batch, dropout, concentrations)
-    # (dropout) components, each with batch shape (batch) and event shape (k classes)
-    print(concentrations.shape)
-    components = [
-        tfp.distributions.DirichletMultinomial(expected_votes, concentrations[:, n, :]) for n in range(n_samples)
-    ]   
-    # (batch) probs of each component, where each component has (dropout) probs
-    component_probs = tf.constant(np.ones(n_samples) / n_samples)
-    categorical = tfp.distributions.Categorical(probs=np.ones((32, 15, 1)))
-    print(categorical)
+    component_probs = tf.ones(n_samples) / n_samples
+    categorical = tfp.distributions.Categorical(probs=component_probs)
 
-    # print(components[0], component_probs.shape)
-    # print([components[n] for n in range(len(components))])
-    # print(categorical)
-    # print(concentrations.shape,component_probs.shape)
+    # move dropout to (leading) batch dimensions, concentrations to (last) event dim. Now (batch, dropout, concentrations)
+    concentrations = tf.transpose(samples_for_q, (0, 2, 1))
+    # print(concentrations.shape)
+    component_distribution = tfp.distributions.DirichletMultinomial(expected_votes, concentrations)
+    # print(component_distribution)
 
-    # print(component_probs.shape, expected_votes.shape, n_samples.shape)
-    mixture = tfp.distributions.Mixture(
-        cat=categorical,
-        components=components,
-        # validate_args=True
+    mixture = tfp.distributions.MixtureSameFamily(
+        categorical,
+        component_distribution,
+        validate_args=True
     )
     return mixture
 

@@ -303,7 +303,8 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, run_config, 
     batch_predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
     logging.info('Made batch predictions of shape {}'.format(batch_predictions.shape))
 
-    assert len(batch_id_str) == len(batch_predictions)
+    if not len(batch_id_str) == len(batch_predictions):
+        raise ValueError('Loaded {} ids but only made {} predictions - something is wrong!'.format(len(batch_id_str), len(batch_predictions)))
     subjects = [{'id_str': x, 'predictions': y} for (x, y) in zip(batch_id_str, batch_predictions)]
 
     # exclude subjects with labels in db
