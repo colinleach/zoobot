@@ -277,8 +277,8 @@ def get_model(schema, final_size, weights_loc=None):
     a_loss_metrics = [bayesian_estimator_funcs.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
-        optimizer=tf.keras.optimizers.Adam(),
-        metrics=abs_metrics + q_loss_metrics + a_loss_metrics
+        optimizer=tf.keras.optimizers.Adam()
+        # metrics=abs_metrics + q_loss_metrics + a_loss_metrics
     )
 
     if weights_loc:

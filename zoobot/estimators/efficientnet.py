@@ -451,7 +451,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
 
     model.add(tf.keras.layers.GlobalAveragePooling2D())
     # custom_top_multinomial(model, output_dim, schema, batch_size)
-    custom_top_beta(model, output_dim, schema, batch_size)        
+    custom_top_dirichlet(model, output_dim, schema, batch_size)        
 
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
@@ -474,8 +474,11 @@ def custom_top_multinomial(model, output_dim, schema, batch_size):
     model.add(tf.keras.layers.Lambda(lambda x: tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in schema.question_index_groups], axis=1), output_shape=[batch_size, output_dim]))        
 
 def custom_top_beta(model, output_dim, schema, batch_size):
-    model.add(tf.keras.layers.Dense(output_dim, 2))  # two params
-    # no need for any softmaxing
+    model.add(tf.keras.layers.Dense(output_dim * 2, activation=lambda x: tf.nn.sigmoid(x) * 10. + tf.keras.backend.epsilon()))  # two params, 0-10 range
+    model.add(tf.keras.layers.Reshape((output_dim, 2)))  # as dimension 2
+
+def custom_top_dirichlet(model, output_dim, schema, batch_size):
+    model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 10. + tf.keras.backend.epsilon()))  # one params per answer, 0-10 range
 
 if __name__ == '__main__':
 

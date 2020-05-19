@@ -13,13 +13,15 @@ from zoobot.estimators import losses, input_utils
 if __name__ == '__main__':
     """
     To make model for smooth/featured (also change cols below):
-      python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_128/train --eval-dir data/decals/shards/multilabel_128/eval --epochs 1000 
+      # python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 1000 
+      python offline_training.py --experiment-dir results/smooth_or_featured_offline --shard-img-size 256 --train-dir data/decals/shards/multilabel_master_filtered_256/train --eval-dir data/decals/shards/multilabel_master_filtered_256/eval --epochs 1000 --batch-size 8 --final-size 128
 
     To make model for predictions on all cols, for appropriate galaxies only:
       python offline_training.py --experiment-dir results/latest_offline_featured --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 1000 
       
     Local testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 --batch-size 16
+      
     """
 
     # useful to avoid errors on small GPU
@@ -65,7 +67,7 @@ if __name__ == '__main__':
         'smooth-or-featured',
         'has-spiral-arms',
         'bar',
-        # 'bulge-size'
+        'bulge-size'
     ]
 
     # will load labels from shard, in this order
@@ -80,11 +82,11 @@ if __name__ == '__main__':
             'bar_strong',
             'bar_weak',
             'bar_no',
-            # 'bulge-size_dominant',
-            # 'bulge-size_large',
-            # 'bulge-size_moderate',
-            # 'bulge-size_small',
-            # 'bulge-size_none'
+            'bulge-size_dominant',
+            'bulge-size_large',
+            'bulge-size_moderate',
+            'bulge-size_small',
+            'bulge-size_none'
         ]
     else:
         version='gz2'
@@ -96,10 +98,10 @@ if __name__ == '__main__':
             'has-spiral-arms_no',
             'bar_yes',
             'bar_no',
-            # 'bulge-size_dominant',
-            # 'bulge-size_obvious',
-            # 'bulge-size_just-noticeable',
-            # 'bulge-size_no'
+            'bulge-size_dominant',
+            'bulge-size_obvious',
+            'bulge-size_just-noticeable',
+            'bulge-size_no'
         ]
     schema = losses.Schema(label_cols, questions, version=version)
 

@@ -154,19 +154,19 @@ Relate the df label columns tor question/answer groups and to tfrecod label indi
         return dict(zip(self.questions, self.question_index_groups))
 
 
-    def joint_p(self, samples, answer_text):
-        assert samples.ndim == 2  # batch, p. No 'per model', marginalise first
+    def joint_p(self, prob_of_answers, answer_text):
+        assert prob_of_answers.ndim == 2  # batch, p. No 'per model', marginalise first
         # prob(answer) = p(that answer|that q asked) * p(that q_asked) i.e...
         # prob(answer) = p(that answer|that q asked) * p(answer before that q)
         answer = self.get_answer(answer_text)
-        p_answer_given_question = samples[:, answer.index]
+        p_answer_given_question = prob_of_answers[:, answer.index]
 
         question = answer.question
         prev_answer = question.asked_after
         if prev_answer is None:
             return p_answer_given_question
         else:
-            p_prev_answer = self.joint_p(samples, prev_answer.text)  # recursive
+            p_prev_answer = self.joint_p(prob_of_answers, prev_answer.text)  # recursive
             return p_answer_given_question * p_prev_answer
 
     @property
@@ -212,9 +212,44 @@ def get_indices_from_label_cols(label_cols, questions):
     # return tf.constant(indices.astype(int), dtype=tf.int32)
 
 
-def beta_loss(successes, total_count, alpha, beta):
-    beta_bin_dist = tfp.distributions.BetaBinomial(total_count, alpha, beta)
-    return beta_bin_dist.log_prob(successes)
+def dirichlet_loss(labels_for_q, concentrations_for_q):
+    total_count = tf.reduce_sum(labels_for_q, axis=1)
+    dist = tfp.distributions.DirichletMultinomial(total_count, concentrations_for_q)
+    return -dist.log_prob(labels_for_q)  # important minus sign
+
+
+def beta_loss(labels_for_q, alpha_for_q, beta_for_q, n_answers):
+    # labels (batch, answer)
+    # params (batch, param)
+    # print(alpha_for_q.shape)
+    # print(beta_for_q.shape)
+    total_counts = tf.reduce_sum(labels_for_q, axis=1)
+
+    if n_answers > 2:
+        a_losses = []
+        for answer_n in range(n_answers):
+            labels_for_a = labels_for_q[:, answer_n]
+            alpha_for_a = alpha_for_q[:, answer_n]
+            beta_for_a = beta_for_q[:, answer_n]
+            a_losses.append(beta_log_prob(labels_for_a, alpha_for_a, beta_for_a, total_counts))
+        loss_by_question = -tf.reduce_sum(a_losses, axis=0)  # 0th axis is list index,1st is batch dim. Important minus!
+    else:  # ignore the prediction for the other answer - one (alpha, beta) pair is enough. Loss only calculated for one answer (makes sense, I think)
+        return -beta_log_prob(labels_for_q[:, 0], alpha_for_q[:, 0], beta_for_q[:, 0], total_counts)  # important minus!
+    return loss_by_question
+
+def beta_log_prob(successes, alpha, beta, total_counts):
+    # print(total_counts.shape)  # (batch)
+    # print(successes.shape)  # (batch)
+    # print(alpha.shape)  # (batch)
+    # print(beta.shape)  # (batch)
+    # print('Alpha:', np.around(alpha.numpy(), 4))
+    # print('Beta:', np.around(beta.numpy(), 4))
+    # print('Successes: ', successes)
+    # print('Total counts: ', total_counts)
+    beta_bin_dist = tfp.distributions.BetaBinomial(total_counts, alpha, beta, validate_args=True)
+    log_prob = beta_bin_dist.log_prob(successes)  # (batch) shape output
+    # print('Log prob: ', np.around(log_prob.numpy(), 4))
+    return log_prob
 
 
 # def multiquestion_beta_loss(labels, predictions, question_index_groups):
@@ -227,8 +262,6 @@ def beta_loss(successes, total_count, alpha, beta):
 #         q_
     
 #     # TODO binary questions should either skip second loss output or not be calculated/enforced identical
-
-
 
 # @tf.function
 def multiquestion_loss(labels, predictions, question_index_groups):
@@ -244,13 +277,20 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     """
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
     q_losses = []
+    # print(predictions.shape)
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
         q_start = q_indices[0]
         q_end = q_indices[1]
-
+        # print(q_start, q_end)
         # q_loss = multinomial_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
-        q_loss = beta_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1, 0], predictions[:, q_start:q_end+1, 1])
+        # q_loss = beta_loss(
+        #     labels_for_q=labels[:, q_start:q_end+1], 
+        #     alpha_for_q=predictions[:, q_start:q_end+1, 0],
+        #     beta_for_q=predictions[:, q_start:q_end+1, 1],
+        #     n_answers=q_end+1-q_start
+        # )
+        q_loss = dirichlet_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
 
         q_losses.append(q_loss)
     
@@ -272,6 +312,7 @@ def multinomial_loss(successes, expected_probs, output_dim=2):
         tf.Tensor: neg log likelihood of k_successes observed across all answers. With batch dimension.
     """
     # successes x, probs p: tf.sum(x*log(p)). Each vector x, p of length k.
+    # important minus!
     loss = -tf.reduce_sum(input_tensor=successes * tf.math.log(expected_probs + tf.constant(1e-8, dtype=tf.float32)), axis=1)
     # print_op = tf.print('successes', successes, 'expected_probs', expected_probs)
     # with tf.control_dependencies([print_op]):

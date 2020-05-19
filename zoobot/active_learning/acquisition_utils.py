@@ -9,6 +9,8 @@ from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
+import tensorflow_probability as tfp
+import tensorflow as tf
 
 from shared_astro_utils import plotting_utils
 from zoobot.estimators import make_predictions
@@ -142,9 +144,6 @@ def check_equal_binary_responses(acq_row, schema):
             return False
     return True
 
-
-
-
 def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):
     assert samples.ndim == 3  # batch, p, model
     all_expected_mi = []
@@ -153,12 +152,77 @@ def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):
         if prev_q is None:
             expected_votes = retirement
         else:
-            joint_p_of_asked = schema.joint_p(samples.mean(axis=-1), prev_q.text)  # prob of getting the answer needed to ask this question
+            # binomial mode
+            # prob_of_answers = binomial_prob_of_answers(samples)
+            # or dirichlet mode
+            prob_of_answers = dirichlet_prob_of_answers(samples, schema)
+            joint_p_of_asked = schema.joint_p(prob_of_answers, prev_q.text)  # prob of getting the answer needed to ask this question
             expected_votes = joint_p_of_asked * retirement
-        for a in q.answers:
-            all_expected_mi.append(mutual_info_acquisition_func(samples[:, a.index], expected_votes=expected_votes))
-    # return np.sum(all_expected_mi)
-    return np.array(all_expected_mi).swapaxes(0, 1)  # keep (batch, answer) convention. Note: not yet summed over answers
+
+        # binomial mode
+        # for a in q.answers:
+        #     all_expected_mi.append(mutual_info_acquisition_func(samples[:, a.index], expected_votes=expected_votes))
+        # OR dirichlet mode
+        all_expected_mi.append(dirichlet_mutual_information(samples[:, q.start_index:q.end_index+1], expected_votes))
+
+    return np.array(all_expected_mi).swapaxes(0, 1)  # keep (batch, answer) convention. Note: not yet summed over answers. Note: dirichlet gives (batch, question) not (batch, answer) - better!
+
+
+def binomial_prob_of_answers(samples):
+    # samples has (batch, answer, dropout) shape
+    return samples.mean(axis=-1)
+
+def dirichlet_prob_of_answers(samples, schema):
+    # samples has (batch, answer, dropout) shape
+    p_of_answers = []
+    for q in schema.questions:
+        samples_by_q = samples[:, q.start_index:q.end_index+1, :]
+        p_of_answers.append(dirichlet_mixture(samples_by_q, total_count=1, n_samples=samples.shape[2]).mean().numpy())
+    p_of_answers = np.array(p_of_answers).transpose()  # to get back to (batch, answer) shape
+
+
+def dirichlet_mutual_information(samples_for_q, expected_votes):
+    # samples_for_q has shape (batch, concentration, dropout)
+    # MI = entropy over all samples - mean entropy of each sample
+    n_samples = samples_for_q.shape[2]
+    predictive_entropy = dirichlet_mixture(samples_for_q, expected_votes).entropy.numpy()  # or .entropy_lower_bound
+    expected_entropy = np.mean([dirichlet_entropy_for_q(samples_for_q[:, :, dropout_n], expected_votes).numpy() for dropout_n in range(n_samples)], axis=1)
+    return predictive_entropy - expected_entropy  # (batch) shape
+
+
+def dirichlet_entropy_for_q(samples_for_q, expected_votes):
+    # samples should have shape (batch, answers_for_q), with values being the concentration of each galaxy/answer
+    dist = tfp.distributions.DirichletMultinomial(expected_votes, samples_for_q)
+    return dist.entropy
+
+
+def dirichlet_mixture(samples_for_q, expected_votes, n_samples):
+    # samples_for_q has shape (batch, answer, dropout)
+    # n_samples = samples_for_q.shape[2]  # is a np array so this is okay
+
+    concentrations = tf.transpose(samples_for_q, (0, 2, 1))  # move dropout to (leading) batch dimensions, concentrations to (last) event dim. Now (batch, dropout, concentrations)
+    # (dropout) components, each with batch shape (batch) and event shape (k classes)
+    print(concentrations.shape)
+    components = [
+        tfp.distributions.DirichletMultinomial(expected_votes, concentrations[:, n, :]) for n in range(n_samples)
+    ]   
+    # (batch) probs of each component, where each component has (dropout) probs
+    component_probs = tf.constant(np.ones(n_samples) / n_samples)
+    categorical = tfp.distributions.Categorical(probs=np.ones((32, 15, 1)))
+    print(categorical)
+
+    # print(components[0], component_probs.shape)
+    # print([components[n] for n in range(len(components))])
+    # print(categorical)
+    # print(concentrations.shape,component_probs.shape)
+
+    # print(component_probs.shape, expected_votes.shape, n_samples.shape)
+    mixture = tfp.distributions.Mixture(
+        cat=categorical,
+        components=components,
+        # validate_args=True
+    )
+    return mixture
 
 
 def mutual_info_acquisition_func(samples: np.ndarray, expected_votes):
