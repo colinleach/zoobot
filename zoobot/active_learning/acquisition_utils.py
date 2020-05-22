@@ -1,6 +1,8 @@
 import os
 import statistics  # thanks Python 3.4!
 import logging
+import itertools
+from functools import lru_cache
 
 import numpy as np
 import matplotlib
@@ -105,19 +107,68 @@ def calculate_reliable_multimodel_mean_acq(samples_list, schema):
     return mean_acq
 
 
-def get_multimodel_acq(samples_list, n_processes=8):  # e.g. [samples_a, samples_b], each of shape(galaxy, answer, rho)
-    samples = np.stack(samples_list, axis=-1)  # add new final axis, which model
-    n_subjects = samples.shape[0]
-    n_answers = samples.shape[1]
-    acq = np.zeros((n_subjects, n_answers))
+def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a, samples_b], each of shape(galaxy, answer, rho)
+    joint_samples = np.stack(samples_list, axis=-1)  # add new final axis, which model
+    n_subjects = joint_samples.shape[0]
+    n_answers = joint_samples.shape[1]
     logging.info('Beginning acquisition calculations ({} models, {} subjects, {} answers)'.format(len(samples_list), n_subjects, n_answers))
-    for subject_n in range(n_subjects):
-        model_predictions_by_answer = [samples[subject_n, answer_n].transpose() for answer_n in range(n_answers)]  # shape (model, rho)
-        with Pool(processes=n_processes) as pool:
-            acq_by_answer = pool.map(multimodel_bald, model_predictions_by_answer)
-        acq[subject_n, :] = acq_by_answer
+    
+    # binomial mode
+    # acq = np.zeros((n_subjects, n_answers))
+    # for subject_n in range(n_subjects):
+    #     model_predictions_by_answer = [samples[subject_n, answer_n].transpose() for answer_n in range(n_answers)]  # shape (model, rho)
+    #     with Pool(processes=n_processes) as pool:
+    #         acq_by_answer = pool.map(multimodel_bald, model_predictions_by_answer)
+    #     acq[subject_n, :] = acq_by_answer
+
+    # dirichlet mode
+    all_expected_mi = []
+    all_predictive_entropy = []
+    all_expected_entropy = []
+
+    # used for working out prob q's are asked
+    joint_samples = tf.concat(samples_list, axis=2) 
+    prob_of_answers = dirichlet_prob_of_answers(joint_samples, schema)
+
+    for q in schema.questions:
+        print(q.text)
+        expected_votes_list = [get_expected_votes(samples, q, retirement, schema, round=True) for samples in samples_list]
+        # print(expected_votes_list)
+
+        samples_list_by_q = [samples[:, q.start_index:q.end_index+1] for samples in samples_list]
+        print('Calculating predictive entropy')
+        predictive_entropy = dirichlet_predictive_entropy(samples_list_by_q, expected_votes_list)
+        print('Calculating expected entropy')
+        expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
+        mi_for_q = predictive_entropy - expected_entropy
+        prev_q = q.asked_after
+        if prev_q is None:
+            joint_p_of_asked = 1.
+        else:
+            joint_p_of_asked = schema.joint_p(prob_of_answers, q.asked_after.text)
+        # print(mi_for_q)
+
+        all_predictive_entropy.append(predictive_entropy)
+        all_expected_entropy.append(expected_entropy)
+        all_expected_mi.append(mi_for_q * joint_p_of_asked)
+
+
     logging.info('Acquisition calculations complete')
-    return acq
+    return np.array(all_expected_mi).transpose(), np.array(all_predictive_entropy).transpose(), np.array(all_expected_entropy).transpose()
+
+
+def get_expected_votes(samples, q, retirement, schema, round):
+    prob_of_answers = dirichlet_prob_of_answers(samples, schema)  # mean over both models. Prob given q is asked!
+    prev_q = q.asked_after
+    if prev_q is None:
+        expected_votes = tf.ones(len(samples)) * retirement
+    else:
+        joint_p_of_asked = schema.joint_p(prob_of_answers, prev_q.text)  # prob of getting the answer needed to ask this question
+        expected_votes = joint_p_of_asked * retirement
+    if round:
+        return tf.round(expected_votes)
+    else:
+        return expected_votes
 
 
 def get_kde(x):
@@ -144,28 +195,29 @@ def check_equal_binary_responses(acq_row, schema):
             return False
     return True
 
-def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):
-    assert samples.ndim == 3  # batch, p, model
-    all_expected_mi = []
-    for q in schema.questions:
-        prev_q = q.asked_after
-        if prev_q is None:
-            expected_votes = retirement
-        else:
-            # binomial mode
-            # prob_of_answers = binomial_prob_of_answers(samples)
-            # or dirichlet mode
-            prob_of_answers = dirichlet_prob_of_answers(samples, schema)
-            joint_p_of_asked = schema.joint_p(prob_of_answers, prev_q.text)  # prob of getting the answer needed to ask this question
-            expected_votes = joint_p_of_asked * retirement
+# for one model...
+# def mutual_info_acquisition_func_multiq(samples, schema, retirement=40):
+#     assert samples.ndim == 3  # batch, p, model
+#     all_expected_mi = []
+#     for q in schema.questions:
+#         prev_q = q.asked_after
+#         if prev_q is None:
+#             expected_votes = retirement
+#         else:
+#             # binomial mode
+#             # prob_of_answers = binomial_prob_of_answers(samples)
+#             # or dirichlet mode
+#             prob_of_answers = dirichlet_prob_of_answers(samples, schema)
+#             joint_p_of_asked = schema.joint_p(prob_of_answers, prev_q.text)  # prob of getting the answer needed to ask this question
+#             expected_votes = joint_p_of_asked * retirement
 
-        # binomial mode
-        # for a in q.answers:
-        #     all_expected_mi.append(mutual_info_acquisition_func(samples[:, a.index], expected_votes=expected_votes))
-        # OR dirichlet mode
-        all_expected_mi.append(dirichlet_mutual_information(samples[:, q.start_index:q.end_index+1], expected_votes))
+#         # binomial mode
+#         # for a in q.answers:
+#         #     all_expected_mi.append(mutual_info_acquisition_func(samples[:, a.index], expected_votes=expected_votes))
+#         # OR dirichlet mode
+#         all_expected_mi.append(dirichlet_mutual_information(samples[:, q.start_index:q.end_index+1], expected_votes))
 
-    return np.array(all_expected_mi).swapaxes(0, 1)  # keep (batch, answer) convention. Note: not yet summed over answers. Note: dirichlet gives (batch, question) not (batch, answer) - better!
+#     return np.array(all_expected_mi).swapaxes(0, 1)  # keep (batch, answer) convention. Note: not yet summed over answers. Note: dirichlet gives (batch, question) not (batch, answer) - better!
 
 
 def binomial_prob_of_answers(samples):
@@ -173,40 +225,119 @@ def binomial_prob_of_answers(samples):
     return samples.mean(axis=-1)
 
 def dirichlet_prob_of_answers(samples, schema):
+    # mean probability (including dropout) of an answer being given. 
     # samples has (batch, answer, dropout) shape
     p_of_answers = []
     for q in schema.questions:
         samples_by_q = samples[:, q.start_index:q.end_index+1, :]
-        p_of_answers.append(dirichlet_mixture(samples_by_q, total_count=1, n_samples=samples.shape[2]).mean().numpy())
-    p_of_answers = np.array(p_of_answers).transpose()  # to get back to (batch, answer) shape
+        p_of_answers.append(dirichlet_mixture(samples_by_q, expected_votes=1, n_samples=samples.shape[2]).mean().numpy())
+    # print([p.shape for p in p_of_answers])
+    p_of_answers = np.concatenate(p_of_answers, axis=1)
+    return p_of_answers
 
 
-def dirichlet_mutual_information(samples_for_q, expected_votes):
-    # samples_for_q has shape (batch, concentration, dropout)
-    # MI = entropy over all samples - mean entropy of each sample
+# def dirichlet_mutual_information(samples_for_q, expected_votes):
+#     # samples_for_q has shape (batch, concentration, dropout)
+#     # MI = entropy over all samples - mean entropy of each sample
+
+#     # predictive_entropy = dirichlet_mixture(samples_for_q, expected_votes).entropy.numpy()  # or .entropy_lower_bound
+#     predictive_entropy = dirichlet_predictive_entropy(samples_for_q, expected_votes)
+#     expected_entropy = dirichlet_expected_entropy(samples_for_q, expected_votes)
+#     return predictive_entropy - expected_entropy  # (batch) shape
+
+
+
+def dirichlet_expected_entropy(list_of_samples_for_q, list_of_expected_votes):
+    expected_entropies = []
+    for n, samples_for_q in enumerate(list_of_samples_for_q):  # for each model
+        expected_votes = list_of_expected_votes[n]
+        # predictive entropy per model is an expected entropy for one model (now over dropout)
+        expected_entropies.append(dirichlet_predictive_entropy_per_model(samples_for_q, expected_votes))
+    return np.mean(expected_entropies, axis=0)
+
+
+def dirichlet_predictive_entropy(list_of_samples_for_q, list_of_expected_votes):
+    # print(list_of_samples_for_q[0].shape)
+    joint_samples = tf.concat(list_of_samples_for_q, axis=2)  # concat along dropout (sample) axis
+    stacked_expected_votes = tf.stack(list_of_expected_votes, axis=1)
+    # print(stacked_expected_votes)
+    joint_expected_votes = tf.round(tf.reduce_mean(stacked_expected_votes, axis=1))  # take the average expected votes. But won't be int?
+    # now we consider these samples from one model
+    # print(joint_expected_votes)
+    return dirichlet_predictive_entropy_per_model(joint_samples, joint_expected_votes)
+
+
+def dirichlet_expected_entropy_per_model(samples_for_q, expected_votes):
+    assert tf.rank(samples_for_q) == 3
+    n_answers = samples_for_q.shape[1]
     n_samples = samples_for_q.shape[2]
-    predictive_entropy = dirichlet_mixture(samples_for_q, expected_votes).entropy.numpy()  # or .entropy_lower_bound
-    expected_entropy = np.mean([dirichlet_entropy_for_q(samples_for_q[:, :, dropout_n], expected_votes).numpy() for dropout_n in range(n_samples)], axis=1)
-    return predictive_entropy - expected_entropy  # (batch) shape
+    expected_entropy = []
+    assert tf.rank(expected_votes) == 1
+    for galaxy_n, galaxy in enumerate(samples_for_q):  # rows
+        entropies_this_galaxy = []
+        for dropout_n in range(n_samples):
+            # print(galaxy_n, dropout_n)
+            galaxy_with_dummy_batch = np.expand_dims(galaxy[:, dropout_n], axis=0)  # mixture requires batch dimension
+            dist = tfp.distributions.DirichletMultinomial(expected_votes[galaxy_n], galaxy_with_dummy_batch, validate_args=True)
+            entropies_this_galaxy.append(entropy_in_permutations_by_galaxy(dist, expected_votes[galaxy_n], n_answers))  # cannot have batch dimension > 1
+        expected_entropy.append(np.mean(entropies_this_galaxy))
+    return np.array(expected_entropy)
 
 
-def dirichlet_entropy_for_q(samples_for_q, expected_votes):
+def dirichlet_predictive_entropy_per_model(samples_for_q, expected_votes):
+    entropies = []
+    n_answers = samples_for_q.shape[1]
+    n_samples = samples_for_q.shape[2]
+    for galaxy_n, galaxy in enumerate(samples_for_q):  # includes dropout
+        galaxy_with_dummy_batch = np.expand_dims(galaxy, axis=0)  # mixture requires batch dimension
+        # print(galaxy_n, expected_votes[galaxy_n], n_answers, n_samples)
+        mixture = dirichlet_mixture(galaxy_with_dummy_batch, expected_votes[galaxy_n], n_samples)
+        entropies.append(entropy_in_permutations_by_galaxy(mixture, expected_votes[galaxy_n], n_answers))
+    return np.array(entropies)
+
+
+def entropy_in_permutations_by_galaxy(dist, total_count, n_answers):
+    assert dist.batch_shape == tf.TensorShape([])  or dist.batch_shape == tf.TensorShape([1]) # works on single galaxy
+    assert dist.event_shape == tf.TensorShape([n_answers])  # need concentrations for every answer
+    permutations = np.array(list(get_discrete_permutations(total_count, n_answers)))
+    probs = dist.prob(permutations)
+    return -np.sum(probs * np.log(probs))
+
+
+# https://stackoverflow.com/questions/37711817/generate-all-possible-outcomes-of-k-balls-in-n-bins-sum-of-multinomial-catego
+def get_discrete_permutations(n, k):
+    if isinstance(n, np.ndarray):
+        assert n.size == 1
+    if isinstance(n, np.ndarray) or isinstance(n, np.float32):
+        n = int(n)
+    if not isinstance(n, int):  # must be tensor
+        n = int(n.numpy())
+    # print(type(k), type(n))
+    def permutation_generator(n, k):
+        masks = np.identity(k, dtype=int)
+        for c in itertools.combinations_with_replacement(masks, n): 
+            yield sum(c)
+    return np.array(list(permutation_generator(n, k)))
+
+
+def dirichlet_entropy_in_concentrations(samples_for_q, expected_votes):
     # samples should have shape (batch, answers_for_q), with values being the concentration of each galaxy/answer
-    dist = tfp.distributions.DirichletMultinomial(expected_votes, samples_for_q)
+    dist = tfp.distributions.DirichletMultinomial(expected_votes, samples_for_q, validate_args=True)
     return dist.entropy
 
 
 def dirichlet_mixture(samples_for_q, expected_votes, n_samples):
+    assert samples_for_q.ndim == 3  # must have galaxies dimension (:1 will work)
     # samples_for_q has shape (batch, answer, dropout)
     # n_samples = samples_for_q.shape[2]  # is a np array so this is okay
 
-    component_probs = tf.ones(n_samples) / n_samples
-    categorical = tfp.distributions.Categorical(probs=component_probs)
+    component_probs = tf.zeros(n_samples) / n_samples
+    categorical = tfp.distributions.Categorical(logits=component_probs, validate_args=True)
 
     # move dropout to (leading) batch dimensions, concentrations to (last) event dim. Now (batch, dropout, concentrations)
     concentrations = tf.transpose(samples_for_q, (0, 2, 1))
     # print(concentrations.shape)
-    component_distribution = tfp.distributions.DirichletMultinomial(expected_votes, concentrations)
+    component_distribution = tfp.distributions.DirichletMultinomial(expected_votes, concentrations, validate_args=True)
     # print(component_distribution)
 
     mixture = tfp.distributions.MixtureSameFamily(
