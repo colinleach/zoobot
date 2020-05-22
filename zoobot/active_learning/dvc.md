@@ -71,6 +71,8 @@ Sim:
 
 Args are baseline, test, and panoptes. Use ' ' to leave blank - the space is crucial.
 
+    ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'baseline_test'
+
     dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'baseline_test'
 
 **Run Live**

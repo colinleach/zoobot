@@ -76,6 +76,8 @@ class Iteration():
         self.acquisition_func = acquisition_func
         self.n_samples = n_samples
         self.n_subjects_to_acquire = n_subjects_to_acquire
+        # print(self.n_subjects_to_acquire)
+        # exit()
         # need to know what size to write new images to shards
         self.initial_size = initial_size
         self.learning_rate = learning_rate
@@ -254,10 +256,14 @@ class Iteration():
         # acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
         acquisitions = self.acquisition_func(all_predictions, self.schema)
         print('Acquistions: ', acquisitions)
+        print(acquisitions.shape)
+        if acquisitions.ndim > 1:
+            logging.critical('Acquisitions ndim > 1: you probably forgot to take a mean per question/answer?')
         # exit()
-        self.record_state(subjects, predictions, acquisitions)
-        logging.debug('{} {} {}'.format(
+        logging.info('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))
+
+        self.record_state(subjects, predictions, acquisitions)
 
         _, top_acquisition_ids = pick_top_subjects(
             subjects, acquisitions, self.n_subjects_to_acquire)
@@ -273,6 +279,8 @@ class Iteration():
 def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
     # reverse order, highest to lowest
     args_to_sort = np.argsort(acquisitions)[::-1]
+    print(args_to_sort)
+    print(n_subjects_to_acquire)
     top_acquisition_subjects = [subjects[i]
                                 for i in args_to_sort][:n_subjects_to_acquire]
     top_acquisition_ids = [subject['id_str']

@@ -100,9 +100,9 @@ def multimodel_bald(model_predictions, min_entropy=-5.5, max_entropy=10):
 
 def calculate_reliable_multimodel_mean_acq(samples_list, schema):
     logging.info('Using multi-model acquisition function')
-    acq = get_multimodel_acq(samples_list)
-    acq_with_nans = sense_check_multimodel_acq(acq, schema)
-    mean_acq = np.mean(acq_with_nans, axis=1)
+    acq, _, _ = get_multimodel_acq(samples_list, schema)
+    # acq_with_nans = sense_check_multimodel_acq(acq, schema)
+    mean_acq = np.mean(acq, axis=1)
     mean_acq[np.isnan(mean_acq)] = -99.  # never acquire these. nan are a pain for argsort and db.
     return mean_acq
 

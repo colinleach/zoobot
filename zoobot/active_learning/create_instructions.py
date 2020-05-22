@@ -179,7 +179,12 @@ class AcquisitionCallableFactory():
             # logging.critical('Using mutual information acquisition function')
             # return  lambda *args, **kwargs: np.mean(acquisition_utils.mutual_info_acquisition_func_multiq(*args, **kwargs), axis=-1)  # requires schema and retirement limit  
             logging.critical('Using multi-model acquisition function')
-            return acquisition_utils.calculate_reliable_multimodel_mean_acq  # does the mean itself
+            # def acq_wrapper(*args, **kwargs):  # needed to only return the MI, not also the expected and predictive
+            #     acq, _, _ = acquisition_utils.get_multimodel_acq(*args, **kwargs)
+            #     return acq
+            # return acq_wrapper
+            return acquisition_utils.calculate_reliable_multimodel_mean_acq
+
 
     def get_mock_acquisition_func(self):
         """Callable will return random subject priorities. Useful for baselines"""
