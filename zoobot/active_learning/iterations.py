@@ -230,6 +230,7 @@ class Iteration():
             logging.info('Copied files: {}'.format(glob.glob(save_dir + '/*')))
             assert os.path.isfile(os.path.join(save_dir, 'final.index'))
         else:
+            logging.info('No skip estimator found at {} - beginning training'.format(skip_model_dir))
             _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
         # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
 
