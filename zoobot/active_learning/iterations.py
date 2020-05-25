@@ -105,6 +105,7 @@ class Iteration():
         self.run_config = run_estimator_config.get_run_config(
             initial_size=self.fixed_estimator_params.initial_size, 
             final_size=self.fixed_estimator_params.final_size,
+            crop_size=self.fixed_estimator_params.crop_size,
             schema=self.schema,
             batch_size=self.fixed_estimator_params.batch_size,
             warm_start=False,  # for now 
@@ -144,7 +145,7 @@ class Iteration():
         else:
             checkpoints = self.prediction_checkpoints
         logging.info(f'Loading predictors: {checkpoints}')
-        return [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.final_size, weights_loc=loc) for loc in checkpoints]
+        return [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.initial_size, self.fixed_estimator_params.crop_size, self.fixed_estimator_params.final_size, weights_loc=loc) for loc in checkpoints]
 
     def make_predictions(self, model):
         logging.info('Making and recording predictions')

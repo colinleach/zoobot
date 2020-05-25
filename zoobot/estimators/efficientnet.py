@@ -424,11 +424,21 @@ def EfficientNetB3(include_top=True,
 
 
 
-class CustomSequential(tf.keras.Sequential):
 
-    def call(self, x, training):
-        tf.summary.image('model_input', x, step=self.step)
-        return super().call(x, training)
+
+# class PermaRandomTranslation(layers.experimental.preprocessing.RandomTranslation):
+#     def call(self, x, training=None):
+#         return super().call(x, training=True)
+# class PermaRandomRotation(layers.experimental.preprocessing.RandomRotation):
+#     def call(self, x, training=None):
+#         return super().call(x, training=True)
+# class PermaRandomFlip(layers.experimental.preprocessing.RandomFlip):
+#     def call(self, x, training=None):
+#         return super().call(x, training=True)
+# class PermaRandomCrop(layers.experimental.preprocessing.RandomCrop):
+#     def call(self, x, training=None):
+#         return super().call(x, training=True)
+
 
 
 def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_channels=False, get_effnet=EfficientNetB0, **kwargs):
@@ -436,8 +446,9 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
     # add_channels arg does nothing
 
     output_dim = len(schema.answers)
-    model = CustomSequential()
+    model = tf.keras.models.Sequential()
     logging.info('Building efficientnet to expect input {}'.format(input_shape))
+
     # classes probably does nothing without include_top
     effnet = get_effnet(
         input_shape=input_shape,
@@ -454,7 +465,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
     custom_top_dirichlet(model, output_dim, schema, batch_size)        
 
     # will be updated by callback
-    model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
+    # model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
 
      # my loss only works with run_config shards, the new custom shards are vote fraction labelled
     # loss_func = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
@@ -567,7 +578,7 @@ if __name__ == '__main__':
     )
     train_config = run_estimator_config.get_train_config(train_records, label_cols, batch_size, shard_img_size, final_size, channels)
     eval_config = run_estimator_config.get_eval_config(eval_records, label_cols, batch_size, shard_img_size, final_size, channels)
-    # model = run_estimator_config.get_model(label_cols, questions, final_size, version=version)
+
     model = EfficientNet_custom_top(input_shape=(final_size, final_size, 1), schema=schema, batch_size=batch_size, add_channels=False)
     run_config.assemble(train_config, eval_config, model)
 

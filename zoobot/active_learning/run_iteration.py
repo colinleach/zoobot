@@ -199,7 +199,8 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     # TODO move this to create_instructions.py, replace train_callable
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
         initial_size=shard_img_size,
-        final_size=224,  # hardcode for now
+        final_size=224,  # hardcode for now,
+        crop_size=int(shard_img_size * 0.75),
         questions=questions,
         label_cols=label_cols,
         batch_size=batch_size 

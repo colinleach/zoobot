@@ -15,9 +15,10 @@ from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses, eff
 
 
 class FixedEstimatorParams():
-    def __init__(self, initial_size, final_size, questions, label_cols, batch_size):
+    def __init__(self, initial_size, final_size, crop_size, questions, label_cols, batch_size):
         self.initial_size=initial_size
         self.final_size = final_size
+        self.crop_size = crop_size
         self.questions=questions
         self.label_cols=label_cols
         self.batch_size=batch_size
@@ -28,13 +29,12 @@ class FixedEstimatorParams():
         return dict([(key, value) for (key, value) in self.__dict__.items() if key not in excluded_keys])
 
 
-
-
 class RunEstimatorConfig():
     def __init__(
             self,
             initial_size,
             final_size,
+            crop_size,
             schema: losses.Schema,
             channels=3,
             epochs=1500,  # rely on earlystopping callback
@@ -50,6 +50,7 @@ class RunEstimatorConfig():
     ):  # TODO refactor for consistent order
         self.initial_size = initial_size
         self.final_size = final_size
+        self.crop_size = crop_size
         self.channels = channels
         self.schema = schema
         self.epochs = epochs
@@ -127,7 +128,8 @@ class RunEstimatorConfig():
                 log_dir=os.path.join(self.log_dir, 'tensorboard'),
                 histogram_freq=3,
                 write_images=True,
-                profile_batch=0  # i.e. disable profiling
+                # profile_batch='2,10' 
+                profile_batch=0   # i.e. disable profiling
             ),
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=os.path.join(self.log_dir, 'models'),
@@ -138,7 +140,8 @@ class RunEstimatorConfig():
             tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=self.patience),
             bayesian_estimator_funcs.UpdateStepCallback(
                 batch_size=self.batch_size
-            )
+            ),
+            tf.keras.callbacks.TerminateOnNaN()
         ] + extra_callbacks
 
         # if os.path.isdir('/home/walml'):
@@ -169,7 +172,7 @@ class RunEstimatorConfig():
 
 # batch size changed from 256 for now, for my poor laptop
 # can override less rarely specified RunEstimatorConfig defaults with **kwargs if you like
-def get_run_config(initial_size, final_size, warm_start, log_dir, train_records, eval_records, epochs, schema, batch_size, **kwargs):
+def get_run_config(initial_size, final_size, crop_size, warm_start, log_dir, train_records, eval_records, epochs, schema, batch_size, **kwargs):
 
     # save these to get back the same run config across iterations? But hpefully in instructions already, or can be calculated...
     # args = {
@@ -179,6 +182,7 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
     # }
     run_config = RunEstimatorConfig(
         initial_size=initial_size,
+        crop_size=crop_size,
         final_size=final_size,
         schema=schema,
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
@@ -191,7 +195,7 @@ def get_run_config(initial_size, final_size, warm_start, log_dir, train_records,
 
     eval_config = get_eval_config(eval_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    model = get_model(schema, run_config.final_size)
+    model = get_model(schema, run_config.initial_size, run_config.crop_size, run_config.final_size)
 
     run_config.assemble(train_config, eval_config, model)
     return run_config
@@ -211,8 +215,8 @@ def get_train_config(train_records, label_cols, batch_size, initial_size, final_
         drop_remainder=True,
         repeat=False,  # Changed from True for keras, which understands to restart a dataset
         stratify_probs=None,
-        geometric_augmentation=True,
-        photographic_augmentation=True,
+        geometric_augmentation=False,
+        photographic_augmentation=False,
         zoom=ZOOM,
         max_shift=MAX_SHIFT,
         max_shear=MAX_SHEAR,
@@ -238,8 +242,8 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
         repeat=False,
         drop_remainder=False,
         stratify_probs=None,
-        geometric_augmentation=True,
-        photographic_augmentation=True,
+        geometric_augmentation=False,
+        photographic_augmentation=False,
         # zoom=(2., 2.2),  # BAR MODE
         zoom=(ZOOM),  # SMOOTH MODE
         max_shift=MAX_SHIFT,
@@ -256,14 +260,55 @@ def get_eval_config(eval_records, label_cols, batch_size, initial_size, final_si
     return eval_config
 
 
-def get_model(schema, final_size, weights_loc=None):
+class CustomSequential(tf.keras.Sequential):
+
+    def call(self, x, training):
+        tf.summary.image('model_input', x, step=self.step)
+        # tf.summary.image('model_input', x, step=0)
+        return super().call(x, training)
+
+
+class CustomPreprocessing(tf.keras.Sequential):
+    def call(self, x, training):
+        # I add the step manually to the top-level model, but this inner model won't have that same var - could add if needed
+        x = super().call(x, training=True)  # always use training=True
+        tf.summary.image('after_preprocessing_layers', x, step=0)
+        return x
+
+
+def preprocessing_layers(initial_size, crop_size, final_size):
+    if crop_size < final_size:
+        logging.warning('Initial size {}, Crop size {} < final size {}, losing resolution'.format(initial_size, crop_size, final_size))
+    model = CustomPreprocessing()
+
+    model.add(tf.keras.layers.Input(shape=(initial_size, initial_size, 1)))
+    # model.add(layers.experimental.preprocessing.RandomTranslation(
+    #     height_factor=.1, width_factor=.1, fill_mode='reflect'  # warning,train/test skew
+    # ))
+    model.add(tf.keras.layers.experimental.preprocessing.RandomRotation(np.pi, fill_mode='reflect'))
+    model.add(tf.keras.layers.experimental.preprocessing.RandomFlip())
+    model.add(tf.keras.layers.experimental.preprocessing.RandomCrop(
+        crop_size, crop_size  # from 256, bad to the resize up again but need more zoom...
+    ))
+    model.add(tf.keras.layers.experimental.preprocessing.Resizing(
+        final_size, final_size, interpolation='bilinear'
+    ))
+    return model
+
+
+def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     # dropout_rate = 0.3
     # drop_connect_rate = 0.2  # gets scaled by num blocks, 0.6ish = 1
 
+    logging.info('Initial size {}, crop size {}, final size {}'.format(initial_size, crop_size, final_size))
+
+    model = CustomSequential()
+
+    model.add(preprocessing_layers(initial_size=initial_size, crop_size=crop_size, final_size=final_size))
+
     input_shape = (final_size, final_size, 1)
-    logging.info(f'Model will expect images like {input_shape}')
-    model = efficientnet.EfficientNet_custom_top(
+    effnet = efficientnet.EfficientNet_custom_top(
         schema=schema,
         input_shape=input_shape,
         get_effnet=efficientnet.EfficientNetB0
@@ -271,6 +316,10 @@ def get_model(schema, final_size, weights_loc=None):
         # dropout_rate=dropout_rate,
         # drop_connect_rate=drop_connect_rate
     )
+    model.add(effnet)
+
+    # will be updated by callback
+    model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
 
     abs_metrics = [bayesian_estimator_funcs.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     q_loss_metrics = [bayesian_estimator_funcs.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]

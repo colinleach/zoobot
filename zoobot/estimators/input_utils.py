@@ -238,8 +238,8 @@ def preprocess_images(batch_images, config):
         channel_images = tf.identity(batch_images)
 
     augmented_images = augment_images(channel_images, config)
-    assert augmented_images.shape[1] == config.final_size
-    assert augmented_images.shape[2] == config.final_size
+    # assert augmented_images.shape[1] == config.final_size
+    # assert augmented_images.shape[2] == config.final_size
     # tf.summary.image('c_augmented', augmented_images)
     return augmented_images
 
