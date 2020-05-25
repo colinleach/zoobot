@@ -109,6 +109,8 @@ class RunEstimatorConfig():
         """
 
         logging.info('Batch {}, final size {}'.format(self.batch_size, self.final_size))
+        logging.info('Train: {}'.format(self.train_config.tfrecord_loc))
+        logging.info('Test: {}'.format(self.eval_config.tfrecord_loc))
 
         if not self.warm_start:  # don't try to load any existing models
             if os.path.exists(self.log_dir):
@@ -279,6 +281,13 @@ class CustomPreprocessing(tf.keras.Sequential):
 def preprocessing_layers(initial_size, crop_size, final_size):
     if crop_size < final_size:
         logging.warning('Initial size {}, Crop size {} < final size {}, losing resolution'.format(initial_size, crop_size, final_size))
+    
+    resize = True
+    if np.abs(crop_size - final_size) < 10:
+        logging.warning('Crop size and final size are similar: skipping resizing and cropping directly to final_size (ignoring crop_size)')
+        resize = False
+        crop_size = final_size
+
     model = CustomPreprocessing()
 
     model.add(tf.keras.layers.Input(shape=(initial_size, initial_size, 1)))
@@ -290,9 +299,10 @@ def preprocessing_layers(initial_size, crop_size, final_size):
     model.add(tf.keras.layers.experimental.preprocessing.RandomCrop(
         crop_size, crop_size  # from 256, bad to the resize up again but need more zoom...
     ))
-    model.add(tf.keras.layers.experimental.preprocessing.Resizing(
-        final_size, final_size, interpolation='bilinear'
-    ))
+    if resize:
+        model.add(tf.keras.layers.experimental.preprocessing.Resizing(
+            final_size, final_size, interpolation='bilinear'
+        ))
     return model
 
 

@@ -102,21 +102,6 @@ class Iteration():
         # decals schema for now, but will likely switch to GZ2
         self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions, version='gz2')
 
-        self.run_config = run_estimator_config.get_run_config(
-            initial_size=self.fixed_estimator_params.initial_size, 
-            final_size=self.fixed_estimator_params.final_size,
-            crop_size=self.fixed_estimator_params.crop_size,
-            schema=self.schema,
-            batch_size=self.fixed_estimator_params.batch_size,
-            warm_start=False,  # for now 
-            log_dir=self.estimators_dir,
-            train_records=self.get_train_records(),
-            eval_records=self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
-            learning_rate=self.learning_rate,
-            epochs=self.epochs,
-
-        )  # could be docker container to run, save model
-
         self.db, self.db_loc = get_db(self.iteration_dir, initial_db_loc)
 
         # currently does nothing
@@ -131,6 +116,22 @@ class Iteration():
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(
             self.iteration_dir, 'train_records_index.json')
+
+    @property
+    def run_config(self):
+        return run_estimator_config.get_run_config(
+            initial_size=self.fixed_estimator_params.initial_size, 
+            final_size=self.fixed_estimator_params.final_size,
+            crop_size=self.fixed_estimator_params.crop_size,
+            schema=self.schema,
+            batch_size=self.fixed_estimator_params.batch_size,
+            warm_start=False,  # for now 
+            log_dir=self.estimators_dir,
+            train_records=self.get_train_records(),  # will always be up-todate
+            eval_records=self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
+            learning_rate=self.learning_rate,
+            epochs=self.epochs,
+        )  # could be docker container to run, save model
 
     def get_acquired_tfrecords(self):
         return [os.path.join(self.acquired_tfrecords_dir, loc) for loc in os.listdir(self.acquired_tfrecords_dir)]
@@ -212,6 +213,9 @@ class Iteration():
             assert not database.db_fully_labelled(self.db)
         else:
             logging.warning('No subjects have been returned from the oracle - does this make sense?')
+
+        # this may have added new train records - make sure run_config is using them. 
+        # self.run_config will always use the latest as it is recreated each time via @property
 
         """Callable should expect 
         - log dir to train models in
