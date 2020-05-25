@@ -22,4 +22,4 @@ shard_dir=$DATA/repos/zoobot/data/gz2/shards/all_featp5_facep5_424_arc
 
 echo $epochs $batch_size $shard_img_size $final_size $shard_dir
 
-$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline_full --shard-img-size $shard_img_size --train-dir $shard_dir/train --eval-dir $shard_dir/eval --epochs $epochs --batch-size $batch_size --final-size $final_size  
+$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline_full --shard-img-size $shard_img_size --train-dir $shard_dir/train_shards --eval-dir $shard_dir/eval_shards --epochs $epochs --batch-size $batch_size --final-size $final_size  
