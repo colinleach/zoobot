@@ -270,17 +270,37 @@ class CustomSequential(tf.keras.Sequential):
         return super().call(x, training)
 
 
-class CustomPreprocessing(tf.keras.Sequential):
-    def call(self, x, training):
-        # I add the step manually to the top-level model, but this inner model won't have that same var - could add if needed
-        x = super().call(x, training=True)  # always use training=True
-        tf.summary.image('after_preprocessing_layers', x, step=0)
-        return x
+# this would be more elegant, but sadly using a stack with multiple sequential models 
+# (as opposed to some layers, then a sequential model) 
+# seems to silently break loading weights
+
+# class CustomPreprocessing(tf.keras.Sequential):
+#     def call(self, x, training):
+#         # I add the step manually to the top-level model, but this inner model won't have that same var - could add if needed
+#         x = super().call(x, training=True)  # always use training=True
+#         tf.summary.image('after_preprocessing_layers', x, step=0)
+#         return x
 
 
-def preprocessing_layers(initial_size, crop_size, final_size):
+# so intead we modify each layer
+
+# class PermaRandomTranslation(layers.experimental.preprocessing.RandomTranslation):
+#     def call(self, x, training=None):
+#         return super().call(x, training=True)
+class PermaRandomRotation(tf.keras.layers.experimental.preprocessing.RandomRotation):
+    def call(self, x, training=None):
+        return super().call(x, training=True)
+class PermaRandomFlip(tf.keras.layers.experimental.preprocessing.RandomFlip):
+    def call(self, x, training=None):
+        return super().call(x, training=True)
+class PermaRandomCrop(tf.keras.layers.experimental.preprocessing.RandomCrop):
+    def call(self, x, training=None):
+        return super().call(x, training=True)
+
+
+def add_preprocessing_layers(model, crop_size, final_size):
     if crop_size < final_size:
-        logging.warning('Initial size {}, Crop size {} < final size {}, losing resolution'.format(initial_size, crop_size, final_size))
+        logging.warning('Crop size {} < final size {}, losing resolution'.format(crop_size, final_size))
     
     resize = True
     if np.abs(crop_size - final_size) < 10:
@@ -288,22 +308,16 @@ def preprocessing_layers(initial_size, crop_size, final_size):
         resize = False
         crop_size = final_size
 
-    model = CustomPreprocessing()
-
-    model.add(tf.keras.layers.Input(shape=(initial_size, initial_size, 1)))
-    # model.add(layers.experimental.preprocessing.RandomTranslation(
-    #     height_factor=.1, width_factor=.1, fill_mode='reflect'  # warning,train/test skew
-    # ))
-    model.add(tf.keras.layers.experimental.preprocessing.RandomRotation(np.pi, fill_mode='reflect'))
-    model.add(tf.keras.layers.experimental.preprocessing.RandomFlip())
-    model.add(tf.keras.layers.experimental.preprocessing.RandomCrop(
+    model.add(PermaRandomRotation(np.pi, fill_mode='reflect'))
+    model.add(PermaRandomFlip())
+    model.add(PermaRandomCrop(
         crop_size, crop_size  # from 256, bad to the resize up again but need more zoom...
     ))
     if resize:
+        logging.info('Using resizing, to {}'.format(final_size))
         model.add(tf.keras.layers.experimental.preprocessing.Resizing(
             final_size, final_size, interpolation='bilinear'
         ))
-    return model
 
 
 def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
@@ -315,7 +329,9 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     model = CustomSequential()
 
-    model.add(preprocessing_layers(initial_size=initial_size, crop_size=crop_size, final_size=final_size))
+    model.add(tf.keras.layers.Input(shape=(initial_size, initial_size, 1)))
+
+    add_preprocessing_layers(model, crop_size=crop_size, final_size=final_size)  # inplace
 
     input_shape = (final_size, final_size, 1)
     effnet = efficientnet.EfficientNet_custom_top(

@@ -423,24 +423,6 @@ def EfficientNetB3(include_top=True,
     )
 
 
-
-
-
-# class PermaRandomTranslation(layers.experimental.preprocessing.RandomTranslation):
-#     def call(self, x, training=None):
-#         return super().call(x, training=True)
-# class PermaRandomRotation(layers.experimental.preprocessing.RandomRotation):
-#     def call(self, x, training=None):
-#         return super().call(x, training=True)
-# class PermaRandomFlip(layers.experimental.preprocessing.RandomFlip):
-#     def call(self, x, training=None):
-#         return super().call(x, training=True)
-# class PermaRandomCrop(layers.experimental.preprocessing.RandomCrop):
-#     def call(self, x, training=None):
-#         return super().call(x, training=True)
-
-
-
 def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_channels=False, get_effnet=EfficientNetB0, **kwargs):
     # batch size arg does nothing
     # add_channels arg does nothing

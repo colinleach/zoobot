@@ -237,10 +237,25 @@ def preprocess_images(batch_images, config):
     else:
         channel_images = tf.identity(batch_images)
 
-    augmented_images = augment_images(channel_images, config)
+    # augmented_images = augment_images(channel_images, config)
     # assert augmented_images.shape[1] == config.final_size
     # assert augmented_images.shape[2] == config.final_size
     # tf.summary.image('c_augmented', augmented_images)
+
+    # print(config.final_size, 'final size')
+
+    # augmented_images = tf.map_fn(
+    #     lambda x: tf.image.resize(
+    #         x,
+    #         tf.constant([config.final_size, config.final_size], dtype=tf.int32),
+    #         method=tf.image.ResizeMethod.NEAREST_NEIGHBOR  # only nearest neighbour works - otherwise gives noise
+    #     ),
+    #     channel_images
+    # )
+
+    # augmentation is now done through tf.keras.layers.experimental.preprocessing instead for speed
+    augmented_images = tf.identity(channel_images)
+
     return augmented_images
 
 

@@ -51,6 +51,8 @@ class Iteration():
 
         self.iteration_dir = iteration_dir
 
+        if not all([os.path.isfile(loc) for loc in prediction_shards]):
+            raise ValueError('Missing some prediction shards, of {}'.format(prediction_shards))
         # shards should be unique, or everything falls apart.
         if not len(prediction_shards) == len(set(prediction_shards)):
             raise ValueError(
