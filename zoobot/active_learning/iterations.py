@@ -287,7 +287,7 @@ class Iteration():
 def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
     # reverse order, highest to lowest
     args_to_sort = np.argsort(acquisitions)[::-1]
-    logging.info(n_subjects_to_acquire[:10])
+    logging.info(n_subjects_to_acquire)
     logging.info(args_to_sort[:10])
     top_acquisition_subjects = [subjects[i]
                                 for i in args_to_sort][:n_subjects_to_acquire]
