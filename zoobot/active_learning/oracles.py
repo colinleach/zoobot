@@ -128,34 +128,9 @@ class PanoptesMock(Oracle):
         assert isinstance(subject_ids, list)
         assert len(subject_ids) > 0
         assert len(set(subject_ids)) == len(subject_ids)  # must be unique
+        logging.info(subject_ids[:10])
         os.remove(self._subjects_requested_loc)
-
-        # using the mock oracle catalog saved in define_experiment.py, that includes labels for 'unlabelled' subjects
-        known_catalog = pd.read_csv(
-            self._oracle_loc,
-            usecols=['id_str'] + self._label_cols,
-            dtype={'id_str': str}
-        )
-        # return labels from the oracle, mimicking live GZ classifications
-        id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
-        logging.info(f'{len(id_str_dummy_df)} id strs in dummy df')
-        logging.info('e.g. {}'.format(id_str_dummy_df['id_str'][:5].values))
-        logging.info(f'{len(known_catalog)} in known catalog at {self._oracle_loc}')
-        logging.info('with ids e.g. {}'.format(known_catalog['id_str'][:5].values))
-        matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
-        logging.info(f'{len(matching_df)} matches in known catalog')
-        if not len(id_str_dummy_df) == len(matching_df):
-            missing_ids = set(id_str_dummy_df['id_str']) - set(matching_df['id_str'])
-            # if this fails, some to-be-queried id_strs are not in the oracle catalog
-            print(f'Missing ids: {missing_ids}')
-            raise ValueError(f'{len(missing_ids)} ids not found in oracle catalog')
-        labels = list(matching_df[self._label_cols].to_dict(orient='records'))
-        # ensure these are explicitly floats, or tf will complain when loading them
-        for label_dict in labels:
-            for k in label_dict.keys():
-                label_dict[k] = float(label_dict[k])
-        logging.info(f'{len(labels)} matching labels returned from known catalog')
-        assert len(subject_ids) == len(labels)
+        labels = get_labels(subject_ids, self._oracle_loc, self._label_cols)
         return subject_ids, labels
 
     def save(self, save_dir):
@@ -182,3 +157,33 @@ def load_oracle(save_dir):
     except TypeError:  # will have different args for init
         return load_panoptes_mock_oracle(save_dir)
 
+
+def get_labels(subject_ids, oracle_loc, label_cols):
+
+        # using the mock oracle catalog saved in define_experiment.py, that includes labels for 'unlabelled' subjects
+        known_catalog = pd.read_csv(
+            oracle_loc,
+            usecols=['id_str'] + label_cols,
+            dtype={'id_str': str}
+        )
+        # return labels from the oracle, mimicking live GZ classifications
+        id_str_dummy_df = pd.DataFrame(data={'id_str': subject_ids})
+        logging.info(f'{len(id_str_dummy_df)} id strs in dummy df')
+        logging.info('e.g. {}'.format(id_str_dummy_df['id_str'][:5].values))
+        logging.info(f'{len(known_catalog)} in known catalog at {oracle_loc}')
+        logging.info('with ids e.g. {}'.format(known_catalog['id_str'][:5].values))
+        matching_df = pd.merge(id_str_dummy_df, known_catalog, how='inner', on='id_str')
+        logging.info(f'{len(matching_df)} matches in known catalog')
+        if not len(id_str_dummy_df) == len(matching_df):
+            missing_ids = set(id_str_dummy_df['id_str']) - set(matching_df['id_str'])
+            # if this fails, some to-be-queried id_strs are not in the oracle catalog
+            print(f'Missing ids: {missing_ids}')
+            raise ValueError(f'{len(missing_ids)} ids not found in oracle catalog')
+        labels = list(matching_df[label_cols].to_dict(orient='records'))
+        # ensure these are explicitly floats, or tf will complain when loading them
+        for label_dict in labels:
+            for k in label_dict.keys():
+                label_dict[k] = float(label_dict[k])
+        logging.info(f'{len(labels)} matching labels returned from known catalog')
+        assert len(subject_ids) == len(labels)
+        return labels

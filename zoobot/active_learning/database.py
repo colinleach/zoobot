@@ -37,7 +37,10 @@ class Subject:
             'id_str': self.id_str,
             'file_loc': self.file_loc,
         }
-        data.update(**self.labels)
+        if self.labels is not None:
+            data.update(**self.labels)
+        else:
+            data['labels'] = None    
         return data
 
 
@@ -139,9 +142,10 @@ def verify_db_matches_shards(db, size, channels):
         expected_shard_ids = set(shardindex[shardindex['tfrecord_loc'] == tfrecord_loc]['id_str'].unique())
         examples = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc], 
-            read_tfrecord.matrix_id_feature_spec(size, channels)
+            read_tfrecord.get_feature_spec({'matrix': 'string', 'id_str': 'string'})
         )
-        actual_shard_ids = set([example['id_str'].decode() for example in examples])
+        
+        actual_shard_ids = set([example['id_str'].numpy()[0].decode() for example in examples])
         assert expected_shard_ids == actual_shard_ids
 
 
@@ -156,9 +160,9 @@ def verify_catalog_matches_shards(unlabelled_catalog, db, size, channels):
     for tfrecord_loc in tfrecord_locs:
         examples = read_tfrecord.load_examples_from_tfrecord(
             [tfrecord_loc],
-            read_tfrecord.matrix_id_feature_spec(size, channels)
+            read_tfrecord.get_feature_spec({'matrix': 'string', 'id_str': 'string'})
         )
-        ids_in_shard = [x['id_str'].decode() for x in examples]
+        ids_in_shard = [x['id_str'].numpy()[0].decode() for x in examples]
         assert len(ids_in_shard) == len(set(ids_in_shard))  # must be unique within shard
         shard_ids = Counter(ids_in_shard) + shard_ids
 
@@ -183,7 +187,7 @@ def write_catalog_to_tfrecord_shards(df: pd.DataFrame, db, img_size, columns_to_
     if not all(column in df.columns.values for column in columns_to_save):
         raise IndexError('Columns not found in df: {}'.format(set(columns_to_save) - set(df.columns.values)))
 
-    df = df.copy().sample(frac=1).reset_index(drop=True)  # shuffle
+    df = df.copy().sample(frac=1).reset_index(drop=True)  # shuffle - note that this means acquired subjects will be in random order
     # split into shards
     shard_n = 0
     n_shards = (len(df) // shard_size) + 1

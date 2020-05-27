@@ -2,8 +2,11 @@ import os
 
 from zoobot.tests.active_learning import conftest  # to patch
 from zoobot import estimators  # to patch
-from zoobot.active_learning import database, db_access
+from zoobot.active_learning import database, db_access, run_estimator_config
 from zoobot.tfrecord import read_tfrecord
+
+from unittest.mock import create_autospec
+
 
 def test_write_catalog_to_tfrecord_shards(unlabelled_catalog, empty_shard_db, size, channels, tfrecord_dir):
     columns_to_save = ['id_str', 'some_feature']
@@ -35,12 +38,19 @@ def test_make_predictions_on_tfrecord(monkeypatch, tfrecord_matrix_id_loc, fille
         mock_subject_is_labelled
     )
 
+    mock_run_config = create_autospec(run_estimator_config.RunEstimatorConfig)
+    mock_run_config.batch_size = 12
+    mock_run_config.initial_size = 128
+    mock_run_config.final_size = 64
+    mock_run_config.channels = 3
+
     n_samples = 10
     model = None  # avoid this via mocking, above
     subjects, samples = database.make_predictions_on_tfrecord(
-        [tfrecord_matrix_id_loc],
-        model,  
-        filled_shard_db,
+        tfrecord_locs=[tfrecord_matrix_id_loc],
+        model=model,  
+        run_config=mock_run_config,
+        db=filled_shard_db,
         n_samples=n_samples,
         size=size,
         max_images=20000

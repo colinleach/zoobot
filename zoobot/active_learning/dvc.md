@@ -60,14 +60,14 @@ Sim:
 **Run Simulation**
 
     catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5
-    shard_dir=data/gz2/shards/all_featp5_facep5_sim_256
+    shard_dir=data/gz2/shards/all_featp5_facep5_sim_300
 
     experiment_dir=data/experiments/live/latest
     instructions_dir=$experiment_dir/instructions
 
     export PYTHON=/home/walml/anaconda3/envs/zoobot/bin/python
 
-    n_iterations=1
+    n_iterations=2
 
 Args are baseline, test, and panoptes. Use ' ' to leave blank - the space is crucial.
 

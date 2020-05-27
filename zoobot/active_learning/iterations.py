@@ -287,12 +287,13 @@ class Iteration():
 def pick_top_subjects(subjects, acquisitions, n_subjects_to_acquire):
     # reverse order, highest to lowest
     args_to_sort = np.argsort(acquisitions)[::-1]
-    print(args_to_sort)
-    print(n_subjects_to_acquire)
+    logging.info(n_subjects_to_acquire[:10])
+    logging.info(args_to_sort[:10])
     top_acquisition_subjects = [subjects[i]
                                 for i in args_to_sort][:n_subjects_to_acquire]
     top_acquisition_ids = [subject['id_str']
                            for subject in top_acquisition_subjects]
+    logging.info(top_acquisition_ids[:10])
     assert len(top_acquisition_ids) == len(
         set(top_acquisition_ids))  # no duplicates allowed
     return top_acquisition_subjects, top_acquisition_ids

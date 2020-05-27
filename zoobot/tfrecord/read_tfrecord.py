@@ -10,26 +10,19 @@ import tensorflow as tf
 from zoobot.tfrecord.tfrecord_io import load_dataset
 
 
+# currently only used in tests
 def load_examples_from_tfrecord(tfrecord_locs, feature_spec, n_examples=None, max_examples=1e8):
     dataset = load_dataset(tfrecord_locs, feature_spec)
-    iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
     dataset = dataset.batch(1)  # 1 image per batch
     dataset = dataset.prefetch(1)
-    batch = iterator.get_next()
 
-    with tf.compat.v1.Session() as sess:
-        if n_examples is None:  # load full record
-            data = []
-            while len(data) < max_examples:
-                try:
-                    loaded_example = sess.run(batch)
-                    data.append(loaded_example)
-                except tf.errors.OutOfRangeError:
-                    logging.debug('tfrecords {} exhausted'.format(tfrecord_locs))
-                    break
-        else:  # load exactly n examples, or throw an error
-            logging.debug('Loading the first {} examples from {}'.format(n_examples, tfrecord_locs))
-            data = [sess.run(batch) for n in range(n_examples)]
+    if n_examples is None:  # load full record
+        data = []
+        for batch in dataset:
+            data.append(batch)
+    else:  # load exactly n examples, or throw an error
+        logging.debug('Loading the first {} examples from {}'.format(n_examples, tfrecord_locs))
+        data = [batch for batch in dataset.take(n_examples)]
 
     return data
 
