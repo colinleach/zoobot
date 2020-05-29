@@ -288,16 +288,16 @@ if __name__ == '__main__':
 
     # gz2
     label_cols = [
-    'smooth-or-featured_smooth',
-    'smooth-or-featured_featured-or-disk',
+    # 'smooth-or-featured_smooth',
+    # 'smooth-or-featured_featured-or-disk',
     'has-spiral-arms_yes',
     'has-spiral-arms_no',
-    'bar_yes',
-    'bar_no',
-    'bulge-size_dominant',
-    'bulge-size_obvious',
-    'bulge-size_just-noticeable',
-    'bulge-size_no'
+    # 'bar_yes',
+    # 'bar_no',
+    # 'bulge-size_dominant',
+    # 'bulge-size_obvious',
+    # 'bulge-size_just-noticeable',
+    # 'bulge-size_no'
     ]
 
     options = args.options
