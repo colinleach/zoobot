@@ -258,11 +258,11 @@ if __name__ == '__main__':
     # logging.getLogger().addHandler(logging.StreamHandler())
 
     questions = [
-        'smooth-or-featured',
+        # 'smooth-or-featured',
         'has-spiral-arms',
         # 'spiral-winding',
-        'bar',
-        'bulge-size'
+        # 'bar',
+        # 'bulge-size'
     ]
 
     # decals
