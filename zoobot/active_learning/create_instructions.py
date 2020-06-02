@@ -241,7 +241,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         panoptes (bool): if True, use Panoptes as oracle (upload subjects, download responses). Else, mock with historical responses.
     """
     # hardcoded defaults, for now
-    subjects_per_iter = 1024
+    subjects_per_iter = 1024 * 8  # half! single big batch
     shards_per_iter = 4
     # final_size = 224  # for both modes
     if baseline:

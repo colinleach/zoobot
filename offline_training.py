@@ -21,7 +21,7 @@ if __name__ == '__main__':
       
 
     GZ2 testing:
-      python offline_training.py --experiment-dir results/debug --shard-img-size 256 --train-dir data/gz2/shards/all_featp5_facep5_sim_256/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_256/eval_shards --epochs 2 --batch-size 8 --final-size 128
+      python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/eval_shards --epochs 2 --batch-size 8 --final-size 128
 
     Local testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 --batch-size 16
@@ -72,10 +72,10 @@ if __name__ == '__main__':
 
     # must match label cols below
     questions = [
-        'smooth-or-featured',
+        # 'smooth-or-featured',
         'has-spiral-arms',
-        'bar',
-        'bulge-size'
+        # 'bar',
+        # 'bulge-size'
     ]
 
     # will load labels from shard, in this order
@@ -100,16 +100,16 @@ if __name__ == '__main__':
         version='gz2'
         # gz2 cols
         label_cols = [
-            'smooth-or-featured_smooth',
-            'smooth-or-featured_featured-or-disk',
+            # 'smooth-or-featured_smooth',
+            # 'smooth-or-featured_featured-or-disk',
             'has-spiral-arms_yes',
             'has-spiral-arms_no',
-            'bar_yes',
-            'bar_no',
-            'bulge-size_dominant',
-            'bulge-size_obvious',
-            'bulge-size_just-noticeable',
-            'bulge-size_no'
+            # 'bar_yes',
+            # 'bar_no',
+            # 'bulge-size_dominant',
+            # 'bulge-size_obvious',
+            # 'bulge-size_just-noticeable',
+            # 'bulge-size_no'
         ]
     schema = losses.Schema(label_cols, questions, version=version)
 
