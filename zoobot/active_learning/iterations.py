@@ -138,7 +138,7 @@ class Iteration():
         return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
     # supports using only n trained models *from this iteration*, but probably don't need this now
-    def get_prediction_models(self, max_models=3):
+    def get_prediction_models(self, max_models=10):
         if self.prediction_checkpoints == []:
             logging.critical('No previous prediction checkpoints found - multimodel acquisition will not work!')
         if max_models < len(self.prediction_checkpoints):
@@ -276,7 +276,7 @@ class Iteration():
         # make predictions and save to db, could be docker container
         subject_ids = None
         all_predictions = []
-        for model_n, model in enumerate(self.get_prediction_models(max_models=3)): # N most recent models
+        for model_n, model in enumerate(self.get_prediction_models()): # N most recent models
             logging.info(f'Predicting with model {model_n}')
             subjects, predictions = self.make_predictions(model)
             if subject_ids is not None:

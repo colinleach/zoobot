@@ -241,7 +241,7 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
         panoptes (bool): if True, use Panoptes as oracle (upload subjects, download responses). Else, mock with historical responses.
     """
     # hardcoded defaults, for now
-    subjects_per_iter = 1024 * 8  # half! single big batch
+    subjects_per_iter = 1024 * 5  # top third, roughly
     shards_per_iter = 4
     # final_size = 224  # for both modes
     if baseline:
@@ -269,16 +269,16 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
 
     # gz2 cols
     label_cols = [
-        # 'smooth-or-featured_smooth',
-        # 'smooth-or-featured_featured-or-disk',
+        'smooth-or-featured_smooth',
+        'smooth-or-featured_featured-or-disk',
         'has-spiral-arms_yes',
         'has-spiral-arms_no',
-        # 'bar_yes',
-        # 'bar_no',
-        # 'bulge-size_dominant',
-        # 'bulge-size_obvious',
-        # 'bulge-size_just-noticeable',
-        # 'bulge-size_no'
+        'bar_yes',
+        'bar_no',
+        'bulge-size_dominant',
+        'bulge-size_obvious',
+        'bulge-size_just-noticeable',
+        'bulge-size_no'
     ]
 
     # record instructions
