@@ -8,10 +8,13 @@ import pandas as pd
 
 """Shared logic to refine catalogs. All science decisions should have happened after this script"""
 
-def get_experiment_catalogs(catalog, save_dir):
+def get_experiment_catalogs(catalog, save_dir, filter_catalog=False):
     catalog = shuffle(catalog)  # crucial for GZ2!
     catalog = define_identifiers(catalog)
-    filtered_catalog = apply_custom_filter_cheat(catalog)  # science logic lives here
+    if filter_catalog:
+        filtered_catalog = apply_custom_filter_cheat(catalog)  # science logic lives here
+    else:
+        filtered_catalog = catalog
     labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36, ignore galaxies with less labels
     # unlabelled and catalog will have no 'label' column
     return catalog, labelled, unlabelled
@@ -100,7 +103,9 @@ if __name__ == '__main__':
     
     Decals: see dvc.md
 
-    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5
+    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5 --filter
+    python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5_unfiltered --sim-fraction 2.5
+
     $PYTHON zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_arc_2p5 --sim-fraction 2.5
     """
 
@@ -118,6 +123,7 @@ if __name__ == '__main__':
                         help='Save experiment catalogs here')
     parser.add_argument('--sim-fraction', dest='sim_fraction', type=float, default=4.,
                         help='Save experiment catalogs here')
+    parser.add_argument('--filter', dest='filter_catalog', action='store_true', default=False)
     args = parser.parse_args()
     master_catalog_loc = args.master_catalog_loc
     save_dir = args.save_dir
@@ -160,7 +166,7 @@ if __name__ == '__main__':
 
     master_catalog = pd.read_csv(master_catalog_loc)
     catalog, labelled, unlabelled = get_experiment_catalogs(
-        master_catalog, save_dir)
+        master_catalog, save_dir, filter_catalog=args.filter_catalog)
 
     # ad hoc filtering here
     # catalog = catalog[:20000]

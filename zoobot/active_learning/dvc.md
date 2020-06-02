@@ -59,7 +59,7 @@ Sim:
 
 **Run Simulation**
 
-    catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5
+    catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5_2p5
     shard_dir=data/gz2/shards/all_featp5_facep5_sim_2p5_300
 
     experiment_dir=data/experiments/live/latest
