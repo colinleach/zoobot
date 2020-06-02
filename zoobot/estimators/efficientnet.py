@@ -8,7 +8,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from zoobot.active_learning import create_instructions, run_estimator_config
-from zoobot.estimators import losses, bayesian_estimator_funcs
+from zoobot.estimators import losses, bayesian_estimator_funcs, custom_layers
 
 import os
 import math
@@ -85,12 +85,6 @@ def get_swish():
 
     return swish
 
-class PermaDropout(layers.Dropout):
-
-    def call(self, x, training=None):
-        return super().call(x, training=True)  # ME, force dropout on at test time
-
-
 def get_dropout():
     """Wrapper over custom dropout. Fix problem of ``None`` shape for tf.keras.
     It is not possible to define FixedDropout class as global object,
@@ -98,7 +92,7 @@ def get_dropout():
     Issue:
         https://github.com/tensorflow/tensorflow/issues/30946
     """
-    class FixedDropout(PermaDropout):  # inherit from mine instead of layers.Dropout
+    class FixedDropout(custom_layers.PermaDropout):  # inherit from mine instead of layers.Dropout
         def _get_noise_shape(self, inputs):
             if self.noise_shape is None:
                 return self.noise_shape
@@ -362,7 +356,7 @@ def EfficientNet(width_coefficient,
             # x = layers.Dropout(dropout_rate, name='top_dropout')(x)
             # use constantly-on dropout instead
             # top layer dropout needs to be high to do anything much
-            x = PermaDropout(dropout_rate, name='top_dropout')(x)  
+            x = custom_layers.PermaDropout(dropout_rate, name='top_dropout')(x)  
         x = layers.Dense(classes,
                          activation='softmax',
                          kernel_initializer=DENSE_KERNEL_INITIALIZER,
@@ -444,7 +438,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
 
     model.add(tf.keras.layers.GlobalAveragePooling2D())
     # custom_top_multinomial(model, output_dim, schema, batch_size)
-    custom_top_dirichlet(model, output_dim, schema, batch_size)        
+    custom_top_dirichlet(model, output_dim, schema)        
 
     # will be updated by callback
     # model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
@@ -466,11 +460,11 @@ def custom_top_multinomial(model, output_dim, schema, batch_size):
     model.add(tf.keras.layers.Dense(output_dim))
     model.add(tf.keras.layers.Lambda(lambda x: tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in schema.question_index_groups], axis=1), output_shape=[batch_size, output_dim]))        
 
-def custom_top_beta(model, output_dim, schema, batch_size):
+def custom_top_beta(model, output_dim, schema):
     model.add(tf.keras.layers.Dense(output_dim * 2, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # two params, 1-100 range
     model.add(tf.keras.layers.Reshape((output_dim, 2)))  # as dimension 2
 
-def custom_top_dirichlet(model, output_dim, schema, batch_size):
+def custom_top_dirichlet(model, output_dim, schema):
     model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # one params per answer, 1-100 range
 
 if __name__ == '__main__':

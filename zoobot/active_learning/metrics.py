@@ -2,6 +2,7 @@ import os
 import logging
 import json
 import pickle
+from typing import List
 from collections import namedtuple
 
 import numpy as np
@@ -20,7 +21,7 @@ from zoobot.estimators import make_predictions, bayesian_estimator_funcs, input_
 IterationState = namedtuple('IterationState', ['samples', 'acquisitions', 'id_strs'])
 
 
-def save_iteration_state(iteration_dir, subjects, samples, acquisitions):
+def save_iteration_state(iteration_dir, subjects, samples: List, acquisitions):
     id_strs = [subject['id_str'] for subject in subjects]
     iteration_state = IterationState(samples, acquisitions, id_strs)  # namedtuple
     with open(os.path.join(iteration_dir, 'state.pickle'), 'wb') as f:

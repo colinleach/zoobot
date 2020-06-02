@@ -134,7 +134,7 @@ def get_png_root_loc(target):
         return f'/home/ec2-user/root/repos/zoobot/data/{target}'
     # laptop
     elif os.path.isdir('/home/walml'):
-        return f'/media/walml/beta/{target}/'
+        return f'/media/walml/beta/galaxy_zoo/{target}/'
     # EC2 Ubuntu
     elif os.path.isdir('/home/ubuntu'):
         return f'/home/ubuntu/root/repos/zoobot/data/{target}'

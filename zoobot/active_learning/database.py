@@ -219,7 +219,7 @@ def add_labelled_subjects_to_tfrecord(db, subject_ids, tfrecord_loc, size, colum
 
 
 # should make each shard a comparable size to the available memory, but can iterate over several if needed
-def make_predictions_on_tfrecord(tfrecord_locs, model: tf.keras.Model, run_config, db, n_samples, size, max_images=10000):
+def make_predictions_on_tfrecord(tfrecord_locs, model: tf.keras.Model, fixed_estimator_params, db, n_samples, size, max_images=10000):
     """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
     Load in batches to avoid maxing out GPU memory
     See make_predictions_on_tfrecord_batch for more details.
@@ -250,7 +250,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model: tf.keras.Model, run_confi
         unlabelled_subjects, samples = make_predictions_on_tfrecord_batch(
             tfrecord_locs[min_tfrecord:min_tfrecord + records_per_batch],
             model,
-            run_config,
+            fixed_estimator_params,
             db,
             n_samples,
             size,
@@ -271,7 +271,7 @@ def make_predictions_on_tfrecord(tfrecord_locs, model: tf.keras.Model, run_confi
     return all_unlabelled_subjects, all_samples_arr
 
 
-def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, run_config, db, n_samples, size, max_images=10000):
+def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, fixed_estimator_params, db, n_samples, size, max_images=10000):
     """Record model predictions (samples) on a list of tfrecords, for each unlabelled galaxy.
     Uses db to identify which subjects are unlabelled by matching on id_str feature.
     Data in tfrecords_batch_locs must fit in memory; otherwise use `make_predictions_on_tfrecord`
@@ -293,10 +293,10 @@ def make_predictions_on_tfrecord_batch(tfrecords_batch_locs, model, run_config, 
     eval_config = run_estimator_config.get_eval_config(
         eval_records=tfrecords_batch_locs,
         label_cols=[],  # tfrecord will have no labels, in general
-        batch_size=run_config.batch_size,
-        initial_size=run_config.initial_size,
-        final_size=run_config.final_size,
-        channels=run_config.channels
+        batch_size=fixed_estimator_params.batch_size,
+        initial_size=fixed_estimator_params.initial_size,
+        final_size=fixed_estimator_params.final_size,
+        channels=3  # TODO don't hardcode...
     )
     dataset = input_utils.get_input(config=eval_config)
 

@@ -19,8 +19,7 @@ InitialState = namedtuple(
     [
         'iteration_dir',
         'iteration_n',
-        'initial_estimator_ckpt',
-        'prediction_checkpoints',
+        'checkpoints',
         'initial_train_tfrecords',
         'initial_db_loc',
         'prediction_shards',
@@ -33,7 +32,6 @@ FinalState = namedtuple(
     'FinalState',
     [
         'iteration_n',
-        'estimators_dir',
         'prediction_checkpoints',
         'train_records',
         'db_loc',
@@ -76,8 +74,7 @@ def run(initial_state, instructions, fixed_estimator_params, acquisition_func, o
         n_subjects_to_acquire=instructions.subjects_per_iter,
         initial_size=instructions.shards.size,
         learning_rate=initial_state.learning_rate,
-        initial_estimator_ckpt=initial_state.initial_estimator_ckpt,  # currently does nothing
-        prediction_checkpoints=initial_state.prediction_checkpoints,
+        checkpoints=initial_state.checkpoints,
         epochs=epochs,
         oracle=oracle,
         questions=questions,
@@ -90,7 +87,6 @@ def run(initial_state, instructions, fixed_estimator_params, acquisition_func, o
 
     final_state = FinalState(
         iteration_n=initial_state.iteration_n,
-        estimators_dir=iteration.estimators_dir,  # to become initial_estimator_ckpt'
         train_records=iteration.get_train_records(),  # initial_train_tfrecords
         prediction_checkpoints=iteration.prediction_checkpoints,
         db_loc=iteration.db_loc
@@ -116,13 +112,12 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
         initial_state = InitialState(
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=0,  # duplication
-            initial_estimator_ckpt=instructions.initial_estimator_ckpt,  # for first iteration, the first model is the one passed to ActiveConfig
             initial_db_loc=instructions.db_loc,  # will copy the db from instructions
             initial_train_tfrecords=instructions.shards.train_tfrecord_locs(),  # only the initial train shards
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
             epochs=get_epochs(this_iteration_n),  # duplication
-            prediction_checkpoints=get_initial_prediction_checkpoint(instructions)  # previously trained model to cold start multi-model acquisition without training two every first sim iteration
+            checkpoints=get_initial_checkpoints(instructions)  # start from [None, None], or pretrained checkpoints if they exist
         )
     else:
         previous_final_state = load_final_state(previous_iteration_dir)
@@ -131,12 +126,11 @@ def get_initial_state(instructions, this_iteration_dir, previous_iteration_dir):
             iteration_dir=this_iteration_dir,  # duplication
             iteration_n=this_iteration_n,  # duplication
             initial_train_tfrecords=previous_final_state.train_records,  # everything trained on by last iteration, i.e. initial train shards + newly acquired shards (from ALL prev iterations)
-            initial_estimator_ckpt=previous_final_state.estimators_dir,
             initial_db_loc=previous_final_state.db_loc,  # will copy the db from the last iteration
             prediction_shards=get_prediction_shards(this_iteration_n, instructions),  # duplication
             learning_rate=get_learning_rate(this_iteration_n),  # duplication
             epochs=get_epochs(this_iteration_n),  # duplication
-            prediction_checkpoints=previous_final_state.prediction_checkpoints
+            checkpoints=previous_final_state.prediction_checkpoints  # load the weights used to make the previous predictions
         )
     return initial_state
 
@@ -161,8 +155,12 @@ def get_prediction_shards(iteration_n, instructions):
     return prediction_shards
 
 
+# TODO may need to set this lower for n>1, when restoring models
 def get_learning_rate(iteration_n):
-    return 0.001  # may be reduced to 0.0001 from 0.001 (for first bar model, but not for smooth)
+    if iteration_n == 0:
+        return 0.001
+    else:
+        return 0.0002  # for small initial adjustments
 
 
 def get_epochs(iteration_n):
@@ -171,15 +169,25 @@ def get_epochs(iteration_n):
     else:
         return 1500  # old, still keep it long
 
-def get_initial_prediction_checkpoint(instructions):
+
+# use only for first epoch, to skip if already trained
+def get_initial_checkpoints(instructions):
+    checkpoints_to_load = []
     shard_dir = os.path.dirname(instructions.shards.config_save_loc)
-    initial_checkpoint_loc = shard_dir + '_pretrained/final'  # for now TODO
-    if os.path.isfile(initial_checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
-        logging.info(f'Will use weights from {initial_checkpoint_loc} as first predictor')
-        return [initial_checkpoint_loc]
+    pretrained_checkpoints_dir = shard_dir + '_pretrained'
+    if os.path.isdir(pretrained_checkpoints_dir):
+        checkpoints_to_load = []
+        # every folder inside might be a checkpoint, so add to list-of-checkpoints-to-load
+        for subdir in os.listdir(pretrained_checkpoints_dir):
+            checkpoint_loc = os.path.join(pretrained_checkpoints_dir, subdir, 'final')  # tf wants the name, I always use 'final'
+            if os.path.isfile(checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
+                logging.info(f'Will load weights from {checkpoint_loc} for 0th epoch')
+                checkpoints_to_load.append(checkpoint_loc)
+        assert len(checkpoints_to_load) > 0
     else:
-        logging.critical(f'No initial prediction checkpoint found in {initial_checkpoint_loc}, not attempting to load')
-        return []
+        logging.warning(f'No initial prediction checkpoint found in {pretrained_checkpoints_dir}, not attempting to load')
+        checkpoints_to_load = [None, None] # TODO hardcoded as two models by default, for now
+    return checkpoints_to_load
 
 
 def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions, label_cols, test=False):
@@ -195,11 +203,17 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
     else:  # hopefully v100
         batch_size = 128
     #  batch_norm etc fail explictly below 10, and maybe don't work so great until larger batch sizes. Paper (MnasNet) uses 4000!
+
+    # for quick debugging - will not learn well locally
+    if os.path.isdir('/home/walml'):
+        final_size = 64 # 10 is the minimum possible size. 
+    else:  # hopefully v100
+        final_size = 224
     
     # TODO move this to create_instructions.py, replace train_callable
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(
         initial_size=shard_img_size,
-        final_size=224,  # hardcode for now,
+        final_size=final_size,  # hardcode for now,
         crop_size=int(shard_img_size * 0.75),
         questions=questions,
         label_cols=label_cols,

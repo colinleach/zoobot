@@ -100,7 +100,7 @@ if __name__ == '__main__':
     
     Decals: see dvc.md
 
-    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5 --sim-fraction 2.5
+    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5
     $PYTHON zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_arc_2p5 --sim-fraction 2.5
     """
 

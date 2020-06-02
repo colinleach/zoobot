@@ -23,16 +23,15 @@ class Iteration():
         eval_tfrecords: List,
         fixed_estimator_params,
         acquisition_func,
-        n_samples: int,  # may need more samples?
+        n_samples: int,
         n_subjects_to_acquire: int,
         initial_size: int,
         learning_rate: float,
         epochs: int,
         oracle,
-        questions,
-        label_cols,
-        initial_estimator_ckpt=None,
-        prediction_checkpoints=[]
+        questions: List,
+        label_cols: List,
+        checkpoints=[]
     ):
         """
         Do some sanity checks in the args, then save them as properties.
@@ -105,22 +104,19 @@ class Iteration():
         self.schema = losses.Schema(self.fixed_estimator_params.label_cols, self.fixed_estimator_params.questions, version='gz2')
 
         self.db, self.db_loc = get_db(self.iteration_dir, initial_db_loc)
-
-        # currently does nothing
-        self.initial_estimator_ckpt = initial_estimator_ckpt
         
         os.mkdir(self.estimators_dir)
 
-        self.prediction_checkpoints = prediction_checkpoints
-        if self.prediction_checkpoints == []:
-            logging.warning('No previous prediction checkpoints found - multimodel acquisition will not work!')
+        assert len(checkpoints) > 0  # should not be empty list
+        self.checkpoints = checkpoints # train models loaded from these checkpoints. Skip training if 'pretrained' in name.
+        self.prediction_checkpoints = []  # make predictions using models loaded from these checkpoints. 
+
 
         # record which tfrecords were used, for later analysis
         self.tfrecords_record = os.path.join(
             self.iteration_dir, 'train_records_index.json')
 
-    @property
-    def run_config(self):
+    def run_config(self, weights_loc, log_dir):
         return run_estimator_config.get_run_config(
             initial_size=self.fixed_estimator_params.initial_size, 
             final_size=self.fixed_estimator_params.final_size,
@@ -128,7 +124,7 @@ class Iteration():
             schema=self.schema,
             batch_size=self.fixed_estimator_params.batch_size,
             warm_start=False,  # for now 
-            log_dir=self.estimators_dir,
+            log_dir=log_dir,
             train_records=self.get_train_records(),  # will always be up-todate
             eval_records=self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
             learning_rate=self.learning_rate,
@@ -141,14 +137,26 @@ class Iteration():
     def get_train_records(self):
         return self.initial_train_tfrecords + self.get_acquired_tfrecords()  # linting error
 
+    # supports using only n trained models *from this iteration*, but probably don't need this now
     def get_prediction_models(self, max_models=3):
+        if self.prediction_checkpoints == []:
+            logging.critical('No previous prediction checkpoints found - multimodel acquisition will not work!')
         if max_models < len(self.prediction_checkpoints):
             logging.info('Loading only {} of {} predictors'.format(max_models, len(self.prediction_checkpoints)))
             checkpoints = self.prediction_checkpoints[-max_models::]
         else:
             checkpoints = self.prediction_checkpoints
         logging.info(f'Loading predictors: {checkpoints}')
-        return [run_estimator_config.get_model(self.schema, self.fixed_estimator_params.initial_size, self.fixed_estimator_params.crop_size, self.fixed_estimator_params.final_size, weights_loc=loc) for loc in checkpoints]
+        models = []
+        for loc in checkpoints:
+            models.append(run_estimator_config.get_model(
+                self.schema,
+                self.fixed_estimator_params.initial_size,
+                self.fixed_estimator_params.crop_size,
+                self.fixed_estimator_params.final_size,
+                weights_loc=loc)
+            )
+        return models
 
     def make_predictions(self, model):
         logging.info('Making and recording predictions')
@@ -156,7 +164,7 @@ class Iteration():
         unlabelled_subjects, samples = database.make_predictions_on_tfrecord(
             self.prediction_shards,
             model,
-            self.run_config,
+            self.fixed_estimator_params,
             self.db,
             n_samples=self.n_samples,
             size=self.initial_size
@@ -167,7 +175,7 @@ class Iteration():
         assert isinstance(unlabelled_subjects, list)
         return unlabelled_subjects, samples
 
-    def record_state(self, subjects, samples, acquisitions):
+    def record_state(self, subjects, samples: List, acquisitions):
         metrics.save_iteration_state(
             self.iteration_dir, subjects, samples, acquisitions)
 
@@ -228,20 +236,41 @@ class Iteration():
         self.record_train_records()
         logging.info('Saving to {}'.format(self.estimators_dir))
 
-        # TEMP for debugging acquisitions
-        skip_model_dir = os.path.dirname(self.prediction_shards[0]) + '_final_' + self.iteration_dir[-1]  # e.g. _0, _1
-        if os.path.isdir(skip_model_dir):
-            logging.warning('Skipping training and loading cheat estimator at {}'.format(skip_model_dir))
-            save_dir = os.path.join(self.estimators_dir, 'models')
-            shutil.copytree(skip_model_dir, save_dir)
-            logging.info('Copied files: {}'.format(glob.glob(save_dir + '/*')))
-            assert os.path.isfile(os.path.join(save_dir, 'final.index'))
-        else:
-            logging.info('No skip estimator found at {} - beginning training'.format(skip_model_dir))
-            _ = self.run_config.run_estimator()  # saves weights to {estimator_dir i.e. log_dir}/models/final
-        # exit() # TEMP we only want the initial trained estimator this time, to re-use later. In practice, for the first iteration, we trained models twice.
+        if self.prediction_checkpoints:
+            logging.critical('Expected no prediction checkpoints yet, got {}'.format(self.prediction_checkpoints))
+        for checkpoint_n, checkpoint_loc in enumerate(self.checkpoints): # may be [None, None]
 
-        self.prediction_checkpoints.append(self.estimators_dir + '/models/final')  # hacky duplication
+            # maybe we can skip training?
+            skip = False
+            if checkpoint_loc is None:
+                weights_folder_name = 'model_{}'.format(checkpoint_n)
+            else:
+                weights_folder_name = os.path.basename(os.path.dirname(checkpoint_loc))
+                if 'pretrained' in checkpoint_loc:
+                    skip = True
+
+            target_dir = os.path.join(self.estimators_dir, 'models', weights_folder_name)  # will have final.index etc in this folder
+            log_dir = os.path.join(target_dir, 'log')  # for tensorboard etc e.g. models/model_a/log/blah.tfevents.out
+            save_loc = os.path.join(target_dir, 'final')  # weights files e.g. models/model_a/final.index
+    
+            if skip:
+                logging.warning('Skipping training and loading cheat estimators from {}'.format(checkpoint_loc))
+                # copy the existing weights, mimicking saving the model
+
+                current_weights_folder = os.path.dirname(checkpoint_loc + '.index')
+                shutil.copytree(current_weights_folder, target_dir)  # contents of folder a into new folder called folder b
+                # logging.debug('Copied files: {}'.format(glob.glob(target_dir + '/*')))
+                logging.info('Copied pretrained weights from {} to {} to mimick training'.format(current_weights_folder, target_dir))
+            else:
+                logging.info('No skip estimators found at {} - beginning training'.format(checkpoint_loc))
+                trained_model = self.run_config(checkpoint_loc, log_dir=log_dir).run_estimator()
+                logging.info('Saving trained model to {}'.format(save_loc))
+                trained_model.save_weights(save_loc)
+
+
+            assert os.path.isfile(save_loc + '.index')
+            self.prediction_checkpoints.append(save_loc)
+        logging.info('All training completed. Prediction checkpoints to use: {}'.format(self.prediction_checkpoints))
 
         # TODO getting quite messy throughout with lists vs np.ndarray - need to clean up
         # make predictions and save to db, could be docker container
@@ -267,11 +296,11 @@ class Iteration():
         print(acquisitions.shape)
         if acquisitions.ndim > 1:
             logging.critical('Acquisitions ndim > 1: you probably forgot to take a mean per question/answer?')
-        # exit()
+
         logging.info('{} {} {}'.format(
             len(acquisitions), len(subjects), len(predictions)))
 
-        self.record_state(subjects, predictions, acquisitions)
+        self.record_state(subjects, all_predictions, acquisitions)
 
         _, top_acquisition_ids = pick_top_subjects(
             subjects, acquisitions, self.n_subjects_to_acquire)

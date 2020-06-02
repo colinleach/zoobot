@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib
 import numpy as np
 
-from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses, efficientnet
+from zoobot.estimators import bayesian_estimator_sequential, input_utils, losses, efficientnet, custom_layers
 
 
 class FixedEstimatorParams():
@@ -112,9 +112,9 @@ class RunEstimatorConfig():
         logging.info('Train: {}'.format(self.train_config.tfrecord_loc))
         logging.info('Test: {}'.format(self.eval_config.tfrecord_loc))
 
-        if not self.warm_start:  # don't try to load any existing models
-            if os.path.exists(self.log_dir):
-                shutil.rmtree(self.log_dir)
+        # if not self.warm_start:  # don't try to load any existing models
+        #     if os.path.exists(self.log_dir):
+        #         shutil.rmtree(self.log_dir)
 
         train_dataset = input_utils.get_input(config=self.train_config)
         test_dataset = input_utils.get_input(config=self.eval_config)
@@ -136,11 +136,11 @@ class RunEstimatorConfig():
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=os.path.join(self.log_dir, 'models'),
                 save_weights_only=True),
-            bayesian_estimator_funcs.UpdateStepCallback(
+            bayesian_estimator_sequential.UpdateStepCallback(
                 batch_size=self.batch_size
             ),
             tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=self.patience),
-            bayesian_estimator_funcs.UpdateStepCallback(
+            bayesian_estimator_sequential.UpdateStepCallback(
                 batch_size=self.batch_size
             ),
             tf.keras.callbacks.TerminateOnNaN()
@@ -168,7 +168,7 @@ class RunEstimatorConfig():
             )
 
         logging.info('All epochs completed - finishing gracefully')
-        self.model.save_weights(os.path.join(self.log_dir, 'models/final'))
+        # save manually outside, to avoid side-effects
         return self.model
 
 
@@ -270,34 +270,6 @@ class CustomSequential(tf.keras.Sequential):
         return super().call(x, training)
 
 
-# this would be more elegant, but sadly using a stack with multiple sequential models 
-# (as opposed to some layers, then a sequential model) 
-# seems to silently break loading weights
-
-# class CustomPreprocessing(tf.keras.Sequential):
-#     def call(self, x, training):
-#         # I add the step manually to the top-level model, but this inner model won't have that same var - could add if needed
-#         x = super().call(x, training=True)  # always use training=True
-#         tf.summary.image('after_preprocessing_layers', x, step=0)
-#         return x
-
-
-# so intead we modify each layer
-
-# class PermaRandomTranslation(layers.experimental.preprocessing.RandomTranslation):
-#     def call(self, x, training=None):
-#         return super().call(x, training=True)
-class PermaRandomRotation(tf.keras.layers.experimental.preprocessing.RandomRotation):
-    def call(self, x, training=None):
-        return super().call(x, training=True)
-class PermaRandomFlip(tf.keras.layers.experimental.preprocessing.RandomFlip):
-    def call(self, x, training=None):
-        return super().call(x, training=True)
-class PermaRandomCrop(tf.keras.layers.experimental.preprocessing.RandomCrop):
-    def call(self, x, training=None):
-        return super().call(x, training=True)
-
-
 def add_preprocessing_layers(model, crop_size, final_size):
     if crop_size < final_size:
         logging.warning('Crop size {} < final size {}, losing resolution'.format(crop_size, final_size))
@@ -308,9 +280,9 @@ def add_preprocessing_layers(model, crop_size, final_size):
         resize = False
         crop_size = final_size
 
-    model.add(PermaRandomRotation(np.pi, fill_mode='reflect'))
-    model.add(PermaRandomFlip())
-    model.add(PermaRandomCrop(
+    model.add(custom_layers.PermaRandomRotation(np.pi, fill_mode='reflect'))
+    model.add(custom_layers.PermaRandomFlip())
+    model.add(custom_layers.PermaRandomCrop(
         crop_size, crop_size  # from 256, bad to the resize up again but need more zoom...
     ))
     if resize:
@@ -333,6 +305,22 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     add_preprocessing_layers(model, crop_size=crop_size, final_size=final_size)  # inplace
 
+    # model.add(bayesian_estimator_sequential.get_bayesian_model(
+    #     image_dim=final_size, # not initial size
+    #     output_dim=len(schema.label_cols),
+    #     schema=schema,
+    #     conv1_filters=32,
+    #     conv1_kernel=3,
+    #     conv2_filters=64,
+    #     conv2_kernel=3,
+    #     conv3_filters=128,
+    #     conv3_kernel=3,
+    #     dense1_units=128,
+    #     dense1_dropout=0.5,
+    #     predict_dropout=0.5,  # change this to calibrate
+    #     log_freq=10
+    # ))
+    # OR
     input_shape = (final_size, final_size, 1)
     effnet = efficientnet.EfficientNet_custom_top(
         schema=schema,
@@ -347,9 +335,9 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
 
-    abs_metrics = [bayesian_estimator_funcs.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
-    q_loss_metrics = [bayesian_estimator_funcs.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
-    a_loss_metrics = [bayesian_estimator_funcs.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
+    # abs_metrics = [bayesian_estimator_sequential.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+    # q_loss_metrics = [bayesian_estimator_sequential.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
+    # a_loss_metrics = [bayesian_estimator_sequential.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam()
@@ -358,6 +346,9 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     if weights_loc:
         logging.info('Loading weights from {}'.format(weights_loc))
-        model.load_weights(weights_loc)  # inplace
+        load_status = model.load_weights(weights_loc)  # inplace
+        # may silently fail without these
+        load_status.assert_nontrivial_match()
+        load_status.assert_existing_objects_matched()
 
     return model

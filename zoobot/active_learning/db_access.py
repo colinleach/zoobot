@@ -239,7 +239,8 @@ def get_entry(db, subject_id):
         raise IndexError('Fatal: top ids not found in catalog or labels missing!')
     if subject[1] is None:
         raise ValueError('Fatal: {} missing labels in db!'.format(subject_id))
-    assert os.path.isfile(str(subject[2]))  # check that image path is correct
+    if not os.path.isfile(str(subject[2])):  # check that image path is correct
+        raise ValueError('Fatal: missing subject allegedly at {}'.format(str(subject[2])))
 
     return CatalogEntry(
         id_str=str(subject[0]),  # db cursor casts to int-like string to int...
