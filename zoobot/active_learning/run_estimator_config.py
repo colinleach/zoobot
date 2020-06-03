@@ -129,12 +129,16 @@ class RunEstimatorConfig():
             tf.keras.callbacks.TensorBoard(
                 log_dir=os.path.join(self.log_dir, 'tensorboard'),
                 histogram_freq=3,
-                write_images=True,
+                write_images=False,  # this actually writes the weights, terrible name
+                write_graph=False,
                 # profile_batch='2,10' 
                 profile_batch=0   # i.e. disable profiling
             ),
             tf.keras.callbacks.ModelCheckpoint(
-                filepath=os.path.join(self.log_dir, 'models'),
+                filepath=os.path.join(self.log_dir, 'in_progress'),
+                monitor='val_loss',
+                mode='min',
+                save_best_only=True,
                 save_weights_only=True),
             bayesian_estimator_sequential.UpdateStepCallback(
                 batch_size=self.batch_size
