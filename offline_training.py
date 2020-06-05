@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     GZ2 testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/eval_shards --epochs 2 --batch-size 8 --final-size 128
-      python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/eval_shards --epochs 2 --batch-size 8 --final-size 128
+      python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/eval_shards --epochs 2 --batch-size 8 --final-size 224
 
     Local testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 --batch-size 16
