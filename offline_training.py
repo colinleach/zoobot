@@ -137,4 +137,9 @@ if __name__ == '__main__':
     #     print(x.shape, y.shape)
     #     assert x.shape[0] == batch_size
     
+    final_checkpoint_dir = os.path.join(save_dir, 'models')
+    if not os.path.isdir(final_checkpoint_dir):
+      os.mkdir(final_checkpoint_dir)
+    save_loc = os.path.join(final_checkpoint_dir, 'final')
     trained_model = run_config.run_estimator() 
+    trained_model.save_weights(save_loc)
