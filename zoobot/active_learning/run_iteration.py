@@ -274,7 +274,7 @@ if __name__ == '__main__':
     questions = [
         'smooth-or-featured',
         'has-spiral-arms',
-        'spiral-winding',
+        # 'spiral-winding',
         'bar',
         'bulge-size'
     ]
