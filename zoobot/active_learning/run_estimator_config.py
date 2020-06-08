@@ -45,7 +45,7 @@ class RunEstimatorConfig():
             patience=10,
             log_dir='runs/default_run_{}'.format(time.time()),
             save_freq=10,
-            warm_start=True,
+            weights_loc=None,
             warm_start_settings=None
     ):  # TODO refactor for consistent order
         self.initial_size = initial_size
@@ -59,7 +59,7 @@ class RunEstimatorConfig():
         self.batch_size = batch_size
         self.log_dir = log_dir
         self.save_freq = save_freq
-        self.warm_start = warm_start
+        self.weights_loc = weights_loc
         self.patience = patience
         self.min_epochs = min_epochs
         self.train_config = None
@@ -178,13 +178,13 @@ class RunEstimatorConfig():
 
 # batch size changed from 256 for now, for my poor laptop
 # can override less rarely specified RunEstimatorConfig defaults with **kwargs if you like
-def get_run_config(initial_size, final_size, crop_size, warm_start, log_dir, train_records, eval_records, epochs, schema, batch_size, **kwargs):
+def get_run_config(initial_size, final_size, crop_size, weights_loc, log_dir, train_records, eval_records, epochs, schema, batch_size, **kwargs):
 
     # save these to get back the same run config across iterations? But hpefully in instructions already, or can be calculated...
     # args = {
     #     'initial_size': initial_size,
     #     'final_size': final_size,
-    #     'warm_start':
+    #     'weights_loc':
     # }
     run_config = RunEstimatorConfig(
         initial_size=initial_size,
@@ -193,7 +193,7 @@ def get_run_config(initial_size, final_size, crop_size, warm_start, log_dir, tra
         schema=schema,
         epochs=epochs,  # to tweak 2000 for overnight at 8 iters, 650 for 2h per iter
         log_dir=log_dir,
-        warm_start=warm_start,
+        weights_loc=weights_loc,
         batch_size=batch_size
     )
 
@@ -201,7 +201,7 @@ def get_run_config(initial_size, final_size, crop_size, warm_start, log_dir, tra
 
     eval_config = get_eval_config(eval_records, schema.label_cols, run_config.batch_size, run_config.initial_size, run_config.final_size, run_config.channels)
 
-    model = get_model(schema, run_config.initial_size, run_config.crop_size, run_config.final_size)
+    model = get_model(schema, run_config.initial_size, run_config.crop_size, run_config.final_size, weights_loc=weights_loc)
 
     run_config.assemble(train_config, eval_config, model)
     return run_config

@@ -123,7 +123,7 @@ class Iteration():
             crop_size=self.fixed_estimator_params.crop_size,
             schema=self.schema,
             batch_size=self.fixed_estimator_params.batch_size,
-            warm_start=False,  # for now 
+            weights_loc=weights_loc,  # for now 
             log_dir=log_dir,
             train_records=self.get_train_records(),  # will always be up-todate
             eval_records=self.eval_tfrecords,  # linting error due to __init__, self.eval_tfrecords exists
