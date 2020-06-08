@@ -198,7 +198,6 @@ def main(shard_dir, hyperband_iterations, schema):
     run_config = run_estimator_config.get_run_config(
         initial_size=shard_img_size,
         final_size=resolution,
-        warm_start=warm_start,
         log_dir=save_dir,
         train_records=train_records,
         eval_records=eval_records,

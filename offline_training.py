@@ -120,7 +120,6 @@ if __name__ == '__main__':
       initial_size=shard_img_size,
       final_size=final_size,
       crop_size=int(shard_img_size * 0.75),
-      warm_start=warm_start,
       log_dir=save_dir,
       train_records=train_records,
       eval_records=eval_records,
