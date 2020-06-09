@@ -165,7 +165,7 @@ def add_labels_to_db(subject_ids: List, all_labels: List, db):
             raise ValueError(
                 'Trying to set labels {} for already-labelled subject {}'.format(labels, subject_id)
             )
-
+        logging.info(subject_n)  # temporary
         # set the label (this won't raise an automatic error if already exists!)
         cursor.execute(
             '''
