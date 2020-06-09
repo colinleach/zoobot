@@ -165,7 +165,7 @@ def add_labels_to_db(subject_ids: List, all_labels: List, db):
             raise ValueError(
                 'Trying to set labels {} for already-labelled subject {}'.format(labels, subject_id)
             )
-        logging.info('{} {} {}'.format(subject_n, subject_id, labels))  # temporary
+        logging.info('{} {}'.format(subject_n, subject_id))  # temporary
         # the logging seemed to help, so maybe it's just falling over itself a little bit?
         time.sleep(0.002) # 2ms, typical write time 30ms
         # set the label (this won't raise an automatic error if already exists!)
@@ -197,7 +197,7 @@ def add_labels_to_db(subject_ids: List, all_labels: List, db):
             retrieved_labels = row[0]
             assert retrieved_labels == labels_str
 
-    logging.info('{} labels added to db'.format(len(len(subject_ids))))
+    logging.info('{} labels added to db'.format(len(subject_ids)))
 
 
 def get_all_entries(db, labelled=None):
