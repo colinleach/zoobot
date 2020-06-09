@@ -147,7 +147,7 @@ def save_final_state(final_state, save_dir):
 
 
 def get_prediction_shards(iteration_n, instructions, timeout=15.0):
-    db = sqlite3.connect(instructions.db_loc, timeout=timeout)
+    db = sqlite3.connect(instructions.db_loc, timeout=timeout, isolation_level='IMMEDIATE')
     all_shard_locs = [os.path.join(instructions.shards.shard_dir, os.path.split(loc)[-1]) for loc in database.get_all_shard_locs(db)]
     shards_iterable = itertools.cycle(all_shard_locs)  # cycle through shards
     for _ in range(iteration_n + 1):  # get next shards once for iteration_n = 0, etc.

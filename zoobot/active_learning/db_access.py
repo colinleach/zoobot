@@ -34,7 +34,7 @@ def create_db(catalog, db_loc, timeout=15.0):
     Returns:
         sqlite3.Connection: connection to database as described above. Intended for active learning
     """
-    db = sqlite3.connect(db_loc, timeout=timeout)
+    db = sqlite3.connect(db_loc, timeout=timeout, isolation_level='IMMEDIATE')
 
     cursor = db.cursor()
 

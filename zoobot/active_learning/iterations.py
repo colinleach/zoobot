@@ -332,6 +332,6 @@ def get_db(iteration_dir, initial_db_loc, timeout=15.0):
     new_db_loc = os.path.join(iteration_dir, 'iteration.db')
     assert os.path.isfile(initial_db_loc)
     shutil.copy(initial_db_loc, new_db_loc)
-    db = sqlite3.connect(new_db_loc, timeout=timeout)
+    db = sqlite3.connect(new_db_loc, timeout=timeout, isolation_level='IMMEDIATE')
     assert not database.db_fully_labelled(db)
     return db, new_db_loc
