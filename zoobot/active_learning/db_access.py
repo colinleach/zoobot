@@ -21,7 +21,7 @@ from zoobot.estimators import estimator_params, make_predictions
 
 CatalogEntry = namedtuple('CatalogEntry', ['id_str', 'file_loc', 'labels'])
 
-def create_db(catalog, db_loc):
+def create_db(catalog, db_loc, timeout=15.0):
     """Instantiate sqlite database at db_loc with the following tables:
     1. `catalog`: analogy of catalog dataframe, for fits locations and (sometimes) labels
     2. `shards`: which shard contains each (serialized) galaxy
@@ -34,7 +34,7 @@ def create_db(catalog, db_loc):
     Returns:
         sqlite3.Connection: connection to database as described above. Intended for active learning
     """
-    db = sqlite3.connect(db_loc)
+    db = sqlite3.connect(db_loc, timeout=timeout)
 
     cursor = db.cursor()
 
