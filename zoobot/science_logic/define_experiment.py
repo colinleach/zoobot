@@ -105,10 +105,11 @@ if __name__ == '__main__':
     
     Decals: see dvc.md
 
-    GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5 --filter
-    python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_2p5_unfiltered --sim-fraction 2.5
+    GZ2: 
+        python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5 --filter
+        python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_2p5_unfiltered --sim-fraction 2.5
 
-    $PYTHON zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_arc_unfiltered --sim-fraction 2.5
+        python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_2p5_arc_unfiltered --sim-fraction 2.5
     """
 
     # master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # currently with all galaxies but only a few classifications
