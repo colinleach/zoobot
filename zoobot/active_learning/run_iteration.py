@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 
 from zoobot.active_learning import database, iterations, acquisition_utils, create_instructions, oracles, run_estimator_config
+from zoobot import label_metadata
 
 InitialState = namedtuple(
     'InitialState',
@@ -274,54 +275,13 @@ if __name__ == '__main__':
     )
     # logging.getLogger().addHandler(logging.StreamHandler())
 
-    questions = [
-        'smooth-or-featured',
-        'has-spiral-arms',
-        # 'spiral-winding',
-        'bar',
-        'bulge-size'
-    ]
-
-    # decals
-    # will load labels from shard, in this order
-    # will predict all label columns, in this order
-    # label_cols = [
-    #     'smooth-or-featured_smooth',
-    #     'smooth-or-featured_featured-or-disk',
-    #     'has-spiral-arms_yes',
-    #     'has-spiral-arms_no',
-    #     # 'spiral-winding_tight',
-    #     # 'spiral-winding_medium',
-    #     # 'spiral-winding_loose',
-    #     'bar_strong',
-    #     'bar_weak',
-    #     'bar_no',
-    #     'bulge-size_dominant',
-    #     'bulge-size_large',
-    #     'bulge-size_moderate',
-    #     'bulge-size_small',
-    #     'bulge-size_none'
-    # ]
-
-    # gz2
-    label_cols = [
-    'smooth-or-featured_smooth',
-    'smooth-or-featured_featured-or-disk',
-    'has-spiral-arms_yes',
-    'has-spiral-arms_no',
-    'bar_yes',
-    'bar_no',
-    'bulge-size_dominant',
-    'bulge-size_obvious',
-    'bulge-size_just-noticeable',
-    'bulge-size_no'
-    ]
+    # label_cols = label_metadata.decals_partial_label_cols
+    # label_cols = label_metadata.gz2_partial_label_cols
+    questions = label_metadata.gz2_questions
+    label_cols = label_metadata.gz2_label_cols
 
     options = args.options
     test = 'test' in options
     logging.info(f'Test mode: {test}')
     main(args.instructions_dir, args.this_iteration_dir, args.previous_iteration_dir, questions, label_cols, test)
-
-    # TODO move to simulation controller
-    # analysis.show_subjects_by_iteration(iterations_record[-1].get_train_records(), 15, active_config.shards.size, 3, os.path.join(active_config.run_dir, 'subject_history.png'))
 

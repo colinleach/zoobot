@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from zoobot.active_learning import create_instructions, run_estimator_config
 from zoobot.estimators import losses, input_utils
-
+from zoobot import label_metadata
   
 if __name__ == '__main__':
     """
@@ -22,7 +22,8 @@ if __name__ == '__main__':
 
     GZ2 testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/eval_shards --epochs 2 --batch-size 8 --final-size 128
-      python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_300_unfiltered/eval_shards --epochs 2 --batch-size 8 --final-size 224
+      python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_sim_2p5_unfiltered_300/train_shards --eval-dir data/gz2/shards/all_sim_2p5_unfiltered_300/train_shards --epochs 1 --batch-size 8 --final-size 128
+      python offline_training.py --experiment-dir results/debug --shard-img-size 64 --train-dir data/gz2/shards/debug_sim/train_shards --eval-dir data/gz2/shards/debug_sim/eval_shards --epochs 2 --batch-size 8 --final-size 64
 
     Local testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 --batch-size 16
@@ -71,47 +72,17 @@ if __name__ == '__main__':
     if not os.path.isdir(save_dir):
       os.mkdir(save_dir)
 
-    # must match label cols below
-    questions = [
-        'smooth-or-featured',
-        'has-spiral-arms',
-        'bar',
-        'bulge-size'
-    ]
-
     # will load labels from shard, in this order
     # will predict all label columns, in this order
     if 'decals' in train_records_dir:
         version='decals'
-        label_cols = [
-            'smooth-or-featured_smooth',
-            'smooth-or-featured_featured-or-disk',
-            'has-spiral-arms_yes',
-            'has-spiral-arms_no',
-            'bar_strong',
-            'bar_weak',
-            'bar_no',
-            'bulge-size_dominant',
-            'bulge-size_large',
-            'bulge-size_moderate',
-            'bulge-size_small',
-            'bulge-size_none'
-        ]
+        label_cols = label_metadata.decals_partial_label_cols
+        questions = label_metadata.decals_partial_questions
     else:
         version='gz2'
-        # gz2 cols
-        label_cols = [
-            'smooth-or-featured_smooth',
-            'smooth-or-featured_featured-or-disk',
-            'has-spiral-arms_yes',
-            'has-spiral-arms_no',
-            'bar_yes',
-            'bar_no',
-            'bulge-size_dominant',
-            'bulge-size_obvious',
-            'bulge-size_just-noticeable',
-            'bulge-size_no'
-        ]
+        questions = label_metadata.gz2_questions
+        label_cols = label_metadata.gz2_label_cols
+  
     schema = losses.Schema(label_cols, questions, version=version)
 
     print('Epochs: {}'.format(epochs))
@@ -126,7 +97,8 @@ if __name__ == '__main__':
       epochs=epochs,
       schema=schema,
       batch_size=batch_size,
-      patience=5
+      patience=5,
+      weights_loc=None
     )
 
     # check for bad shard_img_size leading to bad batch size

@@ -6,6 +6,8 @@ import glob
 
 import pandas as pd
 
+from zoobot import label_metadata
+
 """Shared logic to refine catalogs. All science decisions should have happened after this script"""
 
 def get_experiment_catalogs(catalog, save_dir, filter_catalog=False):
@@ -104,9 +106,9 @@ if __name__ == '__main__':
     Decals: see dvc.md
 
     GZ2: python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5 --filter
-    python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_unfiltered --sim-fraction 2.5
+    python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_2p5_unfiltered --sim-fraction 2.5
 
-    $PYTHON zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_arc_unfiltered --sim-fraction 2.5
+    $PYTHON zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog_arc.csv --save-dir data/gz2/prepared_catalogs/all_arc_unfiltered --sim-fraction 2.5
     """
 
     # master_catalog_loc = 'data/decals/decals_master_catalog.csv'  # currently with all galaxies but only a few classifications
@@ -128,37 +130,9 @@ if __name__ == '__main__':
     master_catalog_loc = args.master_catalog_loc
     save_dir = args.save_dir
 
-    # used to delete these columns from mock unlabelled catalog
-    # could perhaps extract somewhere
-    # label_cols = [
-    #     'smooth-or-featured_smooth',
-    #     'smooth-or-featured_featured-or-disk',
-    #     'has-spiral-arms_yes',
-    #     'has-spiral-arms_no',
-    #     'spiral-winding_tight',
-    #     'spiral-winding_medium',
-    #     'spiral-winding_loose',
-    #     'bar_strong',
-    #     'bar_weak',
-    #     'bar_no',
-    #     'bulge-size_dominant',
-    #     'bulge-size_large',
-    #     'bulge-size_moderate',
-    #     'bulge-size_small',
-    #     'bulge-size_none'
-    # ]
-    label_cols = [
-        'smooth-or-featured_smooth',
-        'smooth-or-featured_featured-or-disk',
-        'has-spiral-arms_yes',
-        'has-spiral-arms_no',
-        'bar_yes',
-        'bar_no',
-        'bulge-size_dominant',
-        'bulge-size_obvious',
-        'bulge-size_just-noticeable',
-        'bulge-size_no'
-    ]
+    # label_cols = label_metadata.decals_partial_label_cols
+    # label_cols = label_metadata.gz2_partial_label_cols
+    label_cols = label_metadata.gz2_label_cols
 
     if os.path.isdir(save_dir):
         shutil.rmtree(save_dir)

@@ -19,6 +19,7 @@ import git
 
 from shared_astro_utils import object_utils
 
+from zoobot import label_metadata
 from zoobot.tfrecord import catalog_to_tfrecord
 from zoobot.science_logic import prepare_catalogs
 from zoobot.active_learning import database
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     GZ2 sim:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_256 --img-size 256
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5/simulation_context/unlabelled_catalog.csv --eval-size 4000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_300 --img-size 300
-        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5_unfiltered/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5_unfiltered/simulation_context/unlabelled_catalog.csv --eval-size 15000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_300_unfiltered --img-size 300
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_2p5_unfiltered/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_2p5_unfiltered/simulation_context/unlabelled_catalog.csv --eval-size 15000 --shard-dir=data/gz2/shards/all_sim_2p5_unfiltered_300 --img-size 300
         
         $PYTHON zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_arc/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_arc/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_256_arc --img-size 256
     
@@ -240,6 +241,7 @@ if __name__ == '__main__':
 
     Testing:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size=100 --shard-dir=data/decals/shards/debug_sim --max-labelled 500 --max-unlabelled=300 --img-size 32
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_2p5_unfiltered/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_2p5_unfiltered/simulation_context/unlabelled_catalog.csv --shard-dir=data/gz2/shards/debug_sim --eval-size 1000 --max-labelled 5000 --max-unlabelled=3000 --img-size 64
     """
 
     # only responsible for making the shards. 
@@ -268,39 +270,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # decals cols
-    # label_cols = [
-    #     'smooth-or-featured_smooth',
-    #     'smooth-or-featured_featured-or-disk',
-    #     'has-spiral-arms_yes',
-    #     'has-spiral-arms_no',
-    #     'spiral-winding_tight',
-    #     'spiral-winding_medium',
-    #     'spiral-winding_loose',
-    #     'bar_strong',
-    #     'bar_weak',
-    #     'bar_no',
-    #     'bulge-size_dominant',
-    #     'bulge-size_large',
-    #     'bulge-size_moderate',
-    #     'bulge-size_small',
-    #     'bulge-size_none'
-    # ]
-
-    # gz2 cols
-    label_cols = [
-        'smooth-or-featured_smooth',
-        'smooth-or-featured_featured-or-disk',
-        'has-spiral-arms_yes',
-        'has-spiral-arms_no',
-        'bar_yes',
-        'bar_no',
-        'bulge-size_dominant',
-        'bulge-size_obvious',
-        'bulge-size_just-noticeable',
-        'bulge-size_no'
-    ]
-    
+    # label_cols = label_metadata.decals_partial_label_cols
+    # label_cols = label_metadata.gz2_partial_label_cols
+    label_cols = label_metadata.gz2_label_cols
 
     # log_loc = 'make_shards_{}.log'.format(time.time())
     logging.basicConfig(

@@ -68,28 +68,51 @@ def create_answers_gz2(question, label_cols):
     question_text = question.text
     if question_text == 'smooth-or-featured':
         answer_substrings = ['_smooth', '_featured-or-disk']
-    elif question_text == 'has-spiral-arms':
+    elif question_text == 'disk-edge-on':
         answer_substrings = ['_yes', '_no']
-    elif question_text == 'spiral-winding':
-        answer_substrings = ['_tight', '_medium', '_loose']
     elif question_text == 'bar':
+        answer_substrings = ['_yes', '_no']
+    elif question_text == 'has-spiral-arms':
         answer_substrings = ['_yes', '_no']
     elif question_text == 'bulge-size':
         answer_substrings = ['_dominant', '_obvious', '_just-noticeable', '_no']
+    elif question_text == 'something-odd':
+        answer_substrings = ['_yes', '_no']
+    elif question_text == 'how-rounded':
+        answer_substrings = ['_round', '_in-between', '_cigar']
+    elif question_text == 'bulge-shape':
+        answer_substrings = ['_round', '_boxy', '_no-bulge']
+    elif question_text == 'spiral-winding':
+        answer_substrings = ['_tight', '_medium', '_loose']
+    elif question_text == 'spiral-count':
+        answer_substrings = ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell']
     else:
         print(question_text)
         raise ValueError(question.text + ' not recognised')
     return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
 
-# luckily, these are the same in GZ2 and decals
+
 def set_dependencies(questions):
+    #  awkward to keep the partial version as it changes these dependencies
+    if 'disk-edge-on' in [q.text for q in questions]:
+        featured_branch_answer = 'disk-edge-on_no'
+    else:
+        featured_branch_answer = 'smooth-or-featured_featured-or-disk'  # skip it
+
+    # luckily, these are the same in GZ2 and decals, just only some questions are asked
     dependencies = {
-        'smooth-or-featured': None,
-        'has-spiral-arms': 'smooth-or-featured_featured-or-disk',
+        'smooth-or-featured': None,  # always asked
+        'disk-edge-on': 'smooth-or-featured_featured-or-disk',
+        'has-spiral-arms': featured_branch_answer,
+        'bar': featured_branch_answer,
+        'bulge-size': featured_branch_answer,
+        'something-odd': None,  # always asked
+        'how-rounded': 'smooth-or-featured_smooth',
+        'bulge-shape': 'disk-edge-on_yes',
         'spiral-winding': 'has-spiral-arms_yes',
-        'bar': 'smooth-or-featured_featured-or-disk',
-        'bulge-size': 'smooth-or-featured_featured-or-disk'
+        'spiral-count': 'has-spiral-arms_yes'
     }
+
     for question in questions:
         prev_answer_text = dependencies[question.text]
         if prev_answer_text is not None:
