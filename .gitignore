@@ -72,3 +72,6 @@ data/experiments/*
 data/debug
 events.out.tfevents.*
 data/gz2/shards/*
+
+pyfa_env/*
+temp/*
