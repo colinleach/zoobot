@@ -168,7 +168,7 @@ def get_epochs(iteration_n):
     if iteration_n == 0:
         return 1500  # about this long for initial convergence
     else:
-        return 1500  # old, still keep it long
+        return 10  # plenty for continuing finetuning
 
 
 # use only for first epoch, to skip if already trained
