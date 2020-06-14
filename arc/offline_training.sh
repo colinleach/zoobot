@@ -15,11 +15,12 @@ epochs=1000
 batch_size=128  # fits on V100, not my laptop...
 shard_img_size=300
 final_size=224
-shard_dir=$DATA/repos/zoobot/data/gz2/shards/all_featp5_facep5_424_arc
+shard_dir=$DATA/repos/zoobot/data/gz2/shards/all_featp5_facep5_all_300_arc_unfiltered
+
 # shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
 # shard_dir=$DATA/repos/zoobot/data/gz2/shards/multilabel_master_filtered_$shard_img_size
 
 
 echo $epochs $batch_size $shard_img_size $final_size $shard_dir
 
-$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline_full --shard-img-size $shard_img_size --train-dir $shard_dir/train_shards --eval-dir $shard_dir/eval_shards --epochs $epochs --batch-size $batch_size --final-size $final_size  
+$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/latest_offline_unfiltered_all --shard-img-size $shard_img_size --train-dir $shard_dir/train_shards --eval-dir $shard_dir/eval_shards --epochs $epochs --batch-size $batch_size --final-size $final_size  
