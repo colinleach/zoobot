@@ -131,26 +131,30 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
     prob_of_answers = dirichlet_prob_of_answers(joint_samples, schema)
 
     for q in schema.questions:
-        print(q.text)
-        expected_votes_list = [get_expected_votes(samples, q, retirement, schema, round=True) for samples in samples_list]
-        # print(expected_votes_list)
-
-        samples_list_by_q = [samples[:, q.start_index:q.end_index+1] for samples in samples_list]
-        print('Calculating predictive entropy')
-        predictive_entropy = dirichlet_predictive_entropy(samples_list_by_q, expected_votes_list)
-        print('Calculating expected entropy')
-        expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
-        mi_for_q = predictive_entropy - expected_entropy
-        prev_q = q.asked_after
-        if prev_q is None:
-            joint_p_of_asked = 1.
+        if q.text == 'spiral-count':
+            # should be save to skip as I immediately take an average
+            logging.warning('Temporarily skipping spiral-count as too many answers')
         else:
-            joint_p_of_asked = schema.joint_p(prob_of_answers, q.asked_after.text)
-        # print(mi_for_q)
+            print(q.text)
+            expected_votes_list = [get_expected_votes(samples, q, retirement, schema, round=True) for samples in samples_list]
+            # print(expected_votes_list)
 
-        all_predictive_entropy.append(predictive_entropy)
-        all_expected_entropy.append(expected_entropy)
-        all_expected_mi.append(mi_for_q * joint_p_of_asked)
+            samples_list_by_q = [samples[:, q.start_index:q.end_index+1] for samples in samples_list]
+            print('Calculating predictive entropy')
+            predictive_entropy = dirichlet_predictive_entropy(samples_list_by_q, expected_votes_list)
+            print('Calculating expected entropy')
+            expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
+            mi_for_q = predictive_entropy - expected_entropy
+            prev_q = q.asked_after
+            if prev_q is None:
+                joint_p_of_asked = 1.
+            else:
+                joint_p_of_asked = schema.joint_p(prob_of_answers, q.asked_after.text)
+            # print(mi_for_q)
+
+            all_predictive_entropy.append(predictive_entropy)
+            all_expected_entropy.append(expected_entropy)
+            all_expected_mi.append(mi_for_q * joint_p_of_asked)
 
 
     logging.info('Acquisition calculations complete')

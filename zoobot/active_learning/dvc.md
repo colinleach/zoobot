@@ -59,8 +59,8 @@ Sim:
 
 **Run Simulation**
 
-    catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5_2p5_unfiltered
-    shard_dir=data/gz2/shards/all_featp5_facep5_sim_300_unfiltered
+    catalog_dir=data/gz2/prepared_catalogs/all_2p5_unfiltered
+    shard_dir=data/gz2/shards/all_sim_2p5_unfiltered_300
 
     experiment_dir=data/experiments/live/latest
     instructions_dir=$experiment_dir/instructions
@@ -71,9 +71,9 @@ Sim:
 
 Args are baseline, test, and panoptes. Use ' ' to leave blank - the space is crucial.
 
-    ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'baseline_test'
+    ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'active_test'
 
-    dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'baseline'
+    <!-- dvc run --ignore-build-cache -d $shard_dir -d $catalog_dir -d production/run_simulation.sh -o $experiment_dir -f $experiment_dir.dvc ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir 'baseline' -->
 
 **Run Live**
 
