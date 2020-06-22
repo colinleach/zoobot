@@ -292,6 +292,7 @@ def dirichlet_predictive_entropy_per_model(samples_for_q, expected_votes):
     entropies = []
     n_answers = samples_for_q.shape[1]
     n_samples = samples_for_q.shape[2]
+    # this is very slow, but I haven't managed to get DirichletMultinomial to work with a batch dimension on expected_votes
     for galaxy_n, galaxy in enumerate(samples_for_q):  # includes dropout
         galaxy_with_dummy_batch = np.expand_dims(galaxy, axis=0)  # mixture requires batch dimension
         # print(galaxy_n, expected_votes[galaxy_n], n_answers, n_samples)
@@ -331,9 +332,18 @@ def dirichlet_entropy_in_concentrations(samples_for_q, expected_votes):
 
 
 def dirichlet_mixture(samples_for_q, expected_votes, n_samples):
+    """[summary]
+
+    Args:
+        samples_for_q ([type]): shape (batch, answer, dropout)
+        expected_votes ([type]): scalar, I am doing something wrong as it doesn't seem to like a batch distribution for n despite the example
+        n_samples ([type]): scalar
+
+    Returns:
+        [type]: [description]
+    """
     assert samples_for_q.ndim == 3  # must have galaxies dimension (:1 will work)
-    # samples_for_q has shape (batch, answer, dropout)
-    # n_samples = samples_for_q.shape[2]  # is a np array so this is okay
+    # samples_for_q has 
 
     component_probs = tf.zeros(n_samples) / n_samples
     categorical = tfp.distributions.Categorical(logits=component_probs, validate_args=True)
