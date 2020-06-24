@@ -130,11 +130,9 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
     joint_samples = tf.concat(samples_list, axis=2) 
     prob_of_answers = dirichlet_prob_of_answers(joint_samples, schema)
 
+    logging.warning('Only optimising over four questions')
     for q in schema.questions:
-        if q.text == 'spiral-count':
-            # should be save to skip as I immediately take an average
-            logging.warning('Temporarily skipping spiral-count as too many answers')
-        else:
+        if q.text in ['smooth-or-featured', 'has-spiral-arms', 'bar', 'bulge-size']:
             print(q.text)
             expected_votes_list = [get_expected_votes(samples, q, retirement, schema, round=True) for samples in samples_list]
             # print(expected_votes_list)
@@ -155,6 +153,8 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
             all_predictive_entropy.append(predictive_entropy)
             all_expected_entropy.append(expected_entropy)
             all_expected_mi.append(mi_for_q * joint_p_of_asked)
+        else:
+            logging.warning('Skipping {}'.format(q.text))
 
 
     logging.info('Acquisition calculations complete')
@@ -292,7 +292,7 @@ def dirichlet_predictive_entropy_per_model(samples_for_q, expected_votes):
     entropies = []
     n_answers = samples_for_q.shape[1]
     n_samples = samples_for_q.shape[2]
-    # this is very slow, but I haven't managed to get DirichletMultinomial to work with a batch dimension on expected_votes
+    # this is very slow, but permutations_by_gaalxy can only work on single galaxies as num. of permutations changes
     for galaxy_n, galaxy in enumerate(samples_for_q):  # includes dropout
         galaxy_with_dummy_batch = np.expand_dims(galaxy, axis=0)  # mixture requires batch dimension
         # print(galaxy_n, expected_votes[galaxy_n], n_answers, n_samples)
