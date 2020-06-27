@@ -252,8 +252,8 @@ def main(shard_config_loc, catalog_dir, instructions_dir, baseline, warm_start, 
     expected_votes = 40  # SMOOTH MODE
 
     # label_cols = label_metadata.decals_partial_label_cols
-    # label_cols = label_metadata.gz2_partial_label_cols
-    label_cols = label_metadata.gz2_label_cols
+    label_cols = label_metadata.gz2_partial_label_cols
+    # label_cols = label_metadata.gz2_label_cols
 
     # record instructions
     instructions = Instructions(
