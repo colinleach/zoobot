@@ -275,9 +275,9 @@ if __name__ == '__main__':
     )
     # logging.getLogger().addHandler(logging.StreamHandler())
 
-    # label_cols = label_metadata.decals_partial_label_cols
+    questions = label_metadata.gz2_partial_questions
     label_cols = label_metadata.gz2_partial_label_cols
-    questions = label_metadata.gz2_questions
+    # questions = label_metadata.gz2_questions
     # label_cols = label_metadata.gz2_label_cols
 
     options = args.options
