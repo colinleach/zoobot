@@ -188,7 +188,10 @@ def get_png_root_loc(target):
         return f'/Volumes/alpha/{target}'
     # ARC
     elif os.path.isdir('/data/phys-zooniverse/chri5177'):
-        return f'/data/phys-zooniverse/chri5177/{target}'
+        if target == 'decals':
+            return '/data/phys-zooniverse/chri5177'  # it's just png_native
+        else:
+            return f'/data/phys-zooniverse/chri5177/{target}'
     else:
         raise ValueError('Cannot work out appropriate png root')
 
@@ -220,6 +223,7 @@ if __name__ == '__main__':
     Decals:
         python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv /media/walml/beta/decals/results/classifications_oct_3_2019.csv data/decals/decals_master_catalog.csv
         python zoobot/science_logic/prepare_catalogs.py /home/walml/repos/zoobot/final_dr5_uploadable_catalog.csv /home/walml/repos/zoobot/current_final_dr5_result.csv data/decals/decals_master_catalog.csv
+        python zoobot/science_logic/prepare_catalogs.py $DATA/repos/zoobot/final_dr5_uploadable_catalog.csv $DATA/repos/zoobot/current_final_dr5_result.csv data/decals/decals_master_catalog_arc.csv
 
     GZ2:
         python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/galaxy_zoo/gz2/subjects/gz2_classifications_and_subjects.csv '' data/gz2/gz2_master_catalog.csv
