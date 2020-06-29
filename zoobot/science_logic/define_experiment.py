@@ -17,7 +17,7 @@ def get_experiment_catalogs(catalog, save_dir, filter_catalog=False):
         filtered_catalog = apply_custom_filter_cheat(catalog)  # science logic lives here
     else:
         filtered_catalog = catalog
-    labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36, ignore galaxies with less labels
+    labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36-70, just to check it works, then may relax this constraint
     # unlabelled and catalog will have no 'label' column
     return catalog, labelled, unlabelled
 
@@ -71,7 +71,7 @@ def apply_custom_filter_cheat(catalog):
 
 
 def subject_is_retired(subject):
-    return subject['smooth-or-featured_total-votes'] > 36
+    return (subject['smooth-or-featured_total-votes'] > 36) & (subject['smooth-or-featured_total-votes'] < 70) 
 
 
 def drop_duplicates(df):
@@ -103,7 +103,8 @@ if __name__ == '__main__':
 
     """
     
-    Decals: see dvc.md
+    Decals: (see dvc.md)
+        python zoobot/science_logic/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv --save-dir data/decals/prepared_catalogs/all_2p5_unfiltered_retired --sim-fraction 2.5
 
     GZ2: 
         python zoobot/science_logic/define_experiment.py --master-catalog data/gz2/gz2_master_catalog.csv --save-dir data/gz2/prepared_catalogs/all_featp5_facep5_2p5 --sim-fraction 2.5 --filter
@@ -132,8 +133,9 @@ if __name__ == '__main__':
     save_dir = args.save_dir
 
     # label_cols = label_metadata.decals_partial_label_cols
+    label_cols = label_metadata.decals_label_cols
     # label_cols = label_metadata.gz2_partial_label_cols
-    label_cols = label_metadata.gz2_label_cols
+    # label_cols = label_metadata.gz2_label_cols
 
     if os.path.isdir(save_dir):
         shutil.rmtree(save_dir)

@@ -229,6 +229,10 @@ if __name__ == '__main__':
     Sim shards: add simulation_context
         # python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/decals_multiq/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/decals_multiq/unlabelled_catalog.csv --eval-size 5000 --shard-dir=data/decals/shards/decals_multiq_128_sim --img-size 128
     
+    DECALS all:
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_retired/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_retired/unlabelled_catalog.csv --eval-size 10000 --shard-dir=data/decals/shards/all_2p5_unfiltered_retired --img-size 300
+        python zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_retired/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_retired/unlabelled_catalog.csv --eval-size 100 --shard-dir=data/decals/shards/all_2p5_unfiltered_retired --max-labelled 500 --max-unlabelled=300 --img-size 32
+
     GZ2 sim:
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5/simulation_context/unlabelled_catalog.csv --eval-size 1000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_256 --img-size 256
         python zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5/simulation_context/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_featp5_facep5_2p5/simulation_context/unlabelled_catalog.csv --eval-size 4000 --shard-dir=data/gz2/shards/all_featp5_facep5_sim_300 --img-size 300
@@ -271,8 +275,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # label_cols = label_metadata.decals_partial_label_cols
+    label_cols = label_metadata.decals_label_cols
     # label_cols = label_metadata.gz2_partial_label_cols
-    label_cols = label_metadata.gz2_label_cols
+    # label_cols = label_metadata.gz2_label_cols
 
     # log_loc = 'make_shards_{}.log'.format(time.time())
     logging.basicConfig(

@@ -15,8 +15,8 @@ def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
     """Convert zooniverse/decals joint catalog (from decals repo) for active learning and join to previous classifications
     
     Args:
-        catalog_loc (str): Load science catalog of galaxies from here.
-        classifications_loc (str): Load GZ classifications (see gz-panoptes-reduction repo) from here
+        catalog_loc (str): Load science catalog of galaxies from here. All galaxies which might be classified.
+        classifications_loc (str): Load GZ classifications (see gz-panoptes-reduction repo) from here. All galaxies which have been classified.
         save_loc (str): Save master catalog here
     """
     catalog = pd.read_csv(catalog_loc)
@@ -29,13 +29,12 @@ def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
 
     # may need to change png prefix
     catalog = catalog.rename(index=str, columns={
-        'fits_loc': 'local_fits_loc',
-        'png_loc': 'local_png_loc',
         'z': 'redshift'
     })
 
     print('Galaxies: {}'.format(len(catalog)))
     # tweak png locs according to current machine
+
     catalog = specify_file_locs(catalog, 'decals')
 
     classifications = pd.read_csv(classifications_loc)
@@ -176,7 +175,10 @@ def get_png_root_loc(target):
         return f'/home/ec2-user/root/repos/zoobot/data/{target}'
     # laptop
     elif os.path.isdir('/home/walml'):
-        return f'/media/walml/beta/galaxy_zoo/{target}/'
+        if target == 'decals':
+            return f'/media/walml/beta/{target}/'  # old folder, moving so many files is hard
+        else:
+            return f'/media/walml/beta/galaxy_zoo/{target}/'
     # EC2 Ubuntu
     elif os.path.isdir('/home/ubuntu'):
         return f'/home/ubuntu/root/repos/zoobot/data/{target}'
@@ -217,6 +219,7 @@ if __name__ == '__main__':
     """
     Decals:
         python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv /media/walml/beta/decals/results/classifications_oct_3_2019.csv data/decals/decals_master_catalog.csv
+        python zoobot/science_logic/prepare_catalogs.py /home/walml/repos/zoobot/final_dr5_uploadable_catalog.csv /home/walml/repos/zoobot/current_final_dr5_result.csv data/decals/decals_master_catalog.csv
 
     GZ2:
         python zoobot/science_logic/prepare_catalogs.py /media/walml/beta/galaxy_zoo/gz2/subjects/gz2_classifications_and_subjects.csv '' data/gz2/gz2_master_catalog.csv
