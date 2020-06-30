@@ -76,12 +76,16 @@ if __name__ == '__main__':
     # will predict all label columns, in this order
     if 'decals' in train_records_dir:
         version='decals'
-        label_cols = label_metadata.decals_partial_label_cols
-        questions = label_metadata.decals_partial_questions
+        label_cols = label_metadata.decals_label_cols
+        questions = label_metadata.decals_questions
+        # label_cols = label_metadata.decals_partial_label_cols
+        # questions = label_metadata.decals_partial_questions
     else:
         version='gz2'
-        questions = label_metadata.gz2_questions
-        label_cols = label_metadata.gz2_label_cols
+        questions = label_metadata.gz2_partial_questions
+        label_cols = label_metadata.gz2_partial_label_cols
+        # questions = label_metadata.gz2_questions
+        # label_cols = label_metadata.gz2_label_cols
   
     schema = losses.Schema(label_cols, questions, version=version)
 
