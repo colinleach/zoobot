@@ -50,6 +50,8 @@ def create_answers_decals(question, label_cols):
     question_text = question.text
     if question_text == 'smooth-or-featured':
         answer_substrings = ['_smooth', '_featured-or-disk']
+    elif question_text == 'disk-edge-on':
+        answer_substrings = ['yes', 'no']
     elif question_text == 'has-spiral-arms':
         answer_substrings = ['_yes', '_no']
     elif question_text == 'spiral-winding':
@@ -58,6 +60,16 @@ def create_answers_decals(question, label_cols):
         answer_substrings = ['_strong', '_weak', '_no']
     elif question_text == 'bulge-size':
         answer_substrings = ['_dominant', '_large', '_moderate', '_small', '_none']
+    elif question_text == 'something-odd':
+        answer_substrings = ['yes', 'no']
+    elif question_text == 'how-rounded':
+        answer_substrings = ['round', 'in-between', 'cigar-shaped']
+    elif question_text == 'edge-on-bulge':
+        answer_substrings = ['boxy', 'none', 'rounded']
+    elif question_text == 'spiral-arm-count':
+        answer_substrings = ['1', '2', '3', '4', 'more-than-4', 'cant-tell']
+    elif question_text == 'merging':
+        answer_substrings = ['none', 'minor-disturbance', 'major-disturbance', 'merger']
     else:
         print(question_text)
         raise ValueError(question.text + ' not recognised')
@@ -110,7 +122,9 @@ def set_dependencies(questions):
         'how-rounded': 'smooth-or-featured_smooth',
         'bulge-shape': 'disk-edge-on_yes',
         'spiral-winding': 'has-spiral-arms_yes',
-        'spiral-count': 'has-spiral-arms_yes'
+        'spiral-count': 'has-spiral-arms_yes',
+        'spiral-arm-count': 'has-spiral-arms_yes', # bad naming...
+        'merging': None
     }
 
     for question in questions:
