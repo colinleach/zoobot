@@ -6,10 +6,10 @@ decals_questions = [
     'bar',
     'bulge-size',
     'how-rounded',
-    'bulge-shape',
+    'edge-on-bulge',
     'spiral-winding',
-    'spiral-count',
-    'merger'
+    'spiral-arm-count',  # bad naming
+    'merging'
 ]
 
 decals_label_cols = [
