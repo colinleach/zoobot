@@ -5,7 +5,6 @@ decals_questions = [
     'has-spiral-arms',
     'bar',
     'bulge-size',
-    'something-odd',
     'how-rounded',
     'bulge-shape',
     'spiral-winding',
