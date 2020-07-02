@@ -47,32 +47,23 @@ class Answer():
 
 
 def create_answers_decals(question, label_cols):
+    pairs = {
+        'smooth-or-featured': ['_smooth', '_featured-or-disk'],
+        'disk-edge-on': ['_yes', '_no'],
+        'has-spiral-arms': ['_yes', '_no'],
+        'spiral-winding': ['_tight', '_medium', '_loose'],
+        'bar': ['_strong', '_weak', '_no'],
+        'bulge-size': ['_dominant', '_large', '_moderate', '_small', '_none'],
+        'something-odd': ['_yes', '_no'],
+        'how-rounded': ['_round', '_in-between', '_cigar-shaped'],
+        'edge-on-bulge': ['_boxy', '_none', '_rounded'],
+        'spiral-arm-count': ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell'],
+        'merging': ['_none', '_minor-disturbance', '_major-disturbance', '_merger']
+    }
     question_text = question.text
-    if question_text == 'smooth-or-featured':
-        answer_substrings = ['_smooth', '_featured-or-disk']
-    elif question_text == 'disk-edge-on':
-        answer_substrings = ['_yes', '_no']
-    elif question_text == 'has-spiral-arms':
-        answer_substrings = ['_yes', '_no']
-    elif question_text == 'spiral-winding':
-        answer_substrings = ['_tight', '_medium', '_loose']
-    elif question_text == 'bar':
-        answer_substrings = ['_strong', '_weak', '_no']
-    elif question_text == 'bulge-size':
-        answer_substrings = ['_dominant', '_large', '_moderate', '_small', '_none']
-    elif question_text == 'something-odd':
-        answer_substrings = ['_yes', '_no']
-    elif question_text == 'how-rounded':
-        answer_substrings = ['_round', '_in-between', '_cigar-shaped']
-    elif question_text == 'edge-on-bulge':
-        answer_substrings = ['_boxy', '_none', '_rounded']
-    elif question_text == 'spiral-arm-count':
-        answer_substrings = ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell']
-    elif question_text == 'merging':
-        answer_substrings = ['_none', '_minor-disturbance', '_major-disturbance', '_merger']
-    else:
-        print(question_text)
-        raise ValueError(question.text + ' not recognised')
+    answer_substrings = pairs.get(question_text, None)
+    if answer_substrings is None:
+        raise ValueError(question_text + ' not recognised in pairs {}'.format(pairs))
     return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
 
 
