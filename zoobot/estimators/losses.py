@@ -51,7 +51,7 @@ def create_answers_decals(question, label_cols):
     if question_text == 'smooth-or-featured':
         answer_substrings = ['_smooth', '_featured-or-disk']
     elif question_text == 'disk-edge-on':
-        answer_substrings = ['yes', 'no']
+        answer_substrings = ['_yes', '_no']
     elif question_text == 'has-spiral-arms':
         answer_substrings = ['_yes', '_no']
     elif question_text == 'spiral-winding':
@@ -61,15 +61,15 @@ def create_answers_decals(question, label_cols):
     elif question_text == 'bulge-size':
         answer_substrings = ['_dominant', '_large', '_moderate', '_small', '_none']
     elif question_text == 'something-odd':
-        answer_substrings = ['yes', 'no']
+        answer_substrings = ['_yes', '_no']
     elif question_text == 'how-rounded':
-        answer_substrings = ['round', 'in-between', 'cigar-shaped']
+        answer_substrings = ['_round', '_in-between', '_cigar-shaped']
     elif question_text == 'edge-on-bulge':
-        answer_substrings = ['boxy', 'none', 'rounded']
+        answer_substrings = ['_boxy', '_none', '_rounded']
     elif question_text == 'spiral-arm-count':
-        answer_substrings = ['1', '2', '3', '4', 'more-than-4', 'cant-tell']
+        answer_substrings = ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell']
     elif question_text == 'merging':
-        answer_substrings = ['none', 'minor-disturbance', 'major-disturbance', 'merger']
+        answer_substrings = ['_none', '_minor-disturbance', '_major-disturbance', '_merger']
     else:
         print(question_text)
         raise ValueError(question.text + ' not recognised')
