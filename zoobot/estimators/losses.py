@@ -54,7 +54,6 @@ def create_answers_decals(question, label_cols):
         'spiral-winding': ['_tight', '_medium', '_loose'],
         'bar': ['_strong', '_weak', '_no'],
         'bulge-size': ['_dominant', '_large', '_moderate', '_small', '_none'],
-        'something-odd': ['_yes', '_no'],
         'how-rounded': ['_round', '_in-between', '_cigar-shaped'],
         'edge-on-bulge': ['_boxy', '_none', '_rounded'],
         'spiral-arm-count': ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell'],
@@ -139,7 +138,7 @@ Relate the df label columns tor question/answer groups and to tfrecod label indi
             label_cols (List): columns (strings) which record k successes for each galaxy for each answer
             questions (List): semantic names of questions which group those answers
         """
-        logging.info(f'Label cols: {label_cols} \n Questions: {question_texts}')
+        logging.info(f'Label cols: {label_cols} \n Questions: {question_texts} \n Version: {version}')
         self.label_cols = label_cols
         # self.questions = questions
         self.version = version

@@ -75,6 +75,7 @@ if __name__ == '__main__':
     # will load labels from shard, in this order
     # will predict all label columns, in this order
     if 'decals' in train_records_dir:
+        logging.info('Using decals questions, labels')
         version='decals'
         label_cols = label_metadata.decals_label_cols
         questions = label_metadata.decals_questions
@@ -82,11 +83,14 @@ if __name__ == '__main__':
         # questions = label_metadata.decals_partial_questions
     else:
         version='gz2'
+        logging.info('Using GZ2 questions, labels')
         questions = label_metadata.gz2_partial_questions
         label_cols = label_metadata.gz2_partial_label_cols
         # questions = label_metadata.gz2_questions
         # label_cols = label_metadata.gz2_label_cols
   
+    logging.info(label_cols)
+    logging.info(questions)
     schema = losses.Schema(label_cols, questions, version=version)
 
     print('Epochs: {}'.format(epochs))
