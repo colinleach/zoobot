@@ -112,6 +112,7 @@ def set_dependencies(questions):
         'something-odd': None,  # always asked
         'how-rounded': 'smooth-or-featured_smooth',
         'bulge-shape': 'disk-edge-on_yes',
+        'edge-on-bulge': 'disk-edge-on_yes',
         'spiral-winding': 'has-spiral-arms_yes',
         'spiral-count': 'has-spiral-arms_yes',
         'spiral-arm-count': 'has-spiral-arms_yes', # bad naming...
