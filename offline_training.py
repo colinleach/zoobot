@@ -18,7 +18,9 @@ if __name__ == '__main__':
 
     To make model for predictions on all cols, for appropriate galaxies only:
       python offline_training.py --experiment-dir results/latest_offline_featured --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 1000 
-      
+    
+    DECALS testing:
+      python offline_training.py --experiment-dir results/debug --shard-img-size 64 --train-dir data/decals/shards/all_2p5_unfiltered_retired/train_shards --eval-dir data/decals/shards/all_2p5_unfiltered_retired/eval_shards --epochs 2 --batch-size 8 --final-size 64
 
     GZ2 testing:
       python offline_training.py --experiment-dir results/debug --shard-img-size 300 --train-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/train_shards --eval-dir data/gz2/shards/all_featp5_facep5_sim_2p5_300/eval_shards --epochs 2 --batch-size 8 --final-size 128
@@ -89,10 +91,11 @@ if __name__ == '__main__':
         # questions = label_metadata.gz2_questions
         # label_cols = label_metadata.gz2_label_cols
   
-    logging.info(label_cols)
-    logging.info(questions)
-    schema = losses.Schema(label_cols, questions, version=version)
+    # logging.info(label_cols)
+    # logging.info(questions)
 
+    schema = losses.Schema(label_cols, questions, version=version)
+    print(len(schema.answers))
     print('Epochs: {}'.format(epochs))
 
     run_config = run_estimator_config.get_run_config(
