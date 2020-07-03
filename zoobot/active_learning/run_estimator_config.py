@@ -326,6 +326,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # ))
     # OR
     input_shape = (final_size, final_size, 1)
+
     effnet = efficientnet.EfficientNet_custom_top(
         schema=schema,
         input_shape=input_shape,

@@ -422,6 +422,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
     # add_channels arg does nothing
 
     output_dim = len(schema.answers)
+    logging.info(f'Model output dim: {output_dim}')
     model = tf.keras.models.Sequential()
     logging.info('Building efficientnet to expect input {}'.format(input_shape))
 

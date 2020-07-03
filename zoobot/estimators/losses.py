@@ -45,10 +45,13 @@ class Answer():
     def next_question(self):
         return self._next_question
 
+    def __repr__(self):
+        return f'{self.text}, index {self.index}'
+
 
 def create_answers_decals(question, label_cols):
     pairs = {
-        'smooth-or-featured': ['_smooth', '_featured-or-disk'],
+        'smooth-or-featured': ['_smooth', '_featured-or-disk', '_artifact'],
         'disk-edge-on': ['_yes', '_no'],
         'has-spiral-arms': ['_yes', '_no'],
         'spiral-winding': ['_tight', '_medium', '_loose'],
@@ -242,7 +245,7 @@ def get_indices_from_label_cols(label_cols, questions):
 
 def dirichlet_loss(labels_for_q, concentrations_for_q):
     total_count = tf.reduce_sum(labels_for_q, axis=1)
-    dist = tfp.distributions.DirichletMultinomial(total_count, concentrations_for_q)
+    dist = tfp.distributions.DirichletMultinomial(total_count, concentrations_for_q, validate_args=True)  # may drop
     return -dist.log_prob(labels_for_q)  # important minus sign
 
 
@@ -305,7 +308,7 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     """
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
     q_losses = []
-    # print(predictions.shape)
+    # will give shape errors if model output dim is not labels dim, which can happen if losses.py substrings are missing an answer
     for q_n in range(len(question_index_groups)):
         q_indices = question_index_groups[q_n]
         q_start = q_indices[0]
