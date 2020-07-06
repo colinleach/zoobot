@@ -71,11 +71,13 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
+
         subdirs_to_search = ['', 'train_shards', 'eval_shards']
         dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2', subdir) for subdir in subdirs_to_search]
         tfrecord_locs = []
         for d in dirs_to_search:
-            tfrecord_locs.append(glob.glob(os.path.join(d, '*.tfrecord')))
+            tfrecord_locs = tfrecord_locs + glob.glob(os.path.join(d, '*.tfrecord'))  # concat lists
+
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0/in_progress'
         save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_all.csv'
 
