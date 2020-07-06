@@ -86,9 +86,6 @@ if __name__ == '__main__':
     )
     eval_config.drop_remainder = False
     dataset = input_utils.get_input(config=eval_config)
-    
-    batch_predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
-    logging.info('Made batch predictions of shape {}'.format(batch_predictions.shape))
 
     feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
     id_str_dataset = input_utils.get_dataset(
