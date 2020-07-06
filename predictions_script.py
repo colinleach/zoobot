@@ -61,13 +61,13 @@ if __name__ == '__main__':
         n_samples = 2
 
     if local:
-        catalog_loc = 'data/decals/decals_master_catalog_arc.csv'
+        catalog_loc = 'data/decals/decals_master_catalog.csv'
         tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/decals_n2_allq_m0_eval_shards/*.tfrecord')
         checkpoint_dir = 'results/temp/decals_n2_allq_m0/models/final'
         save_loc = 'temp/temp.csv'
     else:
         data_dir = os.environ['DATA']
-        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/prepared_catalogs/all_2p5_unfiltered_n2_arc.csv'
+        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv.csv'
         tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
         checkpoint_dir = f'{data_dir}/repos/zoobot/data/experiments/live/decals_n2_allq_m0/models/final'
         save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_eval.csv'
