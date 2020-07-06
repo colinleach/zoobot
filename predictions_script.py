@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+import logging
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,7 @@ if __name__ == '__main__':
         save_loc = 'temp/temp.csv'
     else:
         data_dir = os.environ['DATA']
-        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/all_2p5_unfiltered_n2_arc.csv'
+        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/prepared_catalogs/all_2p5_unfiltered_n2_arc.csv'
         tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
         checkpoint_dir = f'{data_dir}/repos/zoobot/data/experiments/live/decals_n2_allq_m0/models/final'
         save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_eval.csv'
@@ -74,6 +75,8 @@ if __name__ == '__main__':
 
 
     # go
+
+    logging.info(f'{data_dir}, {catalog_loc}, {tfrecord_locs}, {checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
 
     schema = losses.Schema(label_cols, questions, version=version)
 
@@ -96,6 +99,7 @@ if __name__ == '__main__':
     load_status.assert_nontrivial_match()
     load_status.assert_existing_objects_matched()
 
+    logging.info('Beginning predictions')
     predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
 
     data = [prediction_to_row(predictions[n], id_strs[n]) for n in range(len(predictions))]
