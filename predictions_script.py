@@ -25,6 +25,8 @@ def prediction_to_row(prediction, id_str):
 
 if __name__ == '__main__':
 
+    logging.basicConfig(level=logging.INFO)
+
     local = os.path.isdir('/home/walml')
 
     # driver errors if you don't include this
@@ -69,13 +71,18 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
-        tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/**.tfrecord', recursive=True)
+        subdirs_to_search = ['', 'train_shards', 'eval_shards']
+        dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2', subdir) for subdir in subdirs_to_search]
+        tfrecord_locs = []
+        for d in dirs_to_search:
+            tfrecord_locs.append(glob.glob(os.path.join(d, '*.tfrecord')))
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0/in_progress'
         save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_all.csv'
 
     # go
 
     logging.info(f'{data_dir}, {catalog_loc}, {tfrecord_locs}, {checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
+    logging.info(len(tfrecord_locs))
 
     schema = losses.Schema(label_cols, questions, version=version)
 
