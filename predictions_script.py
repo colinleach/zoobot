@@ -68,11 +68,10 @@ if __name__ == '__main__':
     else:
         data_dir = os.environ['DATA']
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
-        tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
+        # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
+        tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/**.tfrecord', recursive=True)
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0/in_progress'
         save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_eval.csv'
-
-
 
     # go
 
@@ -101,6 +100,7 @@ if __name__ == '__main__':
 
     logging.info('Beginning predictions')
     predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
+    logging.info('Predictions complete - {}'.format(predictions.shape))
 
     data = [prediction_to_row(predictions[n], id_strs[n]) for n in range(len(predictions))]
     predictions_df = pd.DataFrame(data)
@@ -111,3 +111,4 @@ if __name__ == '__main__':
     assert len(df) == len(predictions_df)
 
     df.to_csv(save_loc, index=False)
+    logging.info(f'Predictions saved to {save_loc}')
