@@ -82,10 +82,13 @@ if __name__ == '__main__':
     catalog = pd.read_csv(catalog_loc, dtype={'subject_id': str})  # original catalog
 
     eval_config = run_estimator_config.get_eval_config(
-        tfrecord_locs, label_cols, batch_size, initial_size, final_size, channels
+        tfrecord_locs, [], batch_size, initial_size, final_size, channels  # label cols = [] as we don't know them, in general
     )
     eval_config.drop_remainder = False
     dataset = input_utils.get_input(config=eval_config)
+    
+    batch_predictions = np.stack([model.predict(dataset) for n in range(n_samples)], axis=-1)
+    logging.info('Made batch predictions of shape {}'.format(batch_predictions.shape))
 
     feature_spec = input_utils.get_feature_spec({'id_str': 'string'})
     id_str_dataset = input_utils.get_dataset(
