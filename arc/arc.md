@@ -31,6 +31,8 @@ rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot
 
 rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/results/... /home/walml/repos/zoobot/results
 
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/final_dr5_uploadable_catalog.csv chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot
+
 rsync -azv --exclude '*.tfrecord' --exclude '*/manual_summaries' -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data/experiments/live/gz2_all_q_warm_active /home/walml/repos/zoobot/results/temp
 
 
