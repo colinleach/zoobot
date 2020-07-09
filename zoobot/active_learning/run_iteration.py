@@ -179,15 +179,19 @@ def get_initial_checkpoints(instructions):
     if os.path.isdir(pretrained_checkpoints_dir):
         checkpoints_to_load = []
         # every folder inside might be a checkpoint, so add to list-of-checkpoints-to-load
-        for subdir in os.listdir(pretrained_checkpoints_dir):
+        subdirs = os.listdir(pretrained_checkpoints_dir)
+        for subdir in subdirs: # e.g. model_0, model_1 (does not include path) 
             possible_checkpoint_names = ['final', 'in_progress']
             for name in possible_checkpoint_names:
-                checkpoint_loc = os.path.join(pretrained_checkpoints_dir, subdir, name)  # tf wants the name, I always use 'final'
+                checkpoint_loc = os.path.join(pretrained_checkpoints_dir, subdir, name)
                 if os.path.isfile(checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
                     logging.info(f'Will load weights from {checkpoint_loc} for 0th epoch')
                     checkpoints_to_load.append(checkpoint_loc)
                 break  # only add final, and fallback to try in_progress
-        assert len(checkpoints_to_load) > 0
+        if len(checkpoints_to_load) == 0:
+            raise FileNotFoundError(
+                f'No checkpoints {possible_checkpoint_names} found in {pretrained_checkpoints_dir} under subdirs {subdirs}'
+            )
     else:
         logging.warning(f'No initial prediction checkpoint found in {pretrained_checkpoints_dir}, not attempting to load')
         checkpoints_to_load = [None, None] # TODO hardcoded as two models by default, for now
