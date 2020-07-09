@@ -175,6 +175,9 @@ def get_epochs(iteration_n):
 def get_initial_checkpoints(instructions):
     checkpoints_to_load = []
     shard_dir = os.path.dirname(instructions.shards.config_save_loc)
+    # temporary - use absolute file path
+    if os.environ['DATA']:
+        shard_dir = os.path.join(os.environ['DATA'], shard_dir)
     pretrained_checkpoints_dir = shard_dir + '_pretrained'
     if os.path.isdir(pretrained_checkpoints_dir):
         checkpoints_to_load = []
@@ -184,6 +187,7 @@ def get_initial_checkpoints(instructions):
             possible_checkpoint_names = ['final', 'in_progress']
             for name in possible_checkpoint_names:
                 checkpoint_loc = os.path.join(pretrained_checkpoints_dir, subdir, name)
+                logging.info(f'Checking {checkpoint_loc}')
                 if os.path.isfile(checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
                     logging.info(f'Will load weights from {checkpoint_loc} for 0th epoch')
                     checkpoints_to_load.append(checkpoint_loc)
