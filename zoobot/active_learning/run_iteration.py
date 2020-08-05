@@ -177,7 +177,7 @@ def get_initial_checkpoints(instructions):
     shard_dir = os.path.dirname(instructions.shards.config_save_loc)
     # temporary - use absolute file path
     if os.environ['DATA']:
-        shard_dir = os.path.join(os.environ['DATA'], shard_dir)
+        shard_dir = os.path.join(os.environ['DATA'], 'repos/zoobot', shard_dir)  # may not be necessary
     pretrained_checkpoints_dir = shard_dir + '_pretrained'
     if os.path.isdir(pretrained_checkpoints_dir):
         checkpoints_to_load = []
