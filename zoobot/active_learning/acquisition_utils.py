@@ -53,41 +53,42 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
 
     logging.warning('Only optimising over four questions')
     for q in schema.questions:
+        logging.warning('Only optimising spiral arms!')
         # if q.text in ['smooth-or-featured', 'has-spiral-arms', 'bar', 'bulge-size']:
-        print(q.text)
-        # expected_votes_list = [get_expected_votes_ml(samples, q, retirement, schema, round=True) for samples in samples_list]
-        # print(expected_votes_list)
+        if q.text in ['has-spiral-arms']:
+            print(q.text)
+            # expected_votes_list = [get_expected_votes_ml(samples, q, retirement, schema, round=True) for samples in samples_list]
+            # print(expected_votes_list)
 
-        samples_list_by_q = [samples[:, q.start_index:q.end_index+1] for samples in samples_list]  # shape (model, galaxy, answer, dropout)
+            samples_list_by_q = [samples[:, q.start_index:q.end_index+1] for samples in samples_list]  # shape (model, galaxy, answer, dropout)
 
+            # print('Calculating predictive entropy')
+            # predictive_entropy = dirichlet_predictive_entropy(samples_list_by_q, expected_votes_list)
+            # print('Calculating expected entropy')
+            # expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
 
-        # print('Calculating predictive entropy')
-        # predictive_entropy = dirichlet_predictive_entropy(samples_list_by_q, expected_votes_list)
-        # print('Calculating expected entropy')
-        # expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
+            print('Calculating predictive entropy')
+            predictive_entropy = dirichlet_predictive_entropy_alpha(samples_list_by_q)
+            # print(predictive_entropy.shape)
 
-        print('Calculating predictive entropy')
-        predictive_entropy = dirichlet_predictive_entropy_alpha(samples_list_by_q)
-        # print(predictive_entropy.shape)
+            print('Calculating expected entropy')
+            expected_entropy = dirichlet_expected_entropy_alpha(samples_list_by_q)
+            # print(expected_entropy.shape)
+            assert predictive_entropy.shape == expected_entropy.shape
+            mi_for_q = predictive_entropy - expected_entropy
 
-        print('Calculating expected entropy')
-        expected_entropy = dirichlet_expected_entropy_alpha(samples_list_by_q)
-        # print(expected_entropy.shape)
-        assert predictive_entropy.shape == expected_entropy.shape
-        mi_for_q = predictive_entropy - expected_entropy
+            print('Calculating joint p of being asked')
+            prev_q = q.asked_after
+            if prev_q is None:
+                joint_p_of_asked = 1.
+            else:
+                joint_p_of_asked = schema.joint_p(prob_of_answers, q.asked_after.text)
 
-        print('Calculating joint p of being asked')
-        prev_q = q.asked_after
-        if prev_q is None:
-            joint_p_of_asked = 1.
+            all_predictive_entropy.append(predictive_entropy)
+            all_expected_entropy.append(expected_entropy)
+            all_expected_mi.append(mi_for_q * joint_p_of_asked)
         else:
-            joint_p_of_asked = schema.joint_p(prob_of_answers, q.asked_after.text)
-
-        all_predictive_entropy.append(predictive_entropy)
-        all_expected_entropy.append(expected_entropy)
-        all_expected_mi.append(mi_for_q * joint_p_of_asked)
-        # else:
-        #     logging.warning('Skipping {}'.format(q.text))
+            logging.warning('Skipping {}'.format(q.text))
 
     logging.info('Acquisition calculations complete')
     return np.array(all_expected_mi).transpose(), np.array(all_predictive_entropy).transpose(), np.array(all_expected_entropy).transpose()
