@@ -270,6 +270,7 @@ class Iteration():
                 logging.info('Saving trained model to {}'.format(save_loc))
                 trained_model.save_weights(save_loc)
 
+            logging.info('Expecting saved weights at {}.index'.format(save_loc))
             assert os.path.isfile(save_loc + '.index')  # either from training, or from copytree (note that the checkpoint name must remain constant)
             self.prediction_checkpoints.append(save_loc)
         logging.info('All training completed. Prediction checkpoints to use: {}'.format(self.prediction_checkpoints))
