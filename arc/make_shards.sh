@@ -10,4 +10,4 @@ module load python/anaconda3/2019.03
 
 export PYTHON=$DATA/envs/zoobot/bin/python
 
-$PYTHON zoobot/active_learning/make_shards.py --labelled-catalog=data/gz2/prepared_catalogs/all_2p5_arc_unfiltered/labelled_catalog.csv --unlabelled-catalog=data/gz2/prepared_catalogs/all_2p5_arc_unfiltered/unlabelled_catalog.csv --eval-size 15000 --shard-dir=data/gz2/shards/all_sim_2p5_unfiltered_300 --img-size 300
+$PYTHON zoobot/active_learning/make_shards.py --labelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_n2_arc/labelled_catalog.csv --unlabelled-catalog=data/decals/prepared_catalogs/all_2p5_unfiltered_n2_arc/unlabelled_catalog.csv --eval-size 10000 --shard-dir=data/decals/shards/all_2p5_unfiltered_n2  --img-size 300
