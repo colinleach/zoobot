@@ -252,7 +252,7 @@ class Iteration():
             target_dir = os.path.join(self.estimators_dir, 'models', weights_folder_name)  # will have final.index or in_progress.index etc in this folder
             log_dir = os.path.join(target_dir, 'log')  # for tensorboard etc e.g. models/model_a/log/blah.tfevents.out
             checkpoint_name = 'final'
-            if 'in_progress' in target_dir:
+            if 'in_progress' in checkpoint_loc:  # checkpint to load is actually called in_progress
                 checkpoint_name = 'in_progress'
             save_loc = os.path.join(target_dir, checkpoint_name)  # weights files e.g. models/model_a/final.index. Do not attempt to rename in case of copy (skip, below)
     
