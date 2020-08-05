@@ -249,9 +249,12 @@ class Iteration():
                 if 'pretrained' in checkpoint_loc:
                     skip = True
 
-            target_dir = os.path.join(self.estimators_dir, 'models', weights_folder_name)  # will have final.index etc in this folder
+            target_dir = os.path.join(self.estimators_dir, 'models', weights_folder_name)  # will have final.index or in_progress.index etc in this folder
             log_dir = os.path.join(target_dir, 'log')  # for tensorboard etc e.g. models/model_a/log/blah.tfevents.out
-            save_loc = os.path.join(target_dir, 'final')  # weights files e.g. models/model_a/final.index
+            checkpoint_name = 'final'
+            if 'in_progress' in target_dir:
+                checkpoint_name = 'in_progress'
+            save_loc = os.path.join(target_dir, checkpoint_name)  # weights files e.g. models/model_a/final.index. Do not attempt to rename in case of copy (skip, below)
     
             if skip:
                 logging.warning('Skipping training and loading cheat estimators from {}'.format(checkpoint_loc))
@@ -267,8 +270,7 @@ class Iteration():
                 logging.info('Saving trained model to {}'.format(save_loc))
                 trained_model.save_weights(save_loc)
 
-
-            assert os.path.isfile(save_loc + '.index')
+            assert os.path.isfile(save_loc + '.index')  # either from training, or from copytree (note that the checkpoint name must remain constant)
             self.prediction_checkpoints.append(save_loc)
         logging.info('All training completed. Prediction checkpoints to use: {}'.format(self.prediction_checkpoints))
 
