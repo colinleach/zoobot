@@ -191,7 +191,7 @@ def get_initial_checkpoints(instructions):
                 if os.path.isfile(checkpoint_loc + '.index'):  # tf will always put this file in a ckpt directory
                     logging.info(f'Will load weights from {checkpoint_loc} for 0th epoch')
                     checkpoints_to_load.append(checkpoint_loc)
-                break  # only add final, and fallback to try in_progress
+                    break  # only add final, and fallback to try in_progress
         if len(checkpoints_to_load) == 0:
             raise FileNotFoundError(
                 f'No checkpoints {possible_checkpoint_names} found in {pretrained_checkpoints_dir} under subdirs {subdirs}'
