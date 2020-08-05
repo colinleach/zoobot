@@ -2,7 +2,7 @@
 
 #SBATCH --partition=htc
 #SBATCH --ntasks-per-node=1
-#SBATCH --time=23:50:00
+#SBATCH --time=23:55:00
 #SBATCH --gres=gpu:v100:1
 #SBATCH --mem=12288
 #SBATCH --job-name=submit_simulation
@@ -19,13 +19,13 @@ export PYTHON=$DATA/envs/zoobot/bin/python
 # shard_dir=data/decals/shards/decals_multiq_128_sim_init_2500_featp4
 
 # and switch label cols in make_shards.py, create_instructions.py, and run_iteration.py, and version in iterations.py, for now
-catalog_dir=data/gz2/prepared_catalogs/all_featp5_facep5_arc
-shard_dir=data/gz2/shards/all_featp5_facep5_sim_256_arc
+catalog_dir=data/gz2/prepared_catalogs/all_2p5_arc_unfiltered
+shard_dir=data/gz2/shards/all_actual_sim_2p5_unfiltered_300
 
-experiment_dir=data/experiments/live/latest
+experiment_dir=data/experiments/live/gz2_4q_repeat_opt4_warm_baseline
 instructions_dir=$experiment_dir/instructions
-n_iterations=2
-options='baseline_test'
+n_iterations=10
+options='baseline'
 
 # ./production/create_instructions.sh $catalog_dir $shard_dir $experiment_dir $options
 ./production/run_simulation.sh $n_iterations $catalog_dir $shard_dir $experiment_dir $options
