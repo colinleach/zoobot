@@ -55,7 +55,7 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
     for q in schema.questions:
         logging.warning('Only optimising spiral arms!')
         # if q.text in ['smooth-or-featured', 'has-spiral-arms', 'bar', 'bulge-size']:
-        if q.text in ['has-spiral-arms']:
+        if q.text in ['smooth-or-featured']:
             print(q.text)
             # expected_votes_list = [get_expected_votes_ml(samples, q, retirement, schema, round=True) for samples in samples_list]
             # print(expected_votes_list)

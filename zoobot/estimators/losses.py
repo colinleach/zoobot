@@ -94,7 +94,12 @@ def create_answers_gz2(question, label_cols):
     else:
         print(question_text)
         raise ValueError(question.text + ' not recognised')
-    return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
+
+    try:
+        return [Answer(question_text + substring, question, label_cols.index(question_text + substring)) for substring in answer_substrings]
+    except ValueError:
+        raise ValueError('{}, {} not all in answer substrings {}'.format(question_text, answer_substrings, label_cols))
+    
 
 
 def set_dependencies(questions):
