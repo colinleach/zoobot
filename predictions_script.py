@@ -36,39 +36,37 @@ if __name__ == '__main__':
 
     # parameters (many)
 
-    # catalog_loc = 'data/latest_labelled_catalog.csv
-    # catalog_loc = 'data/decals/decals_master_catalog.csv'
-    # catalog_loc = 'data/gz2/gz2_master_catalog.csv'
-
-
     # decals cols
-    questions = label_metadata.decals_questions
-    version = 'decals'
-    label_cols = label_metadata.decals_label_cols
+    # questions = label_metadata.decals_questions
+    # version = 'decals'
+    # label_cols = label_metadata.decals_label_cols
 
     # gz2 cols
-    # questions = label_metadata.gz2_questions
-    # version = 'gz2'
-    # label_cols = label_metadata.gz2_label_cols
+    questions = label_metadata.gz2_partial_questions
+    version = 'gz2'
+    label_cols = label_metadata.gz2_partial_label_cols
     
     initial_size = 300
     crop_size = int(initial_size * 0.75)
     final_size = 224
     channels = 3
     if local:
-        batch_size = 8  # or 128
+        batch_size = 8  # largest that fits on laptop  @ 224 pix
         n_samples = 2
     else:
         batch_size = 128  # or 128
         n_samples = 5
 
     if local:
-        catalog_loc = 'data/decals/decals_master_catalog.csv'
-        tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/decals_n2_allq_m0_eval_shards/*.tfrecord')
-        checkpoint_dir = 'results/temp/decals_n2_allq_m0/models/final'
-        save_loc = 'temp/temp.csv'
+        # catalog_loc = 'data/decals/decals_master_catalog.csv'
+        catalog_loc = 'data/gz2/gz2_master_catalog.csv'
+        # tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/decals_n2_allq_m0_eval_shards/*.tfrecord')
+        tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/gz2_all_actual_sim_2p5_unfiltered_300_eval_shards/*.tfrecord')
+        checkpoint_dir = 'results/temp/gz2_1q_1baseline/iteration_2/estimators/models/gz2_1q_m0/in_progress'
+        save_loc = 'temp/gz2_1q_1baseline_it2_m0.csv'
     else:
         data_dir = os.environ['DATA']
+        logging.info(data_dir)
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
 
@@ -83,7 +81,7 @@ if __name__ == '__main__':
 
     # go
 
-    logging.info(f'{data_dir}, {catalog_loc}, {tfrecord_locs}, {checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
+    logging.info(f'{catalog_loc}, {tfrecord_locs}, {checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
     logging.info(len(tfrecord_locs))
 
     schema = losses.Schema(label_cols, questions, version=version)
@@ -114,7 +112,8 @@ if __name__ == '__main__':
     data = [prediction_to_row(predictions[n], id_strs[n]) for n in range(len(predictions))]
     predictions_df = pd.DataFrame(data)
 
-    catalog['iauname'] = catalog['iauname'].astype(str)  # or dr7objid
+    # if version == 'decals':
+    #     catalog['iauname'] = catalog['iauname'].astype(str)  # or dr7objid
 
     df = pd.merge(catalog, predictions_df, how='inner', on='id_str')
     assert len(df) == len(predictions_df)
