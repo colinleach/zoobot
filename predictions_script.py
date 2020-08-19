@@ -62,8 +62,8 @@ if __name__ == '__main__':
         catalog_loc = 'data/gz2/gz2_master_catalog.csv'
         # tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/decals_n2_allq_m0_eval_shards/*.tfrecord')
         tfrecord_locs = glob.glob(f'/home/walml/repos/zoobot/results/temp/gz2_all_actual_sim_2p5_unfiltered_300_eval_shards/*.tfrecord')
-        checkpoint_dir = 'results/temp/gz2_1q_1baseline/iteration_2/estimators/models/gz2_1q_m0/in_progress'
-        save_loc = 'temp/gz2_1q_1baseline_it2_m0.csv'
+        checkpoint_dir = 'results/temp/gz2_1q_1active/iteration_1/estimators/models/gz2_1q_m1/in_progress'
+        save_loc = 'temp/gz2_1q_1active_it1_m1.csv'
     else:
         data_dir = os.environ['DATA']
         logging.info(data_dir)
