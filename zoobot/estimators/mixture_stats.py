@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.special import gamma, loggamma  # more numerically stable than gamma
+from scipy.special import gamma, loggamma, digamma, betaln  # log more numerically stable than gamma
 from scipy.stats import beta  # or could use tfp
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -58,9 +58,10 @@ def dirichlet_chernoff(a, b, lam):
     return -neg_chern
 
 # copied from tfp, probably not needed
+# @tf.function
 def dirichlet_kl_div(concentration1, concentration2):
-    concentration1 = tf.convert_to_tensor(concentration1)
-    concentration2 = tf.convert_to_tensor(concentration2)
+    # concentration1 = tf.convert_to_tensor(concentration1)
+    # concentration2 = tf.convert_to_tensor(concentration2)
     digamma_sum_d1 = tf.math.digamma(
         tf.reduce_sum(concentration1, axis=-1, keepdims=True))
     digamma_diff = tf.math.digamma(concentration1) - digamma_sum_d1
@@ -68,8 +69,17 @@ def dirichlet_kl_div(concentration1, concentration2):
 
     return (
         tf.reduce_sum(concentration_diff * digamma_diff, axis=-1) -
-        tf.math.lbeta(concentration1) + tf.math.lbeta(concentration2)).numpy()
+        tf.math.lbeta(concentration1) + tf.math.lbeta(concentration2))
 
+# pure python version
+# def dirichlet_kl_div(concentration1, concentration2):
+#     digamma_sum_d1 = digamma(concentration1.sum(axis=-1))
+#     digamma_diff = digamma(concentration1) - digamma_sum_d1
+#     concentration_diff = concentration1 - concentration2
+#     positive_comp = (concentration_diff * digamma_diff).sum(axis=-1)
+#     # negative_comp = betaln(*concentration1) + betaln(*concentration2)
+#     negative_comp = tf.math.lbeta(concentration1) + tf.math.lbeta(concentration2)
+#     return positive_comp - negative_comp.numpy()
 
 
 def entropy_given_components(answer_model, weights):

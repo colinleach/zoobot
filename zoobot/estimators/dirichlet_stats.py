@@ -63,7 +63,7 @@ class DirichletEqualMixture(EqualMixture):
 
 class DirichletMultinomialEqualMixture(EqualMixture):
 
-    def __init__(self, total_votes, *args, **kwargs):
+    def __init__(self, total_votes, concentrations, *args, **kwargs):
         """
         To use same interface as tfp, but much faster for equal mixtures of dirichlet-multinomials
 
@@ -73,9 +73,12 @@ class DirichletMultinomialEqualMixture(EqualMixture):
         """
         
         self.total_votes = np.array(total_votes).astype(np.float32)
-        # otherwise the same as DirichletEqualMixture
-        DirichletEqualMixture.__init__(self, *args, **kwargs)
-
+        self.concentrations = concentrations.astype(np.float32)
+        self.n_distributions = self.concentrations.shape[2]
+        self.distributions = [
+            tfp.distributions.DirichletMultinomial(self.total_votes, self.concentrations[:, :, n], validate_args=True)
+            for n in range(self.n_distributions)
+        ]
 
 def get_hpd(x, p, ci=0.8):
     assert np.isclose(p.sum(), 1, atol=0.001)
@@ -198,7 +201,7 @@ def dirichlet_mixture_loss(labels, predictions, question_index_groups):  # paste
         q_loss = dirichlet_mixture_loss_per_question(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
         q_losses.append(q_loss)
     
-    total_loss = tf.stack(q_losses, axis=1)
+    total_loss = np.stack(q_losses, axis=1)
     return total_loss  # leave the reduce_sum to the estimator
 
 # this works but is very slow
@@ -215,7 +218,7 @@ def dirichlet_mixture_loss(labels, predictions, question_index_groups):  # paste
 def dirichlet_mixture_loss_per_question(labels_q, concentrations_q):
     n_samples = concentrations_q.shape[-1]
     total_votes = labels_q.sum(axis=1).squeeze()
-    mean_log_probs = DirichletMultinomialEqualMixture(total_votes, concentrations_q).mean_log_prob(labels_q) 
+    mean_log_probs = DirichletMultinomialEqualMixture(total_votes=total_votes, concentrations=concentrations_q).mean_log_prob(labels_q) 
     return -np.squeeze(np.array(mean_log_probs))  # negative log prob
 
 

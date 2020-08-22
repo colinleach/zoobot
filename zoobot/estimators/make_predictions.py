@@ -23,6 +23,7 @@ def load_predictor(train_callable: tf.keras.Model, weights_loc: str):
     Returns:
         function: callable expecting parsed subjects according to saved model input configuration
     """
+    raise NotImplementedError  # actually this returns checkpoint status object, not laoded model
     return train_callable.load_weights(weights_loc)
     # model_unwrapped = tf.saved_model.load(predictor_loc)
     # # wrap to avoid having to pass around dicts all the time

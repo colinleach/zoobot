@@ -125,6 +125,7 @@ class RunEstimatorConfig():
         #     print(im_batch.shape)
         # exit()
 
+        checkpoint_loc = os.path.join(self.log_dir, 'in_progress')
         callbacks = [
             tf.keras.callbacks.TensorBoard(
                 log_dir=os.path.join(self.log_dir, 'tensorboard'),
@@ -135,9 +136,10 @@ class RunEstimatorConfig():
                 profile_batch=0   # i.e. disable profiling
             ),
             tf.keras.callbacks.ModelCheckpoint(
-                filepath=os.path.join(self.log_dir, 'in_progress'),
+                filepath=checkpoint_loc,
                 monitor='val_loss',
                 mode='min',
+                save_freq='epoch',
                 save_best_only=True,
                 save_weights_only=True),
             bayesian_estimator_sequential.UpdateStepCallback(
@@ -173,6 +175,10 @@ class RunEstimatorConfig():
 
         logging.info('All epochs completed - finishing gracefully')
         # save manually outside, to avoid side-effects
+        # note that the BEST model is saved as checkpoint, but self.model is the LAST model
+        # to return the best model, load the last checkpoint
+        logging.info('Loading and returning (best) model')
+        self.model.load_weights(checkpoint_loc)  # inplace
         return self.model
 
 

@@ -268,7 +268,7 @@ class Iteration():
                 logging.info('No skip estimators found at {} - beginning training'.format(checkpoint_loc))
                 trained_model = self.run_config(checkpoint_loc, log_dir=log_dir).run_estimator()
                 logging.info('Saving trained model to {}'.format(save_loc))
-                trained_model.save_weights(save_loc)
+                trained_model.save_weights(save_loc)  # may overwrite the best model (in-progress) saved by run_estimator()?
 
             logging.info('Expecting saved weights at {}.index'.format(save_loc))
             assert os.path.isfile(save_loc + '.index')  # either from training, or from copytree (note that the checkpoint name must remain constant)
@@ -293,10 +293,9 @@ class Iteration():
 
         # returns list of acquisition values
         # warning, duplication
-        # acquisitions = self.acquisition_func(predictions, self.schema, retirement=40)
         acquisitions = self.acquisition_func(all_predictions, self.schema)
-        print('Acquistions: ', acquisitions)
-        print(acquisitions.shape)
+        logging.info('Acquistions: ', acquisitions)
+        logging.info(acquisitions.shape)
         if acquisitions.ndim > 1:
             logging.critical('Acquisitions ndim > 1: you probably forgot to take a mean per question/answer?')
 
