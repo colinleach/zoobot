@@ -53,10 +53,10 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
 
     logging.warning('Only optimising over four questions')
     for q in schema.questions:
-        logging.warning('Only optimising spiral arms!')
+        logging.warning('Only optimising smooth/featured!')
         # if q.text in ['smooth-or-featured', 'has-spiral-arms', 'bar', 'bulge-size']:
         if q.text in ['smooth-or-featured']:
-            print(q.text)
+            logging.info(q.text)
             # expected_votes_list = [get_expected_votes_ml(samples, q, retirement, schema, round=True) for samples in samples_list]
             # print(expected_votes_list)
 
@@ -67,17 +67,17 @@ def get_multimodel_acq(samples_list, schema, retirement=40):  # e.g. [samples_a,
             # print('Calculating expected entropy')
             # expected_entropy = dirichlet_expected_entropy(samples_list_by_q, expected_votes_list)
 
-            print('Calculating predictive entropy')
+            logging.info('Calculating predictive entropy')
             predictive_entropy = dirichlet_predictive_entropy_alpha(samples_list_by_q)
             # print(predictive_entropy.shape)
 
-            print('Calculating expected entropy')
+            logging.info('Calculating expected entropy')
             expected_entropy = dirichlet_expected_entropy_alpha(samples_list_by_q)
             # print(expected_entropy.shape)
             assert predictive_entropy.shape == expected_entropy.shape
             mi_for_q = predictive_entropy - expected_entropy
 
-            print('Calculating joint p of being asked')
+            logging.info('Calculating joint p of being asked')
             prev_q = q.asked_after
             if prev_q is None:
                 joint_p_of_asked = 1.
