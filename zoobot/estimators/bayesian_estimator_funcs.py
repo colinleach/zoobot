@@ -4,6 +4,7 @@ import sys
 import tensorflow as tf
 
 from zoobot.estimators import losses
+from zoobot.estimators import efficientnet  # for the new top
 
 # https://www.tensorflow.org/guide/keras/overview#model_subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models#building_models
@@ -126,10 +127,10 @@ class BayesianModel(tf.keras.Model):
             activation=dense1_activation,
             kernel_regularizer=regularizer,
             name='model/layer4/dense1')
-        self.dropout_final = tf.keras.layers.Dropout(rate=dropout_rate)  # possible massive typo - this has no dropout!
-        self.dense_final = tf.keras.layers.Dense(
-            units=self.output_dim,  # num outputs
-            name='model/layer5/dense1')
+        self.dropout_final = tf.keras.layers.Dropout(rate=predict_dropout)  # was a possible massive typo using the conv 'dropout_rate' - which is 0!
+        # self.dense_final = tf.keras.layers.Dense(
+        #     units=self.output_dim,  # num outputs
+        #     name='model/layer5/dense1')
 
     def build(self, input_shape):
         # self.step = 0
@@ -182,11 +183,16 @@ class BayesianModel(tf.keras.Model):
 
         # normalise predictions by question
         # list comp is allowed since schema is pure python, not tensors, but note that it must be static or graph will be wrong
-        x = tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in self.schema.question_index_groups], axis=1)
+        # x = tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in self.schema.question_index_groups], axis=1)
+
+        # use multinomial dirichlet top
+        # efficientnet.custom_top_dirichlet()
+
+        
         # tf.summary.histogram('x', x, step=self.step)
-        for q, (start_index, end_index) in self.schema.named_index_groups.items():
-            for i in range(start_index, end_index+1):
-                tf.summary.histogram(f'prediction_{self.schema.label_cols[i]}', x[:, i], step=self.step)
+        # for q, (start_index, end_index) in self.schema.named_index_groups.items():
+        #     for i in range(start_index, end_index+1):
+        #         tf.summary.histogram(f'prediction_{self.schema.label_cols[i]}', x[:, i], step=self.step)
 
         return x
 
