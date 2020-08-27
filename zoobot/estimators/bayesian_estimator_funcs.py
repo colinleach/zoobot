@@ -127,10 +127,11 @@ class BayesianModel(tf.keras.Model):
             activation=dense1_activation,
             kernel_regularizer=regularizer,
             name='model/layer4/dense1')
-        self.dropout_final = tf.keras.layers.Dropout(rate=predict_dropout)  # was a possible massive typo using the conv 'dropout_rate' - which is 0!
+        self.dense1_drop = tf.keras.layers.Dropout(rate=self.dense1_dropout)  # was a possible massive typo using the conv 'dropout_rate' - which is 0!
         # self.dense_final = tf.keras.layers.Dense(
         #     units=self.output_dim,  # num outputs
         #     name='model/layer5/dense1')
+        # self.final_drop = tf.keras.layers.Dropout(rate=predict_dropout)  # was a possible massive typo using the conv 'dropout_rate' - which is 0!
 
     def build(self, input_shape):
         # self.step = 0
@@ -178,8 +179,11 @@ class BayesianModel(tf.keras.Model):
         x = tf.reshape(x, [-1, int(self.image_dim / 16) ** 2 * self.conv3_filters], name='model/layer4/flat')
 
         # reordered
-        x = self.dense_final(x)
-        x = self.dropout_final(x, training=True)  # dropout always on, regardless of training arg (required by keras)
+        x = self.dense1(x)
+        x = self.dense1_drop(x, training=True)  # dropout always on, regardless of training arg (required by keras)
+
+        # final layer would go here
+        # x = self.dense_final etc
 
         # normalise predictions by question
         # list comp is allowed since schema is pure python, not tensors, but note that it must be static or graph will be wrong
