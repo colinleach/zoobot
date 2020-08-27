@@ -131,7 +131,6 @@ class BayesianModel(tf.keras.Model):
         # self.dense_final = tf.keras.layers.Dense(
         #     units=self.output_dim,  # num outputs
         #     name='model/layer5/dense1')
-        # self.final_drop = tf.keras.layers.Dropout(rate=predict_dropout)  # was a possible massive typo using the conv 'dropout_rate' - which is 0!
 
     def build(self, input_shape):
         # self.step = 0
@@ -151,13 +150,13 @@ class BayesianModel(tf.keras.Model):
 
         x = self.conv1(x)
         # x = self.drop1(x)
-        x = self.conv1b(x)
+        # x = self.conv1b(x)
         # x = self.drop1b(x)
         x = self.pool1(x)
 
         x = self.conv2(x)
         # x = self.drop2(x)
-        x = self.conv2b(x)
+        # x = self.conv2b(x)
         # x = self.drop2b(x)
         x = self.pool2(x)
 
@@ -180,7 +179,7 @@ class BayesianModel(tf.keras.Model):
 
         # reordered
         x = self.dense1(x)
-        x = self.dense1_drop(x, training=True)  # dropout always on, regardless of training arg (required by keras)
+        # x = self.dense1_drop(x, training=True)  # dropout always on, regardless of training arg (required by keras)
 
         # final layer would go here
         # x = self.dense_final etc
