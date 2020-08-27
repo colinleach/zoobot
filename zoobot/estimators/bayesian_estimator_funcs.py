@@ -60,7 +60,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv1_activation,
             kernel_regularizer=regularizer,
             name='model/layer1/conv1')
-        self.drop1 = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop1 = tf.keras.layers.Dropout(rate=dropout_rate)
         self.conv1b = tf.keras.layers.Convolution2D(
             filters=conv1_filters,
             kernel_size=[conv1_kernel, conv1_kernel],
@@ -68,7 +68,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv1_activation,
             kernel_regularizer=regularizer,
             name='model/layer1/conv1b')
-        self.drop1b = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop1b = tf.keras.layers.Dropout(rate=dropout_rate)
         self.pool1 = tf.keras.layers.MaxPooling2D(
             pool_size=[pool1_size, pool1_size],
             strides=pool1_strides,
@@ -81,7 +81,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv2_activation,
             kernel_regularizer=regularizer,
             name='model/layer2/conv2')
-        self.drop2 = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop2 = tf.keras.layers.Dropout(rate=dropout_rate)
         self.conv2b = tf.keras.layers.Convolution2D(
             filters=conv2_filters,
             kernel_size=[conv2_kernel, conv2_kernel],
@@ -89,7 +89,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv2_activation,
             kernel_regularizer=regularizer,
             name='model/layer2/conv2b')
-        self.drop2b = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop2b = tf.keras.layers.Dropout(rate=dropout_rate)
         self.pool2 = tf.keras.layers.MaxPooling2D(
             pool_size=pool2_size,
             strides=pool2_strides,
@@ -102,7 +102,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv3_activation,
             kernel_regularizer=regularizer,
             name='model/layer3/conv3')
-        self.drop3 = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop3 = tf.keras.layers.Dropout(rate=dropout_rate)
         self.pool3 = tf.keras.layers.MaxPooling2D(
             pool_size=[pool3_size, pool3_size],
             strides=pool3_strides,
@@ -116,7 +116,7 @@ class BayesianModel(tf.keras.Model):
             activation=conv3_activation,
             kernel_regularizer=regularizer,
             name='model/layer4/conv4')
-        self.drop4 = tf.keras.layers.Dropout(rate=dropout_rate)
+        # self.drop4 = tf.keras.layers.Dropout(rate=dropout_rate)
         self.pool4 = tf.keras.layers.MaxPooling2D(
             pool_size=[pool3_size, pool3_size],
             strides=pool3_strides,
@@ -148,25 +148,24 @@ class BayesianModel(tf.keras.Model):
         tf.summary.image('input_image', x, step=self.step)
         tf.summary.histogram('input_image_hist', x, step=self.step)
 
-        dropout_on = True  # dropout always on, regardless of training arg (required by keras)
         x = self.conv1(x)
-        x = self.drop1(x, training=dropout_on)
+        # x = self.drop1(x)
         x = self.conv1b(x)
-        x = self.drop1b(x, training=dropout_on)
+        # x = self.drop1b(x)
         x = self.pool1(x)
 
         x = self.conv2(x)
-        x = self.drop2(x, training=dropout_on)
+        # x = self.drop2(x)
         x = self.conv2b(x)
-        x = self.drop2b(x, training=dropout_on)
+        # x = self.drop2b(x)
         x = self.pool2(x)
 
         x = self.conv3(x)
-        x = self.drop3(x, training=dropout_on)
+        # x = self.drop3(x)
         x = self.pool3(x)
 
         x = self.conv4(x)
-        x = self.drop4(x, training=dropout_on)
+        # x = self.drop4(x) 
         x = self.pool4(x)
 
         """
@@ -178,8 +177,9 @@ class BayesianModel(tf.keras.Model):
         """
         x = tf.reshape(x, [-1, int(self.image_dim / 16) ** 2 * self.conv3_filters], name='model/layer4/flat')
 
-        x = self.dropout_final(x, training=dropout_on)
+        # reordered
         x = self.dense_final(x)
+        x = self.dropout_final(x, training=True)  # dropout always on, regardless of training arg (required by keras)
 
         # normalise predictions by question
         # list comp is allowed since schema is pure python, not tensors, but note that it must be static or graph will be wrong
