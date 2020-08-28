@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib
 import numpy as np
 
-from zoobot.estimators import bayesian_estimator_sequential, input_utils, losses, efficientnet, custom_layers
+from zoobot.estimators import bayesian_estimator_funcs, input_utils, losses, efficientnet, custom_layers
 
 
 class FixedEstimatorParams():
@@ -142,11 +142,11 @@ class RunEstimatorConfig():
                 save_freq='epoch',
                 save_best_only=True,
                 save_weights_only=True),
-            bayesian_estimator_sequential.UpdateStepCallback(
+            bayesian_estimator_funcs.UpdateStepCallback(
                 batch_size=self.batch_size
             ),
             tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=self.patience),
-            bayesian_estimator_sequential.UpdateStepCallback(
+            bayesian_estimator_funcs.UpdateStepCallback(
                 batch_size=self.batch_size
             ),
             tf.keras.callbacks.TerminateOnNaN()
@@ -317,7 +317,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     output_dim = len(schema.label_cols)
     # now headless
-    model.add(bayesian_estimator_sequential.get_bayesian_model(
+    model.add(bayesian_estimator_funcs.get_model(
         image_dim=final_size, # not initial size
         output_dim=len(schema.label_cols),
         schema=schema,
@@ -332,7 +332,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
         predict_dropout=0.5,  # change this to calibrate
         log_freq=10
     ))
-    efficientnet.custom_top_dirichlet(model, len(schema.label_cols), schema)  # inplace
+    # efficientnet.custom_top_dirichlet(model, len(schema.label_cols), schema)  # inplace
     # OR
     # input_shape = (final_size, final_size, 1)
 
