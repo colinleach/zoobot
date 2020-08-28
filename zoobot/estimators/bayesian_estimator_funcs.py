@@ -6,7 +6,9 @@ import tensorflow as tf
 from zoobot.estimators import losses
 from zoobot.estimators import efficientnet, custom_layers
 
-# TODO rewrite as single keras model, using the permadropout layer as needed
+# the final hidden dense layer must be sigmoid (or at least not relu or None)
+# AND you can't have the final conv4 layer (pool is okay if you want)
+# else it always predicts 1 (ie. hidden layer always 0), and I have no idea why
 
 def get_model(
     image_dim,
@@ -99,7 +101,7 @@ def get_model(
     ]
     [model.add(l) for l in conv_block_3]
 
-    # identical to conv3
+    # # identical to conv3
     # conv_block_4 = [
     #     # tf.keras.layers.Convolution2D(
     #     #     filters=conv3_filters,
@@ -116,6 +118,7 @@ def get_model(
     # [model.add(l) for l in conv_block_4]
 
     model.add(tf.keras.layers.Flatten())  # preserves batch size
+    # model.add(tf.keras.layers.Lambda(lambda x: tf.reshape(x, [-1, int(image_dim / 16) ** 2 * conv3_filters], name='model/layer4/flat')))
 
     dense_hidden_block = [
         tf.keras.layers.Dense(

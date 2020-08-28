@@ -311,6 +311,8 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     Returns:
         [type]: [description]
     """
+    # print(labels[:2])
+    # print(predictions[:2])
     # very important that question_index_groups is fixed and discrete, else tf.function autograph will mess up 
     q_losses = []
     # will give shape errors if model output dim is not labels dim, which can happen if losses.py substrings are missing an answer
@@ -331,7 +333,13 @@ def multiquestion_loss(labels, predictions, question_index_groups):
         q_losses.append(q_loss)
     
     total_loss = tf.stack(q_losses, axis=1)
-    return total_loss  # leave the reduce_sum to the estimator
+    # print(total_loss[:2])
+    # print(labels.shape, predictions.shape, total_loss.shape)
+    # https://www.tensorflow.org/api_docs/python/tf/keras/losses/MeanAbsoluteError
+    # return tf.reduce_sum(total_loss, axis=1)
+    return tf.reduce_mean(tf.reduce_sum(total_loss, axis=1))
+    # return total_loss  # leave the reduce_sum to the estimator, loss should keep the batch size. 
+    # https://www.tensorflow.org/api_docs/python/tf/keras/losses/Loss will auto-reduce (sum) over the batch anyway
 
 
 def multinomial_loss(successes, expected_probs, output_dim=2):
