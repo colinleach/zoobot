@@ -12,8 +12,6 @@ from zoobot.estimators import efficientnet, custom_layers
 
 def get_model(
     image_dim,
-    output_dim,
-    schema,
     conv1_filters=32,
     conv1_kernel=1,
     conv1_activation=tf.nn.relu,
@@ -117,8 +115,8 @@ def get_model(
     # ]
     # [model.add(l) for l in conv_block_4]
 
-    model.add(tf.keras.layers.Flatten())  # preserves batch size
-    # model.add(tf.keras.layers.Lambda(lambda x: tf.reshape(x, [-1, int(image_dim / 16) ** 2 * conv3_filters], name='model/layer4/flat')))
+    # model.add(tf.keras.layers.Flatten())  # preserves batch size
+    model.add(tf.keras.layers.Lambda(lambda x: tf.reshape(x, [-1, int(image_dim / 8) ** 2 * conv3_filters], name='model/layer4/flat')))
 
     dense_hidden_block = [
         tf.keras.layers.Dense(

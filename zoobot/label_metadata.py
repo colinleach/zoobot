@@ -78,8 +78,6 @@ decals_partial_label_cols = [
 ]
 
 
-
-
 gz2_partial_questions = [
     'smooth-or-featured'
     # 'has-spiral-arms',

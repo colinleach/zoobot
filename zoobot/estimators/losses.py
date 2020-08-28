@@ -251,6 +251,10 @@ def get_indices_from_label_cols(label_cols, questions):
 def dirichlet_loss(labels_for_q, concentrations_for_q):
     total_count = tf.reduce_sum(labels_for_q, axis=1)
     dist = tfp.distributions.DirichletMultinomial(total_count, concentrations_for_q, validate_args=True)  # may drop
+    # print(total_count)
+    # print(labels_for_q)
+    # print(concentrations_for_q)
+    # print(dist.prob(labels_for_q))
     return -dist.log_prob(labels_for_q)  # important minus sign
 
 
@@ -299,8 +303,20 @@ def beta_log_prob(successes, alpha, beta, total_counts):
     
 #     # TODO binary questions should either skip second loss output or not be calculated/enforced identical
 
+
+
+def get_multiquestion_loss(question_index_groups):
+
+    class MultiquestionLoss(tf.keras.losses.Loss):
+
+        def call(self, labels, predictions):
+            return calculate_multiquestion_loss(labels, predictions, question_index_groups)
+
+    return MultiquestionLoss(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
+
 # @tf.function
-def multiquestion_loss(labels, predictions, question_index_groups):
+def calculate_multiquestion_loss(labels, predictions, question_index_groups):
+
     """[summary]
     
     Args:
@@ -330,6 +346,10 @@ def multiquestion_loss(labels, predictions, question_index_groups):
         # )
         q_loss = dirichlet_loss(labels[:, q_start:q_end+1], predictions[:, q_start:q_end+1])
 
+        # print(q_n, q_start, q_end)
+        # print(labels[:4])
+        # print(predictions[:4])
+        # print(q_loss[:4])
         q_losses.append(q_loss)
     
     total_loss = tf.stack(q_losses, axis=1)
@@ -337,8 +357,9 @@ def multiquestion_loss(labels, predictions, question_index_groups):
     # print(labels.shape, predictions.shape, total_loss.shape)
     # https://www.tensorflow.org/api_docs/python/tf/keras/losses/MeanAbsoluteError
     # return tf.reduce_sum(total_loss, axis=1)
-    return tf.reduce_mean(tf.reduce_sum(total_loss, axis=1))
-    # return total_loss  # leave the reduce_sum to the estimator, loss should keep the batch size. 
+    # return tf.reduce_mean(tf.reduce_sum(total_loss, axis=1))
+    # return tf.reduce_mean(total_loss)
+    return total_loss  # leave the reduce_sum to the estimator, loss should keep the batch size. 
     # https://www.tensorflow.org/api_docs/python/tf/keras/losses/Loss will auto-reduce (sum) over the batch anyway
 
 
