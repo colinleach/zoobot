@@ -162,7 +162,7 @@ class RunEstimatorConfig():
         with fit_summary_writer.as_default():
 
             # for debugging
-            # self.model.run_eagerly = True
+            self.model.run_eagerly = True
             # https://www.tensorflow.org/api_docs/python/tf/keras/Model
 
             self.model.fit(
@@ -179,6 +179,9 @@ class RunEstimatorConfig():
         # to return the best model, load the last checkpoint
         logging.info('Loading and returning (best) model')
         self.model.load_weights(checkpoint_loc)  # inplace
+
+        print(self.model.predict(test_dataset))
+
         return self.model
 
 
@@ -316,10 +319,11 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     add_preprocessing_layers(model, crop_size=crop_size, final_size=final_size)  # inplace
 
     output_dim = len(schema.label_cols)
-    # now headless
+
+    # now headless, with 128 neuron hidden dense layer at top
     model.add(bayesian_estimator_funcs.get_model(
         image_dim=final_size, # not initial size
-        output_dim=len(schema.label_cols),
+        output_dim=output_dim,
         schema=schema,
         conv1_filters=32,
         conv1_kernel=3,
@@ -332,10 +336,9 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
         predict_dropout=0.5,  # change this to calibrate
         log_freq=10
     ))
-    # efficientnet.custom_top_dirichlet(model, len(schema.label_cols), schema)  # inplace
+    efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
     # OR
     # input_shape = (final_size, final_size, 1)
-
     # effnet = efficientnet.EfficientNet_custom_top(
     #     schema=schema,
     #     input_shape=input_shape,
@@ -352,11 +355,17 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # abs_metrics = [bayesian_estimator_sequential.CustomAbsErrorByColumn(name=q.text + '_abs', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     # q_loss_metrics = [bayesian_estimator_sequential.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     # a_loss_metrics = [bayesian_estimator_sequential.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
+
     model.compile(
         loss=lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups),
         optimizer=tf.keras.optimizers.Adam()
         # metrics=abs_metrics + q_loss_metrics + a_loss_metrics
     )
+
+    # print(model)
+    # exit()
+    model.summary()
+    # model.layers[-1].summary()
 
     if weights_loc:
         logging.info('Loading weights from {}'.format(weights_loc))
