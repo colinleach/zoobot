@@ -162,7 +162,7 @@ class RunEstimatorConfig():
         with fit_summary_writer.as_default():
 
             # for debugging
-            self.model.run_eagerly = True
+            # self.model.run_eagerly = True
             # https://www.tensorflow.org/api_docs/python/tf/keras/Model
 
             self.model.fit(
