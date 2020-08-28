@@ -100,22 +100,22 @@ def get_model(
     [model.add(l) for l in conv_block_3]
 
     # identical to conv3
-    conv_block_4 = [
-        tf.keras.layers.Convolution2D(
-            filters=conv3_filters,
-            kernel_size=[conv3_kernel, conv3_kernel],
-            padding=padding,
-            activation=conv3_activation,
-            kernel_regularizer=regularizer,
-            name='model/layer4/conv4'),
-        tf.keras.layers.MaxPooling2D(
-            pool_size=[pool3_size, pool3_size],
-            strides=pool3_strides,
-            name='model/layer4/pool4')
-    ]
-    [model.add(l) for l in conv_block_4]
+    # conv_block_4 = [
+    #     # tf.keras.layers.Convolution2D(
+    #     #     filters=conv3_filters,
+    #     #     kernel_size=[conv3_kernel, conv3_kernel],
+    #     #     padding=padding,
+    #     #     activation=conv3_activation,
+    #     #     kernel_regularizer=regularizer,
+    #     #     name='model/layer4/conv4'),
+    #     tf.keras.layers.MaxPooling2D(
+    #         pool_size=[pool3_size, pool3_size],
+    #         strides=pool3_strides,
+    #         name='model/layer4/pool4')
+    # ]
+    # [model.add(l) for l in conv_block_4]
 
-    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Flatten())  # preserves batch size
 
     dense_hidden_block = [
         tf.keras.layers.Dense(
