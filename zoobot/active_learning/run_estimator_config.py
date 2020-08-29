@@ -323,31 +323,31 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     output_dim = len(schema.label_cols)
 
     # now headless, with 128 neuron hidden dense layer at top
-    model.add(bayesian_estimator_funcs.get_model(
-        image_dim=final_size, # not initial size
-        conv1_filters=32,
-        conv1_kernel=3,
-        conv2_filters=64,
-        conv2_kernel=3,
-        conv3_filters=128,
-        conv3_kernel=3,
-        dense1_units=128,
-        dense1_dropout=0.5,
-        predict_dropout=0.5,  # change this to calibrate
-        log_freq=10
-    ))
-    efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
+    # model.add(bayesian_estimator_funcs.get_model(
+    #     image_dim=final_size, # not initial size
+    #     conv1_filters=32,
+    #     conv1_kernel=3,
+    #     conv2_filters=64,
+    #     conv2_kernel=3,
+    #     conv3_filters=128,
+    #     conv3_kernel=3,
+    #     dense1_units=128,
+    #     dense1_dropout=0.5,
+    #     predict_dropout=0.5,  # change this to calibrate
+    #     log_freq=10
+    # ))
+    # efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
     # OR
-    # input_shape = (final_size, final_size, 1)
-    # effnet = efficientnet.EfficientNet_custom_top(
-    #     schema=schema,
-    #     input_shape=input_shape,
-    #     get_effnet=efficientnet.EfficientNetB0
-    #     # further kwargs will be passed to get_effnet
-    #     # dropout_rate=dropout_rate,
-    #     # drop_connect_rate=drop_connect_rate
-    # )
-    # model.add(effnet)
+    input_shape = (final_size, final_size, 1)
+    effnet = efficientnet.EfficientNet_custom_top(
+        schema=schema,
+        input_shape=input_shape,
+        get_effnet=efficientnet.EfficientNetB0
+        # further kwargs will be passed to get_effnet
+        # dropout_rate=dropout_rate,
+        # drop_connect_rate=drop_connect_rate
+    )
+    model.add(effnet)
 
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
