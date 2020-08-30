@@ -457,13 +457,13 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
 
     return model
 
-def custom_top_multinomial(model, output_dim, schema, batch_size):
-    model.add(tf.keras.layers.Dense(output_dim))
-    model.add(tf.keras.layers.Lambda(lambda x: tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in schema.question_index_groups], axis=1), output_shape=[batch_size, output_dim]))        
+# def custom_top_multinomial(model, output_dim, schema, batch_size):
+#     model.add(tf.keras.layers.Dense(output_dim))
+#     model.add(tf.keras.layers.Lambda(lambda x: tf.concat([tf.nn.softmax(x[:, q[0]:q[1]+1]) for q in schema.question_index_groups], axis=1), output_shape=[batch_size, output_dim]))        
 
-def custom_top_beta(model, output_dim, schema):
-    model.add(tf.keras.layers.Dense(output_dim * 2, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # two params, 1-100 range
-    model.add(tf.keras.layers.Reshape((output_dim, 2)))  # as dimension 2
+# def custom_top_beta(model, output_dim, schema):
+#     model.add(tf.keras.layers.Dense(output_dim * 2, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # two params, 1-100 range
+    # model.add(tf.keras.layers.Reshape((output_dim, 2)))  # as dimension 2
 
 def custom_top_dirichlet(model, output_dim, schema):
     model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # one params per answer, 1-100 range
