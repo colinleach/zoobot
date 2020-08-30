@@ -398,7 +398,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # however, with the custom head below, it seems happy? 3.13
     import tensorflow_probability as tfp
     loss = lambda x, y: -tfp.distributions.BetaBinomial(
-        tf.reduce_sum(x, axis=1), tf.keras.backend.epsilon() + tf.nn.sigmoid(y[:, 0]) * 100, tf.keras.backend.epsilon() + tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
+        tf.reduce_sum(x, axis=1), 0.25 + tf.nn.sigmoid(y[:, 0]) * 100, 0.25 + tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
 
     # loss = lambda x, y: -tfp.distributions.Binomial(tf.reduce_sum(x, axis=1), probs=(y[:, 0] - 1) / 100).log_prob(x[:, 0])
 
@@ -421,3 +421,8 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
         load_status.assert_existing_objects_matched()
 
     return model
+
+# note that effnet doesn't work on 2 shards only, see slurm-1151229.out and 234.out
+
+# 1644 - baseline convnet with changes above (new head/loss)
+# 1690 - same but with first_acq
