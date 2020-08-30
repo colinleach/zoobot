@@ -80,7 +80,7 @@ decals_partial_label_cols = [
 
 gz2_partial_questions = [
     'smooth-or-featured'
-    # 'has-spiral-arms',
+    # 'has-spiral-arms'
     # 'bar',
     # 'bulge-size'
 ]
@@ -102,7 +102,7 @@ gz2_partial_label_cols = [
     'smooth-or-featured_smooth',
     'smooth-or-featured_featured-or-disk'
     # 'has-spiral-arms_yes',
-    # 'has-spiral-arms_no',
+    # 'has-spiral-arms_no'
     # 'bar_yes',
     # 'bar_no',
     # 'bulge-size_dominant',

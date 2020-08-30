@@ -108,7 +108,7 @@ if __name__ == '__main__':
       epochs=epochs,
       schema=schema,
       batch_size=batch_size,
-      patience=5,
+      patience=10,
       weights_loc=None
     )
 

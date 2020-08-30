@@ -322,32 +322,35 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     output_dim = len(schema.label_cols)
 
+
+    # model.add(bayesian_estimator_funcs.get_minst_model())  # actually this doesn't work lolz
+
     # now headless, with 128 neuron hidden dense layer at top
-    # model.add(bayesian_estimator_funcs.get_model(
-    #     image_dim=final_size, # not initial size
-    #     conv1_filters=32,
-    #     conv1_kernel=3,
-    #     conv2_filters=64,
-    #     conv2_kernel=3,
-    #     conv3_filters=128,
-    #     conv3_kernel=3,
-    #     dense1_units=128,
-    #     dense1_dropout=0.5,
-    #     predict_dropout=0.5,  # change this to calibrate
-    #     log_freq=10
-    # ))
+    model.add(bayesian_estimator_funcs.get_model(
+        image_dim=final_size, # not initial size
+        conv1_filters=32,
+        conv1_kernel=3,
+        conv2_filters=64,
+        conv2_kernel=3,
+        conv3_filters=128,
+        conv3_kernel=3,
+        dense1_units=128,
+        dense1_dropout=0.5,
+        predict_dropout=0.5,  # change this to calibrateP
+        log_freq=10
+    ))
     # efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
     # OR
-    input_shape = (final_size, final_size, 1)
-    effnet = efficientnet.EfficientNet_custom_top(
-        schema=schema,
-        input_shape=input_shape,
-        get_effnet=efficientnet.EfficientNetB0
-        # further kwargs will be passed to get_effnet
-        # dropout_rate=dropout_rate,
-        # drop_connect_rate=drop_connect_rate
-    )
-    model.add(effnet)
+    # input_shape = (final_size, final_size, 1)
+    # effnet = efficientnet.EfficientNet_custom_top(
+    #     schema=schema,
+    #     input_shape=input_shape,
+    #     get_effnet=efficientnet.EfficientNetB0
+    #     # further kwargs will be passed to get_effnet
+    #     # dropout_rate=dropout_rate,
+    #     # drop_connect_rate=drop_connect_rate
+    # )
+    # model.add(effnet)
 
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
@@ -356,13 +359,48 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # q_loss_metrics = [bayesian_estimator_sequential.CustomLossByQuestion(name=q.text + '_q_loss', start_col=start_col, end_col=end_col) for q, (start_col, end_col) in schema.named_index_groups.items()]
     # a_loss_metrics = [bayesian_estimator_sequential.CustomLossByAnswer(name=a.text + '_a_loss', col=col) for col, a in enumerate(schema.answers)]
 
-    # this works with classic cnn, 0.024-3 ish
+    # this works with classic cnn, 0.03 ish. 
+    # works with both sigmoid and None final activation (better with None, sigmoid not quite right here ofc)
+    # With the multiq final layer, stuck on .15ish, always [[ 1.0189215 66.1367   ] (i.e. as low as possible, 0th 1-100 and 1st not mattering)
+    # undoing the multiq final layer back to sigmoid i.e. (y[:, 0] - 1) / 100, works as expected
+    # designed to NOT use the custom multiq final layer
     # mse = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
-    # loss = lambda x, y: mse(x[:, 0] / tf.reduce_sum(x, axis=1), y[:, 1])
+    # loss = lambda x, y: mse(x[:, 0] / tf.reduce_sum(x, axis=1), y[:, 0])  # works without the multiq final layer
+    # loss = lambda x, y: mse(x[:, 0] / tf.reduce_sum(x, axis=1), (y[:, 0] - 1) / 100)  # works with the multiq final layer
 
     # loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
-    multiquestion_loss = losses.get_multiquestion_loss(schema.question_index_groups)
-    loss = lambda x, y: multiquestion_loss(x, y)
+
+    # with convnet
+    # for one question, makes standard cnn + multiq head always predict the same values [2.0518641 1.0020642]
+    # for two questions, also converges to similar values, though not exactly the same values - possibly working?
+    #  [1.7545501 1.0059544 1.0250697 1.2924562]
+    #  [1.785771  1.00633   1.0198811 1.4103988]
+    #  [2.17065   1.003661  1.0083214 1.7136166]
+    # with effnet
+    # for one question, predicts similar but not identical numbers, poor loss (4-5)
+#     [[2.648161  1.0308543]
+    #  [2.4120877 1.0264466]
+    #  [2.3445587 1.0243336]
+    # however, it does seem to work right for the full size version? As the concentrations are reasonable?
+    # for two questions, works nicely (30 epochs)
+    # multiquestion_loss = losses.get_multiquestion_loss(schema.question_index_groups)
+    # loss = lambda x, y: multiquestion_loss(x, y)
+
+    # effnet 1q. 30 epochs loss 3.0, seems to work - tho these are all pretty smooth
+    # (this was with the current multiq head)
+    # [[65.34233    7.150231 ]
+    #  [85.74967    8.548231 ]
+    #  [ 7.6572576  1.8533657]
+    # convnet it does NOT seem to work with the current multiq head, gives the usual diagonal pdf - though perhaps it's just hard to get past that?
+    # [[2.047638  1.0070325]
+    # [2.0414152 1.0071195]
+    # [2.0806828 1.0065957]
+    # however, with the custom head below, it seems happy? 3.13
+    import tensorflow_probability as tfp
+    loss = lambda x, y: -tfp.distributions.BetaBinomial(
+        tf.reduce_sum(x, axis=1), tf.nn.sigmoid(y[:, 0]) * 100, tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
+
+    # loss = lambda x, y: -tfp.distributions.Binomial(tf.reduce_sum(x, axis=1), probs=(y[:, 0] - 1) / 100).log_prob(x[:, 0])
 
     model.compile(
         loss=loss,
