@@ -180,7 +180,10 @@ class RunEstimatorConfig():
         logging.info('Loading and returning (best) model')
         self.model.load_weights(checkpoint_loc)  # inplace
 
-        print(self.model.predict(test_dataset))
+
+        y = self.model.predict(test_dataset)
+        print(y)  # final layer output
+        print(0.01 + soften_x(y) * 100)  # actual concentrations
 
         print(self.model.evaluate(test_dataset))
 
@@ -396,9 +399,16 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # [2.0414152 1.0071195]
     # [2.0806828 1.0065957]
     # however, with the custom head below, it seems happy? 3.13
+    min_conc = 0.01
+    conc_scale = 100
+    # soften_x = lambda x: (tf.math.tanh( tf.math.log(0.5*x) )+ 1) / 2
+
     import tensorflow_probability as tfp
     loss = lambda x, y: -tfp.distributions.BetaBinomial(
-        tf.reduce_sum(x, axis=1), 0.177 + tf.nn.sigmoid(y[:, 0]) * 100, 0.177 + tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
+            tf.reduce_sum(x, axis=1),
+            min_conc + soften_x(y[:, 0]) * conc_scale,
+            min_conc + soften_x(y[:, 1])* conc_scale
+        ).log_prob(x[:, 0])
 
     # loss = lambda x, y: -tfp.distributions.Binomial(tf.reduce_sum(x, axis=1), probs=(y[:, 0] - 1) / 100).log_prob(x[:, 0])
 
@@ -426,3 +436,6 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
 # 1644 - baseline convnet with changes above (new head/loss)
 # 1690 - same but with first_acq
+
+def soften_x(x):
+    return x**2 / (x**2 + 4)
