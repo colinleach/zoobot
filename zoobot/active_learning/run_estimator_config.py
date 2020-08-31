@@ -398,7 +398,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # however, with the custom head below, it seems happy? 3.13
     import tensorflow_probability as tfp
     loss = lambda x, y: -tfp.distributions.BetaBinomial(
-        tf.reduce_sum(x, axis=1), 0.25 + tf.nn.sigmoid(y[:, 0]) * 100, 0.25 + tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
+        tf.reduce_sum(x, axis=1), 0.177 + tf.nn.sigmoid(y[:, 0]) * 100, 0.177 + tf.nn.sigmoid(y[:, 1] * 100)).log_prob(x[:, 0])
 
     # loss = lambda x, y: -tfp.distributions.Binomial(tf.reduce_sum(x, axis=1), probs=(y[:, 0] - 1) / 100).log_prob(x[:, 0])
 
