@@ -355,6 +355,8 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     )
     model.add(effnet)
 
+    efficientnet.custom_top_dirichlet(model, output_dim, schema)    
+
 
 
     # efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
