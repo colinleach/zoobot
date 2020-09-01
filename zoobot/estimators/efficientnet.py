@@ -439,7 +439,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
 
     model.add(tf.keras.layers.GlobalAveragePooling2D())
     # custom_top_multinomial(model, output_dim, schema, batch_size)
-    custom_top_dirichlet(model, output_dim, schema)        
+    # custom_top_dirichlet(model, output_dim, schema)        
 
     # will be updated by callback
     # model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
