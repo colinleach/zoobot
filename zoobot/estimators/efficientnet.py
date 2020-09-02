@@ -466,7 +466,7 @@ def EfficientNet_custom_top(schema, input_shape=None, batch_size=None, add_chann
     # model.add(tf.keras.layers.Reshape((output_dim, 2)))  # as dimension 2
 
 def custom_top_dirichlet(model, output_dim, schema):
-    model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # one params per answer, 1-100 range
+    model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 50. + .5))  # one params per answer, 1-100 range
 
 if __name__ == '__main__':
 

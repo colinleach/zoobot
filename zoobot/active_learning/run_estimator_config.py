@@ -354,12 +354,11 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
         # drop_connect_rate=drop_connect_rate
     )
     model.add(effnet)
+    # model.add(tf.keras.layers.Dense(16))
+    # model.add(tf.keras.layers.Dense(2))
+# 
+    efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
 
-    efficientnet.custom_top_dirichlet(model, output_dim, schema)    
-
-
-
-    # efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)
 
@@ -404,16 +403,16 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # [2.0414152 1.0071195]
     # [2.0806828 1.0065957]
     # however, with the custom head below, it seems happy? 3.13
-    min_conc = 0.01
-    conc_scale = 100
-    # soften_x = lambda x: (tf.math.tanh( tf.math.log(0.5*x) )+ 1) / 2
+    # min_conc = 0.01
+    # conc_scale = 100
+    # # soften_x = lambda x: (tf.math.tanh( tf.math.log(0.5*x) )+ 1) / 2
 
-    import tensorflow_probability as tfp
-    loss = lambda x, y: -tfp.distributions.BetaBinomial(
-            tf.reduce_sum(x, axis=1),
-            min_conc + soften_x(y[:, 0]) * conc_scale,
-            min_conc + soften_x(y[:, 1])* conc_scale
-        ).log_prob(x[:, 0])  # success = smooth vote
+    # import tensorflow_probability as tfp
+    # loss = lambda x, y: -tfp.distributions.BetaBinomial(
+    #         tf.reduce_sum(x, axis=1),
+    #         min_conc + soften_x(y[:, 0]) * conc_scale,
+    #         min_conc + soften_x(y[:, 1])* conc_scale
+    #     ).log_prob(x[:, 0])  # success = smooth vote
 
     # loss = lambda x, y: -tfp.distributions.Binomial(tf.reduce_sum(x, axis=1), probs=(y[:, 0] - 1) / 100).log_prob(x[:, 0])
 
