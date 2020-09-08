@@ -375,7 +375,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # loss = lambda x, y: mse(x[:, 0] / tf.reduce_sum(x, axis=1), y[:, 0])  # works without the multiq final layer
     # loss = lambda x, y: mse(x[:, 0] / tf.reduce_sum(x, axis=1), (y[:, 0] - 1) / 100)  # works with the multiq final layer
 
-    # loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
+    loss = lambda x, y: losses.multiquestion_loss(x, y, question_index_groups=schema.question_index_groups)
 
     # with convnet
     # for one question, makes standard cnn + multiq head always predict the same values [2.0518641 1.0020642]
