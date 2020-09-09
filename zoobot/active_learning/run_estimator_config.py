@@ -348,7 +348,7 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     effnet = efficientnet.EfficientNet_custom_top(
         schema=schema,
         input_shape=input_shape,
-        get_effnet=efficientnet.EfficientNetB3  # updated to B3!
+        get_effnet=efficientnet.EfficientNetB0
         # further kwargs will be passed to get_effnet
         # dropout_rate=dropout_rate,
         # drop_connect_rate=drop_connect_rate
