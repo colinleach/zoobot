@@ -1,4 +1,4 @@
-
+# https://github.com/qubvel/efficientnet
 import collections
 import time
 import logging
@@ -410,6 +410,25 @@ def EfficientNetB3(include_top=True,
     return EfficientNet(
         1.2, 1.4, 300, dropout_rate,
         model_name='efficientnet-b3',
+        include_top=include_top, weights=weights,
+        input_tensor=input_tensor, input_shape=input_shape,
+        pooling=pooling, classes=classes,
+        **kwargs
+    )
+
+
+def EfficientNetB7(
+        include_top=True,
+        weights='imagenet',
+        input_tensor=None,
+        input_shape=None,
+        pooling=None,
+        classes=1000,
+        **kwargs
+):
+    return EfficientNet(
+        2.0, 3.1, 600, 0.5,
+        model_name='efficientnet-b7',
         include_top=include_top, weights=weights,
         input_tensor=input_tensor, input_shape=input_shape,
         pooling=pooling, classes=classes,
