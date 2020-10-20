@@ -77,8 +77,8 @@ if __name__ == '__main__':
         for d in dirs_to_search:
             tfrecord_locs = tfrecord_locs + glob.glob(os.path.join(d, '*.tfrecord'))  # concat lists
 
-        checkpoint_dir = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0/in_progress'
-        save_loc = f'{data_dir}/repos/zoobot/results/decals_n2_allq_m0_all.csv'
+        checkpoint_dir = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7/in_progress'
+        save_loc = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7.csv'
 
     # go
 
