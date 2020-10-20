@@ -37,14 +37,14 @@ if __name__ == '__main__':
     # parameters (many)
 
     # decals cols
-    # questions = label_metadata.decals_questions
-    # version = 'decals'
-    # label_cols = label_metadata.decals_label_cols
+    questions = label_metadata.decals_questions
+    version = 'decals'
+    label_cols = label_metadata.decals_label_cols
 
     # gz2 cols
-    questions = label_metadata.gz2_partial_questions
-    version = 'gz2'
-    label_cols = label_metadata.gz2_partial_label_cols
+    # questions = label_metadata.gz2_partial_questions
+    # version = 'gz2'
+    # label_cols = label_metadata.gz2_partial_label_cols
     
     initial_size = 300
     crop_size = int(initial_size * 0.75)
