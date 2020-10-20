@@ -54,7 +54,7 @@ if __name__ == '__main__':
         batch_size = 8  # largest that fits on laptop  @ 224 pix
         n_samples = 5
     else:
-        batch_size = 128  # or 128
+        batch_size = 16  # 16 for B7, 128 for B0
         n_samples = 5
 
     if local:
@@ -71,7 +71,8 @@ if __name__ == '__main__':
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
 
-        subdirs_to_search = ['', 'train_shards', 'eval_shards']
+        # subdirs_to_search = ['', 'train_shards', 'eval_shards']
+        subdirs_to_search = ['eval_shards']  # eval only
         dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2', subdir) for subdir in subdirs_to_search]
         tfrecord_locs = []
         for d in dirs_to_search:
