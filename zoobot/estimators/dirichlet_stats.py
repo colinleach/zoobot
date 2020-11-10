@@ -38,6 +38,14 @@ class EqualMixture():
     def mean(self):  # i.e. expected 
         return tf.reduce_mean([dist.mean() for dist in self.distributions], axis=0)
 
+    def mean_cdf(self, x):  # as integration is separable 
+        # will fail if cdf is not implemented
+        return tf.reduce_mean([dist.cdf(x) for dist in self.distributions], axis=0)
+
+    def cdf(self, x):
+        raise NotImplementedError('Can only be calculated with batch_dim shaped x, unlike .prob etc, needs custom implementation')
+
+
 
 class DirichletEqualMixture(EqualMixture):
 
@@ -61,6 +69,64 @@ class DirichletEqualMixture(EqualMixture):
     def entropy_lower_bound(self):
         return np.array([mixture_stats.entropy_lower_bound(galaxy_conc, weights=np.ones(self.n_distributions)/self.n_distributions) for galaxy_conc in self.concentrations])
 
+    def to_beta(self, answer_index, batch_dim):
+        assert self.batch_shape == 1  # beta uses batch shape for cdf(x), so needs to be able to broadcast, so can only do one galaxy at a time
+        answer_concentrations = self.concentrations[:, answer_index]
+        # may give index errors
+        other_concentrations = self.concentrations[:, :answer_index].sum(axis=1) + self.concentrations[:, answer_index+1:].sum(axis=1)
+        # print(answer_concentrations.shape, other_concentrations.shape)
+        beta_concentrations = np.stack([answer_concentrations, other_concentrations], axis=1)
+        return BetaEqualMixture(beta_concentrations, batch_dim=batch_dim)
+
+
+
+class BetaEqualMixture(DirichletEqualMixture):
+
+    def __init__(self, concentrations, batch_dim):
+        assert concentrations.shape[0] == 1
+        assert concentrations.shape[1]  == 2
+        # print(concentrations.shape)
+        self.batch_dim = batch_dim
+        self.concentrations = np.stack([np.squeeze(concentrations) for _ in range(batch_dim)], axis=0).astype(np.float32)
+        # print(self.concentrations.shape)
+        assert self.concentrations.ndim == 3
+        self.n_distributions = self.concentrations.shape[2]
+        self.distributions = [
+            tfp.distributions.Beta(
+                concentration0=self.concentrations[:, 0, n],
+                concentration1=self.concentrations[:, 1, n],
+                validate_args=True)
+            for n in range(self.n_distributions)
+        ]
+
+    @property
+    def standard_sample_grid(self):
+        return np.linspace(1e-8, 1. - 1e-8, num=self.batch_dim)
+
+    def mean_mode(self):  # approximate only
+        assert self.batch_dim >= 50
+        # print(self.mean_prob(self.standard_sample_grid).shape)
+        mode_index = np.argmax(self.mean_prob(self.standard_sample_grid))
+        return self.standard_sample_grid[mode_index]  # bit lazy but it works
+
+    def confidence_interval(self, interval_width):
+        assert self.batch_dim >= 50
+        # dist must be unimodal (though the mode can be at extremes)
+        cdf = self.mean_cdf(self.standard_sample_grid)
+        mode = self.mean_mode()
+        # print(mode)
+        mode_cdf = self.mean_cdf(mode)[0]  # just using the first, batch size broadcasting gives batch_size identical results
+        # print(mode_cdf)
+        return confidence_interval_from_cdf(self.standard_sample_grid, cdf, mode_cdf, interval_width)
+
+    def cdf(self, x):
+        # for dist in self.distributions:
+            # dist_with_batch_matching_x = tfp.distributions.Beta()
+        # print(x)
+        cdfs = [dist.cdf(x) for dist in self.distributions]
+        return tf.transpose(cdfs)
+
+
 class DirichletMultinomialEqualMixture(EqualMixture):
 
     def __init__(self, total_votes, concentrations, *args, **kwargs):
@@ -80,7 +146,7 @@ class DirichletMultinomialEqualMixture(EqualMixture):
             for n in range(self.n_distributions)
         ]
 
-def get_hpd(x, p, ci=0.8):
+def get_hpd(x, p, ci=0.8):  # on (discrete) multinomial dirichlet
     assert np.isclose(p.sum(), 1, atol=0.001)
     # here, x is discrete posterior p's, not samples as with agnfinder
     mode_index = np.argmax(p)
@@ -220,6 +286,53 @@ def dirichlet_mixture_loss_per_question(labels_q, concentrations_q):
     total_votes = labels_q.sum(axis=1).squeeze()
     mean_log_probs = DirichletMultinomialEqualMixture(total_votes=total_votes, concentrations=concentrations_q).mean_log_prob(labels_q) 
     return -np.squeeze(np.array(mean_log_probs))  # negative log prob
+
+
+def beta_confidence_interval(concentration0, concentration1, interval_width):
+
+    dist = tfp.distributions.Beta(concentration0, concentration1, validate_args=True, allow_nan_stats=False)
+    if concentration0 <= 1:
+        mode = 1
+    elif concentration1 <= 1:
+        mode = 0
+    else:
+        mode = dist.mode()
+    mode_cdf = dist.cdf(mode)
+
+    x = np.linspace(0.001, .999, num=1000)
+    cdf = dist.cdf(x)
+    return confidence_interval_from_cdf(x, cdf, mode_cdf, interval_width)
+
+
+def confidence_interval_from_cdf(x, cdf, mode_cdf, interval_width):
+    width_per_half = interval_width / 2
+
+    lower_index = np.argmin(np.abs(mode_cdf  - cdf - width_per_half))
+    upper_index = np.argmin(np.abs(cdf - mode_cdf - width_per_half))
+
+    if mode_cdf < width_per_half:  # i.e. if lower interval hits the edge
+        remaining_cdf = mode_cdf  # b
+        upper_index = np.argmin(np.abs(cdf - interval_width))
+    elif 1 - mode_cdf < width_per_half:  # i.e. upper interval hits the edge
+        remaining_cdf = mode_cdf  # b
+        lower_index = np.argmin(np.abs(1 - cdf - interval_width))
+
+    assert np.allclose(cdf[upper_index] - cdf[lower_index], interval_width, atol=.02)
+
+    lower = x[lower_index]
+    upper = x[upper_index]
+    return lower, upper
+
+
+
+
+
+
+
+
+
+
+
 
 
 # deprecated

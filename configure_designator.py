@@ -5,7 +5,7 @@ import requests
 import pandas as pd
 
 from panoptes_client import Panoptes, Workflow, SubjectSet
-from zoobot.active_learning import mock_panoptes
+# from zoobot.active_learning import mock_panoptes
 
 from gzreduction.panoptes.api import api_to_json, reformat_api_like_exports
 
@@ -19,10 +19,11 @@ def configure(subject_set_chances, workflow_id, login_loc, debug=False):
     Panoptes.connect(**zooniverse_login)
 
     workflow = Workflow.find(workflow_id)
-    workflow.configuration['subject_set_chances'] = subject_set_chances
-    workflow.configuration = workflow.configuration
+    # workflow.configuration['subject_set_chances'] = subject_set_chances
+    workflow.configuration.update({'subject_set_chances': subject_set_chances})
     workflow.save()
 
+    print(workflow.configuration)
 
 def upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc):
     # only for testing
@@ -55,21 +56,31 @@ def upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc):
 
 if __name__ == '__main__':
 
-    project_id = '8751'  #  DUMMY PROJECT
+    # project_id = '8751'  #  DUMMY PROJECT
+    project_id = '5733'  # REAL PROJECT
     workflow_id = '10582'  # REAL enhanced workflow
-    login_loc = 'zooniverse_login.json'
+    login_loc = '../gz-panoptes-reduction/gzreduction/panoptes/api/zooniverse_login.json'
 
     # catalog_loc = 'data/decals/decals_master_catalog.csv'
     # upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc)
 
     # this is NOT the current configuration - instead, we have 20% EAGLE sims, and the remainder have these chances
+    # subject_set_chances = {
+    #     '74909': 0.8,  # priority
+    #     '74905': 0.2  # random
+    # }
+
     subject_set_chances = {
-        '74909': 0.8,  # priority
-        '74905': 0.2  # random
+        '74905': 0.5,  # random
+        '77652': 0.1,  # eagle
+        '85299': 0.0,  # missing_a, now finished
+        '88772': 0.4  # missing_e
     }
+
+
     configure(
         subject_set_chances,
         workflow_id,
         login_loc,
-        debug=True
+        debug=False
     )

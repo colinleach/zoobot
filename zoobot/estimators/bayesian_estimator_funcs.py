@@ -48,8 +48,6 @@ def get_model(
     predict_dropout=0.5,
     log_freq=10):
 
-
-    dropout_rate = 0  # no dropout on conv layers
     regularizer = None
     padding = 'same'
     pool1_size = 2
@@ -65,17 +63,17 @@ def get_model(
         tf.keras.layers.Convolution2D(
             filters=conv1_filters,
             kernel_size=[conv1_kernel, conv1_kernel],
-            # padding=padding,
-            # activation=conv1_activation,
-            # kernel_regularizer=regularizer,
+            padding=padding,
+            activation=conv1_activation,
+            kernel_regularizer=regularizer,
             name='model/layer1/conv1'),
-        # tf.keras.layers.Convolution2D(
-        #     filters=conv1_filters,
-        #     kernel_size=[conv1_kernel, conv1_kernel],
-        #     padding=padding,
-        #     activation=conv1_activation,
-        #     kernel_regularizer=regularizer,
-        #     name='model/layer1/conv1b'),
+        tf.keras.layers.Convolution2D(
+            filters=conv1_filters,
+            kernel_size=[conv1_kernel, conv1_kernel],
+            padding=padding,
+            activation=conv1_activation,
+            kernel_regularizer=regularizer,
+            name='model/layer1/conv1b'),
         tf.keras.layers.MaxPooling2D(
             pool_size=[pool1_size, pool1_size],
             strides=pool1_strides,
@@ -87,20 +85,20 @@ def get_model(
         tf.keras.layers.Convolution2D(
             filters=conv2_filters,
             kernel_size=[conv2_kernel, conv2_kernel],
-            # padding=padding,
-            # activation=conv2_activation,
-            # kernel_regularizer=regularizer,
+            padding=padding,
+            activation=conv2_activation,
+            kernel_regularizer=regularizer,
             name='model/layer2/conv2'),
-        # tf.keras.layers.Convolution2D(
-        #     filters=conv2_filters,
-        #     kernel_size=[conv2_kernel, conv2_kernel],
-        #     padding=padding,
-        #     activation=conv2_activation,
-        #     kernel_regularizer=regularizer,
-        #     name='model/layer2/conv2b'),
+        tf.keras.layers.Convolution2D(
+            filters=conv2_filters,
+            kernel_size=[conv2_kernel, conv2_kernel],
+            padding=padding,
+            activation=conv2_activation,
+            kernel_regularizer=regularizer,
+            name='model/layer2/conv2b'),
         tf.keras.layers.MaxPooling2D(
             pool_size=pool2_size,
-            # strides=pool2_strides,
+            strides=pool2_strides,
             name='model/layer2/pool2')
     ]
     [model.add(l) for l in conv_block_2]
@@ -109,32 +107,32 @@ def get_model(
         tf.keras.layers.Convolution2D(
             filters=conv3_filters,
             kernel_size=[conv3_kernel, conv3_kernel],
-            # padding=padding,
-            # activation=conv3_activation,
-            # kernel_regularizer=regularizer,
+            padding=padding,
+            activation=conv3_activation,
+            kernel_regularizer=regularizer,
             name='model/layer3/conv3'),
         tf.keras.layers.MaxPooling2D(
             pool_size=[pool3_size, pool3_size],
-            # strides=pool3_strides,
+            strides=pool3_strides,
             name='model/layer3/pool3')
     ]
     [model.add(l) for l in conv_block_3]
 
     # # identical to conv3
-    # conv_block_4 = [
-    #     # tf.keras.layers.Convolution2D(
-    #     #     filters=conv3_filters,
-    #     #     kernel_size=[conv3_kernel, conv3_kernel],
-    #     #     padding=padding,
-    #     #     activation=conv3_activation,
-    #     #     kernel_regularizer=regularizer,
-    #     #     name='model/layer4/conv4'),
-    #     tf.keras.layers.MaxPooling2D(
-    #         pool_size=[pool3_size, pool3_size],
-    #         strides=pool3_strides,
-    #         name='model/layer4/pool4')
-    # ]
-    # [model.add(l) for l in conv_block_4]
+    conv_block_4 = [
+        tf.keras.layers.Convolution2D(
+            filters=conv3_filters,
+            kernel_size=[conv3_kernel, conv3_kernel],
+            padding=padding,
+            activation=conv3_activation,
+            kernel_regularizer=regularizer,
+            name='model/layer4/conv4'),
+        tf.keras.layers.MaxPooling2D(
+            pool_size=[pool3_size, pool3_size],
+            strides=pool3_strides,
+            name='model/layer4/pool4')
+    ]
+    [model.add(l) for l in conv_block_4]
 
     model.add(tf.keras.layers.Flatten())  # preserves batch size
     # model.add(tf.keras.layers.Lambda(lambda x: tf.reshape(x, [-1, int(image_dim / 8) ** 2 * conv3_filters], name='model/layer4/flat')))
@@ -143,9 +141,9 @@ def get_model(
         tf.keras.layers.Dense(
             units=dense1_units,
             activation=dense1_activation,
-            # kernel_regularizer=regularizer,
-            name='model/layer4/dense1')
-        # custom_layers.PermaDropout(rate=dense1_dropout)
+            kernel_regularizer=regularizer,
+            name='model/layer4/dense1'),
+        custom_layers.PermaDropout(rate=dense1_dropout)
     ]
     [model.add(l) for l in dense_hidden_block]
 
