@@ -64,17 +64,9 @@ if __name__ == '__main__':
     # catalog_loc = 'data/decals/decals_master_catalog.csv'
     # upload_dummy_subjects(catalog_loc, project_id, workflow_id, login_loc)
 
-    # this is NOT the current configuration - instead, we have 20% EAGLE sims, and the remainder have these chances
-    # subject_set_chances = {
-    #     '74909': 0.8,  # priority
-    #     '74905': 0.2  # random
-    # }
-
     subject_set_chances = {
-        '74905': 0.5,  # random
-        '77652': 0.1,  # eagle
-        '85299': 0.0,  # missing_a, now finished
-        '88772': 0.4  # missing_e
+        '89259': 0.8,  # decals dr8
+        '77652': 0.2,  # eagle
     }
 
 
