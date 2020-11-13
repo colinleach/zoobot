@@ -219,11 +219,7 @@ def main(instructions_dir, this_iteration_dir, previous_iteration_dir, questions
             batch_size = 128
     #  batch_norm etc fail explictly below 10, and maybe don't work so great until larger batch sizes. Paper (MnasNet) uses 4000!
 
-    # for quick debugging - will not learn well locally
-    if os.path.isdir('/home/walml'):
-        final_size = 64 # 10 is the minimum possible size. 
-    else:  # hopefully v100
-        final_size = 224
+    final_size = 224
     
     # TODO move this to create_instructions.py, replace train_callable
     fixed_estimator_params = run_estimator_config.FixedEstimatorParams(

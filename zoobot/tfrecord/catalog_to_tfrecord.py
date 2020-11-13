@@ -148,6 +148,12 @@ def row_to_serialized_example(row, img_size, columns_to_save, reader):
     """
     #
 
+    matrix, extra_data_dict = row_to_serializable_data(reader, row, img_size, columns_to_save)
+
+    return create_tfrecord.serialize_image_example(matrix, **extra_data_dict)
+
+
+def row_to_serializable_data(reader, row, img_size, columns_to_save):
     pil_img = reader(row)
     # pil_img.save('zoobot/test_examples/rescaled_after_pil.png')
     # to align with north/east 
@@ -156,8 +162,7 @@ def row_to_serialized_example(row, img_size, columns_to_save, reader):
         Image.FLIP_TOP_BOTTOM)
     matrix = np.array(final_pil_img)
 
-    extra_kwargs = {}
+    extra_data_dict = {}
     for col in columns_to_save:
-        extra_kwargs.update({col: row[col]})
-
-    return create_tfrecord.serialize_image_example(matrix, **extra_kwargs)
+        extra_data_dict.update({col: row[col]})
+    return matrix, extra_data_dict

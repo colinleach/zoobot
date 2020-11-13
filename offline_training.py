@@ -28,7 +28,7 @@ if __name__ == '__main__':
       python offline_training.py --experiment-dir results/debug --shard-img-size 64 --train-dir data/gz2/shards/debug_sim/train_shards --eval-dir data/gz2/shards/debug_sim/eval_shards --epochs 2 --batch-size 8 --final-size 64
 
     Local testing:
-      python offline_training.py --experiment-dir results/debug --shard-img-size 128 --train-dir data/decals/shards/multilabel_master_filtered_128/train --eval-dir data/decals/shards/multilabel_master_filtered_128/eval --epochs 2 --batch-size 16
+      python offline_training.py --experiment-dir results/debug --shard-img-size 64 --final-size 224 --train-dir data/decals/shards/all_2p5_unfiltered_retired/train_shards --eval-dir data/decals/shards/all_2p5_unfiltered_retired/eval_shards --epochs 2 --batch-size 8
       
     """
 
