@@ -11,38 +11,51 @@ from astropy.table import Table
 from zoobot.science_logic import define_experiment
 
 
-def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
-    """Convert zooniverse/decals joint catalog (from decals repo) for active learning and join to previous classifications
+# def create_decals_master_catalog(catalog_loc, classifications_loc, save_loc):
+#     """Convert zooniverse/decals joint catalog (from decals repo) for active learning and join to previous classifications
     
-    Args:
-        catalog_loc (str): Load science catalog of galaxies from here. All galaxies which might be classified.
-        classifications_loc (str): Load GZ classifications (see gz-panoptes-reduction repo) from here. All galaxies which have been classified.
-        save_loc (str): Save master catalog here
-    """
-    catalog = pd.read_csv(catalog_loc)
-    # conversion messes up strings into bytes
-    # for str_col in ['iauname', 'png_loc', 'fits_loc']:
-    #     catalog[str_col] = catalog[str_col].apply(lambda x: x.decode('utf-8'))
+#     Args:
+#         catalog_loc (str): Load science catalog of galaxies from here. All galaxies which might be classified.
+#         classifications_loc (str): Load GZ classifications (see gz-panoptes-reduction repo) from here. All galaxies which have been classified.
+#         save_loc (str): Save master catalog here
+#     """
+#     catalog = pd.read_csv(catalog_loc)
+#     # conversion messes up strings into bytes
+#     # for str_col in ['iauname', 'png_loc', 'fits_loc']:
+#     #     catalog[str_col] = catalog[str_col].apply(lambda x: x.decode('utf-8'))
 
-    # rename columns for convenience (could move this to DECALS repo)
-    catalog['nsa_version'] = 'v1_0_0'
+#     # rename columns for convenience (could move this to DECALS repo)
+#     catalog['nsa_version'] = 'v1_0_0'
 
-    # may need to change png prefix
-    catalog = catalog.rename(index=str, columns={
-        'z': 'redshift'
-    })
+#     # may need to change png prefix
+#     catalog = catalog.rename(index=str, columns={
+#         'z': 'redshift'
+#     })
 
-    print('Galaxies: {}'.format(len(catalog)))
-    # tweak png locs according to current machine
+#     logging.info('Galaxies: {}'.format(len(catalog)))
 
-    catalog = specify_file_locs(catalog, 'decals')
+#     # tweak png locs according to current machine
+#     catalog = specify_file_locs(catalog, 'decals')
 
-    classifications = pd.read_csv(classifications_loc)
-    # add all historical classifications (before starting any active learning)
-    df = pd.merge(catalog, classifications, how='left',
-                  on='iauname')  # many rows will have None   
+#     classifications = pd.read_csv(classifications_loc)
+#     # add all historical classifications (before starting any active learning)
+#     df = pd.merge(catalog, classifications, how='left',
+#                   on='iauname')  # many rows will have None   
+#     df['id_str'] = df['iauname'] 
+
+#     assert not any(df.duplicated(subset=['iauname']))
+#     # df = define_experiment.drop_duplicates(df)
+    
+#     df.to_csv(save_loc, index=False)
+
+
+def create_decals_master_catalog(classifications_loc, save_loc):
+    # minimal changes, just tweak file path and add id_str column
+    df = pd.read_parquet(classifications_loc)
+    logging.info('Galaxies: {}'.format(len(df)))
+    assert not any(df.duplicated(subset=['iauname']))
+    df = specify_file_locs(df, 'decals')  # requires existing 'png_loc' column with relative file locations
     df['id_str'] = df['iauname'] 
-    df = define_experiment.drop_duplicates(df)
     df.to_csv(save_loc, index=False)
 
 
@@ -250,7 +263,6 @@ if __name__ == '__main__':
         )
     else:
         create_decals_master_catalog(
-            catalog_loc=args.catalog_loc,
             classifications_loc=args.classifications_loc,
             save_loc=args.save_loc
         )
