@@ -71,7 +71,7 @@ def apply_custom_filter_cheat(catalog):
 
 
 def subject_is_retired(subject):
-    return (subject['smooth-or-featured_total-votes'] > 2)  # now with minimal floor (everything should have 3 or more)
+    return (subject['smooth-or-featured_total-votes'] >= 3)  # now with minimal floor (everything should have 3 or more)
     # return (subject['smooth-or-featured_total-votes'] > 36) & (subject['smooth-or-featured_total-votes'] < 70) 
 
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         master_catalog, save_dir, filter_catalog=args.filter_catalog)
 
     # ad hoc filtering here
-    # catalog = catalog[:20000]
+    catalog = catalog[:20000]
 
     labelled.to_csv(os.path.join(
         save_dir, 'labelled_catalog.csv'), index=False)
