@@ -18,6 +18,7 @@ from collections import Counter
 import numpy as np
 import tensorflow as tf
 import pandas as pd
+from tqdm import tqdm
 
 from zoobot.tfrecord import catalog_to_tfrecord, read_tfrecord
 from zoobot.estimators import input_utils
@@ -193,7 +194,8 @@ def write_catalog_to_tfrecord_shards(df: pd.DataFrame, db, img_size, columns_to_
     n_shards = (len(df) // shard_size) + 1
     df_shards = [df.iloc[n * shard_size:(n + 1) * shard_size] for n in range(n_shards)]
 
-    for shard_n, df_shard in enumerate(df_shards):
+    logging.info(f'Writing shards to {save_dir}')
+    for shard_n, df_shard in tqdm(enumerate(df_shards), total=len(df_shards)):
         save_loc = os.path.join(save_dir, 's{}_shard_{}.tfrecord'.format(img_size, shard_n))
         catalog_to_tfrecord.write_image_df_to_tfrecord(
             df_shard, 
