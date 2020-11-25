@@ -494,7 +494,7 @@ def custom_top_dirichlet_reparam(model, output_dim, schema):
     model.add(tf.keras.layers.Dense(dense_units, activation=None))  # one m per answer, one s per question
 
     # keras functional model, split architecture
-    x = tf.keras.Input(shape=dense_units, batch_size=8)  # not including batch in shape, but still has (unknown) batch dim
+    x = tf.keras.Input(shape=dense_units)  # not including batch in shape, but still has (unknown) batch dim
     # not really a for loop, just constructing the graph
     n_answers = len(schema.answers)
     alpha_list = []
