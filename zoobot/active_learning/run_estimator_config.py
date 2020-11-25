@@ -183,7 +183,7 @@ class RunEstimatorConfig():
 
         y = self.model.predict(test_dataset)
         print(y)  # final layer output
-        print(0.01 + soften_x(y) * 100)  # actual concentrations
+        # print(0.01 + soften_x(y) * 100)  # actual concentrations
 
         print(self.model.evaluate(test_dataset))
 
@@ -317,7 +317,8 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
 
     logging.info('Initial size {}, crop size {}, final size {}'.format(initial_size, crop_size, final_size))
 
-    model = CustomSequential()
+    # model = CustomSequential()  # to log the input image for debugging
+    model = tf.keras.Sequential()
 
     model.add(tf.keras.layers.Input(shape=(initial_size, initial_size, 1)))
 
