@@ -488,6 +488,32 @@ def custom_top_dirichlet(model, output_dim, schema):
     # model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 20. + .2))  # one params per answer, 1-100 range
     model.add(tf.keras.layers.Dense(output_dim, activation=lambda x: tf.nn.sigmoid(x) * 100. + 1.))  # one params per answer, 1-100 range
 
+def custom_top_dirichlet_reparam(model, output_dim, schema):
+
+    dense_units = (len(schema.answers) + len(schema.questions))
+    model.add(tf.keras.layers.Dense(dense_units, activation=None))  # one m per answer, one s per question
+
+    # keras functional model, split architecture
+    x = tf.keras.Input(shape=dense_units, batch_size=8)  # not including batch in shape, but still has (unknown) batch dim
+    # not really a for loop, just constructing the graph
+    n_answers = len(schema.answers)
+    alpha_list = []
+    for q_n in range(len(schema.question_index_groups)):
+        q_indices = schema.question_index_groups[q_n]
+        q_start = q_indices[0]
+        q_end = q_indices[1]
+        q_mean = tf.nn.softmax(x[:, q_start:q_end+1])
+        # might also use a softmax here to constrain to (0.01, 10) or similar. Currently any pos. value (via abs or relu)
+        q_precision = tf.expand_dims(0.01 + tf.math.abs(x[:, n_answers + q_n]), axis=1)  # expand_dims to avoid slicing axis 1 away
+        q_alpha = q_mean * q_precision
+        alpha_list.append(q_alpha)
+    alpha = tf.concat(alpha_list, axis=1)
+    # print(x.shape, alpha.shape)
+    top_model = tf.keras.Model(inputs=x, outputs=alpha)
+
+    model.add(top_model)
+
+
 if __name__ == '__main__':
 
     # https://github.com/tensorflow/tensorflow/issues/24496
