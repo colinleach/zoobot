@@ -491,7 +491,14 @@ def custom_top_dirichlet(model, output_dim, schema):
 def custom_top_dirichlet_reparam(model, output_dim, schema):
 
     dense_units = (len(schema.answers) + len(schema.questions))
-    model.add(tf.keras.layers.Dense(dense_units, activation=None))  # one m per answer, one s per question
+    model.add(tf.keras.layers.Dense(
+        dense_units, 
+        # kernel_initializer=tf.keras.initializers.Ones(),
+        # bias_initializer=tf.keras.initializers.Zeros(),
+        activation=None
+        # bias_constraint=tf.keras.constraints.NonNeg(),
+        # kernel_constraint=tf.keras.constraints.NonNeg()
+        ))  # one m per answer, one s per question
 
     # keras functional model, split architecture
     x = tf.keras.Input(shape=dense_units)  # not including batch in shape, but still has (unknown) batch dim
@@ -502,9 +509,10 @@ def custom_top_dirichlet_reparam(model, output_dim, schema):
         q_indices = schema.question_index_groups[q_n]
         q_start = q_indices[0]
         q_end = q_indices[1]
-        q_mean = tf.nn.softmax(x[:, q_start:q_end+1])
+        q_mean = 1e-8 + tf.nn.softmax(x[:, q_start:q_end+1])
         # might also use a softmax here to constrain to (0.01, 10) or similar. Currently any pos. value (via abs or relu)
         q_precision = tf.expand_dims(0.01 + tf.math.abs(x[:, n_answers + q_n]), axis=1)  # expand_dims to avoid slicing axis 1 away
+        # q_precision = tf.expand_dims(0.01 + x[:, n_answers + q_n], axis=1)  # expand_dims to avoid slicing axis 1 away
         q_alpha = q_mean * q_precision
         alpha_list.append(q_alpha)
     alpha = tf.concat(alpha_list, axis=1)
