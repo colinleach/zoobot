@@ -54,7 +54,7 @@ if __name__ == '__main__':
         batch_size = 8  # largest that fits on laptop  @ 224 pix
         n_samples = 5
     else:
-        batch_size = 16  # 16 for B7, 128 for B0
+        batch_size = 128  # 16 for B7, 128 for B0
         n_samples = 5
 
     if local:
@@ -68,18 +68,21 @@ if __name__ == '__main__':
     else:
         data_dir = os.environ['DATA']
         logging.info(data_dir)
-        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
+        catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog.csv'
+        shard_name = 'decals_dr_full'
+        model_name = 'decals_dr_full_m0'  # and decals_dr_full_reparam
+        output_name = model_name + '_eval_predictions'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
 
         # subdirs_to_search = ['', 'train_shards', 'eval_shards']
         subdirs_to_search = ['eval_shards']  # eval only
-        dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2', subdir) for subdir in subdirs_to_search]
+        dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/{shard_name}', subdir) for subdir in subdirs_to_search]
         tfrecord_locs = []
         for d in dirs_to_search:
             tfrecord_locs = tfrecord_locs + glob.glob(os.path.join(d, '*.tfrecord'))  # concat lists
 
-        checkpoint_dir = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7/in_progress'
-        save_loc = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7.csv'
+        checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
+        save_loc = f'{data_dir}/repos/zoobot/results/{output_name}.csv'
 
     # go
 
