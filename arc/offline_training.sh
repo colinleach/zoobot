@@ -11,16 +11,16 @@ module load python/anaconda3/2019.03
 module load gpu/cuda/10.1.243
 module load gpu/cudnn/7.6.5__cuda-10.1
 
-epochs=1000
+epochs=1000  # early stopping
 batch_size=128  # fits on V100, not my laptop...
 shard_img_size=300
 final_size=224
-shard_dir=$DATA/repos/zoobot/data/decals/shards/all_2p5_unfiltered_retired
+SHARD_NAME=decals_dr_full
+shard_dir=$DATA/repos/zoobot/data/decals/shards/$SHARD_NAME
 
 # shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
 # shard_dir=$DATA/repos/zoobot/data/gz2/shards/multilabel_master_filtered_$shard_img_size
 
-
 echo $epochs $batch_size $shard_img_size $final_size $shard_dir
 
-$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir $DATA/repos/zoobot/results/decals_retired_allq_m0 --shard-img-size $shard_img_size --train-dir $shard_dir/train_shards --eval-dir $shard_dir/eval_shards --epochs $epochs --batch-size $batch_size --final-size $final_size  
+$DATA/envs/zoobot/bin/python offline_training.py --experiment-dir ${DATA}/repos/zoobot/results/${SHARD_NAME}_m0 --shard-img-size $shard_img_size --train-dir $shard_dir/train_shards --eval-dir $shard_dir/eval_shards --epochs $epochs --batch-size $batch_size --final-size $final_size  
