@@ -1,61 +1,56 @@
 
-## Locally
+# Training ML
 
-**Run new reduction (optional)**
+Begin using GZD-C/DR5 final volunteer catalog. See zoobot/notebooks/catalogs/merge_catalogs.ipynb.
 
-*Check get_latest.py carefully first to make sure you're not deleting anything!*
+## ARC
 
-`dvc run -o data/decals/classifications/classifications.csv python -f data/decals/classifications.csv.dvc ../gzreduction/main.py`
+### Create Master Catalog
 
-<!-- `dvc push -r s3 data/decals/classifications.dvc` -->
-
-## EC2
-
-<!-- `shard_dir=data/decals/shards/decals_weak_bars_sim` -->
-<!-- `question=bar` -->
-<!-- `catalog_dir=data/decals/prepared_catalogs/decals_weak_bars_launch`
-`shard_dir=data/decals/shards/decals_weak_bars_launch`
-`experiment_dir=data/experiments/simulation/decals_weak_bars_launch_test` -->
-
-**Specify input data**
-
-Catalog (i.e. big list) of all galaxies, including iauname, fits_loc, png_loc columns. No labels required or expected.
-
-`initial_catalog=/media/walml/beta/decals/catalogs/decals_dr5_uploadable_master_catalog_nov_2019.csv`
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/current_final_dr5_result.parquet chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data/decals
 
 Classifications collected to-date, output by gz-panoptes-reduction as classifications.csv. Includes iauname column, to match with catalog.
 
-`initial_classifications=/media/walml/beta/decals/results/classifications_2019_11_27.csv`
-
-**Create master catalog**
-
-Will merge the catalog and classifications to-date here. Also remove duplicates and tweak filenames, if needed. Deprecated for GZ2, for now.
+`initial_classifications=data/decals/current_final_dr5_result.parquet`
 
 `master_catalog=data/decals/decals_master_catalog.csv`
 
-`dvc run -o $master_catalog -f $master_catalog.dvc -d zoobot/science_logic/prepare_catalogs.py -d $initial_catalog -d $initial_classifications python zoobot/science_logic/prepare_catalogs.py $initial_catalog $initial_classifications $master_catalog`
+`dvc run -n master_catalog -o $master_catalog -d $initial_classifications python zoobot/science_logic/prepare_catalogs.py no_catalog $initial_classifications $master_catalog`
 
 
-**Define experiment (create experiment catalogs)**
+### Define experiment (create experiment catalogs)
 
-`catalog_dir=data/decals/prepared_catalogs/decals_multiq`
+`catalog_dir=data/decals/prepared_catalogs/decals_dr`
 
-`dvc run -d $master_catalog -d zoobot/science_logic/define_experiment.py -o $catalog_dir -f $catalog_dir.dvc python zoobot/science_logic/define_experiment.py --master-catalog=$master_catalog --save-dir=$catalog_dir`
+`dvc run -n experiment_catalog -d $master_catalog -d zoobot/science_logic/define_experiment.py -o $catalog_dir python zoobot/science_logic/define_experiment.py --master-catalog=$master_catalog --save-dir=$catalog_dir`
 
-**Create shards**
+Optionally add --filter to select a subset of galaxies. 
+
+Optionally set --sim-fraction to control fraction of galaxies to pretend are unlabelled in simulation_context catalogs. Does not affect real catalogs.
+
+For active learning tests, you will use the sim catalogs. For real active learning, or `normal' offline training, you will use the real catalogs.
+
+### Create shards
 
 Real:
 
-`shard_dir=data/decals/shards/decals_multiq_128`
+Use make_shards.sh
 
-`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/unlabelled_catalog.csv --eval-size=2500 --shard-dir=$shard_dir --max-unlabelled=40000 --img-size 128`
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/arc/make_shards.sh chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/arc/make_shards.sh
+
+sbatch arc/make_shards.sh
 
 Sim:
 
-`shard_dir=data/decals/shards/decals_multiq_128_sim_init_1800_featp5_facep5`
+Also use make_shards.sh, pointing to the simulation_context subfolder of the prepared catalogs.
 
+### Run Offline (on labelled only)
 
-`dvc run -d $catalog_dir -d zoobot/active_learning/make_shards.py -o $shard_dir -f $shard_dir.dvc python zoobot/active_learning/make_shards.py --labelled-catalog=$catalog_dir/simulation_context/labelled_catalog.csv --unlabelled-catalog=$catalog_dir/simulation_context/unlabelled_catalog.csv --eval-size=1000 --shard-dir=$shard_dir --img-size 128 --max-labelled 5000`
+Use offline_training.sh
+
+rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/arc/offline_training.sh chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/arc/offline_training.sh
+
+sbatch offline_training.sh
 
 **Run Simulation**
 
