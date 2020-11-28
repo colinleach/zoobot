@@ -1,0 +1,41 @@
+master_catalog:
+  cmd: python zoobot/science_logic/prepare_catalogs.py no_catalog data/decals/current_final_dr5_result.parquet
+    data/decals/decals_master_catalog.csv
+  deps:
+  - path: data/decals/current_final_dr5_result.parquet
+    md5: 49c32968543d5d0dd9e60b02419b91ab
+    size: 49844776
+  outs:
+  - path: data/decals/decals_master_catalog.csv
+    md5: de145342fd54d211b59c9394e2aea5e9
+    size: 203939326
+experiment_catalog:
+  cmd: python zoobot/science_logic/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv
+    --save-dir=data/decals/prepared_catalogs/decals_dr
+  deps:
+  - path: data/decals/decals_master_catalog.csv
+    md5: de145342fd54d211b59c9394e2aea5e9
+    size: 203939326
+  - path: zoobot/science_logic/define_experiment.py
+    md5: 2eaed381c8b1b84e4d0fd1955719db67
+    size: 8253
+  outs:
+  - path: data/decals/prepared_catalogs/decals_dr
+    md5: 49c68d11cc3a486e9068f064db4c1dd7.dir
+    size: 624819801
+    nfiles: 6
+experiment_catalog_20k:
+  cmd: python zoobot/science_logic/define_experiment.py --master-catalog=data/decals/decals_master_catalog.csv
+    --save-dir=data/decals/prepared_catalogs/decals_dr_20k
+  deps:
+  - path: data/decals/decals_master_catalog.csv
+    md5: de145342fd54d211b59c9394e2aea5e9
+    size: 203939326
+  - path: zoobot/science_logic/define_experiment.py
+    md5: 2eaed381c8b1b84e4d0fd1955719db67
+    size: 8253
+  outs:
+  - path: data/decals/prepared_catalogs/decals_dr_20k
+    md5: db8a6cc4f32cd13ceb0dad0bd0426751.dir
+    size: 624825738
+    nfiles: 6
