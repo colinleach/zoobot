@@ -358,8 +358,8 @@ def get_model(schema, initial_size, crop_size, final_size, weights_loc=None):
     # model.add(tf.keras.layers.Dense(16))
     # model.add(tf.keras.layers.Dense(2))
 # 
-    efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
-    # efficientnet.custom_top_dirichlet_reparam(model, output_dim, schema)
+    # efficientnet.custom_top_dirichlet(model, output_dim, schema)  # inplace
+    efficientnet.custom_top_dirichlet_reparam(model, output_dim, schema)
 
     # will be updated by callback
     model.step = tf.Variable(0, dtype=tf.int64, name='model_step', trainable=False)

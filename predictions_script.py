@@ -70,7 +70,7 @@ if __name__ == '__main__':
         logging.info(data_dir)
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog.csv'
         shard_name = 'decals_dr_full'
-        model_name = 'decals_dr_full_1_to_100'
+        model_name = 'decals_dr_full_reparam'
         # decals_dr_full (.1 -> 20), decals_dr_full_1_to_100, decals_dr_full_reparam 
         output_name = model_name + '_eval_predictions'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
