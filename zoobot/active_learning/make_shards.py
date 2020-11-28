@@ -110,7 +110,10 @@ class ShardConfig():
         unlabelled_catalog.to_csv(self.unlabelled_catalog_loc)
 
         # save train/test split into training and eval shards
-        train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
+        # train_df, eval_df = catalog_to_tfrecord.split_df(labelled_catalog, train_test_fraction=train_test_fraction)
+        # temp change: everything labelled as train, everything unlabelled (just 4k) as eval
+        train_df = labelled_catalog
+        eval_df = unlabelled_catalog
         logging.info('\nTraining subjects: {}'.format(len(train_df)))
         logging.info('Eval subjects: {}'.format(len(eval_df)))
         if len(train_df) < len(eval_df):

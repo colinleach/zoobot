@@ -17,7 +17,7 @@ def get_experiment_catalogs(catalog, save_dir, filter_catalog=False):
         filtered_catalog = apply_custom_filter_cheat(catalog)  # science logic lives here
     else:
         filtered_catalog = catalog
-    labelled, unlabelled = split_retired_and_not(filtered_catalog)  # for now using N=36-70, just to check it works, then may relax this constraint
+    labelled, unlabelled = split_retired_and_not(filtered_catalog)  # not actually retired, see subject_is_retired
     # unlabelled and catalog will have no 'label' column
     return catalog, labelled, unlabelled
 
