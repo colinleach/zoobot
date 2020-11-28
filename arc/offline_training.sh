@@ -15,7 +15,7 @@ epochs=1000  # early stopping
 batch_size=128  # fits on V100, not my laptop...
 shard_img_size=300
 final_size=224
-SHARD_NAME=decals_dr_full
+SHARD_NAME=decals_dr_train_labelled
 shard_dir=$DATA/repos/zoobot/data/decals/shards/$SHARD_NAME
 
 # shard_dir=$DATA/repos/zoobot/data/decals/shards/multilabel_master_filtered_$shard_img_size
