@@ -69,14 +69,14 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog.csv'
-        shard_name = 'decals_dr_full'
-        model_name = 'decals_dr_full_m0'  # _full for 80/20 split (metrics), _train_labelled for all labelled (final catalog)
+        shard_name = 'decals_dr_train_labelled'
+        model_name = 'decals_dr_train_labelled_m0'  # _full for 80/20 split (metrics), _train_labelled for all labelled (final catalog)
         # decals_dr_full (.1 -> 20), decals_dr_full_1_to_100, decals_dr_full_reparam 
         output_name = model_name + '_eval_predictions'
         # tfrecord_locs = glob.glob(f'{data_dir}/repos/zoobot/data/decals/shards/all_2p5_unfiltered_n2/eval_shards/*.tfrecord')
 
-        # subdirs_to_search = ['', 'train_shards', 'eval_shards']
-        subdirs_to_search = ['eval_shards']  # eval only
+        subdirs_to_search = ['', 'train_shards', 'eval_shards']  # everything, for final catalog
+        # subdirs_to_search = ['eval_shards']  # eval only, for metrics
         dirs_to_search = [os.path.join(f'{data_dir}/repos/zoobot/data/decals/shards/{shard_name}', subdir) for subdir in subdirs_to_search]
         tfrecord_locs = []
         for d in dirs_to_search:
