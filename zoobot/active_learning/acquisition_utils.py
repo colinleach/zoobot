@@ -233,6 +233,7 @@ def get_discrete_permutations(n, k):
         for c in itertools.combinations_with_replacement(masks, n): 
             yield sum(c)
     return np.array(list(permutation_generator(n, k)))
+    # .e.g [[0, 3], [1, 2], ... [3, 0]] for n=3, k=2
 
 
 def dirichlet_entropy_in_concentrations(samples_for_q, expected_votes):

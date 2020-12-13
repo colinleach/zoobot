@@ -5,6 +5,11 @@ Begin using GZD-C/DR5 final volunteer catalog. See zoobot/notebooks/catalogs/mer
 
 ## ARC
 
+Activate conda on ARC outside of a job:
+
+    module load python/anaconda3/2019.03
+    source activate /data/phys-zooniverse/chri5177/envs/zoobot
+
 ### Create Master Catalog
 
 rsync -azv -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' /home/walml/repos/zoobot/current_final_dr5_result.parquet chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/data/decals

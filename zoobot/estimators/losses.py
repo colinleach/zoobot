@@ -48,6 +48,10 @@ class Answer():
     def __repr__(self):
         return f'{self.text}, index {self.index}'
 
+    @property
+    def pretty_text(self):
+        return self.text.replace('-',' ').replace('_', ' ').title()
+
 
 def create_answers_decals(question, label_cols):
     pairs = {

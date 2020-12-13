@@ -1,4 +1,5 @@
 import json
+import logging
 
 import numpy as np
 import pandas as pd
@@ -146,46 +147,55 @@ class DirichletMultinomialEqualMixture(EqualMixture):
             for n in range(self.n_distributions)
         ]
 
-def get_hpd(x, p, ci=0.8):  # on (discrete) multinomial dirichlet
+def get_hpd(x: np.ndarray, p: np.ndarray, ci=0.8):  # on (discrete) multinomial dirichlet
+    if len(p) <= 1:
+        print(x, p)
+        raise IndexError
+    assert x.ndim == 1
+    assert x.shape == p.shape
     assert np.isclose(p.sum(), 1, atol=0.001)
     # here, x is discrete posterior p's, not samples as with agnfinder
     mode_index = np.argmax(p)
+    # check unimodal
+    unimodal = True
+    if not np.argsort(p)[::-1][1] in (mode_index-1, mode_index+1):
+        logging.warning(f'Possible second mode, hpd will fail: {p}')
+        unimodal = False
     lower_index = mode_index
     higher_index = mode_index
     while True:
         confidence = p[lower_index:higher_index+1].sum()
-#         print(lower_index, higher_index, confidence)
         if confidence >= ci:
-            break  # discrete so will be a little under or a little over
-        else:
+            break  # discrete so will be at least a little over
+        else:  # step each boundary outwards towards the edge, stop at the edge
             lower_index = max(0, lower_index-1)
             higher_index = min(len(x)-1, higher_index+1)
 
     # these indices will give a symmetric interval of at least ci, but not exactly - and will generally overestimate
-
-
-    return (x[lower_index], x[higher_index]), confidence
+    # hence confidence will generally be a bit different to desired ci, important to return
+    return (x[lower_index], x[higher_index]), confidence, unimodal
         
 
 def get_coverage(posteriors, true_values):
     results = []
-    for ci_width in np.linspace(0.1, 0.95):
-        for target_n, (x, posterior) in enumerate(posteriors):
+    for ci_width in np.linspace(0.1, 0.95):  # 50, by default
+        for target_n, (x, posterior) in enumerate(posteriors):  # n posteriors
             true_value = true_values[target_n]
-            credible_interval_width = 0.8
-#             modes = get_hpd(posterior, ci=ci_width)
-#             within_any_ci = any([x[0] < true_value < x[1] for x in modes])
-            (lower_lim, higher_lim), confidence = get_hpd(x, posterior, ci=ci_width)
-            within_any_ci = lower_lim <= true_value <= higher_lim
+            (lower_lim, higher_lim), confidence, unimodal = get_hpd(x, posterior, ci=ci_width)
+            within_any_ci = lower_lim <= true_value <= higher_lim  # inclusive
             results.append({
-                'ci_width': ci_width,
-                'confidence': confidence,
-#                 'hpd_min': hpd[0],
-#                 'hpd_max': hpd[1],
+                'target_index': target_n,
+                'requested_ci_width_dont_use': ci_width, # requested confidence
+                'confidence': confidence,  # actual confidence, use this
+                'lower_edge': lower_lim,
+                'upper_edge': higher_lim,
                 'true_value': true_value,
-                'true_within_hpd': within_any_ci
+                'true_within_hpd': within_any_ci,
+                'unimodal': unimodal
             })
-    return pd.DataFrame(results)
+    df = pd.DataFrame(results)
+    df = df.drop_duplicates(subset=['target_index', 'confidence'])
+    return df
 
 
 def get_true_values(catalog, id_strs, answer):
@@ -196,7 +206,7 @@ def get_true_values(catalog, id_strs, answer):
     return true_values
 
 # samples and catalog are aligned - so let's just use them as one dataframe instead of two args
-def get_posteriors(samples, catalog, id_strs, question, answer):
+def get_posteriors(samples, catalog, id_strs, question, answer, temperature=None):
     """[summary]
 
     Args:
@@ -214,10 +224,13 @@ def get_posteriors(samples, catalog, id_strs, question, answer):
         galaxy = catalog[catalog['id_str'] == id_strs[sample_n]].squeeze()
         galaxy_posteriors = get_galaxy_posteriors(sample, galaxy, question, answer)
         all_galaxy_posteriors.append(galaxy_posteriors)
+    if temperature is not None:
+        all_galaxy_posteriors = [(indices, (posterior ** temperature) / np.sum(posterior ** temperature, axis=1, keepdims=True)) for (indices, posterior) in all_galaxy_posteriors]
     return all_galaxy_posteriors
 
 
 def get_galaxy_posteriors(sample, galaxy, question, answer):
+    assert answer in question.answers
     n_samples = sample.shape[-1]
     cols = [a.text for a in question.answers]
     assert len(cols) == 2 # Binary only!
@@ -225,7 +238,7 @@ def get_galaxy_posteriors(sample, galaxy, question, answer):
 
     votes = np.arange(0., total_votes+1)
     x = np.stack([votes, total_votes-votes], axis=-1)  # also need the counts for other answer, no. 
-    votes_this_answer = x[:, answer.index - question.start_index]
+    votes_this_answer = x[:, answer.index - question.start_index]  # second index is 0 or 1
     
     # could refactor with new equal mixture class
     all_probs = []
@@ -244,7 +257,8 @@ def load_all_concentrations(df, concentration_cols):
     return np.stack(temp, axis=2).transpose(0, 2, 1)
 
 
-def dirichlet_prob_of_answers(samples, schema):
+def dirichlet_prob_of_answers(samples, schema, temperature=None):
+    # badly named vs posteriors, actually gives predicted vote fractions of answers...
     # mean probability (including dropout) of an answer being given. 
     # samples has (batch, answer, dropout) shape
     p_of_answers = []
