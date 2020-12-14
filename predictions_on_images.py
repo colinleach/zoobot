@@ -26,9 +26,15 @@ def prediction_to_row(prediction, png_path):
     return row
 
 
-def load_png(loc):
+def load_image_file(loc, mode='png'):
+    # specify mode explicitly to avoid graph tracing issues
     image = tf.io.read_file(loc)
-    image = tf.image.decode_png(image)
+    if mode == 'png':
+        image = tf.image.decode_png(image)
+    elif mode == 'jpeg' or mode == '.jpg':
+        image = tf.image.decode_jpeg(image)
+    else:
+        raise ValueError(f'Image filetype mode {mode} not recognised')
     return tf.image.convert_image_dtype(image, tf.float32)
 
 
@@ -54,8 +60,8 @@ if __name__ == '__main__':
     version = 'decals'
     label_cols = label_metadata.decals_label_cols
     
-    initial_size = 64
-    # initial_size = 300
+    # initial_size = 64
+    initial_size = 300
     crop_size = int(initial_size * 0.75)
     final_size = 224
 
@@ -64,34 +70,36 @@ if __name__ == '__main__':
         batch_size = 8  # largest that fits on laptop  @ 224 pix
         n_samples = 5
     else:
-        batch_size = 16  # 16 for B7, 128 for B0
+        batch_size = 128  # 16 for B7, 128 for B0
         n_samples = 5
 
     if local:
         # catalog_loc = 'data/decals/decals_master_catalog.csv'
         # checkpoint_dir = 'results/temp/decals_n2_allq_m0/in_progress'
         checkpoint_dir = 'results/debug/in_progress'
+        folder_to_predict = '/media/walml/beta/decals/png_native/dr5/J000'
         save_loc = 'temp/local_debugging.csv'
     else:  # on ARC HPC system
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
-        checkpoint_dir = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7/in_progress'
-        save_loc = f'{data_dir}/repos/zoobot/results/offline_decals_all_2p5_unfiltered_n2_b7.csv'
+        model_name = 'decals_dr_train_labelled_m0'
+        checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
+        folder_to_predict = f'{data_dir}/png_native/dr5/J000'
+        save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_to_predict}_model_{model_name}_predictions.csv'
 
     # go
-
     
-    # logging.info(f'{catalog_loc}, {checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
+    logging.info(f'{checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
 
     schema = losses.Schema(label_cols, questions, version=version)
 
     # catalog = pd.read_csv(catalog_loc, dtype={'subject_id': str})  # original catalog
 
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
-    png_paths = list(Path('/media/walml/beta/decals/png_native/dr5/J000').glob('*.png'))
+    png_paths = list(Path(folder_to_predict).glob('*.png'))  # not recursive
     assert png_paths
-    # png_paths = [Path(loc) for loc in catalog['local_png_loc']]
+
     # check they exist
     missing_paths = [path for path in png_paths if not path.is_file()]
     if missing_paths:
@@ -99,7 +107,7 @@ if __name__ == '__main__':
 
     path_ds = tf.data.Dataset.from_tensor_slices([str(path) for path in png_paths])
 
-    png_ds = path_ds.map(load_png) 
+    png_ds = path_ds.map(lambda x: load_image_file(x, mode='png')) 
     png_ds = png_ds.batch(batch_size, drop_remainder=False)
 
     png_ds = png_ds.map(lambda x: resize_image_batch_with_tf(x , size=initial_size))   # initial size = after resize from 424 but before crop/zoom
@@ -122,8 +130,5 @@ if __name__ == '__main__':
     predictions_df = pd.DataFrame(data)
     print(predictions_df)
 
-    # df = pd.merge(catalog, predictions_df, how='inner', on='id_str')
-    # assert len(df) == len(predictions_df)
-
-    # df.to_csv(save_loc, index=False)
-    # logging.info(f'Predictions saved to {save_loc}')
+    predictions_df.to_csv(save_loc, index=False)
+    logging.info(f'Predictions saved to {save_loc}')
