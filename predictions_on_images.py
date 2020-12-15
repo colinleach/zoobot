@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 from pathlib import Path
+import time
 
 import numpy as np
 import pandas as pd
@@ -86,14 +87,16 @@ if __name__ == '__main__':
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
-        # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
-        folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
+        folder_to_predict = f'{data_dir}/png_native/dr5/J000'
+        # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
         folder_name = 'debug'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
     
     logging.info(f'{checkpoint_dir}, {folder_to_predict}, {save_loc}, {local}, {n_samples}, {batch_size}')
+    start = time.time()
+    logging.info('Starting at: {}'.format(start))
 
     schema = losses.Schema(label_cols, questions, version=version)
 
@@ -136,7 +139,10 @@ if __name__ == '__main__':
 
     data = [prediction_to_row(predictions[n], png_paths[n]) for n in range(len(predictions))]
     predictions_df = pd.DataFrame(data)
-    print(predictions_df)
+    logging.info(predictions_df)
 
     predictions_df.to_csv(save_loc, index=False)
     logging.info(f'Predictions saved to {save_loc}')
+
+    end = time.time()
+    logging.info('Time elapsed: {}'.format(end - start))
