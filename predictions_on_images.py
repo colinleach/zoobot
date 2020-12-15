@@ -123,7 +123,8 @@ if __name__ == '__main__':
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     for path, png in zip(png_paths, png_ds):
-        print(str(path), png.numpy()[0, 0, 0])
+        print(str(path))
+        print(png.numpy()[0, 0, 0])
     exit()
 
     model = run_estimator_config.get_model(schema, initial_size, crop_size, final_size)
