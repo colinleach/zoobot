@@ -26,6 +26,7 @@ def prediction_to_row(prediction, png_path):
     return row
 
 
+# https://stackoverflow.com/questions/62544528/tensorflow-decodejpeg-expected-image-jpeg-png-or-gif-got-unknown-format-st?rq=1
 def load_image_file(loc, mode='png'):
     # specify mode explicitly to avoid graph tracing issues
     image = tf.io.read_file(loc)
@@ -116,6 +117,10 @@ if __name__ == '__main__':
     png_ds = png_ds.map(lambda x: resize_image_batch_with_tf(x , size=initial_size))   # initial size = after resize from 424 but before crop/zoom
     png_ds = png_ds.map(lambda x: tf.reduce_mean(input_tensor=x, axis=3, keepdims=True))  # greyscale
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    for png in png_ds.take(10):
+        print(png)
+    exit
 
     model = run_estimator_config.get_model(schema, initial_size, crop_size, final_size)
     load_status = model.load_weights(checkpoint_dir)
