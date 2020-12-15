@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# SBATCH --partition=htc-devel
-# SBATCH --ntasks-per-node=1
-# SBATCH --time=00:10:00
-# SBATCH --gres=gpu:1
-# SBATCH --job-name=predict-devel
+#SBATCH --partition=htc-devel
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=00:10:00
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=predict-devel
 
-##SBATCH --partition=htc
-##SBATCH --ntasks-per-node=1
-##SBATCH --time=23:55:00
-##SBATCH --gres=gpu:v100:1
-##SBATCH --job-name=predict
+## SBATCH --partition=htc
+## SBATCH --ntasks-per-node=1
+## SBATCH --time=23:55:00
+## SBATCH --gres=gpu:v100:1
+## SBATCH --job-name=predict
 
 module purge
 module load python/anaconda3/2019.03
