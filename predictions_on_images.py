@@ -109,6 +109,8 @@ if __name__ == '__main__':
     logging.info(png_paths)
     logging.info(len(png_paths))
 
+    print(png_paths[0])
+    exit()
     # check they exist
     missing_paths = [path for path in png_paths if not path.is_file()]
     if missing_paths:
