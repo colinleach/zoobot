@@ -92,7 +92,7 @@ if __name__ == '__main__':
         folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
         # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
         file_format = 'jpeg'
-        folder_name = 'debug'
+        folder_name = 'dr2_partial'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     assert os.path.isdir(folder_to_predict)
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
-    png_paths = list(Path(folder_to_predict).glob('*.{}'.format(file_format)))[:100]  # not recursive
+    png_paths = list(Path(folder_to_predict).glob('*.{}'.format(file_format)))  # not recursive
     assert png_paths
     logging.info('Images to predict on: {}'.format(len(png_paths)))
 
