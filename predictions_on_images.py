@@ -1,5 +1,7 @@
 import os
 import glob
+import jsonimport os
+import glob
 import json
 import logging
 from pathlib import Path
@@ -81,14 +83,17 @@ if __name__ == '__main__':
         checkpoint_dir = 'results/debug/in_progress'
         folder_to_predict = '/media/walml/beta/decals/png_native/dr5/J000'
         save_loc = 'temp/local_debugging.csv'
+        file_format = 'png'
     else:  # on ARC HPC system
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
-        folder_to_predict = f'{data_dir}/png_native/dr5/J000'
+        # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
+        folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
         # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
+        file_format = 'jpeg'
         folder_name = 'debug'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
@@ -104,7 +109,7 @@ if __name__ == '__main__':
 
     assert os.path.isdir(folder_to_predict)
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
-    png_paths = list(Path(folder_to_predict).glob('*.png'))  # not recursive
+    png_paths = list(Path(folder_to_predict).glob('*.{}'.format(file_format)))[:100]  # not recursive
     assert png_paths
     logging.info('Images to predict on: {}'.format(len(png_paths)))
 
@@ -115,19 +120,19 @@ if __name__ == '__main__':
 
     path_ds = tf.data.Dataset.from_tensor_slices([str(path) for path in png_paths])
 
-    png_ds = path_ds.map(lambda x: load_image_file(x, mode='png')) 
+    png_ds = path_ds.map(lambda x: load_image_file(x, mode=file_format)) 
     png_ds = png_ds.batch(batch_size, drop_remainder=False)
 
     png_ds = png_ds.map(lambda x: resize_image_batch_with_tf(x , size=initial_size))   # initial size = after resize from 424 but before crop/zoom
     png_ds = png_ds.map(lambda x: tf.reduce_mean(input_tensor=x, axis=3, keepdims=True))  # greyscale
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
-    print('First path: ', str(png_paths[0]))
-    for path, png in zip(png_paths, png_ds):
-        print(str(path))
-        time.sleep(0.1)
-        print(png.numpy()[0, 0, 0])
-    exit()
+    # print('First path: ', str(png_paths[0]))
+    # for path, png in zip(png_paths, png_ds):
+    #     print(str(path))
+    #     time.sleep(0.1)
+    #     print(png.numpy()[0, 0, 0])
+    # exit()
 
     model = run_estimator_config.get_model(schema, initial_size, crop_size, final_size)
     load_status = model.load_weights(checkpoint_dir)
