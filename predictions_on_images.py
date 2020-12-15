@@ -106,6 +106,8 @@ if __name__ == '__main__':
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
     png_paths = list(Path(folder_to_predict).glob('*.png'))  # not recursive
     assert png_paths
+    logging.info(png_paths)
+    logging.info(len(png_paths))
 
     # check they exist
     missing_paths = [path for path in png_paths if not path.is_file()]
