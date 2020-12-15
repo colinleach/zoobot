@@ -92,7 +92,7 @@ if __name__ == '__main__':
         folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
         # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
         file_format = 'jpeg'
-        folder_name = 'dr2_partial'
+        folder_name = 'dr1'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
