@@ -89,7 +89,7 @@ if __name__ == '__main__':
         model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
         # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
-        folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
+        folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/dr1/standard'
         # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
         file_format = 'jpeg'
         folder_name = 'dr1'
