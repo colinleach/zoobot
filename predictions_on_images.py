@@ -106,11 +106,8 @@ if __name__ == '__main__':
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
     png_paths = list(Path(folder_to_predict).glob('*.png'))  # not recursive
     assert png_paths
-    logging.info(png_paths)
-    logging.info(len(png_paths))
+    logging.info('Images to predict on: {}'.format(len(png_paths)))
 
-    print(png_paths[0])
-    exit()
     # check they exist
     missing_paths = [path for path in png_paths if not path.is_file()]
     if missing_paths:
@@ -125,9 +122,9 @@ if __name__ == '__main__':
     png_ds = png_ds.map(lambda x: tf.reduce_mean(input_tensor=x, axis=3, keepdims=True))  # greyscale
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
-    for png in png_ds.take(1):
-        print(png.numpy())
-    # exit()
+    for path, png in zip(png_paths, png_ds):
+        print(str(path), png.numpy()[0, 0, 0])
+    exit()
 
     model = run_estimator_config.get_model(schema, initial_size, crop_size, final_size)
     load_status = model.load_weights(checkpoint_dir)
