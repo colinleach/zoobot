@@ -119,7 +119,7 @@ if __name__ == '__main__':
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     for png in png_ds.take(10):
-        print(png)
+        print(png.numpy())
     exit
 
     model = run_estimator_config.get_model(schema, initial_size, crop_size, final_size)
