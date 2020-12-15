@@ -31,7 +31,7 @@ def load_image_file(loc, mode='png'):
     image = tf.io.read_file(loc)
     if mode == 'png':
         image = tf.image.decode_png(image)
-    elif mode == 'jpeg' or mode == '.jpg':
+    elif mode == 'jpeg':  # rename jpg to jpeg or validation checks in decode_jpg will fail
         image = tf.image.decode_jpeg(image)
     else:
         raise ValueError(f'Image filetype mode {mode} not recognised')
@@ -85,8 +85,10 @@ if __name__ == '__main__':
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
         model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
-        folder_to_predict = f'{data_dir}/png_native/dr5/J000'
-        save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_to_predict}_model_{model_name}_predictions.csv'
+        # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
+        folder_to_predict = '{data_dir}/chri5177/repos/zoobot/data/decals/temp/J000'
+        folder_name = 'debug'
+        save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
     
@@ -96,6 +98,7 @@ if __name__ == '__main__':
 
     # catalog = pd.read_csv(catalog_loc, dtype={'subject_id': str})  # original catalog
 
+    assert os.path.isdir(folder_to_predict)
     # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
     png_paths = list(Path(folder_to_predict).glob('*.png'))  # not recursive
     assert png_paths
