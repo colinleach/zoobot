@@ -122,8 +122,10 @@ if __name__ == '__main__':
     png_ds = png_ds.map(lambda x: tf.reduce_mean(input_tensor=x, axis=3, keepdims=True))  # greyscale
     png_ds = png_ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
+    print('First path: ', str(png_paths[0]))
     for path, png in zip(png_paths, png_ds):
         print(str(path))
+        time.sleep(0.1)
         print(png.numpy()[0, 0, 0])
     exit()
 
