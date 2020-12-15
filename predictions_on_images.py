@@ -87,13 +87,13 @@ if __name__ == '__main__':
         model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
         # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
-        folder_to_predict = '{data_dir}/chri5177/repos/zoobot/data/decals/temp/J000'
+        folder_to_predict = f'{data_dir}/chri5177/repos/zoobot/data/decals/temp/J000'
         folder_name = 'debug'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
     
-    logging.info(f'{checkpoint_dir}, {save_loc}, {local}, {n_samples}, {batch_size}')
+    logging.info(f'{checkpoint_dir}, {folder_to_predict}, {save_loc}, {local}, {n_samples}, {batch_size}')
 
     schema = losses.Schema(label_cols, questions, version=version)
 
