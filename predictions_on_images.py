@@ -16,14 +16,14 @@ from zoobot.estimators import losses, input_utils
 from zoobot.estimators import efficientnet
 
 
-def prediction_to_row(prediction, png_path):
+def prediction_to_row(prediction, png_loc, label_cols):
     row = {
-        'png_path': png_path
+        'png_loc': png_loc
     }
     for n, col in enumerate(label_cols):
         answer = label_cols[n]
         row[answer + '_concentration'] = json.dumps(list(prediction[n].astype(float)))
-        row[answer + '_concentration_mean'] = float(prediction[n].mean())
+        # row[answer + '_concentration_mean'] = float(prediction[n].mean())
     return row
 
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
-        model_name = 'decals_dr_train_labelled_m3'
+        model_name = 'decals_dr_train_labelled_m4'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
         # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
         folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/dr1/standard'
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     predictions = np.stack([model.predict(png_ds) for n in range(n_samples)], axis=-1)
     logging.info('Predictions complete - {}'.format(predictions.shape))
 
-    data = [prediction_to_row(predictions[n], png_paths[n]) for n in range(len(predictions))]
+    data = [prediction_to_row(predictions[n], png_paths[n], label_cols=label_cols) for n in range(len(predictions))]
     predictions_df = pd.DataFrame(data)
     logging.info(predictions_df)
 
