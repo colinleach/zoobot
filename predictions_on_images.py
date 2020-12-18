@@ -86,7 +86,7 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
-        model_name = 'decals_dr_train_labelled_m1'
+        model_name = 'decals_dr_train_labelled_m2'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
         # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
         folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
