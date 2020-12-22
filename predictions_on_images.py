@@ -116,8 +116,6 @@ if __name__ == '__main__':
     if missing_paths:
         raise FileNotFoundError(f'Missing {len(missing_paths)} images e.g. {missing_paths[0]}')
 
-    exit()
-
     path_ds = tf.data.Dataset.from_tensor_slices([str(path) for path in png_paths])
 
     png_ds = path_ds.map(lambda x: load_image_file(x, mode=file_format)) 
