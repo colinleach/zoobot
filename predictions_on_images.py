@@ -86,13 +86,13 @@ if __name__ == '__main__':
         data_dir = os.environ['DATA']
         logging.info(data_dir)
         # catalog_loc = f'{data_dir}/repos/zoobot/data/decals/decals_master_catalog_arc.csv'
-        model_name = 'decals_dr_train_labelled_m4'
+        model_name = 'decals_dr_train_labelled_m0'
         checkpoint_dir = f'{data_dir}/repos/zoobot/results/{model_name}/in_progress'
-        # folder_to_predict = f'{data_dir}/png_native/dr5/J000'
-        folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
+        folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr5/png'
+        # folder_to_predict = '/data/phys-zooniverse/chri5177/galaxy_zoo/decals/dr1_dr2/png/decals-dr2/standard'
         # folder_to_predict = f'{data_dir}/repos/zoobot/data/decals/temp/J000'
-        file_format = 'jpeg'
-        folder_name = 'dr2'
+        file_format = 'png'
+        folder_name = 'dr5'
         save_loc = f'{data_dir}/repos/zoobot/results/folder_{folder_name}_model_{model_name}_predictions.csv'
 
     # go
@@ -106,8 +106,8 @@ if __name__ == '__main__':
     # catalog = pd.read_csv(catalog_loc, dtype={'subject_id': str})  # original catalog
 
     assert os.path.isdir(folder_to_predict)
-    # png_paths = list(Path('/media/walml/beta/decals/dr5/png_native').glob('*/**.png'))
-    png_paths = list(Path(folder_to_predict).glob('*.{}'.format(file_format)))  # not recursive
+    png_paths = list(Path(folder_to_predict).glob('*/*.png'))  # next folder down only, not recursive
+    # png_paths = list(Path(folder_to_predict).glob('*.{}'.format(file_format)))  # this folder only
     assert png_paths
     logging.info('Images to predict on: {}'.format(len(png_paths)))
 
@@ -153,3 +153,6 @@ if __name__ == '__main__':
 
     end = time.time()
     logging.info('Time elapsed: {}'.format(end - start))
+
+    # and copy back to local if needed
+    # rsync -az -e 'ssh -A -J chri5177@oscgate.arc.ox.ac.uk' chri5177@arcus-htc:/data/phys-zooniverse/chri5177/repos/zoobot/results/folder_dr1_model_decals_dr_train_labelled_m0_predictions.csv /home/walml/repos/zoobot/results
