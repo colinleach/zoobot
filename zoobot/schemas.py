@@ -5,7 +5,7 @@ import numpy as np
 
 class Question():
 
-    def __init__(self, question_text:str, answer_text: List, label_cols:List):
+    def __init__(self, question_text: str, answer_text: List, label_cols: List):
         """
         Class representing decision tree question.
         Requires ``label_cols`` as an input in order to find the index (vs. all questions and answers) of this question and each answer.
@@ -113,7 +113,6 @@ def set_dependencies(questions, dependencies):
         questions (List): of questions e.g. [Question('smooth-or-featured'), Question('edge-on-disk')]
         dependencies (dict): dict mapping each question (e.g. disk-edge-on) to the answer on which it depends (e.g. smooth-or-featured_featured-or-disk)
     """
-
     for question in questions:
         prev_answer_text = dependencies[question.text]
         if prev_answer_text is not None:
@@ -126,7 +125,7 @@ def set_dependencies(questions, dependencies):
 
 
 class Schema():
-    def __init__(self, question_answer_pairs:dict, dependencies):
+    def __init__(self, question_answer_pairs: dict, dependencies):
         """
         Relate the df label columns tor question/answer groups and to tfrecod label indices
         Requires that labels be continguous by question - easily satisfied
@@ -135,6 +134,7 @@ class Schema():
             question_answer_pairs (dict): e.g. {'smooth-or-featured: ['_smooth, _featured-or-disk, ...], ...}
             dependencies (dict): dict mapping each question (e.g. disk-edge-on) to the answer on which it depends (e.g. smooth-or-featured_featured-or-disk)
         """
+
         logging.debug(f'Q/A pairs: {question_answer_pairs}')
         self.question_answer_pairs = question_answer_pairs
         _, self.label_cols = extract_questions_and_label_cols(question_answer_pairs)
