@@ -121,7 +121,7 @@ class ShardConfig():
         if unlabelled_catalog is not None:
             checks.check_no_missing_files(unlabelled_catalog['file_loc'], max_to_check=2000)
 
-        logging.info('\nLabelled subjects: {}'.format(len(labelled_catalog)))
+        logging.info('Labelled subjects: {}'.format(len(labelled_catalog)))
         labelled_catalog.to_csv(self.labelled_catalog_loc)
 
         if unlabelled_catalog is not None:
@@ -132,7 +132,7 @@ class ShardConfig():
         train_df, hidden_df = train_test_split(labelled_catalog, test_size=val_fraction + test_fraction)  # sklearn understands test size float as a fraction
         val_df, test_df = train_test_split(hidden_df, test_size=test_fraction / (val_fraction + test_fraction))  # both fractions of full catalog, now taking a slice of a slice
 
-        logging.info('\nTraining subjects: {}'.format(len(train_df)))
+        logging.info('Training subjects: {}'.format(len(train_df)))
         logging.info('Val subjects: {}'.format(len(val_df)))
         logging.info('Test subjects: {}'.format(len(test_df)))
         if len(train_df) < len(val_df):
