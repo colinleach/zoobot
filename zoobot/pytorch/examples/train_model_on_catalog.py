@@ -22,14 +22,16 @@ if __name__ == '__main__':
     parser.add_argument('--experiment-dir', dest='save_dir', type=str)
     # expects catalog, not tfrecords
     parser.add_argument('--catalog', dest='catalog_loc', type=str)
-    parser.add_argument('--architecture', dest='model_architecture', type=str)
+    parser.add_argument('--num_workers',
+                        dest='num_workers', type=int, default=int((os.cpu_count() / 2)))
+    parser.add_argument('--architecture',
+                        dest='model_architecture', type=str, default='efficientnet')
     parser.add_argument('--epochs', dest='epochs', type=int)
-    parser.add_argument('--shard-img-size',
-                        dest='shard_img_size', type=int, default=300)
     parser.add_argument('--resize-size', dest='resize_size',
                         type=int, default=224)
     parser.add_argument('--batch-size', dest='batch_size',
                         default=256, type=int)
+    parser.add_argument('--accelerator', type=str, default='gpu')
     parser.add_argument('--gpus', default=1, type=int)
     parser.add_argument('--nodes', default=1, type=int)
     parser.add_argument('--color', default=False, action='store_true')
@@ -59,18 +61,13 @@ if __name__ == '__main__':
     catalog = pd.read_csv(catalog_loc)
     catalog['file_loc'] = catalog['file_loc'].str.replace(
         '/raid/scratch',  '/share/nas2')
-    logging.info(catalog['file_loc'].iloc[0])
+    logging.info(catalog['file_loc'].iloc[0]) 
 
     # debug mode
     if args.debug:
         logging.warning(
             'Using debug mode: cutting catalog down to 5k galaxies')
         catalog = catalog.sample(5000).reset_index(drop=True)
-
-    # if ddp mode, each gpu has own dataloaders, if 1 gpu, all cpus. Save 2 cpu per gpu just to have some breathing room.
-    # num_workers = int((os.cpu_count() - 2)/args.gpus)
-
-    # prefetch_factor = max(1, int(20000 / (num_workers * batch_size * args.gpus)))  # may need to tweak this if your dataloaders timeout
 
     if args.wandb:
         wandb_logger = WandbLogger(
@@ -94,8 +91,10 @@ if __name__ == '__main__':
         color=args.color,
         resize_size=args.resize_size,
         # hardware parameters
+        accelerator=args.accelerator,
         nodes=args.nodes,
         gpus=args.gpus,
+        num_workers=args.num_workers,
         mixed_precision=args.mixed_precision,
         wandb_logger=wandb_logger
     )
