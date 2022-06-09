@@ -155,6 +155,36 @@ gz2_pairs = {
 }
 gz2_questions, gz2_label_cols = extract_questions_and_label_cols(gz2_pairs)
 
+# ortho version of above i.e. with -gz2 added to questions
+gz2_ortho_pairs = {
+    'smooth-or-featured-gz2': ['_smooth', '_featured-or-disk', '_artifact'],
+    'disk-edge-on-gz2': ['_yes', '_no'],
+    'has-spiral-arms-gz2': ['_yes', '_no'],
+    'bar-gz2': ['_yes', '_no'],
+    'bulge-size-gz2': ['_dominant', '_obvious', '_just-noticeable', '_no'],
+    'something-odd-gz2': ['_yes', '_no'],
+    'how-rounded-gz2': ['_round', '_in-between', '_cigar'],
+    'bulge-shape-gz2': ['_round', '_boxy', '_no-bulge'],
+    'spiral-winding-gz2': ['_tight', '_medium', '_loose'],
+    'spiral-arm-count-gz2': ['_1', '_2', '_3', '_4', '_more-than-4', '_cant-tell']
+}
+gz2_ortho_questions, gz2_ortho_label_cols = extract_questions_and_label_cols(gz2_ortho_pairs)
+
+gz2_ortho_dependencies = {
+    'smooth-or-featured-gz2': None,  # always asked
+    'disk-edge-on-gz2': 'smooth-or-featured-gz2_featured-or-disk',
+    'has-spiral-arms-gz2': 'smooth-or-featured-gz2_featured-or-disk',
+    'bar-gz2': 'smooth-or-featured-gz2_featured-or-disk',
+    'bulge-size-gz2': 'smooth-or-featured-gz2_featured-or-disk',
+    'how-rounded-gz2': 'smooth-or-featured-gz2_smooth',
+    'bulge-shape-gz2': 'disk-edge-on-gz2_yes',  # gz2 only
+    'edge-on-bulge-gz2': 'disk-edge-on-gz2_yes',
+    'spiral-winding-gz2': 'has-spiral-arms-gz2_yes',
+    'spiral-arm-count-gz2': 'has-spiral-arms-gz2_yes',
+    'something-odd-gz2': None  # actually neglects the artifact branch
+}
+
+
 # useful for development/debugging
 gz2_partial_pairs = {
     'smooth-or-featured': ['_smooth', '_featured-or-disk']
@@ -186,7 +216,7 @@ gz2_and_decals_dependencies = {
     'spiral-arm-count-dr12': 'has-spiral-arms_yes',
     'merging-dr12': None,
     # and gz2
-    'something-odd': None
+    'something-odd': None  # actually neglects the artifact branch
 }
 
 
